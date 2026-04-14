@@ -1,0 +1,98 @@
+package com.taskmind.backend.task.interfaces.rest;
+
+import com.taskmind.backend.task.application.CreateTaskCommand;
+import com.taskmind.backend.task.application.TaskApplicationService;
+import com.taskmind.backend.task.application.UpdateTaskCommand;
+import com.taskmind.backend.task.domain.model.Task;
+import com.taskmind.backend.task.domain.model.TaskStatus;
+import com.taskmind.backend.task.interfaces.rest.dto.CreateTaskRequest;
+import com.taskmind.backend.task.interfaces.rest.dto.TaskCompletionResponse;
+import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskRequest;
+import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/v1/tasks")
+@Validated
+public class TaskController {
+
+    private final TaskApplicationService taskApplicationService;
+
+    public TaskController(TaskApplicationService taskApplicationService) {
+        this.taskApplicationService = taskApplicationService;
+    }
+
+    @PostMapping
+    public ResponseEntity<Task> createTask(@Valid @RequestBody CreateTaskRequest request) {
+        var created = taskApplicationService.create(new CreateTaskCommand(
+            request.userId(),
+            request.projectId(),
+            request.title(),
+            request.description(),
+            request.status(),
+            request.priority(),
+            request.dueAt(),
+            request.durationMinutes(),
+            request.energyLevel(),
+            request.source(),
+            request.confidence()
+        ));
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @GetMapping
+    public List<Task> listTasks(@RequestParam(required = false) UUID userId) {
+        return taskApplicationService.list(java.util.Optional.ofNullable(userId));
+    }
+
+    @GetMapping("/{id}/completion")
+    public ResponseEntity<TaskCompletionResponse> getCompletion(@PathVariable UUID id) {
+        return taskApplicationService.findById(id)
+            .map(task -> ResponseEntity.ok(new TaskCompletionResponse(
+                task.id(),
+                task.status(),
+                task.status() == TaskStatus.DONE,
+                task.updatedAt()
+            )))
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Task> updateTask(@PathVariable UUID id, @Valid @RequestBody UpdateTaskRequest request) {
+        return taskApplicationService.update(id, new UpdateTaskCommand(
+                request.projectId(),
+                request.title(),
+                request.description(),
+                request.status(),
+                request.priority(),
+                request.dueAt(),
+                request.durationMinutes(),
+                request.energyLevel()
+            ))
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Task> updateTaskStatus(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateTaskStatusRequest request
+    ) {
+        return taskApplicationService.updateStatus(id, request.status())
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+}
