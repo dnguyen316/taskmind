@@ -39,3 +39,21 @@ This changelog tracks backend feature progress against the core implementation p
 
 ### Teamwork Benefit
 - Clear ownership boundaries across layers reduce merge conflicts and improve onboarding for parallel backend work.
+
+## 2026-04-14 (Task API Iteration)
+
+### Added
+- Task listing enhancements on `GET /v1/tasks`:
+  - `status` filter
+  - `overdueOnly` filter (based on due date and active status)
+  - `page` and `size` pagination controls
+- Safe archive API:
+  - `PATCH /v1/tasks/{id}/archive` marks task status as `ARCHIVED` without destructive deletion.
+
+### Changed
+- Application service task listing now supports composable filtering + pagination.
+- MockMvc contract tests expanded to verify status filtering, overdue filtering, pagination, and archive flow.
+
+### Why this improves BE quality
+- Improves scalability readiness by avoiding unbounded list responses.
+- Enables safer lifecycle handling aligned with “no silent destructive edits” by archiving instead of hard deleting.
