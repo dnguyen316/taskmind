@@ -271,3 +271,152 @@ Backend MVP is complete when:
 3. Critical SLOs are met in staging and production canary.
 4. Analytics events are emitted for all core feature funnels.
 5. Runbooks exist for incident response and model/provider degradation.
+
+---
+
+## 12) Development Task Breakdown (Aligned to Timeline)
+
+Use this as the execution backlog for engineering sprints. Each task includes owner suggestions and clear exit criteria.
+
+### Phase 0 (Week 1): Foundation
+
+#### 0.1 Architecture & Contracts
+- [ ] **BE Lead**: Finalize API style (REST vs GraphQL gateway decision) and publish v1 contract draft.
+- [ ] **BE + FE**: Define request/response schemas for all core endpoints in OpenAPI.
+- [ ] **BE**: Add idempotency strategy for AI mutation endpoints.
+- [ ] **Done when**: OpenAPI spec merged, reviewed by FE, and mock server runs locally.
+
+#### 0.2 Data Layer
+- [ ] **BE**: Create initial PostgreSQL migrations for all MVP tables.
+- [ ] **BE**: Add constraints/indexes (task status enums, due date indexes, foreign keys).
+- [ ] **BE**: Seed minimal dev fixtures (1 user, 2 projects, mixed task set).
+- [ ] **Done when**: `up/down` migration cycle succeeds and fixtures load in CI.
+
+#### 0.3 Platform Baseline
+- [ ] **Infra/BE**: Provision Redis, queue workers, and DLQ.
+- [ ] **BE**: Add auth middleware (JWT validation + per-user scoping).
+- [ ] **BE**: Add structured logging, correlation IDs, base tracing.
+- [ ] **Done when**: Healthcheck includes DB/Redis/queue dependencies and tracing is visible end-to-end.
+
+#### 0.4 Quality & Guardrails
+- [ ] **BE**: Set up test scaffolding (unit, integration, contract test folders).
+- [ ] **BE**: Add centralized JSON schema validation layer.
+- [ ] **BE**: Add linting + CI checks required for merge.
+- [ ] **Done when**: CI fails on schema violations and unauthorized data access attempts.
+
+---
+
+### Phase 1 (Weeks 2–4): AI Inbox Capture
+
+#### 1.1 Endpoint & Pipeline
+- [ ] **BE**: Implement `POST /v1/ai/capture` endpoint.
+- [ ] **AI/BE**: Build extractor -> validator -> confidence scorer pipeline.
+- [ ] **BE**: Add deterministic date parser fallback for common phrases.
+- [ ] **Done when**: Endpoint returns normalized drafts, confidence, and optional clarification.
+
+#### 1.2 Parsing Quality
+- [ ] **AI/BE**: Build seeded phrase evaluation set (single task, multi-task, ambiguous date, vague input).
+- [ ] **BE**: Add parser accuracy job in CI or nightly run.
+- [ ] **Done when**: Accuracy benchmark reaches >=85% on seeded set.
+
+#### 1.3 Persistence & Safety
+- [ ] **BE**: Persist only schema-valid task drafts.
+- [ ] **BE**: Record `ai_runs` + `ai_suggestions` metadata for each invocation.
+- [ ] **BE**: Add rate limiting and abuse controls for capture endpoint.
+- [ ] **Done when**: No invalid payload reaches `tasks`, AI audit row exists for every capture call.
+
+#### 1.4 Observability
+- [ ] **BE**: Add endpoint latency dashboards (p50/p95), error rate, timeout rate.
+- [ ] **BE**: Add alert for elevated parse failures.
+- [ ] **Done when**: On-call can trace request -> AI run -> DB write with one correlation ID.
+
+---
+
+### Phase 2 (Weeks 5–7): Goal Breakdown + Daily Planner
+
+#### 2.1 Goal Breakdown Engine
+- [ ] **BE**: Implement `POST /v1/ai/goals/{goalId}/breakdown`.
+- [ ] **BE**: Add async job orchestration and status polling endpoint/webhook.
+- [ ] **AI/BE**: Generate milestones + task graph + risk notes.
+- [ ] **Done when**: Every generated plan includes >=1 milestone and >=1 immediate next task.
+
+#### 2.2 Dependency & Draft Workflow
+- [ ] **BE**: Add dependency generation rules (sequence + blocker logic).
+- [ ] **BE**: Add editable draft state before user confirms final save.
+- [ ] **BE**: Prevent circular dependencies via validation.
+- [ ] **Done when**: Draft plans are editable and invalid dependency graphs are rejected.
+
+#### 2.3 Daily Planner Core
+- [ ] **BE**: Implement `POST /v1/planner/daily/generate`.
+- [ ] **BE**: Implement deterministic priority formula (urgency, impact, effort, due risk, preference).
+- [ ] **BE**: Enforce hard constraints (available time, dependencies, due windows).
+- [ ] **Done when**: Planner excludes blocked tasks unless explicit override is set.
+
+#### 2.4 Planner Explainability
+- [ ] **BE**: Add rationale payload from score contribution breakdown.
+- [ ] **BE**: Add overflow list behavior and deterministic tie-breakers.
+- [ ] **Done when**: Response includes task ordering rationale and overflow justification.
+
+---
+
+### Phase 3 (Weeks 8–10): Adaptive Rescheduling
+
+#### 3.1 Overdue Detection
+- [ ] **BE**: Implement overdue scanner cron/scheduler.
+- [ ] **BE**: Mark overdue candidates and enqueue proposal jobs.
+- [ ] **Done when**: 100% overdue tasks are picked up within scheduled scan window.
+
+#### 3.2 Proposal Engine
+- [ ] **BE**: Implement proposal generator (`move`, `split`, `defer`, `drop`).
+- [ ] **BE**: Add due-date and dependency conflict checks.
+- [ ] **BE**: Implement `POST /v1/planner/reschedule/proposals`.
+- [ ] **Done when**: Each overdue task receives >=1 valid proposal option.
+
+#### 3.3 Safe Apply Flow
+- [ ] **BE**: Build bulk apply endpoint with confirmation token.
+- [ ] **BE**: Enforce “no silent destructive edits” (archive/soft-change only).
+- [ ] **BE**: Log user decision (accepted/edited/rejected) for each proposal.
+- [ ] **Done when**: Bulk apply rejected without valid user confirmation token.
+
+#### 3.4 Validation & Performance
+- [ ] **BE/QA**: Create simulation suite for deadline conflict precision.
+- [ ] **BE**: Tune DB queries for high-overdue datasets.
+- [ ] **Done when**: Conflict precision >90% and response SLAs hold under load.
+
+---
+
+### Phase 4 (Weeks 11–12): Weekly Review + Hardening
+
+#### 4.1 Weekly Review Pipeline
+- [ ] **BE**: Implement `POST /v1/review/weekly/generate`.
+- [ ] **BE**: Build event aggregation (done/slipped/blockers) and summary generator job.
+- [ ] **AI/BE**: Enforce recommendation template with exactly 3 recommendations.
+- [ ] **Done when**: Weekly output always includes summary, slippage insights, and exactly 3 recommendations.
+
+#### 4.2 Telemetry & Adoption
+- [ ] **BE**: Persist review acceptance and recommendation adoption events.
+- [ ] **BE/Product**: Expose review completion and adoption metrics dashboard.
+- [ ] **Done when**: Product team can segment acceptance/edit/reject behavior.
+
+#### 4.3 Hardening & Production Readiness
+- [ ] **BE/Infra**: Run load tests on `/ai/capture` and `/planner/daily/generate`.
+- [ ] **BE/Infra**: Run failure-injection tests (LLM outage, queue delays, Redis unavailability).
+- [ ] **BE/Security**: Complete authz, fuzzing, and rate-limit abuse tests.
+- [ ] **BE**: Finalize incident runbooks and rollback playbooks.
+- [ ] **Done when**: Release gates pass (no P0/P1, SLOs met, schema pass rate >=99.5%).
+
+---
+
+## 13) Suggested Ticketing Structure
+
+To keep execution tight, create tickets with this label pattern:
+- `phase:0..4`
+- `feature:capture|goal-breakdown|daily-planner|reschedule|weekly-review`
+- `type:api|worker|schema|observability|security|test|infra`
+- `risk:high|medium|low`
+
+Suggested workflow:
+1. Create **epics per phase** (0 through 4).
+2. Create **stories per feature block** (e.g., “Daily planner scoring engine”).
+3. Split into **1–2 day engineering tasks** with explicit acceptance criteria from this plan.
+4. Reserve 20–25% sprint capacity for bugfix/perf/security hardening starting Week 5.
