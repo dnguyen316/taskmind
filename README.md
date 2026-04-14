@@ -48,6 +48,6 @@ Backend runs by default on `http://localhost:8080`.
 ## Next Steps
 
 - Add authentication + user accounts
-- Add task CRUD APIs
+- Expand task APIs from in-memory scaffold to PostgreSQL-backed APIs
 - Add AI-assisted task prioritization/scheduling
 - Connect frontend with backend API

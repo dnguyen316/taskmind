@@ -280,9 +280,17 @@ Use this as the execution backlog for engineering sprints. Each task includes ow
 
 ### Phase 0 (Week 1): Foundation
 
+#### Phase 0 Progress Update (2026-04-14)
+- [x] Backend started: baseline Task API scaffold implemented (`POST /v1/tasks`, `GET /v1/tasks`, `PATCH /v1/tasks/{id}`).
+- [x] Task status workflow started: dedicated status update and completion check endpoints added (`PATCH /v1/tasks/{id}/status`, `GET /v1/tasks/{id}/completion`).
+- [x] Request validation guardrails added at API boundary (priority, confidence, required fields, duration constraints).
+- [x] DDD-oriented backend folder refactor applied for scalable teamwork (domain/application/infrastructure/interfaces).
+- [ ] Next: replace in-memory task store with PostgreSQL migrations/repositories.
+- [ ] Next: add JWT auth middleware and per-user authorization checks.
+
 #### 0.1 Architecture & Contracts
-- [ ] **BE Lead**: Finalize API style (REST vs GraphQL gateway decision) and publish v1 contract draft.
-- [ ] **BE + FE**: Define request/response schemas for all core endpoints in OpenAPI.
+- [x] **BE Lead**: Finalize API style (REST for v1 scaffold) and publish v1 contract draft (initial task APIs).
+- [ ] **BE + FE**: Define request/response schemas for all core endpoints in OpenAPI. *(Task endpoint DTOs drafted in code; OpenAPI file pending).*
 - [ ] **BE**: Add idempotency strategy for AI mutation endpoints.
 - [ ] **Done when**: OpenAPI spec merged, reviewed by FE, and mock server runs locally.
 
@@ -299,7 +307,7 @@ Use this as the execution backlog for engineering sprints. Each task includes ow
 - [ ] **Done when**: Healthcheck includes DB/Redis/queue dependencies and tracing is visible end-to-end.
 
 #### 0.4 Quality & Guardrails
-- [ ] **BE**: Set up test scaffolding (unit, integration, contract test folders).
+- [x] **BE**: Set up test scaffolding (initial web/controller test coverage for task APIs).
 - [ ] **BE**: Add centralized JSON schema validation layer.
 - [ ] **BE**: Add linting + CI checks required for merge.
 - [ ] **Done when**: CI fails on schema violations and unauthorized data access attempts.
