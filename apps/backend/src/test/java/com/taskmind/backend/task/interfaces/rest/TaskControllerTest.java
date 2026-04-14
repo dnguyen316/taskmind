@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -167,5 +169,81 @@ class TaskControllerTest {
         mockMvc.perform(get("/v1/tasks").queryParam("userId", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    }
+
+    @Test
+    void filtersByStatusAndPagination() throws Exception {
+        var todoPayload = """
+            {
+              "userId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "title": "Todo task",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """;
+        var donePayload = """
+            {
+              "userId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "title": "Done task",
+              "status": "DONE",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """;
+
+        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(todoPayload))
+            .andExpect(status().isCreated());
+        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(donePayload))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/v1/tasks")
+                .queryParam("userId", "cccccccc-cccc-cccc-cccc-cccccccccccc")
+                .queryParam("status", "TODO")
+                .queryParam("page", "0")
+                .queryParam("size", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].status").value("TODO"));
+    }
+
+    @Test
+    void filtersOverdueAndArchivesTask() throws Exception {
+        var overdueDate = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1).toString();
+        var createPayload = """
+            {
+              "userId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "title": "Overdue task",
+              "status": "TODO",
+              "priority": 2,
+              "dueAt": "%s",
+              "source": "MANUAL"
+            }
+            """.formatted(overdueDate);
+
+        var createResponse = mockMvc.perform(post("/v1/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createPayload))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        var id = objectMapper.readTree(createResponse.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/v1/tasks")
+                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
+                .queryParam("overdueOnly", "true"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(id));
+
+        mockMvc.perform(patch("/v1/tasks/{id}/archive", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("ARCHIVED"));
+
+        mockMvc.perform(get("/v1/tasks")
+                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
+                .queryParam("overdueOnly", "true"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
     }
 }

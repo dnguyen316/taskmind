@@ -10,6 +10,7 @@ import com.taskmind.backend.task.interfaces.rest.dto.TaskCompletionResponse;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskRequest;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -54,8 +55,20 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> listTasks(@RequestParam(required = false) UUID userId) {
-        return taskApplicationService.list(java.util.Optional.ofNullable(userId));
+    public List<Task> listTasks(
+        @RequestParam(required = false) UUID userId,
+        @RequestParam(required = false) TaskStatus status,
+        @RequestParam(defaultValue = "false") boolean overdueOnly,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "20") @Min(1) int size
+    ) {
+        return taskApplicationService.list(
+            java.util.Optional.ofNullable(userId),
+            java.util.Optional.ofNullable(status),
+            overdueOnly,
+            page,
+            size
+        );
     }
 
     @GetMapping("/{id}/completion")
@@ -92,6 +105,13 @@ public class TaskController {
         @Valid @RequestBody UpdateTaskStatusRequest request
     ) {
         return taskApplicationService.updateStatus(id, request.status())
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<Task> archiveTask(@PathVariable UUID id) {
+        return taskApplicationService.archive(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

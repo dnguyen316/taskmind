@@ -3,6 +3,7 @@ package com.taskmind.backend.task.application;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
+import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -40,10 +41,15 @@ public class TaskApplicationService {
         return taskRepository.save(task);
     }
 
-    public List<Task> list(Optional<UUID> userId) {
+    public List<Task> list(Optional<UUID> userId, Optional<TaskStatus> status, boolean overdueOnly, int page, int size) {
+        var now = OffsetDateTime.now();
         return taskRepository.findAll().stream()
             .filter(task -> userId.map(id -> id.equals(task.userId())).orElse(true))
+            .filter(task -> status.map(taskStatus -> taskStatus == task.status()).orElse(true))
+            .filter(task -> !overdueOnly || isOverdue(task, now))
             .sorted(Comparator.comparing(Task::createdAt).reversed())
+            .skip((long) page * size)
+            .limit(size)
             .toList();
     }
 
@@ -77,5 +83,16 @@ public class TaskApplicationService {
     public Optional<Task> updateStatus(UUID id, TaskStatus status) {
         return taskRepository.findById(id)
             .map(existing -> taskRepository.save(existing.withStatus(status, Instant.now())));
+    }
+
+    public Optional<Task> archive(UUID id) {
+        return updateStatus(id, TaskStatus.ARCHIVED);
+    }
+
+    private boolean isOverdue(Task task, OffsetDateTime now) {
+        return task.dueAt() != null
+            && task.dueAt().isBefore(now)
+            && task.status() != TaskStatus.DONE
+            && task.status() != TaskStatus.ARCHIVED;
     }
 }
