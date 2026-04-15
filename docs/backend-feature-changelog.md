@@ -2,6 +2,21 @@
 
 This changelog tracks backend feature progress against the core implementation plan.
 
+## 2026-04-15 (PostgreSQL Persistence Foundation)
+
+### Added
+- Added Flyway migration `V1__create_tasks_table.sql` to provision the `tasks` table with integrity constraints and indexes.
+- Added JPA-backed persistence adapter (`JpaTaskRepository`) and Spring Data repository wiring for `TaskRepository`.
+- Added runtime PostgreSQL wiring and test-profile H2 configuration to keep local tests deterministic.
+
+### Changed
+- Replaced in-memory task repository implementation with persistent JPA/Flyway-backed infrastructure.
+- Updated backend test suite to run under `test` profile so migrations and persistence are validated in CI-style runs.
+
+### Why this improves BE quality
+- Aligns the backend with Phase 0 plan goals by moving from transient memory storage to migration-managed persistence.
+- Makes schema evolution explicit, reviewable, and repeatable across environments.
+
 ## 2026-04-15 (OpenAPI Contract Draft)
 
 ### Added

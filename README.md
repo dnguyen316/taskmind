@@ -41,6 +41,11 @@ mvn spring-boot:run
 
 Backend runs by default on `http://localhost:8080`.
 
+By default, backend persistence expects PostgreSQL and Flyway migrations with these optional env vars:
+- `TASKMIND_DB_URL` (default `jdbc:postgresql://localhost:5432/taskmind`)
+- `TASKMIND_DB_USERNAME` (default `taskmind`)
+- `TASKMIND_DB_PASSWORD` (default `taskmind`)
+
 ## Initial API
 
 - `GET /api/health` → `{ "status": "ok", "service": "taskmind-backend" }`
