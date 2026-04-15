@@ -1,0 +1,46 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
+    ...options,
+  })
+
+  if (!response.ok) {
+    throw new Error(`${options.method ?? 'GET'} ${path} failed (${response.status})`)
+  }
+
+  if (response.status === 204) {
+    return null
+  }
+
+  return response.json()
+}
+
+export function listTasks({ userId, status, overdueOnly = false, size = 50 }) {
+  const query = new URLSearchParams({
+    userId,
+    overdueOnly: String(overdueOnly),
+    size: String(size),
+  })
+
+  if (status) {
+    query.set('status', status)
+  }
+
+  return request(`/v1/tasks?${query.toString()}`)
+}
+
+export function createTask(payload) {
+  return request('/v1/tasks', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateTaskStatus(taskId, status) {
+  return request(`/v1/tasks/${taskId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
