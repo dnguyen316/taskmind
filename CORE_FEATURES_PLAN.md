@@ -290,7 +290,7 @@ Use this as the execution backlog for engineering sprints. Each task includes ow
 
 #### 0.1 Architecture & Contracts
 - [x] **BE Lead**: Finalize API style (REST for v1 scaffold) and publish v1 contract draft (initial task APIs).
-- [ ] **BE + FE**: Define request/response schemas for all core endpoints in OpenAPI. *(Task endpoint DTOs drafted in code; OpenAPI file pending).*
+- [ ] **BE + FE**: Define request/response schemas for all core endpoints in OpenAPI. *(Initial task API OpenAPI draft added at `apps/backend/openapi.yaml`; remaining core feature endpoints still pending).*
 - [ ] **BE**: Add idempotency strategy for AI mutation endpoints.
 - [ ] **Done when**: OpenAPI spec merged, reviewed by FE, and mock server runs locally.
 

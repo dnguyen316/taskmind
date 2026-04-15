@@ -2,6 +2,22 @@
 
 This changelog tracks backend feature progress against the core implementation plan.
 
+## 2026-04-15 (OpenAPI Contract Draft)
+
+### Added
+- Added initial OpenAPI 3.0 contract draft at `apps/backend/openapi.yaml` for current Task APIs:
+  - `POST /v1/tasks`
+  - `GET /v1/tasks`
+  - `PATCH /v1/tasks/{id}`
+  - `PATCH /v1/tasks/{id}/status`
+  - `GET /v1/tasks/{id}/completion`
+  - `PATCH /v1/tasks/{id}/archive`
+- Included shared schema components for domain enums and DTOs (`TaskStatus`, `TaskSource`, `EnergyLevel`, create/update payloads).
+
+### Why this improves BE quality
+- Gives FE and BE a single contract artifact to align on request/response shapes.
+- Reduces integration ambiguity before broader AI/planner endpoints are implemented.
+
 ## 2026-04-14
 
 ### Added
