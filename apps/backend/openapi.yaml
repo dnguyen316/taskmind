@@ -1,0 +1,359 @@
+openapi: 3.0.3
+info:
+  title: TaskMind Backend API
+  version: 0.1.0
+  description: |
+    Initial v1 contract draft for TaskMind backend task management endpoints.
+servers:
+  - url: http://localhost:8080
+paths:
+  /v1/tasks:
+    post:
+      summary: Create a task
+      operationId: createTask
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+    get:
+      summary: List tasks
+      operationId: listTasks
+      tags: [Tasks]
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - in: query
+          name: overdueOnly
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        '200':
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /v1/tasks/{id}:
+    patch:
+      summary: Update mutable task fields
+      operationId: updateTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          description: Task not found
+
+  /v1/tasks/{id}/status:
+    patch:
+      summary: Update only task status
+      operationId: updateTaskStatus
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskStatusRequest'
+      responses:
+        '200':
+          description: Task status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          description: Task not found
+
+  /v1/tasks/{id}/completion:
+    get:
+      summary: Get completion state for a task
+      operationId: getTaskCompletion
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPath'
+      responses:
+        '200':
+          description: Completion details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskCompletionResponse'
+        '404':
+          description: Task not found
+
+  /v1/tasks/{id}/archive:
+    patch:
+      summary: Archive task (soft lifecycle transition)
+      operationId: archiveTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPath'
+      responses:
+        '200':
+          description: Task archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+
+components:
+  parameters:
+    TaskIdPath:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    ValidationError:
+      description: Input validation failure
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - status
+        - priority
+        - source
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        energyLevel:
+          $ref: '#/components/schemas/EnergyLevel'
+        source:
+          $ref: '#/components/schemas/TaskSource'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - userId
+        - title
+        - status
+        - priority
+        - source
+      properties:
+        userId:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        energyLevel:
+          $ref: '#/components/schemas/EnergyLevel'
+        source:
+          $ref: '#/components/schemas/TaskSource'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          nullable: true
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        energyLevel:
+          $ref: '#/components/schemas/EnergyLevel'
+
+    UpdateTaskStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+
+    TaskCompletionResponse:
+      type: object
+      required:
+        - id
+        - status
+        - completed
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        completed:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    TaskStatus:
+      type: string
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - DONE
+        - ARCHIVED
+
+    TaskSource:
+      type: string
+      enum:
+        - MANUAL
+        - AI_CAPTURE
+        - AI_PLAN
+        - AI_RESCHEDULE
+
+    EnergyLevel:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
