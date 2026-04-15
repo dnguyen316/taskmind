@@ -10,7 +10,6 @@ const {
   saving,
   errorMessage,
   filters,
-  createForm,
   visibleTasks,
   fetchTasks,
   submitTask,
@@ -24,39 +23,44 @@ onMounted(fetchTasks)
   <main class="page">
     <header class="header">
       <h1>TaskMind · FE Task Workspace</h1>
-      <p>Create tasks, filter them, and quickly update status against the backend API.</p>
+      <p>Ant Design Vue + Vee Validate form flow with backend task APIs.</p>
     </header>
 
-    <TaskCreateForm :form="createForm" :saving="saving" @submit="submitTask" />
+    <TaskCreateForm :saving="saving" :on-submit-task="submitTask" />
 
-    <section class="card">
-      <div class="row">
-        <h2>Tasks</h2>
+    <a-card title="Tasks">
+      <template #extra>
         <TaskFilters :filters="filters" @refresh="fetchTasks" />
-      </div>
+      </template>
 
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-      <p v-if="loading">Loading tasks…</p>
-      <p v-else-if="visibleTasks.length === 0">No tasks found for the current filter.</p>
-
-      <TaskList
-        v-else
-        :tasks="visibleTasks"
-        @change-status="(taskId, status) => changeStatus(taskId, status)"
+      <a-alert
+        v-if="errorMessage"
+        type="error"
+        show-icon
+        :message="errorMessage"
+        class="space-bottom"
       />
-    </section>
+
+      <a-spin :spinning="loading">
+        <a-empty v-if="!loading && visibleTasks.length === 0" description="No tasks found for current filter." />
+        <TaskList
+          v-else
+          :tasks="visibleTasks"
+          @change-status="(taskId, status) => changeStatus(taskId, status)"
+        />
+      </a-spin>
+    </a-card>
   </main>
 </template>
 
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f8fafc;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color: #0f172a;
-  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
   display: grid;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .header h1 {
@@ -64,33 +68,11 @@ onMounted(fetchTasks)
 }
 
 .header p {
-  margin: 0.25rem 0 0;
-  color: #334155;
+  margin: 4px 0 0;
+  color: #64748b;
 }
 
-.card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.error {
-  color: #b91c1c;
-  font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .row {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.space-bottom {
+  margin-bottom: 12px;
 }
 </style>
