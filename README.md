@@ -45,6 +45,10 @@ Backend runs by default on `http://localhost:8080`.
 
 - `GET /api/health` → `{ "status": "ok", "service": "taskmind-backend" }`
 
+## API Contract Draft
+
+- OpenAPI spec for the current task endpoints: `apps/backend/openapi.yaml`
+
 ## Next Steps
 
 - Add authentication + user accounts
