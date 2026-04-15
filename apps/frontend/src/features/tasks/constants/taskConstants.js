@@ -4,14 +4,13 @@ export const TASK_STATUS_OPTIONS = [
   'TODO',
   'IN_PROGRESS',
   'DONE',
-  'BLOCKED',
   'ARCHIVED',
 ]
 
 export const STATUS_TRANSITIONS = [
   { label: 'Start', value: 'IN_PROGRESS' },
   { label: 'Done', value: 'DONE' },
-  { label: 'Block', value: 'BLOCKED' },
+  { label: 'Archive', value: 'ARCHIVED' },
 ]
 
 export const DEFAULT_CREATE_TASK_FORM = Object.freeze({
