@@ -73,7 +73,7 @@ public class TaskApplicationService {
 
     @Transactional
     public Optional<Task> update(UUID id, UpdateTaskCommand command) {
-        return taskRepository.findById(id)
+        return taskRepository.findByIdForUpdate(id)
             .map(existing -> {
                 var nextProjectId = command.projectId() != null ? command.projectId() : existing.projectId();
                 projectMembershipApplicationService.validateMembership(nextProjectId, existing.userId());
@@ -101,7 +101,7 @@ public class TaskApplicationService {
 
     @Transactional
     public Optional<Task> updateStatus(UUID id, TaskStatus status) {
-        return taskRepository.findById(id)
+        return taskRepository.findByIdForUpdate(id)
             .map(existing -> taskRepository.save(existing.withStatus(status, Instant.now())));
     }
 

@@ -10,5 +10,7 @@ public interface TaskRepository {
 
     Optional<Task> findById(UUID id);
 
+    Optional<Task> findByIdForUpdate(UUID id);
+
     List<Task> findAll();
 }

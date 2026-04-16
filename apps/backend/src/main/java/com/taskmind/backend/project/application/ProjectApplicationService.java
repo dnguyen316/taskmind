@@ -62,7 +62,7 @@ public class ProjectApplicationService {
 
     @Transactional
     public Optional<Project> update(UUID id, UpdateProjectCommand command) {
-        return projectRepository.findById(id)
+        return projectRepository.findByIdForUpdate(id)
             .map(existing -> {
                 var updatedKey = command.key() != null ? command.key().trim().toUpperCase() : existing.key();
                 if (!existing.key().equals(updatedKey) && projectRepository.existsByKey(updatedKey)) {
@@ -90,7 +90,7 @@ public class ProjectApplicationService {
 
     @Transactional
     public Optional<Project> archive(ArchiveProjectCommand command) {
-        return projectRepository.findById(command.projectId())
+        return projectRepository.findByIdForUpdate(command.projectId())
             .map(existing -> {
                 if (existing.archivedAt() != null) {
                     return existing;

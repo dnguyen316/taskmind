@@ -28,6 +28,11 @@ public class JpaProjectRepository implements ProjectRepository {
     }
 
     @Override
+    public Optional<Project> findByIdForUpdate(UUID id) {
+        return projectJpaRepository.findByIdForUpdate(id).map(ProjectJpaEntity::toDomain);
+    }
+
+    @Override
     public List<Project> findAll() {
         return projectJpaRepository.findAll().stream().map(ProjectJpaEntity::toDomain).toList();
     }

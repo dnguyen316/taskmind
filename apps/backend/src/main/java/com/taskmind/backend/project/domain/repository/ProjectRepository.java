@@ -11,6 +11,8 @@ public interface ProjectRepository {
 
     Optional<Project> findById(UUID id);
 
+    Optional<Project> findByIdForUpdate(UUID id);
+
     List<Project> findAll();
 
     boolean existsByKey(String key);

@@ -28,6 +28,11 @@ public class JpaTaskRepository implements TaskRepository {
     }
 
     @Override
+    public Optional<Task> findByIdForUpdate(UUID id) {
+        return taskJpaRepository.findByIdForUpdate(id).map(TaskJpaEntity::toDomain);
+    }
+
+    @Override
     public List<Task> findAll() {
         return taskJpaRepository.findAll().stream().map(TaskJpaEntity::toDomain).toList();
     }
