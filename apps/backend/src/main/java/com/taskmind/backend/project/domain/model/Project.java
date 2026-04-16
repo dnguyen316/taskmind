@@ -1,10 +1,13 @@
 package com.taskmind.backend.project.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.UUID;
 
 public record Project(
     UUID id,
+    @JsonIgnore
+    Long version,
     String name,
     String key,
     String description,
@@ -15,6 +18,6 @@ public record Project(
 ) {
 
     public Project withArchivedAt(Instant archivedAtTime, Instant updatedAtTime) {
-        return new Project(id, name, key, description, ownerUserId, archivedAtTime, createdAt, updatedAtTime);
+        return new Project(id, version, name, key, description, ownerUserId, archivedAtTime, createdAt, updatedAtTime);
     }
 }

@@ -1,5 +1,6 @@
 package com.taskmind.backend.task.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -7,6 +8,8 @@ import java.util.UUID;
 
 public record Task(
     UUID id,
+    @JsonIgnore
+    Long version,
     UUID userId,
     UUID projectId,
     String title,
@@ -25,6 +28,7 @@ public record Task(
     public Task withStatus(TaskStatus newStatus, Instant updatedAtTime) {
         return new Task(
             id,
+            version,
             userId,
             projectId,
             title,
