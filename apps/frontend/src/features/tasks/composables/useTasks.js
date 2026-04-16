@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue'
-import { createTask, listTasks, updateTaskStatus } from '../api/tasksApi'
+import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
 import { DEFAULT_USER_ID } from '../constants/taskConstants'
 
 export function useTasks() {
@@ -65,6 +65,37 @@ export function useTasks() {
     }
   }
 
+  async function fetchTaskById(taskId) {
+    loading.value = true
+    errorMessage.value = ''
+
+    try {
+      return await getTaskById(taskId, { userId: DEFAULT_USER_ID })
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : 'Failed to load task.'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateTaskDetails(taskId, payload) {
+    saving.value = true
+    errorMessage.value = ''
+
+    try {
+      const updatedTask = await updateTask(taskId, payload)
+
+      tasks.value = tasks.value.map((task) => (task.id === taskId ? updatedTask : task))
+      return updatedTask
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : 'Failed to update task details.'
+      throw error
+    } finally {
+      saving.value = false
+    }
+  }
+
   return {
     loading,
     saving,
@@ -74,6 +105,8 @@ export function useTasks() {
     fetchTasks,
     submitTask,
     changeStatus,
+    fetchTaskById,
+    updateTaskDetails,
   }
 }
 

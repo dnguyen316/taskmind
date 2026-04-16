@@ -45,6 +45,11 @@ export function updateTask(taskId, payload) {
   })
 }
 
+export async function getTaskById(taskId, { userId, size = 200 } = {}) {
+  const taskList = await listTasks({ userId, size })
+  return (Array.isArray(taskList) ? taskList : []).find((candidate) => candidate.id === taskId) ?? null
+}
+
 export function updateTaskStatus(taskId, status) {
   return request(`/v1/tasks/${taskId}/status`, {
     method: 'PATCH',
