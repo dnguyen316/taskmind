@@ -38,6 +38,13 @@ export function createTask(payload) {
   })
 }
 
+export function updateTask(taskId, payload) {
+  return request(`/v1/tasks/${taskId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function updateTaskStatus(taskId, status) {
   return request(`/v1/tasks/${taskId}/status`, {
     method: 'PATCH',

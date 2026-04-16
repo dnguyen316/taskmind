@@ -39,7 +39,9 @@ function statusColor(status) {
         <a-list-item-meta>
           <template #title>
             <a-space>
-              <span class="task-title">{{ item.title }}</span>
+              <router-link :to="`/tasks/${item.id}`" class="task-title-link">
+                <span class="task-title">{{ item.title }}</span>
+              </router-link>
               <a-tag :color="statusColor(item.status)">{{ item.status }}</a-tag>
               <a-tag color="blue">P{{ item.priority }}</a-tag>
             </a-space>
@@ -82,6 +84,10 @@ function statusColor(status) {
   margin-bottom: 10px;
   padding: 12px 16px;
   background: #f8fafc;
+}
+
+.task-title-link {
+  color: #1677ff;
 }
 
 .task-title {
