@@ -1,18 +1,17 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { listTasks, updateTask } from '../api/tasksApi'
-import { DEFAULT_USER_ID, TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import { useTasks } from '../composables/useTasks'
+import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
 
 const ENERGY_LEVEL_OPTIONS = ['LOW', 'MEDIUM', 'HIGH']
 
 const route = useRoute()
 const router = useRouter()
 
-const loading = ref(false)
-const saving = ref(false)
-const errorMessage = ref('')
+const successMessage = ref('')
 const taskNotFound = ref(false)
+const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useTasks()
 
 const formState = reactive({
   id: '',
@@ -38,7 +37,7 @@ watch(taskId, () => {
 })
 
 async function loadTask() {
-  loading.value = true
+  successMessage.value = ''
   errorMessage.value = ''
   taskNotFound.value = false
 
@@ -55,8 +54,7 @@ async function loadTask() {
   }
 
   try {
-    const taskList = await listTasks({ userId: DEFAULT_USER_ID, size: 200 })
-    const task = (Array.isArray(taskList) ? taskList : []).find((candidate) => candidate.id === taskId.value)
+    const task = await fetchTaskById(taskId.value)
 
     if (!task) {
       taskNotFound.value = true
@@ -64,10 +62,8 @@ async function loadTask() {
     }
 
     hydrateForm(task)
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to load task.'
-  } finally {
-    loading.value = false
+  } catch {
+    // errorMessage is managed by useTasks
   }
 }
 
@@ -88,11 +84,11 @@ async function saveTask() {
     return
   }
 
-  saving.value = true
+  successMessage.value = ''
   errorMessage.value = ''
 
   try {
-    const updated = await updateTask(formState.id, {
+    const updated = await updateTaskDetails(formState.id, {
       title: formState.title.trim(),
       description: formState.description.trim() || null,
       priority: Number(formState.priority),
@@ -105,10 +101,10 @@ async function saveTask() {
     if (updated && typeof updated === 'object') {
       hydrateForm(updated)
     }
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to save task.'
-  } finally {
-    saving.value = false
+
+    successMessage.value = 'Task details saved.'
+  } catch {
+    // errorMessage is managed by useTasks
   }
 }
 
@@ -137,6 +133,7 @@ function toDatetimeLocal(value) {
         </a-space>
 
         <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
+        <a-alert v-else-if="successMessage" type="success" show-icon :message="successMessage" />
 
         <a-spin v-if="loading" tip="Loading task..." />
 
