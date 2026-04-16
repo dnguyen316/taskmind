@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskMind Frontend Agent"
+  short_description: "TaskMind Vue frontend delivery workflow guide."
+  default_prompt: "Use this skill when implementing or refining TaskMind frontend features in apps/frontend using Vue 3, composables, vue-router, Axios API integration, and type-safe UI flows."

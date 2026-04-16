@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskMind Backend Agent"
+  short_description: "TaskMind Spring Boot backend delivery workflow."
+  default_prompt: "Use this skill when implementing or refactoring TaskMind backend features in apps/backend with Spring Boot, domain/application layering, JPA repositories, Flyway migrations, and REST controller tests."
