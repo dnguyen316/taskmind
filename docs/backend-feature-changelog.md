@@ -1,5 +1,32 @@
 # Backend Feature Changelog
 
+## 2026-04-16 (Backend Status Review + Execution Task Plan)
+
+### Reviewed
+- Reviewed current backend implementation coverage across task and project modules, including persistence migrations, REST controllers, and application services.
+- Verified feature coverage for:
+  - Task CRUD, status transitions, completion check, filtering, pagination, and archive flow.
+  - Project CRUD-lite (`create`, `list`, `get`, `update`) and soft-archive flow.
+  - Planner/AI workflow contract stubs used by FE integration.
+
+### Current BE Status
+- ✅ Persistence baseline is established with migration-managed PostgreSQL schema for `tasks` and `projects`.
+- ✅ Task APIs are feature-complete for MVP baseline and covered by integration-style controller tests.
+- ✅ Project APIs are implemented end-to-end with JPA persistence and key uniqueness enforcement.
+- ⚠️ Project endpoint test coverage is not yet present in the test suite.
+- ⚠️ Authentication/authorization remains pending for per-user enforcement.
+- ⚠️ OpenAPI spec currently lags behind implemented project and planner/AI stub endpoints.
+
+### Task Plan (Next Execution Slice)
+1. Add `ProjectController` integration tests for create/list/get/update/archive + conflict cases.
+2. Expand `openapi.yaml` to include project endpoints and planner/AI stub contracts.
+3. Introduce JWT auth middleware and enforce owner/user scoping across task/project queries.
+4. Add service-level validation and observability hooks (structured logs + request correlation IDs) for new planner/AI paths.
+
+### Why this improves BE quality
+- Creates an explicit implementation snapshot for team alignment before deeper AI orchestration work.
+- Reduces delivery risk by making backend gaps visible and sequencing immediate execution priorities.
+
 ## 2026-04-16 (Planner + AI Workflow API Stubs for FE Integration)
 
 ### Added
