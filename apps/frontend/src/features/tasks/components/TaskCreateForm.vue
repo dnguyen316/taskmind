@@ -39,7 +39,7 @@ async function handleValidSubmit(values, { resetForm }) {
 </script>
 
 <template>
-  <a-card title="Create Task">
+  <a-card title="Create task" class="surface-card">
     <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
@@ -111,6 +111,10 @@ async function handleValidSubmit(values, { resetForm }) {
 </template>
 
 <style scoped>
+.surface-card {
+  border-radius: 18px;
+}
+
 .field-error {
   color: #d4380d;
   font-size: 12px;
