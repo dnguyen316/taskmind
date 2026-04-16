@@ -13,7 +13,7 @@ export function useTasks() {
     overdueOnly: false,
   })
 
-  const visibleTasks = computed(() => tasks.value)
+  const visibleTasks = computed(() => [...tasks.value].sort(compareByRecency))
 
   async function fetchTasks() {
     loading.value = true
@@ -75,4 +75,35 @@ export function useTasks() {
     submitTask,
     changeStatus,
   }
+}
+
+function compareByRecency(taskA, taskB) {
+  const taskATime = getRecencyTimestamp(taskA)
+  const taskBTime = getRecencyTimestamp(taskB)
+
+  return taskBTime - taskATime
+}
+
+function getRecencyTimestamp(task) {
+  const primaryDate = toTimestamp(task?.updatedAt)
+  const fallbackDate = toTimestamp(task?.createdAt)
+
+  if (Number.isFinite(primaryDate)) {
+    return primaryDate
+  }
+
+  if (Number.isFinite(fallbackDate)) {
+    return fallbackDate
+  }
+
+  return 0
+}
+
+function toTimestamp(value) {
+  if (!value) {
+    return Number.NaN
+  }
+
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : Number.NaN
 }
