@@ -1,5 +1,20 @@
 # Backend Feature Changelog
 
+## 2026-04-16 (Planner + AI Workflow API Stubs for FE Integration)
+
+### Added
+- Added `PlanningController` with FE-aligned MVP endpoints for upcoming UI surfaces:
+  - `POST /v1/ai/capture`
+  - `POST /v1/ai/goals/{goalId}/breakdown`
+  - `POST /v1/planner/daily/generate`
+  - `POST /v1/planner/reschedule/proposals`
+  - `POST /v1/review/weekly/generate`
+- Added deterministic scaffold responses for capture drafts, goal breakdown, daily planning, reschedule proposals, and weekly review output shapes.
+
+### Why this improves BE quality
+- Unblocks frontend integration work by exposing contract-shaped endpoints ahead of deeper orchestration implementation.
+- Preserves deterministic behavior while enabling iterative replacement with production AI/rules engines.
+
 This changelog tracks backend feature progress against the core implementation plan.
 
 ## 2026-04-15 (PostgreSQL Persistence Foundation)
