@@ -7,9 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class ProjectApplicationService {
 
     private final ProjectRepository projectRepository;
@@ -18,6 +21,7 @@ public class ProjectApplicationService {
         this.projectRepository = projectRepository;
     }
 
+    @Transactional
     public Project create(CreateProjectCommand command) {
         var normalizedKey = command.key().trim().toUpperCase();
         if (projectRepository.existsByKey(normalizedKey)) {
@@ -27,6 +31,7 @@ public class ProjectApplicationService {
         var now = Instant.now();
         var project = new Project(
             UUID.randomUUID(),
+            null,
             command.name().trim(),
             normalizedKey,
             command.description(),
@@ -35,13 +40,19 @@ public class ProjectApplicationService {
             now,
             now
         );
-        return projectRepository.save(project);
+        try {
+            return projectRepository.save(project);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("Project key already exists", e);
+        }
     }
 
+    @Transactional(readOnly = true)
     public Optional<Project> findById(UUID id) {
         return projectRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<Project> list(boolean includeArchived) {
         return projectRepository.findAll().stream()
             .filter(project -> includeArchived || project.archivedAt() == null)
@@ -49,6 +60,7 @@ public class ProjectApplicationService {
             .toList();
     }
 
+    @Transactional
     public Optional<Project> update(UUID id, UpdateProjectCommand command) {
         return projectRepository.findById(id)
             .map(existing -> {
@@ -59,6 +71,7 @@ public class ProjectApplicationService {
 
                 var updated = new Project(
                     existing.id(),
+                    existing.version(),
                     command.name() != null ? command.name().trim() : existing.name(),
                     updatedKey,
                     command.description() != null ? command.description() : existing.description(),
@@ -67,10 +80,15 @@ public class ProjectApplicationService {
                     existing.createdAt(),
                     Instant.now()
                 );
-                return projectRepository.save(updated);
+                try {
+                    return projectRepository.save(updated);
+                } catch (DataIntegrityViolationException e) {
+                    throw new IllegalArgumentException("Project key already exists", e);
+                }
             });
     }
 
+    @Transactional
     public Optional<Project> archive(ArchiveProjectCommand command) {
         return projectRepository.findById(command.projectId())
             .map(existing -> {
