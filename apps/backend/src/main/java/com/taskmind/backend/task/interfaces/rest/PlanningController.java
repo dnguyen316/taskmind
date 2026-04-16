@@ -88,7 +88,6 @@ public class PlanningController {
 
         var ordered = tasks.stream()
             .filter(task -> task.status() != TaskStatus.DONE && task.status() != TaskStatus.ARCHIVED)
-            .filter(task -> request.includeBlockedTasks() || task.status() != TaskStatus.TODO)
             .sorted(Comparator
                 .comparingInt(Task::priority)
                 .thenComparing(task -> Optional.ofNullable(task.dueAt()).orElse(OffsetDateTime.MAX)))
