@@ -56,6 +56,7 @@ By default, backend persistence expects PostgreSQL and Flyway migrations with th
 
 ## Next Steps
 
+- User auth/authz plan draft (email+phone login, OTP, MFA): `docs/user-entity-authn-authz-plan.md`
 - Add authentication + user accounts
 - Expand task APIs from in-memory scaffold to PostgreSQL-backed APIs
 - Add AI-assisted task prioritization/scheduling
