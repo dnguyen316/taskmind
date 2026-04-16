@@ -248,4 +248,87 @@ class TaskControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(0));
     }
+
+    @Test
+    void rejectsProjectTaskCreationForNonMember() throws Exception {
+        var projectPayload = """
+            {
+              "name": "Membership protected project",
+              "key": "MPP",
+              "ownerUserId": "99999999-9999-9999-9999-999999999999"
+            }
+            """;
+
+        var projectResponse = mockMvc.perform(post("/v1/projects")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(projectPayload))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        var projectId = objectMapper.readTree(projectResponse.getResponse().getContentAsString()).get("id").asText();
+
+        var taskPayload = """
+            {
+              "userId": "11111111-1111-1111-1111-111111111111",
+              "projectId": "%s",
+              "title": "Forbidden project task",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """.formatted(projectId);
+
+        mockMvc.perform(post("/v1/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(taskPayload))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void allowsProjectTaskCreationForMember() throws Exception {
+        var projectPayload = """
+            {
+              "name": "Membership allowed project",
+              "key": "MAP",
+              "ownerUserId": "99999999-9999-9999-9999-999999999998"
+            }
+            """;
+
+        var projectResponse = mockMvc.perform(post("/v1/projects")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(projectPayload))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        var projectId = objectMapper.readTree(projectResponse.getResponse().getContentAsString()).get("id").asText();
+
+        var addMemberPayload = """
+            {
+              "userId": "11111111-1111-1111-1111-111111111111",
+              "role": "MEMBER"
+            }
+            """;
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(addMemberPayload))
+            .andExpect(status().isCreated());
+
+        var taskPayload = """
+            {
+              "userId": "11111111-1111-1111-1111-111111111111",
+              "projectId": "%s",
+              "title": "Allowed project task",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """.formatted(projectId);
+
+        mockMvc.perform(post("/v1/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(taskPayload))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.projectId").value(projectId));
+    }
 }

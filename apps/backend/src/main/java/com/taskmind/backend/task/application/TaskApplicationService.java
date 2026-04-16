@@ -1,10 +1,11 @@
 package com.taskmind.backend.task.application;
 
+import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
-import java.time.OffsetDateTime;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -15,12 +16,19 @@ import org.springframework.stereotype.Service;
 public class TaskApplicationService {
 
     private final TaskRepository taskRepository;
+    private final ProjectMembershipApplicationService projectMembershipApplicationService;
 
-    public TaskApplicationService(TaskRepository taskRepository) {
+    public TaskApplicationService(
+        TaskRepository taskRepository,
+        ProjectMembershipApplicationService projectMembershipApplicationService
+    ) {
         this.taskRepository = taskRepository;
+        this.projectMembershipApplicationService = projectMembershipApplicationService;
     }
 
     public Task create(CreateTaskCommand command) {
+        projectMembershipApplicationService.validateMembership(command.projectId(), command.userId());
+
         var now = Instant.now();
         var task = new Task(
             UUID.randomUUID(),
@@ -60,10 +68,13 @@ public class TaskApplicationService {
     public Optional<Task> update(UUID id, UpdateTaskCommand command) {
         return taskRepository.findById(id)
             .map(existing -> {
+                var nextProjectId = command.projectId() != null ? command.projectId() : existing.projectId();
+                projectMembershipApplicationService.validateMembership(nextProjectId, existing.userId());
+
                 var updated = new Task(
                     existing.id(),
                     existing.userId(),
-                    command.projectId() != null ? command.projectId() : existing.projectId(),
+                    nextProjectId,
                     command.title() != null ? command.title().trim() : existing.title(),
                     command.description() != null ? command.description() : existing.description(),
                     command.status() != null ? command.status() : existing.status(),

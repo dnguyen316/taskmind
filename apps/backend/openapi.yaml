@@ -27,6 +27,8 @@ paths:
                 $ref: '#/components/schemas/Task'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '403':
+          description: User is not a member of the project
     get:
       summary: List tasks
       operationId: listTasks
@@ -92,6 +94,8 @@ paths:
                 $ref: '#/components/schemas/Task'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '403':
+          description: User is not a member of the project
         '404':
           description: Task not found
 
@@ -238,6 +242,59 @@ paths:
         '409':
           description: Project key already exists
 
+
+  /v1/projects/{projectId}/members:
+    post:
+      summary: Add project member
+      operationId: addProjectMember
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProjectMemberRequest'
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembership'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Membership already exists
+    get:
+      summary: List project members
+      operationId: listProjectMembers
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+      responses:
+        '200':
+          description: Project memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectMembership'
+
+  /v1/projects/{projectId}/members/{userId}:
+    delete:
+      summary: Remove project member
+      operationId: removeProjectMember
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '204':
+          description: Member removed
+
   /v1/projects/{id}/archive:
     patch:
       summary: Archive project
@@ -267,6 +324,20 @@ components:
     ProjectIdPath:
       in: path
       name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProjectIdPathAsProjectId:
+      in: path
+      name: projectId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserIdPath:
+      in: path
+      name: userId
       required: true
       schema:
         type: string
@@ -352,6 +423,43 @@ components:
         description:
           type: string
           nullable: true
+
+
+    AddProjectMemberRequest:
+      type: object
+      required:
+        - userId
+        - role
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/ProjectMembershipRole'
+
+    ProjectMembership:
+      type: object
+      required:
+        - projectId
+        - userId
+        - role
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/ProjectMembershipRole'
+
+    ProjectMembershipRole:
+      type: string
+      enum:
+        - OWNER
+        - ADMIN
+        - MEMBER
+        - VIEWER
 
     Task:
       type: object

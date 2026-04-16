@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1/tasks")
@@ -38,7 +39,8 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(@Valid @RequestBody CreateTaskRequest request) {
-        var created = taskApplicationService.create(new CreateTaskCommand(
+        try {
+            var created = taskApplicationService.create(new CreateTaskCommand(
             request.userId(),
             request.projectId(),
             request.title(),
@@ -51,7 +53,10 @@ public class TaskController {
             request.source(),
             request.confidence()
         ));
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        }
     }
 
     @GetMapping
@@ -85,7 +90,8 @@ public class TaskController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable UUID id, @Valid @RequestBody UpdateTaskRequest request) {
-        return taskApplicationService.update(id, new UpdateTaskCommand(
+        try {
+            return taskApplicationService.update(id, new UpdateTaskCommand(
                 request.projectId(),
                 request.title(),
                 request.description(),
@@ -95,8 +101,11 @@ public class TaskController {
                 request.durationMinutes(),
                 request.energyLevel()
             ))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        }
     }
 
     @PatchMapping("/{id}/status")
