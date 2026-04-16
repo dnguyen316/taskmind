@@ -1,5 +1,23 @@
 # Frontend UI/UX Planning Context (Based on Backend Core Features Plan)
 
+## 0) Current Execution Status (Updated April 16, 2026)
+
+### Completed this cycle
+- ✅ Frontend migration foundation from JavaScript to TypeScript started and applied to core app/runtime files (`main`, router, task API client, task composable, and task constants).
+- ✅ Added shared task domain TypeScript models to enforce stronger request/response typing at the API boundary.
+- ✅ Added TypeScript project configuration and `typecheck` script for ongoing static analysis in CI/local workflows.
+
+### In progress
+- 🔄 Extend TypeScript migration into Vue SFC `<script setup>` blocks for page/component-level prop/event typing.
+- 🔄 Add runtime response validation adapters for AI/planner/review endpoints once those surfaces are implemented.
+
+### Next planned tasks
+1. Convert task components/pages to `lang="ts"` with explicit prop and emit interfaces.
+2. Introduce typed store modules (`useTasksStore`, `usePlannerStore`, `useGoalsStore`, `useReviewStore`) to align with section 6.
+3. Add schema-based runtime validation (e.g., Zod/Yup adapter layer) for external API responses.
+
+---
+
 ## 1) Purpose
 This document translates backend MVP capabilities into a practical frontend UI/UX plan so product/design/engineering can execute in parallel with clear API alignment.
 
