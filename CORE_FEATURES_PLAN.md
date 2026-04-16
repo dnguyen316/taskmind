@@ -428,3 +428,40 @@ Suggested workflow:
 2. Create **stories per feature block** (e.g., “Daily planner scoring engine”).
 3. Split into **1–2 day engineering tasks** with explicit acceptance criteria from this plan.
 4. Reserve 20–25% sprint capacity for bugfix/perf/security hardening starting Week 5.
+
+
+## 11) Backend Status Review and Immediate Task Plan (2026-04-16)
+
+### 11.1 Implementation Status Snapshot
+- **Completed foundations**
+  - Task module includes create/list/update/status/completion/archive behavior with migration-backed persistence.
+  - Project module includes create/list/get/update/archive behavior with unique project-key enforcement and JPA-backed repository adapters.
+  - Planner/AI integration endpoints exist as deterministic stubs to unblock frontend integration.
+- **Partially complete**
+  - API contract artifact is present but does not yet fully document all implemented project/planner endpoints.
+- **Not started / pending**
+  - JWT authentication and authorization scoping.
+  - Queue-backed async orchestration for heavy AI workflows.
+  - Full observability baseline (correlation IDs, endpoint-level SLO dashboards, AI run telemetry persistence).
+
+### 11.2 Immediate Task Plan (Ordered)
+1. **Contract parity**
+   - Update OpenAPI with project endpoints and planner/AI stub routes.
+   - Add request/response schema examples for FE contract stability.
+2. **Project API confidence**
+   - Add controller integration tests for project happy paths and conflict/validation edge cases.
+3. **Security baseline**
+   - Implement JWT auth middleware.
+   - Enforce user ownership constraints on list/get/update/archive operations for tasks and projects.
+4. **AI/planner hardening prep**
+   - Add idempotency support and structured logging around planner/AI endpoints.
+   - Add placeholder persistence model for `ai_runs` to support auditability.
+5. **Operational readiness**
+   - Define p95 latency targets per endpoint class.
+   - Add initial health/readiness checks for DB and migration state.
+
+### 11.3 Exit Criteria for the Next Milestone
+- OpenAPI is aligned with all currently exposed v1 backend endpoints.
+- Project module has automated endpoint coverage comparable to the task module.
+- Auth is enabled and all task/project endpoints enforce per-user access controls.
+- Planner/AI stubs are instrumented with baseline request logging and idempotency guards.
