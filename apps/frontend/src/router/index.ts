@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import TasksDashboardPage from '../features/tasks/pages/TasksDashboardPage.vue'
 import TaskDetailPage from '../features/tasks/pages/TaskDetailPage.vue'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     redirect: { name: 'tasks-dashboard' },
