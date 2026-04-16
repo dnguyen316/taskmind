@@ -12,7 +12,7 @@ const emit = defineEmits(['refresh'])
 </script>
 
 <template>
-  <a-space wrap>
+  <a-space wrap class="filters-row">
     <a-select
       v-model:value="props.filters.status"
       :allow-clear="true"
@@ -25,9 +25,21 @@ const emit = defineEmits(['refresh'])
       </a-select-option>
     </a-select>
 
-    <a-switch v-model:checked="props.filters.overdueOnly" @change="emit('refresh')" />
-    <span>Overdue only</span>
+    <a-space size="small">
+      <a-switch v-model:checked="props.filters.overdueOnly" @change="emit('refresh')" />
+      <span class="muted">Overdue only</span>
+    </a-space>
 
     <a-button @click="emit('refresh')">Refresh</a-button>
   </a-space>
 </template>
+
+<style scoped>
+.filters-row {
+  justify-content: flex-end;
+}
+
+.muted {
+  color: #64748b;
+}
+</style>

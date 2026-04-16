@@ -1,5 +1,13 @@
 :root {
   color-scheme: light;
+  --tm-bg: #f1f5f9;
+  --tm-surface: #ffffff;
+  --tm-text: #0f172a;
+  --tm-muted: #475569;
+  --tm-primary: #2563eb;
+  --tm-border: #dbe2ea;
+  font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: radial-gradient(circle at top, #dbeafe 0, #f1f5f9 35%);
 }
 
 * {
@@ -8,4 +16,20 @@
 
 body {
   margin: 0;
+  min-width: 320px;
+  color: var(--tm-text);
+  background: var(--tm-bg);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.ant-card {
+  border-color: var(--tm-border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
 }

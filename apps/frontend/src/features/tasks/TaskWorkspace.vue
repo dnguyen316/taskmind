@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import TaskCreateForm from './components/TaskCreateForm.vue'
 import TaskFilters from './components/TaskFilters.vue'
 import TaskList from './components/TaskList.vue'
@@ -16,19 +16,35 @@ const {
   changeStatus,
 } = useTasks()
 
+const taskMetrics = computed(() => ({
+  total: visibleTasks.value.length,
+  overdue: visibleTasks.value.filter((task) => task.dueAt && new Date(task.dueAt) < new Date() && task.status !== 'DONE').length,
+  inProgress: visibleTasks.value.filter((task) => task.status === 'IN_PROGRESS').length,
+}))
+
 onMounted(fetchTasks)
 </script>
 
 <template>
-  <main class="page">
-    <header class="header">
-      <h1>TaskMind · FE Task Workspace</h1>
-      <p>Ant Design Vue + Vee Validate form flow with backend task APIs.</p>
-    </header>
+  <main class="workspace-page">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">TaskMind Design System</p>
+        <h1>AI Task Workspace</h1>
+        <p class="hero-copy">
+          Plan, prioritize, and execute with calm, structured surfaces designed for rapid decisions.
+        </p>
+      </div>
+      <a-space size="middle" class="hero-stats">
+        <a-statistic title="Visible tasks" :value="taskMetrics.total" />
+        <a-statistic title="In progress" :value="taskMetrics.inProgress" />
+        <a-statistic title="Overdue" :value="taskMetrics.overdue" />
+      </a-space>
+    </section>
 
     <TaskCreateForm :saving="saving" :on-submit-task="submitTask" />
 
-    <a-card title="Tasks">
+    <a-card title="Task board" class="surface-card">
       <template #extra>
         <TaskFilters :filters="filters" @refresh="fetchTasks" />
       </template>
@@ -54,22 +70,50 @@ onMounted(fetchTasks)
 </template>
 
 <style scoped>
-.page {
+.workspace-page {
   min-height: 100vh;
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 32px 20px 40px;
+  display: grid;
+  gap: 18px;
+}
+
+.hero-card {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(14, 165, 233, 0.08));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 20px;
   padding: 24px;
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
-.header h1 {
+.eyebrow {
   margin: 0;
+  color: #1d4ed8;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
-.header p {
-  margin: 4px 0 0;
-  color: #64748b;
+.hero-card h1 {
+  margin: 6px 0;
+  font-size: clamp(1.6rem, 3.8vw, 2.15rem);
+}
+
+.hero-copy {
+  margin: 0;
+  max-width: 620px;
+  color: #334155;
+}
+
+.hero-stats {
+  flex-wrap: wrap;
+}
+
+.surface-card {
+  border-radius: 18px;
 }
 
 .space-bottom {
