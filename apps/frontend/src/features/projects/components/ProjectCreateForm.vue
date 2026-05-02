@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
+import type { FormContext } from 'vee-validate'
 import * as yup from 'yup'
 
 interface CreateProjectFormValues {
@@ -10,8 +11,9 @@ interface CreateProjectFormValues {
   description: string | null
 }
 
-const props = withDefaults(defineProps<{ saving?: boolean }>(), {
+const props = withDefaults(defineProps<{ saving?: boolean; successSignal?: number }>(), {
   saving: false,
+  successSignal: 0,
 })
 
 const emit = defineEmits<{
@@ -32,21 +34,34 @@ const initialValues = computed<CreateProjectFormValues>(() => ({
   description: null,
 }))
 
-function handleValidSubmit(values: Record<string, unknown>, { resetForm }: { resetForm: (state?: unknown) => void }) {
+const formRef = ref<FormContext | null>(null)
+
+function handleValidSubmit(values: Record<string, unknown>) {
   emit('submit', {
     name: String(values.name ?? "").trim(),
     key: String(values.key ?? "").trim(),
     ownerUserId: String(values.ownerUserId ?? "").trim(),
     description: String(values.description ?? "").trim() || null,
   })
-
-  resetForm({ values: initialValues.value })
 }
+
+watch(
+  () => props.successSignal,
+  () => {
+    formRef.value?.resetForm({ values: initialValues.value })
+  },
+)
 </script>
 
 <template>
   <a-card title="Create project" class="surface-card">
-    <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
+    <VeeForm
+      ref="formRef"
+      :validation-schema="schema"
+      :initial-values="initialValues"
+      @submit="handleValidSubmit"
+      v-slot="{ submitForm }"
+    >
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
           <a-col :xs="24" :md="12">
