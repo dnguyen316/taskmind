@@ -1,13 +1,16 @@
 import { computed, reactive, ref } from 'vue'
+import { listProjects } from '../api/projectsApi'
 import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
 import { DEFAULT_USER_ID } from '../constants/taskConstants'
-import type { CreateTaskPayload, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
+import type { CreateTaskPayload, Project, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
 
 export function useTasks() {
   const loading = ref(false)
   const saving = ref(false)
   const errorMessage = ref('')
   const tasks = ref<Task[]>([])
+  const projects = ref<Project[]>([])
+  const activeProjectId = ref('')
 
   const filters = reactive<TaskFilters>({
     status: undefined,
@@ -35,11 +38,31 @@ export function useTasks() {
     }
   }
 
+  async function fetchProjects() {
+    errorMessage.value = ''
+
+    try {
+      const response = await listProjects({ userId: DEFAULT_USER_ID })
+      projects.value = Array.isArray(response) ? response : []
+
+      if (!activeProjectId.value && projects.value.length > 0) {
+        const currentProject = projects.value.find((project) => project.isActive) ?? projects.value[0]
+        activeProjectId.value = currentProject?.id ?? ''
+      }
+    } catch (error: unknown) {
+      errorMessage.value = error instanceof Error ? error.message : 'Failed to load projects.'
+    }
+  }
+
   async function submitTask(formValues: Omit<CreateTaskPayload, 'userId' | 'source'>) {
     saving.value = true
     errorMessage.value = ''
 
     try {
+      if (!formValues.projectId) {
+        throw new Error('Please select a valid project before creating a task.')
+      }
+
       await createTask({
         userId: DEFAULT_USER_ID,
         source: 'MANUAL',
@@ -103,7 +126,10 @@ export function useTasks() {
     errorMessage,
     filters,
     visibleTasks,
+    projects,
+    activeProjectId,
     fetchTasks,
+    fetchProjects,
     submitTask,
     changeStatus,
     fetchTaskById,

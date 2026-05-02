@@ -15,6 +15,7 @@ const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useT
 
 const formState = reactive({
   id: '',
+  projectId: '',
   title: '',
   description: '',
   priority: 3,
@@ -69,6 +70,7 @@ async function loadTask() {
 
 function hydrateForm(task) {
   formState.id = task.id
+  formState.projectId = task.projectId ?? ''
   formState.title = task.title ?? ''
   formState.description = task.description ?? ''
   formState.priority = Number(task.priority ?? 3)
@@ -89,6 +91,7 @@ async function saveTask() {
 
   try {
     const updated = await updateTaskDetails(formState.id, {
+      projectId: formState.projectId,
       title: formState.title.trim(),
       description: formState.description.trim() || null,
       priority: Number(formState.priority),
