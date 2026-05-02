@@ -119,13 +119,20 @@ export function useProjects() {
     successMessage.value = ''
 
     const originalProjects = [...projects.value]
+    const originalSelectedProject = selectedProject.value ? { ...selectedProject.value } : null
+
     projects.value = projects.value.map((project) => (project.id === projectId ? { ...project, archived: true } : project))
+
+    if (selectedProject.value?.id === projectId) {
+      selectedProject.value = { ...selectedProject.value, archived: true }
+    }
 
     try {
       await projectsApi.archiveProjectById(projectId)
       successMessage.value = 'Project archived.'
     } catch (error: unknown) {
       projects.value = originalProjects
+      selectedProject.value = originalSelectedProject
       errorMessage.value = error instanceof Error ? error.message : 'Failed to archive project.'
       throw error
     }
