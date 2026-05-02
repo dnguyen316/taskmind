@@ -16,6 +16,7 @@ export const STATUS_TRANSITIONS: Array<{ label: string; value: TaskStatus }> = [
 ]
 
 export const DEFAULT_CREATE_TASK_FORM: Readonly<CreateTaskFormValues> = Object.freeze({
+  projectId: '',
   title: '',
   description: '',
   priority: 3,

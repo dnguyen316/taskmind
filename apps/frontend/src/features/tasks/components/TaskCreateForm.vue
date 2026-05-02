@@ -10,9 +10,18 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  projectOptions: {
+    type: Array,
+    default: () => [],
+  },
+  defaultProjectId: {
+    type: String,
+    default: '',
+  },
 })
 
 const schema = yup.object({
+  projectId: yup.string().trim().required('Project selection is required'),
   title: yup.string().trim().required('Title is required').max(200, 'Title must be at most 200 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
   priority: yup.number().integer().min(1).max(4).required(),
@@ -21,11 +30,15 @@ const schema = yup.object({
   status: yup.string().oneOf(['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']).required(),
 })
 
-const initialValues = computed(() => ({ ...DEFAULT_CREATE_TASK_FORM }))
+const initialValues = computed(() => ({
+  ...DEFAULT_CREATE_TASK_FORM,
+  projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
+}))
 
 async function handleValidSubmit(values, { resetForm }) {
   const payload = {
     ...values,
+    projectId: values.projectId,
     title: values.title.trim(),
     description: values.description?.trim() || null,
     dueAt: values.dueAt ? new Date(values.dueAt).toISOString() : null,
@@ -34,7 +47,12 @@ async function handleValidSubmit(values, { resetForm }) {
   }
 
   await props.onSubmitTask(payload)
-  resetForm({ values: { ...DEFAULT_CREATE_TASK_FORM } })
+  resetForm({
+    values: {
+      ...DEFAULT_CREATE_TASK_FORM,
+      projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
+    },
+  })
 }
 </script>
 
@@ -43,6 +61,19 @@ async function handleValidSubmit(values, { resetForm }) {
     <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
+          <a-col :xs="24" :md="12">
+            <a-form-item label="Project" required>
+              <Field name="projectId" v-slot="{ value, handleChange }">
+                <a-select :value="value" placeholder="Select a project" @update:value="handleChange">
+                  <a-select-option v-for="project in projectOptions" :key="project.id" :value="project.id">
+                    {{ project.name }}
+                  </a-select-option>
+                </a-select>
+              </Field>
+              <ErrorMessage class="field-error" name="projectId" />
+            </a-form-item>
+          </a-col>
+
           <a-col :xs="24" :md="12">
             <a-form-item label="Title" required>
               <Field name="title" v-slot="{ field }">
