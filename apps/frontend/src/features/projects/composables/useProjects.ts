@@ -115,6 +115,7 @@ export function useProjects() {
   }
 
   async function archiveProjectById(projectId: string) {
+    saving.value = true
     errorMessage.value = ''
     successMessage.value = ''
 
@@ -135,6 +136,8 @@ export function useProjects() {
       selectedProject.value = originalSelectedProject
       errorMessage.value = error instanceof Error ? error.message : 'Failed to archive project.'
       throw error
+    } finally {
+      saving.value = false
     }
   }
 
