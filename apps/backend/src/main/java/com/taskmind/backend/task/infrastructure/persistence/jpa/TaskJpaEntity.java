@@ -10,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -22,6 +23,10 @@ public class TaskJpaEntity {
     @Id
     @Column(nullable = false)
     private UUID id;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -70,6 +75,7 @@ public class TaskJpaEntity {
 
     private TaskJpaEntity(Task task) {
         this.id = task.id();
+        this.version = task.version();
         this.userId = task.userId();
         this.projectId = task.projectId();
         this.title = task.title();
@@ -92,6 +98,7 @@ public class TaskJpaEntity {
     public Task toDomain() {
         return new Task(
             id,
+            version,
             userId,
             projectId,
             title,

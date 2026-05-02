@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -15,6 +16,10 @@ public class ProjectJpaEntity {
     @Id
     @Column(nullable = false)
     private UUID id;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -42,6 +47,7 @@ public class ProjectJpaEntity {
 
     private ProjectJpaEntity(Project project) {
         this.id = project.id();
+        this.version = project.version();
         this.name = project.name();
         this.key = project.key();
         this.description = project.description();
@@ -58,6 +64,7 @@ public class ProjectJpaEntity {
     public Project toDomain() {
         return new Project(
             id,
+            version,
             name,
             key,
             description,
