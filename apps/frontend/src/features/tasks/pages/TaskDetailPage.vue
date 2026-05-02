@@ -91,7 +91,7 @@ async function saveTask() {
 
   try {
     const updated = await updateTaskDetails(formState.id, {
-      projectId: formState.projectId,
+      projectId: formState.projectId.trim() ? formState.projectId.trim() : null,
       title: formState.title.trim(),
       description: formState.description.trim() || null,
       priority: Number(formState.priority),
