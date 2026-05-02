@@ -16,7 +16,6 @@ export interface ProjectMembership {
   projectId: string
   userId: string
   role: ProjectMembershipRole
-  createdAt: string
 }
 
 export interface CreateProjectPayload {
