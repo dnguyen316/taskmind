@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.taskmind.backend.project.application.ProjectMembershipForbiddenException;
+import com.taskmind.backend.project.application.ProjectMembershipNotFoundException;
 
 @RestController
 @RequestMapping("/v1/projects/{projectId}/members")
@@ -32,24 +35,48 @@ public class ProjectMembershipController {
     @PostMapping
     public ResponseEntity<ProjectMembership> addMember(
         @PathVariable UUID projectId,
+        @RequestHeader("X-Actor-User-Id") UUID actorUserId,
         @Valid @RequestBody AddProjectMemberRequest request
     ) {
         try {
-            var membership = projectMembershipApplicationService.addMember(projectId, request.userId(), request.role());
+            var membership = projectMembershipApplicationService.addMember(actorUserId, projectId, request.userId(), request.role());
             return ResponseEntity.status(HttpStatus.CREATED).body(membership);
+        } catch (ProjectMembershipForbiddenException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        } catch (ProjectMembershipNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
         }
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> removeMember(@PathVariable UUID projectId, @PathVariable UUID userId) {
-        projectMembershipApplicationService.removeMember(projectId, userId);
+    public ResponseEntity<Void> removeMember(
+        @PathVariable UUID projectId,
+        @PathVariable UUID userId,
+        @RequestHeader("X-Actor-User-Id") UUID actorUserId
+    ) {
+        try {
+            projectMembershipApplicationService.removeMember(actorUserId, projectId, userId);
+        } catch (ProjectMembershipForbiddenException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        } catch (ProjectMembershipNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public List<ProjectMembership> listMembers(@PathVariable UUID projectId) {
-        return projectMembershipApplicationService.listMembers(projectId);
+    public List<ProjectMembership> listMembers(
+        @PathVariable UUID projectId,
+        @RequestHeader("X-Actor-User-Id") UUID actorUserId
+    ) {
+        try {
+            return projectMembershipApplicationService.listMembers(actorUserId, projectId);
+        } catch (ProjectMembershipForbiddenException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        } catch (ProjectMembershipNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 }
