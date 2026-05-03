@@ -129,7 +129,8 @@ export function useProjects() {
     mergeProjectState(projectId, { archived: true })
 
     try {
-      await projectsApi.archiveProjectById(projectId)
+      const updated = await projectsApi.archiveProjectById(projectId)
+      mergeProjectState(projectId, updated ?? { archived: true })
       successMessage.value = 'Project archived.'
     } catch (error: unknown) {
       projects.value = originalProjects

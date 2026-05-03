@@ -35,7 +35,8 @@ export async function saveProject(projectId: string, payload: Record<string, unk
 }
 
 export async function archiveProjectById(projectId: string) {
-  await apiClient.patch(`/v1/projects/${projectId}/archive`)
+  const response = await apiClient.patch<ProjectRecord>(`/v1/projects/${projectId}/archive`)
+  return response.data
 }
 
 export async function fetchMembers(projectId: string) {
