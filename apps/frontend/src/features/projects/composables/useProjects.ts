@@ -32,6 +32,14 @@ export function useProjects() {
   const activeProjectsCount = computed(() => projects.value.filter((project) => !project.archived).length)
   const archivedProjectsCount = computed(() => projects.value.filter((project) => Boolean(project.archived)).length)
 
+  function mergeProjectState(projectId: string, changes: Partial<Project>) {
+    projects.value = projects.value.map((project) => (project.id === projectId ? { ...project, ...changes } : project))
+
+    if (selectedProject.value?.id === projectId) {
+      selectedProject.value = { ...selectedProject.value, ...changes }
+    }
+  }
+
   async function fetchProjects() {
     loading.value = true
     errorMessage.value = ''
@@ -97,11 +105,7 @@ export function useProjects() {
 
     try {
       const updated = await projectsApi.saveProject(projectId, payload)
-      projects.value = projects.value.map((project) => (project.id === projectId ? { ...project, ...updated } : project))
-
-      if (selectedProject.value?.id === projectId) {
-        selectedProject.value = { ...selectedProject.value, ...updated }
-      }
+      mergeProjectState(projectId, updated)
 
       successMessage.value = 'Project saved.'
       return updated
@@ -122,11 +126,7 @@ export function useProjects() {
     const originalProjects = [...projects.value]
     const originalSelectedProject = selectedProject.value ? { ...selectedProject.value } : null
 
-    projects.value = projects.value.map((project) => (project.id === projectId ? { ...project, archived: true } : project))
-
-    if (selectedProject.value?.id === projectId) {
-      selectedProject.value = { ...selectedProject.value, archived: true }
-    }
+    mergeProjectState(projectId, { archived: true })
 
     try {
       await projectsApi.archiveProjectById(projectId)
