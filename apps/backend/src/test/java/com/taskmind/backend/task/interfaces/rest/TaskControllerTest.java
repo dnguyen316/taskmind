@@ -40,7 +40,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks")
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated())
@@ -61,7 +61,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks")
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isBadRequest());
@@ -79,7 +79,7 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks")
+        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -95,7 +95,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}", id)
+        mockMvc.perform(patch("/v1/tasks/{id}", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(patchPayload))
             .andExpect(status().isOk())
@@ -115,7 +115,7 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks")
+        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -129,20 +129,20 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}/status", id)
+        mockMvc.perform(patch("/v1/tasks/{id}/status", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(statusPayload))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("DONE"));
 
-        mockMvc.perform(get("/v1/tasks/{id}/completion", id))
+        mockMvc.perform(get("/v1/tasks/{id}/completion", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.completed").value(true))
             .andExpect(jsonPath("$.status").value("DONE"));
     }
 
     @Test
-    void filtersTasksByUserId() throws Exception {
+    void userCannotReadAnotherUsersTasksEvenWhenUserIdFilterIsProvided() throws Exception {
         var payloadA = """
             {
               "userId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -163,13 +163,19 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(payloadA))
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa").contentType(MediaType.APPLICATION_JSON).content(payloadA))
             .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(payloadB))
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb").contentType(MediaType.APPLICATION_JSON).content(payloadB))
             .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks").queryParam("userId", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa").queryParam("userId", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+
+        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     }
 
@@ -194,12 +200,12 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(todoPayload))
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111").contentType(MediaType.APPLICATION_JSON).content(todoPayload))
             .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").contentType(MediaType.APPLICATION_JSON).content(donePayload))
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111").contentType(MediaType.APPLICATION_JSON).content(donePayload))
             .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks")
+        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .queryParam("userId", "cccccccc-cccc-cccc-cccc-cccccccccccc")
                 .queryParam("status", "TODO")
                 .queryParam("page", "0")
@@ -223,7 +229,7 @@ class TaskControllerTest {
             }
             """.formatted(overdueDate);
 
-        var createResponse = mockMvc.perform(post("/v1/tasks")
+        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -231,18 +237,18 @@ class TaskControllerTest {
 
         var id = objectMapper.readTree(createResponse.getResponse().getContentAsString()).get("id").asText();
 
-        mockMvc.perform(get("/v1/tasks")
+        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
                 .queryParam("overdueOnly", "true"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].id").value(id));
 
-        mockMvc.perform(patch("/v1/tasks/{id}/archive", id))
+        mockMvc.perform(patch("/v1/tasks/{id}/archive", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("ARCHIVED"));
 
-        mockMvc.perform(get("/v1/tasks")
+        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
                 .queryParam("overdueOnly", "true"))
             .andExpect(status().isOk())
@@ -278,7 +284,7 @@ class TaskControllerTest {
             }
             """.formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks")
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(taskPayload))
             .andExpect(status().isForbidden());
@@ -325,7 +331,7 @@ class TaskControllerTest {
             }
             """.formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks")
+        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(taskPayload))
             .andExpect(status().isCreated())
