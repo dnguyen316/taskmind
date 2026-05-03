@@ -3,6 +3,7 @@ export type EnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 
 export interface Task {
   id: string
+  projectId: string
   userId: string
   title: string
   description: string | null
@@ -23,6 +24,7 @@ export interface TaskFilters {
 }
 
 export interface CreateTaskPayload {
+  projectId: string
   userId: string
   source: string
   title: string
@@ -34,6 +36,7 @@ export interface CreateTaskPayload {
 }
 
 export interface UpdateTaskPayload {
+  projectId: string
   title: string
   description: string | null
   priority: number
@@ -44,10 +47,17 @@ export interface UpdateTaskPayload {
 }
 
 export interface CreateTaskFormValues {
+  projectId: string
   title: string
   description: string
   priority: number
   durationMinutes: number
   dueAt: string
   status: TaskStatus
+}
+
+export interface Project {
+  id: string
+  name: string
+  isActive?: boolean
 }

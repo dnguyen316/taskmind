@@ -11,7 +11,10 @@ const {
   errorMessage,
   filters,
   visibleTasks,
+  projects,
+  activeProjectId,
   fetchTasks,
+  fetchProjects,
   submitTask,
   changeStatus,
 } = useTasks()
@@ -22,7 +25,10 @@ const taskMetrics = computed(() => ({
   inProgress: visibleTasks.value.filter((task) => task.status === 'IN_PROGRESS').length,
 }))
 
-onMounted(fetchTasks)
+onMounted(async () => {
+  await fetchProjects()
+  await fetchTasks()
+})
 </script>
 
 <template>
@@ -42,7 +48,12 @@ onMounted(fetchTasks)
       </a-space>
     </section>
 
-    <TaskCreateForm :saving="saving" :on-submit-task="submitTask" />
+    <TaskCreateForm
+      :saving="saving"
+      :on-submit-task="submitTask"
+      :project-options="projects"
+      :default-project-id="activeProjectId"
+    />
 
     <a-card title="Task board" class="surface-card">
       <template #extra>
