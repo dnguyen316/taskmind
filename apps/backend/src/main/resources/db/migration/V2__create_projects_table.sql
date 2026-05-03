@@ -1,7 +1,7 @@
 CREATE TABLE projects (
     id UUID PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
-    key VARCHAR(20) UNIQUE NOT NULL,
+    project_key VARCHAR(20) UNIQUE NOT NULL,
     description TEXT,
     owner_user_id UUID NOT NULL,
     archived_at TIMESTAMP WITH TIME ZONE,
