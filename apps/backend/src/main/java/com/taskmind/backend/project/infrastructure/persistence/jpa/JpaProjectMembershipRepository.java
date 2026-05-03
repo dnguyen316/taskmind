@@ -3,6 +3,7 @@ package com.taskmind.backend.project.infrastructure.persistence.jpa;
 import com.taskmind.backend.project.domain.model.ProjectMembership;
 import com.taskmind.backend.project.domain.repository.ProjectMembershipRepository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +33,12 @@ public class JpaProjectMembershipRepository implements ProjectMembershipReposito
             .stream()
             .map(ProjectMembershipJpaEntity::toDomain)
             .toList();
+    }
+
+    @Override
+    public Optional<ProjectMembership> findByProjectIdAndUserId(UUID projectId, UUID userId) {
+        return projectMembershipJpaRepository.findByProjectIdAndUserId(projectId, userId)
+            .map(ProjectMembershipJpaEntity::toDomain);
     }
 
     @Override
