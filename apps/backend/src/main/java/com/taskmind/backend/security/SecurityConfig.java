@@ -1,6 +1,7 @@
 package com.taskmind.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/v1/**").authenticated()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
