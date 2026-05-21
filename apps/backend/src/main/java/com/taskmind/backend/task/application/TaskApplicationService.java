@@ -1,5 +1,6 @@
 package com.taskmind.backend.task.application;
 
+import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
@@ -29,14 +30,15 @@ public class TaskApplicationService {
     }
 
     @Transactional
-    public Task create(CreateTaskCommand command) {
-        projectMembershipApplicationService.validateMembership(command.projectId(), command.userId());
+    public Task create(AuthenticatedUser requester, CreateTaskCommand command) {
+        var effectiveUserId = requester.isPrivileged() ? command.userId() : requester.userId();
+        projectMembershipApplicationService.validateMembership(command.projectId(), effectiveUserId);
 
         var now = Instant.now();
         var task = new Task(
             UUID.randomUUID(),
             null,
-            command.userId(),
+            effectiveUserId,
             command.projectId(),
             command.title().trim(),
             command.description(),
@@ -54,10 +56,18 @@ public class TaskApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public List<Task> list(Optional<UUID> userId, Optional<TaskStatus> status, boolean overdueOnly, int page, int size) {
+    public List<Task> list(
+        AuthenticatedUser requester,
+        Optional<UUID> userId,
+        Optional<TaskStatus> status,
+        boolean overdueOnly,
+        int page,
+        int size
+    ) {
+        var effectiveUserId = requester.isPrivileged() ? userId : Optional.of(requester.userId());
         var now = OffsetDateTime.now();
         return taskRepository.findAll().stream()
-            .filter(task -> userId.map(id -> id.equals(task.userId())).orElse(true))
+            .filter(task -> effectiveUserId.map(id -> id.equals(task.userId())).orElse(true))
             .filter(task -> status.map(taskStatus -> taskStatus == task.status()).orElse(true))
             .filter(task -> !overdueOnly || isOverdue(task, now))
             .sorted(Comparator.comparing(Task::createdAt).reversed())
@@ -72,9 +82,10 @@ public class TaskApplicationService {
     }
 
     @Transactional
-    public Optional<Task> update(UUID id, UpdateTaskCommand command) {
+    public Optional<Task> update(AuthenticatedUser requester, UUID id, UpdateTaskCommand command) {
         return taskRepository.findByIdForUpdate(id)
             .map(existing -> {
+                validateCanMutate(requester, existing);
                 var nextProjectId = command.projectId() != null ? command.projectId() : existing.projectId();
                 projectMembershipApplicationService.validateMembership(nextProjectId, existing.userId());
 
@@ -100,14 +111,23 @@ public class TaskApplicationService {
     }
 
     @Transactional
-    public Optional<Task> updateStatus(UUID id, TaskStatus status) {
+    public Optional<Task> updateStatus(AuthenticatedUser requester, UUID id, TaskStatus status) {
         return taskRepository.findByIdForUpdate(id)
-            .map(existing -> taskRepository.save(existing.withStatus(status, Instant.now())));
+            .map(existing -> {
+                validateCanMutate(requester, existing);
+                return taskRepository.save(existing.withStatus(status, Instant.now()));
+            });
     }
 
     @Transactional
-    public Optional<Task> archive(UUID id) {
-        return updateStatus(id, TaskStatus.ARCHIVED);
+    public Optional<Task> archive(AuthenticatedUser requester, UUID id) {
+        return updateStatus(requester, id, TaskStatus.ARCHIVED);
+    }
+
+    private void validateCanMutate(AuthenticatedUser requester, Task task) {
+        if (!requester.isPrivileged() && !requester.userId().equals(task.userId())) {
+            throw new IllegalArgumentException("Cannot mutate another user's task");
+        }
     }
 
     private boolean isOverdue(Task task, OffsetDateTime now) {
