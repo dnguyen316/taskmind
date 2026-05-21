@@ -2,6 +2,7 @@ package com.taskmind.backend.project.domain.repository;
 
 import com.taskmind.backend.project.domain.model.ProjectMembership;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectMembershipRepository {
@@ -11,6 +12,8 @@ public interface ProjectMembershipRepository {
     void deleteByProjectIdAndUserId(UUID projectId, UUID userId);
 
     List<ProjectMembership> findByProjectId(UUID projectId);
+
+    Optional<ProjectMembership> findByProjectIdAndUserId(UUID projectId, UUID userId);
 
     boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);
 }
