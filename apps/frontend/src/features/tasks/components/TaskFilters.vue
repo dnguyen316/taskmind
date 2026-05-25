@@ -1,45 +1,50 @@
-<script setup>
+<script setup lang="ts">
+import { computed } from 'vue'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import type { TaskFilters } from '../types'
 
-const props = defineProps({
-  filters: {
-    type: Object,
-    required: true,
-  },
-})
+const props = defineProps<{
+  filters: TaskFilters
+}>()
 
-const emit = defineEmits(['refresh'])
+const emit = defineEmits<{
+  refresh: []
+}>()
+
+const statusOptions = computed(() => TASK_STATUS_OPTIONS.map((status) => ({ label: status.replace('_', ' '), value: status })))
 </script>
 
 <template>
-  <a-space wrap class="filters-row">
-    <a-select
-      v-model:value="props.filters.status"
-      :allow-clear="true"
-      placeholder="Filter status"
-      style="min-width: 180px"
-      @change="emit('refresh')"
-    >
-      <a-select-option v-for="status in TASK_STATUS_OPTIONS" :key="status" :value="status">
-        {{ status }}
-      </a-select-option>
-    </a-select>
-
-    <a-space size="small">
-      <a-switch v-model:checked="props.filters.overdueOnly" @change="emit('refresh')" />
-      <span class="muted">Overdue only</span>
-    </a-space>
-
-    <a-button @click="emit('refresh')">Refresh</a-button>
-  </a-space>
+  <a-row :gutter="12" class="filters-row">
+    <a-col :xs="24" :md="8" :xl="7">
+      <a-input-search placeholder="Search tasks by title or ID..." disabled />
+    </a-col>
+    <a-col :xs="12" :md="4">
+      <a-select
+        v-model:value="props.filters.status"
+        :allow-clear="true"
+        :options="statusOptions"
+        placeholder="Status"
+        style="width: 100%"
+        @change="emit('refresh')"
+      />
+    </a-col>
+    <a-col :xs="12" :md="4">
+      <a-select placeholder="Priority" disabled style="width: 100%" />
+    </a-col>
+    <a-col :xs="12" :md="4">
+      <a-select placeholder="Project" disabled style="width: 100%" />
+    </a-col>
+    <a-col :xs="12" :md="4">
+      <a-select placeholder="Assignee" disabled style="width: 100%" />
+    </a-col>
+    <a-col :xs="24" :md="1" class="toggle-wrap">
+      <a-switch v-model:checked="props.filters.overdueOnly" size="small" @change="emit('refresh')" />
+    </a-col>
+  </a-row>
 </template>
 
 <style scoped>
-.filters-row {
-  justify-content: flex-end;
-}
-
-.muted {
-  color: #64748b;
-}
+.filters-row { margin-bottom: 12px; }
+.toggle-wrap { display:flex; align-items:center; justify-content:center; }
 </style>
