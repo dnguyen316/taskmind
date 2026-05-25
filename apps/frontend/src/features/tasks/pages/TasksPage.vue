@@ -16,16 +16,16 @@ const {
   projects,
   fetchTasks,
   fetchProjects,
-  createTask,
-  updateTaskStatus,
+  submitTask,
+  changeStatus,
 } = useTasks()
 
-async function handleCreateTask(payload: Parameters<typeof createTask>[0]) {
-  await createTask(payload)
+async function handleCreateTask(payload: Parameters<typeof submitTask>[0]) {
+  await submitTask(payload)
 }
 
 async function handleChangeStatus(taskId: string, status: TaskStatus) {
-  await updateTaskStatus(taskId, status)
+  await changeStatus(taskId, status)
 }
 
 onMounted(async () => {
