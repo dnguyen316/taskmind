@@ -57,7 +57,7 @@ async function handleValidSubmit(values, { resetForm }) {
 </script>
 
 <template>
-  <a-card title="Create task" class="surface-card">
+  <a-card title="Create task" class="surface-card" :bordered="false">
     <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
@@ -126,14 +126,22 @@ async function handleValidSubmit(values, { resetForm }) {
           <a-col :xs="24" :md="8">
             <a-form-item label="Due at (optional)">
               <Field name="dueAt" v-slot="{ value, handleChange }">
-                <a-input type="datetime-local" :value="value" @input="(event) => handleChange(event.target.value)" />
+                <a-date-picker
+                  show-time
+                  style="width: 100%"
+                  format="YYYY-MM-DD HH:mm"
+                  value-format="YYYY-MM-DDTHH:mm"
+                  :value="value || undefined"
+                  placeholder="Set due date"
+                  @update:value="handleChange"
+                />
               </Field>
               <ErrorMessage class="field-error" name="dueAt" />
             </a-form-item>
           </a-col>
         </a-row>
 
-        <a-button type="primary" html-type="submit" :loading="saving">
+        <a-button type="primary" html-type="submit" size="large" block :loading="saving">
           Create task
         </a-button>
       </a-form>
@@ -143,7 +151,17 @@ async function handleValidSubmit(values, { resetForm }) {
 
 <style scoped>
 .surface-card {
-  border-radius: 18px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+:deep(.ant-card-head-title) {
+  font-size: 22px;
+}
+
+:deep(.ant-form-item-label > label) {
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .field-error {
