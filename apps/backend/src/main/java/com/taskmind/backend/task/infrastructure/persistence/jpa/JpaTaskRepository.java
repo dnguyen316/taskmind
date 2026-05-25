@@ -54,6 +54,8 @@ public class JpaTaskRepository implements TaskRepository {
                 status.orElse(null),
                 overdueOnly,
                 now,
+                TaskStatus.DONE,
+                TaskStatus.ARCHIVED,
                 PageRequest.of(page, size)
             )
             .stream()

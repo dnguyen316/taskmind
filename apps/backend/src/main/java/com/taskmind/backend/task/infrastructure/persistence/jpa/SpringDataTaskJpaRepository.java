@@ -23,7 +23,7 @@ public interface SpringDataTaskJpaRepository extends JpaRepository<TaskJpaEntity
         from TaskJpaEntity t
         where (:userId is null or t.userId = :userId)
           and (:status is null or t.status = :status)
-          and (:overdueOnly = false or (t.dueAt is not null and t.dueAt < :now and t.status not in ('DONE', 'ARCHIVED')))
+          and (:overdueOnly = false or (t.dueAt is not null and t.dueAt < :now and t.status not in (:doneStatus, :archivedStatus)))
         order by t.createdAt desc
         """)
     List<TaskJpaEntity> findFiltered(
@@ -31,6 +31,8 @@ public interface SpringDataTaskJpaRepository extends JpaRepository<TaskJpaEntity
         @Param("status") TaskStatus status,
         @Param("overdueOnly") boolean overdueOnly,
         @Param("now") OffsetDateTime now,
+        @Param("doneStatus") TaskStatus doneStatus,
+        @Param("archivedStatus") TaskStatus archivedStatus,
         Pageable pageable
     );
 }
