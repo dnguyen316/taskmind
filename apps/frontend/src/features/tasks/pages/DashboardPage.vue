@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   BellOutlined,
   CalendarOutlined,
@@ -82,9 +83,9 @@ onMounted(async () => {
     <aside class="sidebar">
       <div class="brand">Taskmind <span>AI</span></div>
       <nav class="menu-group">
-        <a class="menu-item active"><CheckSquareOutlined />Dashboard</a>
-        <a class="menu-item"><CheckSquareOutlined />Tasks <em>{{ taskMetrics.active }}</em></a>
-        <a class="menu-item"><FolderOutlined />Projects</a>
+        <RouterLink to="/dashboard" class="menu-item active"><CheckSquareOutlined />Dashboard</RouterLink>
+        <RouterLink to="/tasks" class="menu-item"><CheckSquareOutlined />Tasks <em>{{ taskMetrics.active }}</em></RouterLink>
+        <RouterLink to="/projects" class="menu-item"><FolderOutlined />Projects</RouterLink>
       </nav>
       <p class="group-title">Workspace</p>
       <nav class="menu-group">
@@ -185,10 +186,11 @@ onMounted(async () => {
           </a-card>
 
           <div class="chat-card">
-            <div class="chat-header"><MessageOutlined /> Nova AI</div>
+            <button class="chat-fab">✦</button>
+            <div class="chat-header"><div class="chat-brand"><span class="chat-brand-icon">✦</span><div><strong>Nova AI</strong><p>Your project assistant</p></div></div><button class="chat-close">×</button></div>
             <p>Hi Alex — I'm Nova. I can summarize work, find blockers, and rebalance the team.</p>
             <div class="chat-chip-row"><button>What's blocking Atlas?</button><button>Plan my Monday</button><button>Find overdue items</button><button>Summarize Nova project</button></div>
-            <div class="chat-input">Ask Nova anything...</div>
+            <div class="chat-input-row"><div class="chat-input">find my task</div><button class="chat-send">➤</button></div>
           </div>
         </div>
       </section>
@@ -230,7 +232,7 @@ onMounted(async () => {
 .project-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid #eef2f7}.project-row:last-child{border-bottom:none}.project-row p{margin:0}
 .project-progress{display:flex;align-items:center;gap:10px;min-width:320px}.project-progress .ant-progress{width:120px}.project-progress span{color:#475569;font-size:12px}
 .activity-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f7}.activity-item:last-child{border-bottom:none}.activity-avatar{width:30px;height:30px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:11px}.activity-item p{margin:3px 0 0;color:#64748b;font-size:12px}
-.chat-card{position:sticky;bottom:10px;padding:0;overflow:hidden}.chat-header{background:linear-gradient(135deg,#3730a3,#4338ca);color:#fff;padding:12px 14px;font-weight:700;display:flex;gap:8px;align-items:center}.chat-card p{padding:12px 14px;margin:0;color:#334155}.chat-chip-row{padding:0 14px 14px;display:flex;flex-wrap:wrap;gap:8px}.chat-chip-row button{border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px}.chat-input{margin:0 14px 14px;border:1px solid #cbd5e1;border-radius:10px;padding:10px;color:#64748b}
+.chat-card{position:sticky;bottom:10px;padding:0;overflow:hidden;border-radius:24px}.chat-fab{position:absolute;right:16px;bottom:16px;width:58px;height:58px;border:none;border-radius:50%;background:linear-gradient(145deg,#2563eb,#6d28d9);color:#fff;font-size:22px;box-shadow:0 10px 30px rgba(67,56,202,.35)}.chat-header{background:linear-gradient(100deg,#1d4ed8,#6d28d9);color:#fff;padding:16px;display:flex;justify-content:space-between;align-items:center}.chat-brand{display:flex;gap:10px;align-items:center}.chat-brand-icon{width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}.chat-brand p{margin:0;color:rgba(255,255,255,.8);padding:0}.chat-close{border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:12px;width:40px;height:40px;font-size:22px}.chat-card p{padding:16px;margin:0;color:#334155}.chat-chip-row{padding:0 14px 14px;display:flex;flex-wrap:wrap;gap:8px}.chat-chip-row button{border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:7px 12px;font-size:12px}.chat-input-row{display:flex;gap:10px;padding:0 14px 14px}.chat-input{flex:1;border:1px solid #cbd5e1;border-radius:14px;padding:12px;color:#111827;background:#fff}.chat-send{border:none;border-radius:14px;width:52px;background:linear-gradient(145deg,#2563eb,#6d28d9);color:#fff;font-size:20px}
 @media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } .sidebar { display:none; } .kpi-grid,.bottom-grid { grid-template-columns:1fr; } }
 @media (max-width: 860px) { .topbar { flex-direction:column; align-items:stretch; } .topbar-actions .ant-input-affix-wrapper, .project-progress { width:100%; min-width:0; } .weeklines{grid-template-columns:1fr} }
 </style>
