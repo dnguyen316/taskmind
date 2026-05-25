@@ -1,85 +1,58 @@
 <script setup lang="ts">
-import { STATUS_TRANSITIONS } from '../constants/taskConstants'
-import { formatDateTime } from '../utils/taskDates'
+import { computed } from 'vue'
+import { formatDateTime, isTaskOverdue, toTimestamp } from '../utils/taskDates'
 import type { Task, TaskStatus } from '../types'
 
-const props = defineProps<{
-  tasks: Task[]
-}>()
+const props = defineProps<{ tasks: Task[] }>()
+const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
 
-const emit = defineEmits<{
-  changeStatus: [taskId: string, status: TaskStatus]
-}>()
+const columns = [
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 120 },
+  { title: 'TASK', dataIndex: 'title', key: 'title' },
+  { title: 'STATUS', dataIndex: 'status', key: 'status', width: 150 },
+  { title: 'PRIORITY', dataIndex: 'priority', key: 'priority', width: 110 },
+  { title: 'DUE', dataIndex: 'dueAt', key: 'dueAt', width: 160 },
+  { title: 'EFFORT', dataIndex: 'durationMinutes', key: 'durationMinutes', width: 90 },
+]
 
-function statusColor(status: TaskStatus) {
-  return {
-    TODO: 'default',
-    IN_PROGRESS: 'processing',
-    DONE: 'success',
-    ARCHIVED: 'purple',
-  }[status] ?? 'default'
+const dataSource = computed(() => props.tasks.map((task) => ({ ...task, key: task.id })))
+
+function statusLabel(status: TaskStatus) {
+  return status.replace('_', ' ')
+}
+function dueLabel(task: Task) {
+  if (!task.dueAt) return '—'
+  const due = toTimestamp(task.dueAt)
+  const now = Date.now()
+  const dayMs = 1000 * 60 * 60 * 24
+  const diffDays = Math.round((due - now) / dayMs)
+  if (Math.abs(diffDays) <= 1) return diffDays < 0 ? 'Yesterday' : diffDays === 0 ? 'Today' : 'Tomorrow'
+  return formatDateTime(task.dueAt)
 }
 </script>
 
 <template>
-  <a-list :data-source="props.tasks" item-layout="vertical" class="task-list">
-    <template #renderItem="{ item }">
-      <a-list-item class="task-item">
-        <a-list-item-meta>
-          <template #title>
-            <a-space>
-              <router-link :to="`/tasks/${item.id}`" class="task-title-link">
-                <span class="task-title">{{ item.title }}</span>
-              </router-link>
-              <a-tag :color="statusColor(item.status)">{{ item.status }}</a-tag>
-              <a-tag color="blue">P{{ item.priority }}</a-tag>
-            </a-space>
-          </template>
-          <template #description>
-            <a-space direction="vertical" size="small">
-              <span>{{ item.description || 'No description' }}</span>
-              <a-space>
-                <span><strong>Due:</strong> {{ formatDateTime(item.dueAt) }}</span>
-                <span><strong>Duration:</strong> {{ item.durationMinutes ?? '—' }} min</span>
-              </a-space>
-            </a-space>
-          </template>
-        </a-list-item-meta>
-
-        <template #actions>
-          <a-button
-            v-for="transition in STATUS_TRANSITIONS"
-            :key="`${item.id}-${transition.value}`"
-            size="small"
-            :disabled="item.status === transition.value"
-            @click="emit('changeStatus', item.id, transition.value)"
-          >
-            {{ transition.label }}
-          </a-button>
-        </template>
-      </a-list-item>
+  <a-table :columns="columns" :data-source="dataSource" :pagination="{ pageSize: 12 }" size="middle">
+    <template #bodyCell="{ column, record }">
+      <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
+      <template v-else-if="column.key === 'title'">
+        <router-link :to="`/tasks/${record.id}`" class="task-link">{{ record.title }}</router-link>
+        <div class="desc">{{ record.description || 'No description' }}</div>
+      </template>
+      <template v-else-if="column.key === 'status'">
+        <a-tag :color="record.status === 'DONE' ? 'success' : record.status === 'IN_PROGRESS' ? 'processing' : 'default'" @click="emit('changeStatus', record.id, record.status === 'TODO' ? 'IN_PROGRESS' : record.status === 'IN_PROGRESS' ? 'DONE' : 'TODO')">{{ statusLabel(record.status) }}</a-tag>
+      </template>
+      <template v-else-if="column.key === 'priority'">P{{ record.priority }}</template>
+      <template v-else-if="column.key === 'dueAt'">
+        <span :class="{ overdue: isTaskOverdue(record) }">{{ dueLabel(record) }}</span>
+      </template>
+      <template v-else-if="column.key === 'durationMinutes'">{{ Math.max(1, Math.round((record.durationMinutes || 30) / 30)) }}</template>
     </template>
-  </a-list>
+  </a-table>
 </template>
 
 <style scoped>
-.task-list {
-  border-radius: 14px;
-}
-
-.task-item {
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  margin-bottom: 10px;
-  padding: 12px 16px;
-  background: #f8fafc;
-}
-
-.task-title-link {
-  color: #1677ff;
-}
-
-.task-title {
-  font-weight: 600;
-}
+.task-link { font-weight: 600; }
+.desc { color: #64748b; font-size: 12px; margin-top: 4px; }
+.overdue { color: #cf1322; font-weight: 600; }
 </style>
