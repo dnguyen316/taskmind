@@ -7,7 +7,6 @@ import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,15 +64,7 @@ public class TaskApplicationService {
         int size
     ) {
         var effectiveUserId = requester.isPrivileged() ? userId : Optional.of(requester.userId());
-        var now = OffsetDateTime.now();
-        return taskRepository.findAll().stream()
-            .filter(task -> effectiveUserId.map(id -> id.equals(task.userId())).orElse(true))
-            .filter(task -> status.map(taskStatus -> taskStatus == task.status()).orElse(true))
-            .filter(task -> !overdueOnly || isOverdue(task, now))
-            .sorted(Comparator.comparing(Task::createdAt).reversed())
-            .skip((long) page * size)
-            .limit(size)
-            .toList();
+        return taskRepository.findFiltered(effectiveUserId, status, overdueOnly, OffsetDateTime.now(), page, size);
     }
 
     @Transactional(readOnly = true)
@@ -130,10 +121,4 @@ public class TaskApplicationService {
         }
     }
 
-    private boolean isOverdue(Task task, OffsetDateTime now) {
-        return task.dueAt() != null
-            && task.dueAt().isBefore(now)
-            && task.status() != TaskStatus.DONE
-            && task.status() != TaskStatus.ARCHIVED;
-    }
 }

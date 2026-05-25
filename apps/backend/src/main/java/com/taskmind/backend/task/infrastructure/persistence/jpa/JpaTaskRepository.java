@@ -1,10 +1,13 @@
 package com.taskmind.backend.task.infrastructure.persistence.jpa;
 
 import com.taskmind.backend.task.domain.model.Task;
+import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -35,5 +38,28 @@ public class JpaTaskRepository implements TaskRepository {
     @Override
     public List<Task> findAll() {
         return taskJpaRepository.findAll().stream().map(TaskJpaEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<Task> findFiltered(
+        Optional<UUID> userId,
+        Optional<TaskStatus> status,
+        boolean overdueOnly,
+        OffsetDateTime now,
+        int page,
+        int size
+    ) {
+        return taskJpaRepository.findFiltered(
+                userId.orElse(null),
+                status.orElse(null),
+                overdueOnly,
+                now,
+                TaskStatus.DONE,
+                TaskStatus.ARCHIVED,
+                PageRequest.of(page, size)
+            )
+            .stream()
+            .map(TaskJpaEntity::toDomain)
+            .toList();
     }
 }
