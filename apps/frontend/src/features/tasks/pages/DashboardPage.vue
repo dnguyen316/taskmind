@@ -1,18 +1,15 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
 import {
   BellOutlined,
   CalendarOutlined,
-  CheckSquareOutlined,
-  FolderOutlined,
   InboxOutlined,
   SearchOutlined,
-  TeamOutlined,
   MessageOutlined,
   BarChartOutlined,
 } from '@ant-design/icons-vue'
 import { useTasks } from '../composables/useTasks'
+import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
 
 const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
@@ -79,28 +76,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="dashboard-layout">
-    <aside class="sidebar">
-      <div class="brand">Taskmind <span>AI</span></div>
-      <nav class="menu-group">
-        <RouterLink to="/dashboard" class="menu-item active"><CheckSquareOutlined />Dashboard</RouterLink>
-        <RouterLink to="/tasks" class="menu-item"><CheckSquareOutlined />Tasks <em>{{ taskMetrics.active }}</em></RouterLink>
-        <RouterLink to="/projects" class="menu-item"><FolderOutlined />Projects</RouterLink>
-      </nav>
-      <p class="group-title">Workspace</p>
-      <nav class="menu-group">
-        <a class="menu-item"><TeamOutlined />Team</a>
-        <a class="menu-item"><CalendarOutlined />Calendar</a>
-        <a class="menu-item"><InboxOutlined />Inbox</a>
-        <a class="menu-item"><BarChartOutlined />Reports</a>
-      </nav>
-      <div class="user-pill">
-        <div class="avatar">AC</div>
-        <div><strong>Alex Chen</strong><p>Acme · Product</p></div>
-      </div>
-    </aside>
+  <AppLayout :task-count="taskMetrics.active">
 
-    <section class="content">
       <header class="topbar">
         <div>
           <h1>Dashboard</h1>
@@ -187,24 +164,11 @@ onMounted(async () => {
 
         </div>
       </section>
-    </section>
-  </main>
+    
+  </AppLayout>
 </template>
 
 <style scoped>
-.dashboard-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; background:#f8fafc; }
-.sidebar { background:#fff; border-right:1px solid #e2e8f0; padding:24px 16px; display:flex; flex-direction:column; }
-.brand { font-size:28px; font-weight:700; margin-bottom:20px; }
-.brand span { font-size:12px; color:#2563eb; margin-left:8px; }
-.menu-group { display:grid; gap:6px; margin-bottom:18px; }
-.menu-item { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; color:#334155; }
-.menu-item.active { background:#eaf1ff; color:#1d4ed8; font-weight:600; }
-.menu-item em { margin-left:auto; font-style:normal; background:#e2e8f0; border-radius:999px; padding:0 8px; font-size:12px; }
-.group-title { text-transform:uppercase; color:#94a3b8; letter-spacing:.08em; font-size:12px; margin:6px 0; }
-.user-pill { margin-top:auto; padding:10px; border-top:1px solid #e2e8f0; display:flex; gap:10px; align-items:center; }
-.avatar { width:32px; height:32px; border-radius:50%; background:#1e40af; color:#fff; display:grid; place-items:center; font-size:12px; }
-.user-pill p { margin:0; color:#64748b; font-size:12px; }
-.content { padding:26px 30px; display:grid; gap:16px; }
 .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; }
 .topbar h1 { margin:0; }
 .topbar p { margin:2px 0 0; color:#64748b; }
@@ -225,6 +189,6 @@ onMounted(async () => {
 .project-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid #eef2f7}.project-row:last-child{border-bottom:none}.project-row p{margin:0}
 .project-progress{display:flex;align-items:center;gap:10px;min-width:320px}.project-progress .ant-progress{width:120px}.project-progress span{color:#475569;font-size:12px}
 .activity-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f7}.activity-item:last-child{border-bottom:none}.activity-avatar{width:30px;height:30px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:11px}.activity-item p{margin:3px 0 0;color:#64748b;font-size:12px}
-@media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } .sidebar { display:none; } .kpi-grid,.bottom-grid { grid-template-columns:1fr; } }
+@media (max-width: 1200px) { .kpi-grid,.bottom-grid { grid-template-columns:1fr; } }
 @media (max-width: 860px) { .topbar { flex-direction:column; align-items:stretch; } .topbar-actions .ant-input-affix-wrapper, .project-progress { width:100%; min-width:0; } .weeklines{grid-template-columns:1fr} }
 </style>
