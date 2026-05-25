@@ -3,6 +3,7 @@ import { listProjects } from '../api/projectsApi'
 import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
 import { DEFAULT_USER_ID } from '../constants/taskConstants'
 import type { CreateTaskPayload, Project, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
+import { toTimestamp } from '../utils/taskDates'
 
 export function useTasks() {
   const loading = ref(false)
@@ -159,11 +160,3 @@ function getRecencyTimestamp(task: Task) {
   return 0
 }
 
-function toTimestamp(value: string | null | undefined) {
-  if (!value) {
-    return Number.NaN
-  }
-
-  const timestamp = new Date(value).getTime()
-  return Number.isFinite(timestamp) ? timestamp : Number.NaN
-}

@@ -4,6 +4,7 @@ import TaskCreateForm from '../components/TaskCreateForm.vue'
 import TaskFilters from '../components/TaskFilters.vue'
 import TaskList from '../components/TaskList.vue'
 import { useTasks } from '../composables/useTasks'
+import { isTaskOverdue } from '../utils/taskDates'
 
 const {
   loading,
@@ -21,7 +22,7 @@ const {
 
 const taskMetrics = computed(() => ({
   total: visibleTasks.value.length,
-  overdue: visibleTasks.value.filter((task) => task.dueAt && new Date(task.dueAt) < new Date() && task.status !== 'DONE').length,
+  overdue: visibleTasks.value.filter((task) => isTaskOverdue(task)).length,
   inProgress: visibleTasks.value.filter((task) => task.status === 'IN_PROGRESS').length,
 }))
 

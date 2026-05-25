@@ -1,28 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import { STATUS_TRANSITIONS } from '../constants/taskConstants'
+import { formatDateTime } from '../utils/taskDates'
+import type { Task, TaskStatus } from '../types'
 
-defineProps({
-  tasks: {
-    type: Array,
-    required: true,
-  },
-})
+const props = defineProps<{
+  tasks: Task[]
+}>()
 
-const emit = defineEmits(['change-status'])
+const emit = defineEmits<{
+  changeStatus: [taskId: string, status: TaskStatus]
+}>()
 
-function formatDate(value) {
-  if (!value) {
-    return '—'
-  }
-
-  try {
-    return new Date(value).toLocaleString()
-  } catch {
-    return value
-  }
-}
-
-function statusColor(status) {
+function statusColor(status: TaskStatus) {
   return {
     TODO: 'default',
     IN_PROGRESS: 'processing',
@@ -33,7 +22,7 @@ function statusColor(status) {
 </script>
 
 <template>
-  <a-list :data-source="tasks" item-layout="vertical" class="task-list">
+  <a-list :data-source="props.tasks" item-layout="vertical" class="task-list">
     <template #renderItem="{ item }">
       <a-list-item class="task-item">
         <a-list-item-meta>
@@ -50,7 +39,7 @@ function statusColor(status) {
             <a-space direction="vertical" size="small">
               <span>{{ item.description || 'No description' }}</span>
               <a-space>
-                <span><strong>Due:</strong> {{ formatDate(item.dueAt) }}</span>
+                <span><strong>Due:</strong> {{ formatDateTime(item.dueAt) }}</span>
                 <span><strong>Duration:</strong> {{ item.durationMinutes ?? '—' }} min</span>
               </a-space>
             </a-space>
@@ -63,7 +52,7 @@ function statusColor(status) {
             :key="`${item.id}-${transition.value}`"
             size="small"
             :disabled="item.status === transition.value"
-            @click="emit('change-status', item.id, transition.value)"
+            @click="emit('changeStatus', item.id, transition.value)"
           >
             {{ transition.label }}
           </a-button>
