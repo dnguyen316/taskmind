@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import TasksDashboardPage from '../features/tasks/pages/TasksDashboardPage.vue'
+import DashboardPage from '../features/tasks/pages/DashboardPage.vue'
+import TasksPage from '../features/tasks/pages/TasksPage.vue'
 import TaskDetailPage from '../features/tasks/pages/TaskDetailPage.vue'
 import ProjectsDashboardPage from '../features/projects/pages/ProjectsDashboardPage.vue'
 import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage.vue'
@@ -8,7 +9,12 @@ import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage.vue'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: { name: 'projects-dashboard' },
+    redirect: { name: 'dashboard' },
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: DashboardPage,
   },
   {
     path: '/projects',
@@ -23,8 +29,8 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/tasks',
-    name: 'tasks-dashboard',
-    component: TasksDashboardPage,
+    name: 'tasks',
+    component: TasksPage,
   },
   {
     path: '/tasks/:id',

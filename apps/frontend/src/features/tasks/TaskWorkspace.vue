@@ -1,7 +1,7 @@
 <script setup>
-import TasksDashboardPage from './pages/TasksDashboardPage.vue'
+import DashboardPage from './pages/DashboardPage.vue'
 </script>
 
 <template>
-  <TasksDashboardPage />
+  <DashboardPage />
 </template>
