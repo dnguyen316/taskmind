@@ -12,7 +12,7 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons-vue'
 import { useTasks } from '../composables/useTasks'
-import { isTaskOverdue } from '../utils/taskDates'
+import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
 
 const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
 
@@ -141,7 +141,7 @@ onMounted(async () => {
               <template #renderItem="{ item }">
                 <a-list-item>
                   <a-list-item-meta :title="item.title" :description="`${item.projectKey ?? 'PRJ'} · ${item.id}`" />
-                  <span class="due">{{ item.dueDate ?? 'In 2d' }}</span>
+                  <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>
                 </a-list-item>
               </template>
             </a-list>
