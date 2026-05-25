@@ -18,7 +18,7 @@ const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
 
 const taskMetrics = computed(() => ({
   active: visibleTasks.value.length,
-  dueThisWeek: visibleTasks.value.filter((task) => task.dueDate).length,
+  dueThisWeek: visibleTasks.value.filter((task) => task.dueAt).length,
   overdue: visibleTasks.value.filter((task) => isTaskOverdue(task)).length,
   completed: visibleTasks.value.filter((task) => task.status === 'DONE').length,
 }))
