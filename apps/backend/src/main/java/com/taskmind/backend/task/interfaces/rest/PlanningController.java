@@ -1,5 +1,6 @@
 package com.taskmind.backend.task.interfaces.rest;
 
+import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.task.application.TaskApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
@@ -18,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -77,8 +79,13 @@ public class PlanningController {
     }
 
     @PostMapping("/planner/daily/generate")
-    public DailyPlanResponse generateDailyPlan(@Valid @RequestBody DailyPlanRequest request) {
+    public DailyPlanResponse generateDailyPlan(
+        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        @Valid @RequestBody DailyPlanRequest request
+    ) {
         var tasks = taskApplicationService.list(
+            toAuthenticatedUser(requesterUserId, rolesHeader),
             Optional.of(request.userId()),
             Optional.empty(),
             false,
@@ -224,4 +231,15 @@ public class PlanningController {
         List<String> recommendations,
         List<String> nextWeekPriorities
     ) { }
+
+    private AuthenticatedUser toAuthenticatedUser(UUID userId, String rolesHeader) {
+        var roles = rolesHeader == null || rolesHeader.isBlank()
+            ? java.util.Set.<String>of()
+            : java.util.Arrays.stream(rolesHeader.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .collect(java.util.stream.Collectors.toSet());
+        return new AuthenticatedUser(userId, roles);
+    }
+
 }
