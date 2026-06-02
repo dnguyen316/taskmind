@@ -2,7 +2,7 @@
 
 > This file is the **entry point** for the autonomous agent rebuilding TaskMind from an
 > empty repository. Codex reads `AGENTS.md` automatically. Read this fully before writing
-> any code, then follow [`01-build-order.md`](01-build-order.md) milestone by milestone.
+> any code, then follow [`docs/build-kit/01-build-order.md`](docs/build-kit/01-build-order.md) milestone by milestone.
 
 ## Mission
 
@@ -13,7 +13,7 @@ RDS Postgres + ElastiCache Redis in production).
 
 You are building a polyglot monorepo: **one Vue 3 SPA + three Spring Boot services + two
 shared Java libraries**. It is *not* a single backend - most work touches exactly one
-service. Respect [service boundaries](00-overview.md#service-boundaries) at all times.
+service. Respect [service boundaries](docs/build-kit/00-overview.md#service-boundaries) at all times.
 
 ## Tech stack (do not substitute)
 
@@ -118,10 +118,10 @@ mvn -q -Dtest=TaskControllerTest#rejectsStaleTaskUpdate test
    applied migration.** Entities carry optimistic-lock `@Version` columns.
 3. **Respect service boundaries.** The frontend calls **only** Core. Core exposes facade
    endpoints to Nova/Relay. All LLM prompts/calls live in **Nova**. Analytics projections
-   and read-context live in **Relay**. See [00-overview.md](00-overview.md).
+   and read-context live in **Relay**. See [docs/build-kit/00-overview.md](docs/build-kit/00-overview.md).
 4. **DDD four layers per feature module** - `interfaces/rest` -> `application` ->
    `domain` (model + repository ports) -> `infrastructure/persistence/jpa`. Keep each
-   change in the layer that owns the concern. See [conventions.md](conventions.md).
+   change in the layer that owns the concern. See [docs/build-kit/conventions.md](docs/build-kit/conventions.md).
 5. **Keep `apps/backend/openapi.yaml` in sync** with Core DTOs whenever you add/modify a
    request/response field.
 6. **TDD for Java**: RED -> GREEN -> REFACTOR. Write the failing test first.
@@ -154,8 +154,8 @@ E2E login: superadmin@taskmind.local / password 1 / OTP 1
 
 ## Where to go next
 
-1. [`00-overview.md`](00-overview.md) - product + target architecture + service boundaries.
-2. [`01-build-order.md`](01-build-order.md) - the milestone roadmap M00-M13 (execute in order).
-3. [`conventions.md`](conventions.md) - coding patterns you must follow.
-4. [`reference/`](reference/) - distilled contracts (data model, API, events, AI, AWS).
-5. [`phases/`](phases/) - one self-contained spec per milestone.
+1. [`docs/build-kit/00-overview.md`](docs/build-kit/00-overview.md) - product + target architecture + service boundaries.
+2. [`docs/build-kit/01-build-order.md`](docs/build-kit/01-build-order.md) - the milestone roadmap M00-M13 (execute in order).
+3. [`docs/build-kit/conventions.md`](docs/build-kit/conventions.md) - coding patterns you must follow.
+4. [`docs/build-kit/reference/`](docs/build-kit/reference/) - distilled contracts (data model, API, events, AI, AWS).
+5. [`docs/build-kit/phases/`](docs/build-kit/phases/) - one self-contained spec per milestone.
