@@ -1,0 +1,1273 @@
+<script setup lang="ts">
+import {
+  ArrowRightOutlined,
+  BarChartOutlined,
+  CalendarOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  CloseOutlined,
+  MenuOutlined,
+  RobotOutlined,
+  SafetyCertificateOutlined,
+  ThunderboltFilled,
+} from '@ant-design/icons-vue'
+import { ref } from 'vue'
+
+const mobileMenuOpen = ref(false)
+
+const features = [
+  {
+    icon: RobotOutlined,
+    title: 'Plan with AI',
+    description: 'Turn a messy list of priorities into a realistic, focused plan in seconds.',
+    accent: 'violet',
+  },
+  {
+    icon: CalendarOutlined,
+    title: 'Own your schedule',
+    description: 'Balance deep work, deadlines, and meetings without rebuilding your day by hand.',
+    accent: 'blue',
+  },
+  {
+    icon: BarChartOutlined,
+    title: 'See what matters',
+    description: 'Spot blockers early and keep every project moving with calm, clear insights.',
+    accent: 'peach',
+  },
+]
+
+const outcomes = [
+  'Capture tasks in plain language',
+  'Get a focused plan for every day',
+  'Rebalance automatically when plans change',
+]
+
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+}
+</script>
+
+<template>
+  <main class="landing-page">
+    <header class="site-header">
+      <div class="header-inner">
+        <RouterLink class="brand" to="/" aria-label="TaskMind home" @click="closeMobileMenu">
+          <span class="brand-mark"><CheckOutlined /></span>
+          <span>TaskMind</span>
+        </RouterLink>
+
+        <nav :class="{ 'nav-open': mobileMenuOpen }" aria-label="Main navigation">
+          <a href="#features" @click="closeMobileMenu">Features</a>
+          <a href="#how-it-works" @click="closeMobileMenu">How it works</a>
+          <a href="#security" @click="closeMobileMenu">Security</a>
+          <div class="mobile-nav-actions">
+            <RouterLink class="nav-sign-in" to="/login" @click="closeMobileMenu">Sign in</RouterLink>
+            <RouterLink class="primary-button compact-button" to="/signup" @click="closeMobileMenu">
+              Start free <ArrowRightOutlined />
+            </RouterLink>
+          </div>
+        </nav>
+
+        <div class="header-actions">
+          <RouterLink class="nav-sign-in" to="/login">Sign in</RouterLink>
+          <RouterLink class="primary-button compact-button" to="/signup">
+            Start free <ArrowRightOutlined />
+          </RouterLink>
+        </div>
+
+        <button
+          class="mobile-menu-button"
+          type="button"
+          aria-label="Toggle navigation"
+          :aria-expanded="mobileMenuOpen"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+        >
+          <CloseOutlined v-if="mobileMenuOpen" />
+          <MenuOutlined v-else />
+        </button>
+      </div>
+    </header>
+
+    <section class="hero-section">
+      <div class="hero-copy">
+        <div class="eyebrow"><span>✦</span> Your AI productivity partner</div>
+        <h1>Make space for<br /><em>what matters.</em></h1>
+        <p class="hero-description">
+          TaskMind turns your priorities into a clear daily plan, so you can spend less time organizing
+          work and more time doing your best work.
+        </p>
+        <div class="hero-actions">
+          <RouterLink class="primary-button hero-button" to="/signup">
+            Start for free <ArrowRightOutlined />
+          </RouterLink>
+          <a class="secondary-button hero-button" href="#how-it-works">See how it works</a>
+        </div>
+        <p class="hero-note">
+          <span><CheckOutlined /> No credit card required</span>
+          <i></i>
+          <span><CheckOutlined /> Free plan included</span>
+        </p>
+      </div>
+
+      <div class="hero-visual" aria-label="TaskMind daily planning preview">
+        <div class="visual-orb visual-orb-main"></div>
+        <div class="visual-orb visual-orb-small"></div>
+        <div class="dot-grid" aria-hidden="true"></div>
+
+        <div class="app-preview">
+          <aside class="preview-sidebar">
+            <span class="preview-logo"><CheckOutlined /></span>
+            <span class="sidebar-item sidebar-item-active"><i></i></span>
+            <span class="sidebar-item"><i></i></span>
+            <span class="sidebar-item"><i></i></span>
+            <span class="sidebar-item"><i></i></span>
+            <span class="sidebar-avatar">AM</span>
+          </aside>
+
+          <div class="preview-main">
+            <div class="preview-header">
+              <div>
+                <small>MONDAY, OCTOBER 14</small>
+                <h2>Good morning, Alex</h2>
+              </div>
+              <button type="button" aria-label="Notifications"><span></span></button>
+            </div>
+
+            <div class="focus-card">
+              <div class="focus-card-header">
+                <span class="focus-icon"><ThunderboltFilled /></span>
+                <div>
+                  <small>DAILY FOCUS</small>
+                  <strong>Make progress on launch</strong>
+                </div>
+                <span class="focus-time">3h 15m</span>
+              </div>
+              <div class="focus-progress"><span></span></div>
+              <div class="focus-progress-meta"><span>3 of 5 tasks complete</span><strong>60%</strong></div>
+            </div>
+
+            <div class="task-list-heading"><strong>Today</strong><span>4 tasks</span></div>
+            <div class="preview-task preview-task-done">
+              <span class="task-check"><CheckOutlined /></span>
+              <div><strong>Review launch brief</strong><small>Atlas project · 9:00 AM</small></div>
+              <span class="task-tag done-tag">Done</span>
+            </div>
+            <div class="preview-task">
+              <span class="task-check"></span>
+              <div><strong>Finalize product narrative</strong><small>Deep work · 10:30 AM</small></div>
+              <span class="task-tag high-tag">High</span>
+            </div>
+            <div class="preview-task">
+              <span class="task-check"></span>
+              <div><strong>Prepare customer preview</strong><small>Atlas project · 2:00 PM</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="floating-card nova-card">
+          <span class="floating-icon"><RobotOutlined /></span>
+          <div><small>NOVA SUGGESTS</small><strong>Move research to tomorrow?</strong></div>
+          <button type="button">Accept</button>
+        </div>
+        <div class="floating-card focus-time-card">
+          <span class="floating-icon"><ClockCircleOutlined /></span>
+          <div><small>FOCUS TIME</small><strong>2h 45m protected</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features-section">
+      <div class="section-heading">
+        <span>BUILT FOR FOCUS</span>
+        <h2>A calmer way to get things done.</h2>
+        <p>Everything you need to move from a crowded mind to a confident plan.</p>
+      </div>
+      <div class="feature-grid">
+        <article v-for="feature in features" :key="feature.title" class="feature-card">
+          <span class="feature-icon" :class="`feature-icon-${feature.accent}`"><component :is="feature.icon" /></span>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+          <a href="#how-it-works">Learn more <ArrowRightOutlined /></a>
+        </article>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="outcome-section">
+      <div class="outcome-copy">
+        <span class="section-label">ONE THOUGHT AHEAD</span>
+        <h2>Your workday,<br />made manageable.</h2>
+        <p>TaskMind understands your workload and helps you make the next best decision — while leaving you in control.</p>
+        <ul>
+          <li v-for="outcome in outcomes" :key="outcome"><span><CheckOutlined /></span>{{ outcome }}</li>
+        </ul>
+        <RouterLink class="dark-button" to="/signup">Build your first plan <ArrowRightOutlined /></RouterLink>
+      </div>
+
+      <div id="security" class="trust-card">
+        <div class="trust-card-glow"></div>
+        <span class="trust-icon"><SafetyCertificateOutlined /></span>
+        <small>DESIGNED FOR TRUST</small>
+        <h3>Your plans stay yours.</h3>
+        <p>Secure by design, transparent in every AI suggestion, and always under your control.</p>
+        <div class="trust-detail"><CheckOutlined /><span><strong>Private by default</strong><small>Your work is never shared.</small></span></div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <RouterLink class="brand footer-brand" to="/"><span class="brand-mark"><CheckOutlined /></span><span>TaskMind</span></RouterLink>
+      <p>Plan clearly. Work calmly.</p>
+      <span>© 2026 TaskMind</span>
+    </footer>
+  </main>
+</template>
+
+<style scoped>
+.landing-page {
+  --ink: #17213a;
+  --muted: #687187;
+  --purple: #6254db;
+  --purple-dark: #5041c8;
+  --line: #e8e9f1;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--ink);
+  background: #fcfcfe;
+}
+
+.site-header {
+  position: relative;
+  z-index: 20;
+  border-bottom: 1px solid rgba(232, 233, 241, 0.7);
+  background: rgba(252, 252, 254, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.header-inner {
+  width: min(1240px, calc(100% - 48px));
+  height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 50px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #7466ec, #4b3bc4);
+  box-shadow: 0 8px 20px rgba(89, 72, 207, 0.25);
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+nav > a,
+.nav-sign-in {
+  color: #626b80;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+nav > a:hover,
+.nav-sign-in:hover {
+  color: var(--purple);
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.mobile-nav-actions,
+.mobile-menu-button {
+  display: none;
+}
+
+.primary-button,
+.secondary-button,
+.dark-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.dark-button:hover {
+  transform: translateY(-2px);
+}
+
+.primary-button {
+  color: #fff;
+  background: linear-gradient(135deg, #6b5ce3, #5142cb);
+  box-shadow: 0 12px 26px rgba(84, 67, 202, 0.24);
+}
+
+.compact-button {
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+.hero-section {
+  width: min(1240px, calc(100% - 48px));
+  min-height: 680px;
+  margin: 0 auto;
+  padding: 76px 0 74px;
+  display: grid;
+  grid-template-columns: 0.88fr 1.12fr;
+  align-items: center;
+  gap: 56px;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 5;
+  padding-bottom: 12px;
+}
+
+.eyebrow {
+  width: max-content;
+  padding: 8px 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #dedafa;
+  border-radius: 999px;
+  color: #5d50cf;
+  background: #f5f3ff;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.eyebrow span {
+  font-size: 12px;
+}
+
+.hero-copy h1 {
+  margin: 25px 0 21px;
+  color: var(--ink);
+  font-size: clamp(56px, 5.3vw, 72px);
+  line-height: 1.03;
+  letter-spacing: -4.8px;
+}
+
+.hero-copy h1 em {
+  color: #5e4fd5;
+  font-style: normal;
+}
+
+.hero-description {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.72;
+}
+
+.hero-actions {
+  margin-top: 31px;
+  display: flex;
+  gap: 12px;
+}
+
+.hero-button {
+  min-height: 52px;
+  padding: 0 24px;
+}
+
+.secondary-button {
+  border: 1px solid #dfe2ea;
+  color: #41495d;
+  background: #fff;
+  box-shadow: 0 6px 15px rgba(29, 35, 64, 0.04);
+}
+
+.hero-note {
+  margin: 19px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #9299a9;
+  font-size: 11px;
+}
+
+.hero-note span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hero-note :deep(svg) {
+  color: var(--purple);
+}
+
+.hero-note i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #b3b8c5;
+}
+
+.hero-visual {
+  position: relative;
+  min-height: 530px;
+}
+
+.visual-orb {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.visual-orb-main {
+  width: 560px;
+  height: 560px;
+  top: -16px;
+  right: -108px;
+  background: linear-gradient(145deg, #e8e4ff, #f7f6ff 76%);
+}
+
+.visual-orb-small {
+  width: 240px;
+  height: 240px;
+  bottom: -12px;
+  left: -38px;
+  background: #eaf5ff;
+}
+
+.dot-grid {
+  position: absolute;
+  top: 12px;
+  left: 1px;
+  width: 92px;
+  height: 76px;
+  opacity: 0.42;
+  background-image: radial-gradient(#9c93dc 1.1px, transparent 1.1px);
+  background-size: 12px 12px;
+}
+
+.app-preview {
+  position: absolute;
+  z-index: 3;
+  top: 42px;
+  left: 32px;
+  width: 600px;
+  height: 410px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgba(221, 223, 236, 0.9);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 36px 80px rgba(44, 39, 105, 0.16);
+  transform: rotate(1.3deg);
+}
+
+.preview-sidebar {
+  width: 64px;
+  padding: 18px 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-right: 1px solid #eff0f5;
+  background: #f9f9fc;
+}
+
+.preview-logo {
+  width: 29px;
+  height: 29px;
+  margin-bottom: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--purple);
+  font-size: 11px;
+}
+
+.sidebar-item {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+}
+
+.sidebar-item i {
+  width: 14px;
+  height: 5px;
+  border-radius: 5px;
+  background: #d7d9e3;
+}
+
+.sidebar-item-active {
+  background: #eeecfc;
+}
+
+.sidebar-item-active i {
+  background: #6859dc;
+}
+
+.sidebar-avatar {
+  width: 26px;
+  height: 26px;
+  margin-top: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #25304a;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.preview-main {
+  flex: 1;
+  padding: 24px 26px;
+}
+
+.preview-header {
+  margin-bottom: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview-header small {
+  color: #a1a7b4;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.preview-header h2 {
+  margin: 5px 0 0;
+  font-size: 17px;
+  letter-spacing: -0.6px;
+}
+
+.preview-header button {
+  position: relative;
+  width: 29px;
+  height: 29px;
+  border: 1px solid #eceef3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.preview-header button::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border: 1.5px solid #abb0bc;
+  border-radius: 50% 50% 42% 42%;
+}
+
+.preview-header button span {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #e46c6c;
+}
+
+.focus-card {
+  padding: 15px 16px 13px;
+  border: 1px solid #e3e0f8;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fbfaff, #f5f3ff);
+}
+
+.focus-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.focus-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--purple);
+  font-size: 12px;
+}
+
+.focus-card-header div {
+  display: grid;
+  gap: 2px;
+}
+
+.focus-card-header small,
+.floating-card small {
+  color: #8075d8;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.focus-card-header strong {
+  font-size: 11px;
+}
+
+.focus-time {
+  margin-left: auto;
+  color: #9a9fac;
+  font-size: 8px;
+}
+
+.focus-progress {
+  height: 5px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e5e2f3;
+}
+
+.focus-progress span {
+  width: 60%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--purple);
+}
+
+.focus-progress-meta {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  color: #9da2af;
+  font-size: 7px;
+}
+
+.focus-progress-meta strong {
+  color: var(--purple);
+}
+
+.task-list-heading {
+  margin: 20px 1px 7px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.task-list-heading strong {
+  font-size: 11px;
+}
+
+.task-list-heading span {
+  color: #a0a5b1;
+  font-size: 8px;
+}
+
+.preview-task {
+  min-height: 51px;
+  padding: 10px 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #eff0f4;
+}
+
+.task-check {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #cdd1dc;
+  border-radius: 50%;
+  font-size: 7px;
+}
+
+.preview-task div {
+  display: grid;
+  gap: 3px;
+}
+
+.preview-task strong {
+  font-size: 9px;
+}
+
+.preview-task small {
+  color: #a0a5b1;
+  font-size: 7px;
+}
+
+.preview-task-done .task-check {
+  border-color: var(--purple);
+  color: #fff;
+  background: var(--purple);
+}
+
+.preview-task-done strong {
+  color: #9da2ae;
+  text-decoration: line-through;
+}
+
+.task-tag {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.done-tag {
+  color: #43866b;
+  background: #ebf7f1;
+}
+
+.high-tag {
+  color: #be6842;
+  background: #fff0e9;
+}
+
+.floating-card {
+  position: absolute;
+  z-index: 5;
+  padding: 12px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e6e7ef;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 38px rgba(42, 37, 103, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.floating-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--purple);
+  background: #eeebff;
+}
+
+.floating-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.floating-card strong {
+  font-size: 9px;
+}
+
+.nova-card {
+  bottom: 29px;
+  left: -1px;
+}
+
+.nova-card button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--purple);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.focus-time-card {
+  top: 68px;
+  right: -23px;
+}
+
+.features-section {
+  padding: 102px 24px 108px;
+  background: #fff;
+}
+
+.section-heading {
+  max-width: 620px;
+  margin: 0 auto 47px;
+  text-align: center;
+}
+
+.section-heading > span,
+.section-label {
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.section-heading h2,
+.outcome-copy h2 {
+  margin: 12px 0 10px;
+  color: var(--ink);
+  font-size: 42px;
+  line-height: 1.14;
+  letter-spacing: -2.3px;
+}
+
+.section-heading p,
+.outcome-copy > p,
+.trust-card > p {
+  color: #747d90;
+  line-height: 1.7;
+}
+
+.section-heading p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.feature-grid {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  min-height: 245px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(28, 35, 64, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 52px rgba(28, 35, 64, 0.08);
+}
+
+.feature-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  font-size: 19px;
+}
+
+.feature-icon-violet {
+  color: #5d4fd3;
+  background: #f0edff;
+}
+
+.feature-icon-blue {
+  color: #3e73bd;
+  background: #eaf4ff;
+}
+
+.feature-icon-peach {
+  color: #ba6c46;
+  background: #fff1e9;
+}
+
+.feature-card h3 {
+  margin: 21px 0 8px;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+
+.feature-card p {
+  min-height: 66px;
+  margin: 0 0 16px;
+  color: #747d90;
+  font-size: 13px;
+  line-height: 1.68;
+}
+
+.feature-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5b4cd0;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.outcome-section {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 112px 0 116px;
+  display: grid;
+  grid-template-columns: 1fr 0.82fr;
+  align-items: center;
+  gap: 100px;
+}
+
+.outcome-copy > p {
+  max-width: 520px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.outcome-copy ul {
+  margin: 26px 0 31px;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  list-style: none;
+}
+
+.outcome-copy li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4d566b;
+  font-size: 13px;
+}
+
+.outcome-copy li > span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--purple);
+  background: #f0edff;
+  font-size: 8px;
+}
+
+.dark-button {
+  min-height: 49px;
+  padding: 0 21px;
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 12px 25px rgba(23, 33, 58, 0.18);
+}
+
+.trust-card {
+  position: relative;
+  overflow: hidden;
+  padding: 43px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(145deg, #1b2540, #2c3760);
+  box-shadow: 0 30px 64px rgba(23, 33, 58, 0.2);
+}
+
+.trust-card-glow {
+  position: absolute;
+  top: -100px;
+  right: -90px;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: rgba(117, 102, 237, 0.22);
+  filter: blur(10px);
+}
+
+.trust-icon {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 23px;
+}
+
+.trust-card > small {
+  display: block;
+  margin-top: 31px;
+  color: #bbb6fa;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.trust-card h3 {
+  margin: 9px 0 9px;
+  font-size: 27px;
+  letter-spacing: -1px;
+}
+
+.trust-card > p {
+  margin: 0 0 24px;
+  color: #c2c8d5;
+  font-size: 13px;
+}
+
+.trust-detail {
+  padding-top: 19px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b9b2fa;
+}
+
+.trust-detail > span {
+  display: grid;
+  gap: 2px;
+}
+
+.trust-detail strong {
+  color: #fff;
+  font-size: 11px;
+}
+
+.trust-detail small {
+  color: #aeb5c5;
+  font-size: 9px;
+}
+
+.site-footer {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 31px 0;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  border-top: 1px solid var(--line);
+  color: #8b93a4;
+  font-size: 11px;
+}
+
+.footer-brand {
+  font-size: 15px;
+}
+
+.footer-brand .brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.site-footer p {
+  margin-right: auto;
+}
+
+@media (max-width: 1120px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding-top: 66px;
+  }
+
+  .hero-copy {
+    text-align: center;
+  }
+
+  .eyebrow,
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions,
+  .hero-note {
+    justify-content: center;
+  }
+
+  .hero-visual {
+    width: min(680px, 100%);
+    margin: -4px auto 0;
+  }
+
+  .app-preview {
+    left: 50%;
+    transform: translateX(-50%) rotate(1.3deg);
+  }
+
+  .outcome-section {
+    gap: 56px;
+  }
+}
+
+@media (max-width: 820px) {
+  .header-inner {
+    width: min(100% - 32px, 1240px);
+    height: 70px;
+    gap: 14px;
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    width: 40px;
+    height: 40px;
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e1e3eb;
+    border-radius: 10px;
+    color: var(--ink);
+    background: #fff;
+  }
+
+  nav {
+    position: absolute;
+    top: 62px;
+    left: 16px;
+    right: 16px;
+    padding: 19px;
+    display: none;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 17px;
+    border: 1px solid #e6e7ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 22px 45px rgba(31, 37, 68, 0.12);
+  }
+
+  nav.nav-open {
+    display: flex;
+  }
+
+  .mobile-nav-actions {
+    padding-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #eceef3;
+  }
+
+  .feature-grid,
+  .outcome-section {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-card p {
+    min-height: 0;
+  }
+
+  .outcome-section {
+    gap: 48px;
+  }
+}
+
+@media (max-width: 660px) {
+  .brand {
+    font-size: 18px;
+  }
+
+  .hero-section {
+    width: calc(100% - 36px);
+    min-height: auto;
+    padding: 52px 0 48px;
+    gap: 38px;
+  }
+
+  .hero-copy h1 {
+    margin-top: 20px;
+    font-size: 47px;
+    letter-spacing: -3.4px;
+  }
+
+  .hero-description {
+    font-size: 15px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-note {
+    flex-wrap: wrap;
+  }
+
+  .hero-note i {
+    display: none;
+  }
+
+  .hero-visual {
+    min-height: 330px;
+  }
+
+  .visual-orb-main {
+    width: 350px;
+    height: 350px;
+    right: -80px;
+  }
+
+  .visual-orb-small,
+  .dot-grid,
+  .floating-card {
+    display: none;
+  }
+
+  .app-preview {
+    top: 6px;
+    width: 600px;
+    transform: translateX(-50%) scale(0.64) rotate(1.3deg);
+    transform-origin: top center;
+  }
+
+  .features-section {
+    padding: 76px 18px 80px;
+  }
+
+  .section-heading h2,
+  .outcome-copy h2 {
+    font-size: 34px;
+    letter-spacing: -1.8px;
+  }
+
+  .feature-card {
+    min-height: 0;
+    padding: 25px;
+  }
+
+  .outcome-section {
+    width: calc(100% - 36px);
+    padding: 78px 0 82px;
+  }
+
+  .trust-card {
+    padding: 30px;
+  }
+
+  .site-footer {
+    width: calc(100% - 36px);
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .site-footer p {
+    width: 100%;
+    margin: 0;
+    order: 3;
+  }
+}
+</style>
