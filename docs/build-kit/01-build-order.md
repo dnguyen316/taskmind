@@ -64,7 +64,7 @@ flowchart TD
 - **M00-M03 are the critical path** to a usable vertical slice (auth + tasks + projects in
   the browser). Get these rock-solid before fanning out.
 - **M05 (eventing)** unlocks Relay, analytics, and activity-driven AI context. Build the
-  `libs/events` envelope first, then the outbox, then the Relay consumer.
+  [`libs/events` envelope and event catalog](reference/domain-events.md) first, then the outbox, then the Relay consumer.
 - **M07 (Nova)** can be built in parallel with M04/M05 conceptually, but the spec assumes
   M02 contracts exist. Build Nova with the **mock provider** first so everything is
   deterministic; wire real providers (OpenAI/Anthropic/NAMC) last.
