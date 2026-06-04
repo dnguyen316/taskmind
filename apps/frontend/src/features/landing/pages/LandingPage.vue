@@ -12,6 +12,7 @@ import {
   ThunderboltFilled,
 } from '@ant-design/icons-vue'
 import { ref } from 'vue'
+import ThemeToggle from '../../../components/ThemeToggle.vue'
 
 const mobileMenuOpen = ref(false)
 
@@ -69,11 +70,14 @@ function closeMobileMenu() {
         </nav>
 
         <div class="header-actions">
+          <ThemeToggle />
           <RouterLink class="nav-sign-in" to="/login">Sign in</RouterLink>
           <RouterLink class="primary-button compact-button" to="/signup">
             Start free <ArrowRightOutlined />
           </RouterLink>
         </div>
+
+        <ThemeToggle />
 
         <button
           class="mobile-menu-button"
@@ -223,22 +227,23 @@ function closeMobileMenu() {
 
 <style scoped>
 .landing-page {
-  --ink: #17213a;
-  --muted: #687187;
-  --purple: #6254db;
-  --purple-dark: #5041c8;
-  --line: #e8e9f1;
+  --ink: var(--tm-text);
+  --muted: var(--tm-text-muted);
+  --purple: var(--tm-primary);
+  --purple-dark: var(--tm-primary-hover);
+  --line: var(--tm-border);
   min-height: 100vh;
   overflow: hidden;
   color: var(--ink);
-  background: #fcfcfe;
+  background: var(--tm-bg);
+  transition: color 180ms ease, background 180ms ease;
 }
 
 .site-header {
   position: relative;
   z-index: 20;
   border-bottom: 1px solid rgba(232, 233, 241, 0.7);
-  background: rgba(252, 252, 254, 0.86);
+  background: color-mix(in srgb, var(--tm-bg) 86%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -406,9 +411,9 @@ nav > a:hover,
 }
 
 .secondary-button {
-  border: 1px solid #dfe2ea;
-  color: #41495d;
-  background: #fff;
+  border: 1px solid var(--tm-border);
+  color: var(--tm-text);
+  background: var(--tm-surface);
   box-shadow: 0 6px 15px rgba(29, 35, 64, 0.04);
 }
 
@@ -486,7 +491,7 @@ nav > a:hover,
   overflow: hidden;
   border: 1px solid rgba(221, 223, 236, 0.9);
   border-radius: 18px;
-  background: #fff;
+  background: var(--tm-surface);
   box-shadow: 0 36px 80px rgba(44, 39, 105, 0.16);
   transform: rotate(1.3deg);
 }
@@ -498,8 +503,8 @@ nav > a:hover,
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  border-right: 1px solid #eff0f5;
-  background: #f9f9fc;
+  border-right: 1px solid var(--tm-border-soft);
+  background: var(--tm-surface-subtle);
 }
 
 .preview-logo {
@@ -579,9 +584,9 @@ nav > a:hover,
   position: relative;
   width: 29px;
   height: 29px;
-  border: 1px solid #eceef3;
+  border: 1px solid var(--tm-border-soft);
   border-radius: 8px;
-  background: #fff;
+  background: var(--tm-surface);
 }
 
 .preview-header button::before {
@@ -607,7 +612,7 @@ nav > a:hover,
   padding: 15px 16px 13px;
   border: 1px solid #e3e0f8;
   border-radius: 12px;
-  background: linear-gradient(135deg, #fbfaff, #f5f3ff);
+  background: linear-gradient(135deg, var(--tm-surface-raised), var(--tm-primary-soft));
 }
 
 .focus-card-header {
@@ -699,7 +704,7 @@ nav > a:hover,
   display: flex;
   align-items: center;
   gap: 10px;
-  border-top: 1px solid #eff0f4;
+  border-top: 1px solid var(--tm-border-soft);
 }
 
 .task-check {
@@ -763,7 +768,7 @@ nav > a:hover,
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid #e6e7ef;
+  border: 1px solid var(--tm-border);
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 18px 38px rgba(42, 37, 103, 0.14);
@@ -811,7 +816,7 @@ nav > a:hover,
 
 .features-section {
   padding: 102px 24px 108px;
-  background: #fff;
+  background: var(--tm-surface);
 }
 
 .section-heading {
@@ -862,7 +867,7 @@ nav > a:hover,
   padding: 30px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: #fff;
+  background: var(--tm-surface);
   box-shadow: 0 16px 42px rgba(28, 35, 64, 0.045);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
@@ -883,7 +888,7 @@ nav > a:hover,
 
 .feature-icon-violet {
   color: #5d4fd3;
-  background: #f0edff;
+  background: var(--tm-primary-soft);
 }
 
 .feature-icon-blue {
@@ -959,16 +964,16 @@ nav > a:hover,
   place-items: center;
   border-radius: 50%;
   color: var(--purple);
-  background: #f0edff;
+  background: var(--tm-primary-soft);
   font-size: 8px;
 }
 
 .dark-button {
   min-height: 49px;
   padding: 0 21px;
-  color: #fff;
-  background: var(--ink);
-  box-shadow: 0 12px 25px rgba(23, 33, 58, 0.18);
+  color: var(--tm-inverse);
+  background: var(--tm-inverse-surface);
+  box-shadow: var(--tm-shadow-md);
 }
 
 .trust-card {
@@ -1129,10 +1134,10 @@ nav > a:hover,
     margin-left: auto;
     display: grid;
     place-items: center;
-    border: 1px solid #e1e3eb;
+    border: 1px solid var(--tm-border);
     border-radius: 10px;
     color: var(--ink);
-    background: #fff;
+    background: var(--tm-surface);
   }
 
   nav {
@@ -1145,9 +1150,9 @@ nav > a:hover,
     align-items: stretch;
     flex-direction: column;
     gap: 17px;
-    border: 1px solid #e6e7ef;
+    border: 1px solid var(--tm-border);
     border-radius: 14px;
-    background: #fff;
+    background: var(--tm-surface);
     box-shadow: 0 22px 45px rgba(31, 37, 68, 0.12);
   }
 
@@ -1160,7 +1165,7 @@ nav > a:hover,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-top: 1px solid #eceef3;
+    border-top: 1px solid var(--tm-border-soft);
   }
 
   .feature-grid,
@@ -1270,4 +1275,124 @@ nav > a:hover,
     order: 3;
   }
 }
+
+/* The composition follows the supplied landing design; these overrides only map it to the shared dark theme. */
+:global(:root[data-theme='dark']) .site-header {
+  border-color: var(--tm-border-soft);
+  background: color-mix(in srgb, var(--tm-bg) 86%, transparent);
+}
+
+:global(:root[data-theme='dark']) .brand,
+:global(:root[data-theme='dark']) .hero-copy h1,
+:global(:root[data-theme='dark']) .section-heading h2,
+:global(:root[data-theme='dark']) .outcome-copy h2,
+:global(:root[data-theme='dark']) .feature-card h3,
+:global(:root[data-theme='dark']) .app-preview,
+:global(:root[data-theme='dark']) .preview-header h2,
+:global(:root[data-theme='dark']) .preview-task strong,
+:global(:root[data-theme='dark']) .floating-card strong {
+  color: var(--tm-text);
+}
+
+:global(:root[data-theme='dark']) nav > a,
+:global(:root[data-theme='dark']) .nav-sign-in,
+:global(:root[data-theme='dark']) .hero-description,
+:global(:root[data-theme='dark']) .section-heading p,
+:global(:root[data-theme='dark']) .outcome-copy > p,
+:global(:root[data-theme='dark']) .feature-card p,
+:global(:root[data-theme='dark']) .outcome-copy li,
+:global(:root[data-theme='dark']) .site-footer {
+  color: var(--tm-text-muted);
+}
+
+:global(:root[data-theme='dark']) .secondary-button,
+:global(:root[data-theme='dark']) .feature-card,
+:global(:root[data-theme='dark']) .app-preview,
+:global(:root[data-theme='dark']) .floating-card,
+:global(:root[data-theme='dark']) .preview-header button,
+:global(:root[data-theme='dark']) nav.nav-open {
+  border-color: var(--tm-border);
+  color: var(--tm-text);
+  background: var(--tm-surface-raised);
+  box-shadow: var(--tm-shadow-md);
+}
+
+:global(:root[data-theme='dark']) .features-section,
+:global(:root[data-theme='dark']) .preview-main {
+  background: var(--tm-surface);
+}
+
+:global(:root[data-theme='dark']) .preview-sidebar {
+  border-color: var(--tm-border-soft);
+  background: var(--tm-surface-subtle);
+}
+
+:global(:root[data-theme='dark']) .focus-card {
+  border-color: var(--tm-primary-soft-border);
+  background: linear-gradient(135deg, var(--tm-surface-raised), var(--tm-primary-soft));
+}
+
+:global(:root[data-theme='dark']) .preview-task,
+:global(:root[data-theme='dark']) .trust-detail,
+:global(:root[data-theme='dark']) .site-footer,
+:global(:root[data-theme='dark']) .mobile-nav-actions {
+  border-color: var(--tm-border-soft);
+}
+
+:global(:root[data-theme='dark']) .visual-orb-main {
+  background: linear-gradient(145deg, #282750, #151a30 76%);
+}
+
+:global(:root[data-theme='dark']) .visual-orb-small {
+  background: #14283d;
+}
+
+:global(:root[data-theme='dark']) .feature-icon-violet,
+:global(:root[data-theme='dark']) .floating-icon,
+:global(:root[data-theme='dark']) .outcome-copy li > span,
+:global(:root[data-theme='dark']) .sidebar-item-active {
+  color: var(--tm-primary);
+  background: var(--tm-primary-soft);
+}
+
+:global(:root[data-theme='dark']) .feature-icon-blue {
+  color: #82b8f0;
+  background: #19324e;
+}
+
+:global(:root[data-theme='dark']) .feature-icon-peach {
+  color: var(--tm-warning);
+  background: var(--tm-warning-soft);
+}
+
+:global(:root[data-theme='dark']) .done-tag {
+  color: var(--tm-success);
+  background: var(--tm-success-soft);
+}
+
+:global(:root[data-theme='dark']) .high-tag {
+  color: var(--tm-warning);
+  background: var(--tm-warning-soft);
+}
+
+:global(:root[data-theme='dark']) .trust-card {
+  border-color: var(--tm-border);
+  background: linear-gradient(145deg, #171d31, #252a4f);
+}
+
+.header-inner > .theme-toggle {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .header-inner > .theme-toggle {
+    margin-left: auto;
+    display: grid;
+  }
+
+  .mobile-menu-button {
+    margin-left: 0;
+  }
+}
+
 </style>

@@ -1,17 +1,67 @@
 :root {
   color-scheme: light;
-  --tm-bg: #f1f5f9;
+  --tm-bg: #f5f7fb;
+  --tm-bg-gradient: radial-gradient(circle at top, #e5edff 0, #f5f7fb 35%);
   --tm-surface: #ffffff;
-  --tm-text: #0f172a;
-  --tm-muted: #475569;
-  --tm-primary: #2563eb;
-  --tm-border: #dbe2ea;
+  --tm-surface-raised: #ffffff;
+  --tm-surface-subtle: #f8f9fc;
+  --tm-surface-muted: #eff2f7;
+  --tm-text: #17213a;
+  --tm-text-muted: #687187;
+  --tm-text-soft: #9299a9;
+  --tm-primary: #6254db;
+  --tm-primary-hover: #5041c8;
+  --tm-primary-soft: #f0edff;
+  --tm-primary-soft-border: #dedafa;
+  --tm-border: #e3e6ee;
+  --tm-border-soft: #eceef3;
+  --tm-success: #43866b;
+  --tm-success-soft: #ebf7f1;
+  --tm-warning: #be6842;
+  --tm-warning-soft: #fff0e9;
+  --tm-inverse: #ffffff;
+  --tm-inverse-surface: #17213a;
+  --tm-shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.05);
+  --tm-shadow-md: 0 18px 42px rgba(28, 35, 64, 0.08);
+  --tm-shadow-lg: 0 36px 80px rgba(44, 39, 105, 0.16);
   font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: radial-gradient(circle at top, #dbeafe 0, #f1f5f9 35%);
+  background: var(--tm-bg-gradient);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --tm-bg: #0c1120;
+  --tm-bg-gradient: radial-gradient(circle at top, #202347 0, #0c1120 38%);
+  --tm-surface: #141b2d;
+  --tm-surface-raised: #192238;
+  --tm-surface-subtle: #111829;
+  --tm-surface-muted: #222c43;
+  --tm-text: #f2f4fb;
+  --tm-text-muted: #aab2c5;
+  --tm-text-soft: #7e899f;
+  --tm-primary: #9487ff;
+  --tm-primary-hover: #aa9fff;
+  --tm-primary-soft: #292747;
+  --tm-primary-soft-border: #4a457e;
+  --tm-border: #303a50;
+  --tm-border-soft: #252e42;
+  --tm-success: #7bc5a3;
+  --tm-success-soft: #193a32;
+  --tm-warning: #f0a17d;
+  --tm-warning-soft: #452b29;
+  --tm-inverse: #0f172a;
+  --tm-inverse-surface: #f3f5fb;
+  --tm-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --tm-shadow-md: 0 18px 42px rgba(0, 0, 0, 0.28);
+  --tm-shadow-lg: 0 36px 80px rgba(0, 0, 0, 0.38);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -19,6 +69,14 @@ body {
   min-width: 320px;
   color: var(--tm-text);
   background: var(--tm-bg);
+  transition: color 180ms ease, background 180ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 #app {
@@ -26,10 +84,12 @@ body {
 }
 
 .ant-card {
+  color: var(--tm-text);
   border-color: var(--tm-border);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  background: var(--tm-surface);
+  box-shadow: var(--tm-shadow-sm);
 }
 
 .ant-btn-primary {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, var(--tm-primary), var(--tm-primary-hover));
 }
