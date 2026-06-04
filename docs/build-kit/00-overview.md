@@ -55,7 +55,7 @@ flowchart LR
 
 1. The **frontend** authenticates against Core and makes all calls to Core only.
 2. **Core** is the system of record (Postgres). On every state change it writes a **domain event to an outbox table in the same transaction**.
-3. An **outbox poller** publishes events to a **Redis Stream** (`taskmind.events`).
+3. An **outbox poller** publishes events to a **Redis Stream** (`taskmind.events`); see [`reference/domain-events.md`](reference/domain-events.md) for the envelope, catalog, and pipeline.
 4. **Relay** consumes the stream (consumer group `relay-workers`), deduplicates by `eventId`, and runs **projection handlers** into the Postgres `analytics` schema and into **Amazon OpenSearch** for activity search.
 5. Core facades (`/v1/ai/**`, `/v1/nova/**`) call **Nova** over service-token HTTP for any LLM work. Nova fetches real-time facts from Core (`/internal/**`) and aggregated **context** from Relay (`/internal/context/**`).
 6. **Object storage** (task attachments) goes to **Amazon S3** via an `ObjectStoragePort` adapter.
@@ -111,5 +111,5 @@ See [`reference/aws-infrastructure.md`](reference/aws-infrastructure.md) for the
 
 1. Read [`AGENTS.md`](../../AGENTS.md) → this overview → [`conventions.md`](conventions.md).
 2. Follow [`01-build-order.md`](01-build-order.md): execute milestones **M00 → M13 in order**. Each milestone has a self-contained spec in [`phases/`](phases/).
-3. Consult [`reference/`](reference/) for the data model, API contract, event catalog, AI capability catalog, and AWS infra whenever a milestone references them.
+3. Consult [`reference/`](reference/) for the data model, API contract, [domain event catalog](reference/domain-events.md), AI capability catalog, and AWS infra whenever a milestone references them.
 4. Gate every milestone with `make vibe-verify` (+ browser E2E for UI).
