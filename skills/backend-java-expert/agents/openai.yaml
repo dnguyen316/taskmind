@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Java Expert"
+  short_description: "Expert Java backend engineering guidance"
+  default_prompt: "Use $backend-java-expert to design, implement, test, or review a Java backend change."
