@@ -1,0 +1,4 @@
+interface:
+  display_name: "Expert Vue.js Frontend"
+  short_description: "Advanced Vue 3 frontend engineering workflow."
+  default_prompt: "Use $expert-vuejs-frontend to design, implement, or review a production Vue 3 frontend change."
