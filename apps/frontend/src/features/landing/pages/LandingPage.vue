@@ -11,10 +11,15 @@ import {
   SafetyCertificateOutlined,
   ThunderboltFilled,
 } from '@ant-design/icons-vue'
-import { ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import ThemeToggle from '../../../components/ThemeToggle.vue'
 
 const mobileMenuOpen = ref(false)
+const landingPage = ref<HTMLElement | null>(null)
+const heroVisual = ref<HTMLElement | null>(null)
+const heroReady = ref(false)
+let revealObserver: IntersectionObserver | undefined
+let revealFallback: ReturnType<typeof window.setTimeout> | undefined
 
 const features = [
   {
@@ -46,10 +51,62 @@ const outcomes = [
 function closeMobileMenu() {
   mobileMenuOpen.value = false
 }
+
+function updateHeroTilt(event: PointerEvent) {
+  if (!heroVisual.value || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+  const bounds = heroVisual.value.getBoundingClientRect()
+  const x = Math.min(Math.max((event.clientX - bounds.left) / bounds.width, 0), 1)
+  const y = Math.min(Math.max((event.clientY - bounds.top) / bounds.height, 0), 1)
+
+  heroVisual.value.style.setProperty('--tilt-x', `${(0.5 - y) * 7}deg`)
+  heroVisual.value.style.setProperty('--tilt-y', `${(x - 0.5) * 9}deg`)
+  heroVisual.value.style.setProperty('--shift-x', `${(x - 0.5) * 12}px`)
+  heroVisual.value.style.setProperty('--shift-y', `${(y - 0.5) * 10}px`)
+}
+
+function resetHeroTilt() {
+  heroVisual.value?.style.removeProperty('--tilt-x')
+  heroVisual.value?.style.removeProperty('--tilt-y')
+  heroVisual.value?.style.removeProperty('--shift-x')
+  heroVisual.value?.style.removeProperty('--shift-y')
+}
+
+onMounted(async () => {
+  await nextTick()
+  heroReady.value = true
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => element.classList.add('is-visible'))
+    return
+  }
+
+  revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        revealObserver?.unobserve(entry.target)
+      })
+    },
+    { threshold: 0.16, rootMargin: '0px 0px -50px' },
+  )
+
+  landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => revealObserver?.observe(element))
+
+  revealFallback = window.setTimeout(() => {
+    landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => element.classList.add('is-visible'))
+  }, 1800)
+})
+
+onBeforeUnmount(() => {
+  revealObserver?.disconnect()
+  if (revealFallback) window.clearTimeout(revealFallback)
+})
 </script>
 
 <template>
-  <main class="landing-page">
+  <main ref="landingPage" class="landing-page" :class="{ 'hero-ready': heroReady }">
     <header class="site-header">
       <div class="header-inner">
         <RouterLink class="brand" to="/" aria-label="TaskMind home" @click="closeMobileMenu">
@@ -113,7 +170,7 @@ function closeMobileMenu() {
         </p>
       </div>
 
-      <div class="hero-visual" aria-label="TaskMind daily planning preview">
+      <div ref="heroVisual" class="hero-visual" aria-label="TaskMind daily planning preview" @pointermove="updateHeroTilt" @pointerleave="resetHeroTilt">
         <div class="visual-orb visual-orb-main"></div>
         <div class="visual-orb visual-orb-small"></div>
         <div class="dot-grid" aria-hidden="true"></div>
@@ -181,13 +238,13 @@ function closeMobileMenu() {
     </section>
 
     <section id="features" class="features-section">
-      <div class="section-heading">
+      <div class="section-heading" data-reveal>
         <span>BUILT FOR FOCUS</span>
         <h2>A calmer way to get things done.</h2>
         <p>Everything you need to move from a crowded mind to a confident plan.</p>
       </div>
       <div class="feature-grid">
-        <article v-for="feature in features" :key="feature.title" class="feature-card">
+        <article v-for="(feature, index) in features" :key="feature.title" class="feature-card" data-reveal :style="{ '--reveal-delay': `${index * 90}ms` }">
           <span class="feature-icon" :class="`feature-icon-${feature.accent}`"><component :is="feature.icon" /></span>
           <h3>{{ feature.title }}</h3>
           <p>{{ feature.description }}</p>
@@ -197,7 +254,7 @@ function closeMobileMenu() {
     </section>
 
     <section id="how-it-works" class="outcome-section">
-      <div class="outcome-copy">
+      <div class="outcome-copy" data-reveal>
         <span class="section-label">ONE THOUGHT AHEAD</span>
         <h2>Your workday,<br />made manageable.</h2>
         <p>TaskMind understands your workload and helps you make the next best decision — while leaving you in control.</p>
@@ -207,7 +264,7 @@ function closeMobileMenu() {
         <RouterLink class="dark-button" to="/signup">Build your first plan <ArrowRightOutlined /></RouterLink>
       </div>
 
-      <div id="security" class="trust-card">
+      <div id="security" class="trust-card" data-reveal>
         <div class="trust-card-glow"></div>
         <span class="trust-icon"><SafetyCertificateOutlined /></span>
         <small>DESIGNED FOR TRUST</small>
@@ -1109,7 +1166,6 @@ nav > a:hover,
 
   .app-preview {
     left: 50%;
-    transform: translateX(-50%) rotate(1.3deg);
   }
 
   .outcome-section {
@@ -1235,7 +1291,6 @@ nav > a:hover,
   .app-preview {
     top: 6px;
     width: 600px;
-    transform: translateX(-50%) scale(0.64) rotate(1.3deg);
     transform-origin: top center;
   }
 
@@ -1392,6 +1447,230 @@ nav > a:hover,
 
   .mobile-menu-button {
     margin-left: 0;
+  }
+}
+
+/* Motion is progressive enhancement: layout and content remain complete without it. */
+.hero-copy > *,
+.hero-visual {
+  opacity: 0;
+}
+
+.hero-ready .hero-copy > * {
+  animation: hero-copy-in 720ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.hero-ready .hero-copy > :nth-child(2) { animation-delay: 80ms; }
+.hero-ready .hero-copy > :nth-child(3) { animation-delay: 150ms; }
+.hero-ready .hero-copy > :nth-child(4) { animation-delay: 220ms; }
+.hero-ready .hero-copy > :nth-child(5) { animation-delay: 290ms; }
+
+.hero-ready .hero-visual {
+  animation: hero-visual-in 900ms 120ms cubic-bezier(.16,.82,.24,1) both;
+}
+
+.hero-visual {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --shift-x: 0px;
+  --shift-y: 0px;
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.app-preview {
+  --preview-offset-x: 0%;
+  --preview-scale: 1;
+  transform: translateX(var(--preview-offset-x)) perspective(1400px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(1.3deg) scale(var(--preview-scale));
+  transform-origin: center;
+  transform-style: preserve-3d;
+  transition: transform 220ms cubic-bezier(.2,.75,.25,1), box-shadow 220ms ease;
+  will-change: transform;
+}
+
+.hero-visual:hover .app-preview {
+  box-shadow: 0 44px 95px rgba(44, 39, 105, 0.23);
+}
+
+.preview-sidebar,
+.preview-main {
+  transform: translateZ(10px);
+}
+
+.focus-card {
+  transform: translateZ(20px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--tm-primary) 10%, transparent);
+}
+
+.floating-card {
+  transition: transform 240ms cubic-bezier(.2,.75,.25,1), box-shadow 200ms ease;
+  will-change: transform;
+}
+
+.nova-card {
+  animation: card-float 4.8s ease-in-out infinite;
+  transform: translate3d(calc(var(--shift-x) * -0.6), calc(var(--shift-y) * -0.5), 42px);
+}
+
+.focus-time-card {
+  animation: card-float-delayed 5.2s ease-in-out infinite;
+  transform: translate3d(calc(var(--shift-x) * 0.75), calc(var(--shift-y) * 0.65), 55px);
+}
+
+.visual-orb-main { animation: orb-drift 9s ease-in-out infinite alternate; }
+.visual-orb-small { animation: orb-drift-small 7s ease-in-out infinite alternate; }
+.dot-grid { animation: dots-breathe 4s ease-in-out infinite; }
+.preview-logo,
+.brand-mark { transition: transform 180ms ease, box-shadow 180ms ease; }
+.brand:hover .brand-mark { transform: rotate(-7deg) scale(1.08); box-shadow: 0 12px 26px rgba(89,72,207,.34); }
+.focus-progress span { transform-origin: left; animation: progress-grow 1.2s 550ms cubic-bezier(.2,.75,.25,1) both; }
+.preview-header button span { animation: notification-pulse 2.2s ease-out infinite; }
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 680ms cubic-bezier(.2,.75,.25,1), transform 680ms cubic-bezier(.2,.75,.25,1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.feature-card {
+  transform-style: preserve-3d;
+}
+
+.feature-card:hover {
+  transform: translateY(-7px) rotateX(1.5deg);
+}
+
+.feature-card:hover .feature-icon {
+  transform: translateY(-3px) rotate(-5deg) scale(1.08);
+}
+
+.feature-icon,
+.feature-card a :deep(svg),
+.primary-button :deep(svg),
+.dark-button :deep(svg) {
+  transition: transform 180ms ease;
+}
+
+.feature-card:hover a :deep(svg),
+.primary-button:hover :deep(svg),
+.dark-button:hover :deep(svg) {
+  transform: translateX(4px);
+}
+
+.trust-card {
+  transition: transform 260ms cubic-bezier(.2,.75,.25,1), box-shadow 260ms ease;
+}
+
+.trust-card:hover {
+  transform: translateY(-6px) rotateY(-1.5deg);
+  box-shadow: 0 38px 76px rgba(23,33,58,.27);
+}
+
+.trust-card:hover .trust-icon {
+  transform: rotate(-6deg) scale(1.06);
+}
+
+.trust-icon { transition: transform 200ms ease; }
+.trust-card-glow { animation: trust-glow 6s ease-in-out infinite alternate; }
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.dark-button:focus-visible,
+.feature-card a:focus-visible,
+nav a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--tm-primary) 45%, transparent);
+  outline-offset: 4px;
+}
+
+@keyframes hero-copy-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-visual-in {
+  from { opacity: 0; transform: translate3d(30px, 18px, 0) scale(.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes card-float {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -8px; }
+}
+
+@keyframes card-float-delayed {
+  0%, 100% { margin-top: -3px; }
+  50% { margin-top: 6px; }
+}
+
+@keyframes orb-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-12px, 9px, 0) scale(1.025); }
+}
+
+@keyframes orb-drift-small {
+  from { transform: translate3d(0, 5px, 0); }
+  to { transform: translate3d(10px, -6px, 0); }
+}
+
+@keyframes dots-breathe {
+  0%, 100% { opacity: .28; transform: translateY(0); }
+  50% { opacity: .58; transform: translateY(-4px); }
+}
+
+@keyframes progress-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes notification-pulse {
+  0%, 55% { box-shadow: 0 0 0 0 rgba(228,108,108,.4); }
+  100% { box-shadow: 0 0 0 7px rgba(228,108,108,0); }
+}
+
+@keyframes trust-glow {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: .7; }
+  to { transform: translate3d(-18px, 18px, 0) scale(1.12); opacity: 1; }
+}
+
+@media (max-width: 1120px) {
+  .app-preview { --preview-offset-x: -50%; }
+}
+
+@media (max-width: 660px) {
+  .app-preview { --preview-scale: .64; }
+  .hero-copy { text-align: center; }
+  .hero-description { max-width: 410px; }
+  .section-heading { max-width: 350px; }
+  .section-heading h2 { text-wrap: balance; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy > *,
+  .hero-visual,
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+
+  .app-preview {
+    transform: translateX(var(--preview-offset-x)) rotateZ(1.3deg) scale(var(--preview-scale)) !important;
+  }
+
+  .floating-card,
+  .visual-orb,
+  .dot-grid,
+  .focus-progress span,
+  .preview-header button span,
+  .trust-card-glow {
+    animation: none !important;
   }
 }
 
