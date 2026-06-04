@@ -67,7 +67,9 @@ flowchart TD
   `libs/events` envelope first, then the outbox, then the Relay consumer.
 - **M07 (Nova)** can be built in parallel with M04/M05 conceptually, but the spec assumes
   M02 contracts exist. Build Nova with the **mock provider** first so everything is
-  deterministic; wire real providers (OpenAI/Anthropic/NAMC) last.
+  deterministic; wire real providers (OpenAI/Anthropic/NAMC) last. Use
+  [`reference/ai-capabilities.md`](reference/ai-capabilities.md) as the capability catalog
+  for M07-M09 AI work.
 - **M13** is cross-cutting hardening + the AWS deployment story; do it once features are
   parity-complete.
 

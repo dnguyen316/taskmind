@@ -14,6 +14,8 @@ TaskMind is an **AI-centered task manager**. Beyond CRUD task management it prov
 - **Notifications** — in-app + SSE + email digest + Slack + reminders.
 - **Analytics / reports** — throughput, workload, KPIs from a projection pipeline.
 
+See [`reference/ai-capabilities.md`](reference/ai-capabilities.md) for the authoritative AI capability catalog used by the Nova, Core facade, Relay context, and frontend AI milestones.
+
 The product is delivered as **one Vue SPA + three Spring Boot services + two shared Java libraries**.
 
 ## Components
