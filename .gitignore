@@ -6,6 +6,10 @@ apps/frontend/dist/
 apps/backend/target/
 *.class
 
+# Python
+__pycache__/
+*.py[cod]
+
 # IDE
 .idea/
 .vscode/
@@ -13,3 +17,8 @@ apps/backend/target/
 
 # OS
 .DS_Store
+
+# Local vibe-coding token telemetry
+.vibe/*.jsonl
+.vibe/*.json
+.vibe/*.csv
