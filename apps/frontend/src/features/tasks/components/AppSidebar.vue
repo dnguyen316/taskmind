@@ -12,7 +12,7 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar tm-shell-sidebar">
     <div class="brand">Taskmind <span>AI</span></div>
     <nav class="menu-group">
       <RouterLink to="/dashboard" class="menu-item" :class="{ active: isDashboard }"><CheckSquareOutlined />Dashboard</RouterLink>
@@ -34,15 +34,88 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
 </template>
 
 <style scoped>
-.sidebar { background:#fff; border-right:1px solid #e2e8f0; padding:24px 16px; display:flex; flex-direction:column; }
-.brand { font-size:28px; font-weight:700; margin-bottom:20px; }
-.brand span { font-size:12px; color:#2563eb; margin-left:8px; }
-.menu-group { display:grid; gap:6px; margin-bottom:18px; }
-.menu-item { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; color:#334155; }
-.menu-item.active { background:#eaf1ff; color:#1d4ed8; font-weight:600; }
-.menu-item em { margin-left:auto; font-style:normal; background:#e2e8f0; border-radius:999px; padding:0 8px; font-size:12px; }
-.group-title { text-transform:uppercase; color:#94a3b8; letter-spacing:.08em; font-size:12px; margin:6px 0; }
-.user-pill { margin-top:auto; padding:10px; border-top:1px solid #e2e8f0; display:flex; gap:10px; align-items:center; }
-.avatar { width:32px; height:32px; border-radius:50%; background:#1e40af; color:#fff; display:grid; place-items:center; font-size:12px; }
-.user-pill p { margin:0; color:#64748b; font-size:12px; }
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  border-right: 1px solid var(--tm-border);
+}
+
+.brand {
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--tm-text);
+}
+
+.brand span {
+  margin-left: 8px;
+  color: var(--tm-accent-blue);
+  font-size: 12px;
+}
+
+.menu-group {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.menu-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--tm-text-muted);
+  border-radius: calc(var(--tm-radius) - 4px);
+}
+
+.menu-item.active {
+  color: var(--tm-accent-blue-strong);
+  font-weight: 600;
+  background: var(--tm-primary-soft);
+}
+
+.menu-item em {
+  margin-left: auto;
+  padding: 0 8px;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--tm-text-muted);
+  background: var(--tm-surface-muted);
+  border-radius: 999px;
+}
+
+.group-title {
+  margin: 6px 0;
+  color: var(--tm-text-soft);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.user-pill {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: auto;
+  padding: 10px;
+  border-top: 1px solid var(--tm-border);
+}
+
+.avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  color: var(--tm-accent-contrast);
+  font-size: 12px;
+  background: var(--tm-accent-navy);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.user-pill p {
+  margin: 0;
+  color: var(--tm-muted);
+  font-size: 12px;
+}
 </style>
