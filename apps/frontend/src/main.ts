@@ -3,6 +3,8 @@ import type { ComponentPublicInstance } from 'vue'
 import Antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
+import { pinia } from './stores/pinia'
+import { useAuthStore } from './stores/auth'
 import 'ant-design-vue/dist/reset.css'
 import './style.css'
 
@@ -16,4 +18,8 @@ app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | n
   })
 }
 
-app.use(Antd).use(router).mount('#app')
+app.use(Antd).use(pinia)
+
+useAuthStore(pinia).initializeSession()
+
+app.use(router).mount('#app')

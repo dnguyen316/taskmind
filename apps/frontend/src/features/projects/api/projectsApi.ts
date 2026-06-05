@@ -2,12 +2,20 @@ import { apiClient } from '../../../lib/apiClient'
 
 export interface ProjectRecord {
   id: string
+  name?: string
+  key?: string
+  description?: string | null
+  ownerUserId?: string | null
   archived?: boolean | null
+  archivedAt?: string | null
+  status?: string | null
   [key: string]: unknown
 }
 
 export interface MemberRecord {
   id: string
+  userId?: string
+  role?: string
   [key: string]: unknown
 }
 

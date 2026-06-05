@@ -1,47 +1,40 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ProjectMembersPanel from '../components/ProjectMembersPanel.vue'
+import { useProjects } from '../composables/useProjects'
 
 const route = useRoute()
 const router = useRouter()
-
 const projectId = computed(() => String(route.params.id ?? '').trim())
+const { selectedProject, members, loading, saving, errorMessage, fetchProject, fetchMembers, addMember, removeMember } = useProjects()
 
-const metadata = reactive({
-  name: 'TaskMind Core Platform',
-  owner: 'Platform Team',
-  status: 'ACTIVE',
-  description: 'Foundational project for workflow orchestration and shared APIs.',
-})
+const memberItems = computed(() =>
+  members.value.map((member) => ({
+    userId: typeof member.userId === 'string' ? member.userId : member.id,
+    role: typeof member.role === 'string' ? member.role : 'MEMBER',
+  })),
+)
 
-const newMember = reactive({ name: '', role: '' })
-const members = reactive([
-  { id: crypto.randomUUID(), name: 'Avery Brooks', role: 'Product Manager' },
-  { id: crypto.randomUUID(), name: 'Jules Park', role: 'Lead Engineer' },
-])
-
-function addMember() {
-  const name = newMember.name.trim()
-  if (!name) {
+async function loadProject() {
+  if (!projectId.value) {
     return
   }
 
-  members.push({
-    id: crypto.randomUUID(),
-    name,
-    role: newMember.role.trim() || 'Contributor',
-  })
-
-  newMember.name = ''
-  newMember.role = ''
+  await fetchProject(projectId.value)
+  await fetchMembers(projectId.value)
 }
 
-function removeMember(memberId: string) {
-  const index = members.findIndex((member) => member.id === memberId)
-  if (index >= 0) {
-    members.splice(index, 1)
-  }
+async function handleAddMember(payload: { userId: string; role: string }) {
+  await addMember(projectId.value, payload)
 }
+
+async function handleRemoveMember(memberId: string) {
+  await removeMember(projectId.value, memberId)
+}
+
+onMounted(loadProject)
+watch(projectId, loadProject)
 </script>
 
 <template>
@@ -53,37 +46,25 @@ function removeMember(memberId: string) {
           <span class="project-id" v-if="projectId">ID: {{ projectId }}</span>
         </a-space>
 
-        <a-descriptions bordered :column="1" size="small" title="Metadata">
-          <a-descriptions-item label="Name">{{ metadata.name }}</a-descriptions-item>
-          <a-descriptions-item label="Owner">{{ metadata.owner }}</a-descriptions-item>
-          <a-descriptions-item label="Status">{{ metadata.status }}</a-descriptions-item>
-          <a-descriptions-item label="Description">{{ metadata.description }}</a-descriptions-item>
-        </a-descriptions>
+        <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
 
-        <a-card title="Members management" type="inner">
-          <a-form layout="inline" @submit.prevent="addMember">
-            <a-form-item>
-              <a-input v-model:value="newMember.name" placeholder="Member name" />
-            </a-form-item>
-            <a-form-item>
-              <a-input v-model:value="newMember.role" placeholder="Role" />
-            </a-form-item>
-            <a-form-item>
-              <a-button type="primary" html-type="submit">Add member</a-button>
-            </a-form-item>
-          </a-form>
+        <a-spin :spinning="loading">
+          <a-descriptions bordered :column="1" size="small" title="Metadata">
+            <a-descriptions-item label="Name">{{ selectedProject?.name || '—' }}</a-descriptions-item>
+            <a-descriptions-item label="Owner">{{ selectedProject?.ownerUserId || '—' }}</a-descriptions-item>
+            <a-descriptions-item label="Status">{{ selectedProject?.archived || selectedProject?.status === 'ARCHIVED' ? 'ARCHIVED' : 'ACTIVE' }}</a-descriptions-item>
+            <a-descriptions-item label="Description">{{ selectedProject?.description || 'No description' }}</a-descriptions-item>
+          </a-descriptions>
+        </a-spin>
 
-          <a-list class="members-list" :data-source="members" bordered>
-            <template #renderItem="{ item }">
-              <a-list-item>
-                <template #actions>
-                  <a-button type="link" danger @click="removeMember(item.id)">Remove</a-button>
-                </template>
-                <a-list-item-meta :title="item.name" :description="item.role" />
-              </a-list-item>
-            </template>
-          </a-list>
-        </a-card>
+        <ProjectMembersPanel
+          :members="memberItems"
+          :loading="loading"
+          :saving="saving"
+          :error-message="errorMessage"
+          @add-member="handleAddMember"
+          @remove-member="handleRemoveMember"
+        />
       </a-space>
     </a-card>
   </main>
@@ -93,5 +74,4 @@ function removeMember(memberId: string) {
 .project-detail-page { min-height: 100vh; max-width: 1100px; margin: 0 auto; padding: 32px 20px 40px; }
 .surface-card { border-radius: 18px; }
 .project-id { margin: 0; font-weight: 600; color: #64748b; }
-.members-list { margin-top: 14px; }
 </style>

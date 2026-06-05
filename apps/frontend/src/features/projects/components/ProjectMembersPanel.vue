@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
+import type { SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
 
 interface ProjectMember {
@@ -28,7 +29,7 @@ const schema = yup.object({
   role: yup.string().trim().required('Role is required').max(50, 'Role must be at most 50 characters'),
 })
 
-function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (state?: unknown) => void }) {
+function onAdd(values: Record<string, unknown>, { resetForm }: SubmissionContext) {
   emit('addMember', { userId: String(values.userId ?? '').trim(), role: String(values.role ?? '').trim() })
   resetForm({ values: { userId: '', role: '' } })
 }

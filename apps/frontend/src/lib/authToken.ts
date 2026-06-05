@@ -10,6 +10,13 @@ export interface StoredAuthTokens {
   expiresInSeconds: number
 }
 
+export interface StoredAuthSession {
+  accessToken: string
+  refreshToken: string
+  tokenType: string
+  expiresAt: number
+}
+
 function storageAvailable() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
@@ -56,4 +63,28 @@ export function getAuthorizationHeader() {
 
   const tokenType = window.localStorage.getItem(TOKEN_TYPE_KEY) || 'Bearer'
   return `${tokenType} ${accessToken}`
+}
+
+
+export function getStoredAuthSession(): StoredAuthSession | null {
+  if (!storageAvailable()) {
+    return null
+  }
+
+  const accessToken = window.localStorage.getItem(ACCESS_TOKEN_KEY)
+  const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY)
+  const tokenType = window.localStorage.getItem(TOKEN_TYPE_KEY) || 'Bearer'
+  const expiresAt = Number(window.localStorage.getItem(TOKEN_EXPIRES_AT_KEY) ?? '0')
+
+  if (!accessToken || !refreshToken || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    clearAuthTokens()
+    return null
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+    tokenType,
+    expiresAt,
+  }
 }
