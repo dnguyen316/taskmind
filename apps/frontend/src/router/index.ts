@@ -5,11 +5,24 @@ import TasksPage from '../features/tasks/pages/TasksPage.vue'
 import TaskDetailPage from '../features/tasks/pages/TaskDetailPage.vue'
 import ProjectsDashboardPage from '../features/projects/pages/ProjectsDashboardPage.vue'
 import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage.vue'
+import LandingPage from '../features/landing/pages/LandingPage.vue'
+import AuthPage from '../features/auth/pages/AuthPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: { name: 'dashboard' },
+    name: 'landing',
+    component: LandingPage,
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: AuthPage,
+  },
+  {
+    path: '/signup',
+    name: 'signup',
+    component: AuthPage,
   },
   {
     path: '/dashboard',
