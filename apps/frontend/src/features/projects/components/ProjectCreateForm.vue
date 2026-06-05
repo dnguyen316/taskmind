@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
-import type { FormContext } from 'vee-validate'
+import type { FormContext, GenericObject } from 'vee-validate'
+import type { CreateProjectPayload } from '../types'
 import * as yup from 'yup'
 
 interface CreateProjectFormValues {
@@ -17,7 +18,7 @@ const props = withDefaults(defineProps<{ saving?: boolean; successSignal?: numbe
 })
 
 const emit = defineEmits<{
-  submit: [payload: { name: string; key: string; ownerUserId: string; description: string | null }]
+  submit: [payload: CreateProjectPayload]
 }>()
 
 const schema = yup.object({
@@ -36,12 +37,12 @@ const initialValues = computed<CreateProjectFormValues>(() => ({
 
 const formRef = ref<FormContext | null>(null)
 
-function handleValidSubmit(values: Record<string, unknown>) {
+function handleValidSubmit(values: GenericObject) {
   emit('submit', {
-    name: String(values.name ?? "").trim(),
-    key: String(values.key ?? "").trim(),
-    ownerUserId: String(values.ownerUserId ?? "").trim(),
-    description: String(values.description ?? "").trim() || null,
+    name: String(values.name ?? '').trim(),
+    key: String(values.key ?? '').trim(),
+    ownerUserId: String(values.ownerUserId ?? '').trim(),
+    description: String(values.description ?? '').trim() || null,
   })
 }
 

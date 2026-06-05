@@ -1,16 +1,6 @@
 import { computed, reactive, ref } from 'vue'
 import * as projectsApi from '../api/projectsApi'
-
-interface Project {
-  id: string
-  archived?: boolean | null
-  [key: string]: unknown
-}
-
-interface Member {
-  id: string
-  [key: string]: unknown
-}
+import type { AddProjectMemberPayload, CreateProjectPayload, Project, ProjectMembership, UpdateProjectPayload } from '../types'
 
 interface ProjectFilters {
   includeArchived: boolean
@@ -19,7 +9,7 @@ interface ProjectFilters {
 export function useProjects() {
   const projects = ref<Project[]>([])
   const selectedProject = ref<Project | null>(null)
-  const members = ref<Member[]>([])
+  const members = ref<ProjectMembership[]>([])
   const loading = ref(false)
   const saving = ref(false)
   const errorMessage = ref('')
@@ -29,8 +19,8 @@ export function useProjects() {
     includeArchived: false,
   })
 
-  const activeProjectsCount = computed(() => projects.value.filter((project) => !project.archived).length)
-  const archivedProjectsCount = computed(() => projects.value.filter((project) => Boolean(project.archived)).length)
+  const activeProjectsCount = computed(() => projects.value.filter((project) => !project.archivedAt).length)
+  const archivedProjectsCount = computed(() => projects.value.filter((project) => Boolean(project.archivedAt)).length)
 
   function mergeProjectState(projectId: string, changes: Partial<Project>) {
     projects.value = projects.value.map((project) => (project.id === projectId ? { ...project, ...changes } : project))
@@ -45,8 +35,7 @@ export function useProjects() {
     errorMessage.value = ''
 
     try {
-      const response = await projectsApi.fetchProjects({ includeArchived: filters.includeArchived })
-      projects.value = Array.isArray(response) ? response : []
+      projects.value = await projectsApi.listProjects({ includeArchived: filters.includeArchived })
       return projects.value
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load projects.'
@@ -61,7 +50,7 @@ export function useProjects() {
     errorMessage.value = ''
 
     try {
-      const project = await projectsApi.fetchProject(projectId)
+      const project = await projectsApi.getProject(projectId)
       selectedProject.value = project ?? null
       return selectedProject.value
     } catch (error: unknown) {
@@ -73,13 +62,13 @@ export function useProjects() {
     }
   }
 
-  async function submitProject(payload: Record<string, unknown>) {
+  async function submitProject(payload: CreateProjectPayload) {
     saving.value = true
     errorMessage.value = ''
     successMessage.value = ''
 
     try {
-      const created = await projectsApi.submitProject(payload)
+      const created = await projectsApi.createProject(payload)
       successMessage.value = 'Project created.'
       await fetchProjects()
       return created
@@ -91,7 +80,7 @@ export function useProjects() {
     }
   }
 
-  async function saveProject(projectId: string, payload: Record<string, unknown>) {
+  async function saveProject(projectId: string, payload: UpdateProjectPayload) {
     saving.value = true
     errorMessage.value = ''
     successMessage.value = ''
@@ -104,7 +93,7 @@ export function useProjects() {
     }
 
     try {
-      const updated = await projectsApi.saveProject(projectId, payload)
+      const updated = await projectsApi.updateProject(projectId, payload)
       mergeProjectState(projectId, updated)
 
       successMessage.value = 'Project saved.'
@@ -126,11 +115,11 @@ export function useProjects() {
     const originalProjects = [...projects.value]
     const originalSelectedProject = selectedProject.value ? { ...selectedProject.value } : null
 
-    mergeProjectState(projectId, { archived: true })
+    mergeProjectState(projectId, { archivedAt: new Date().toISOString() })
 
     try {
-      const updated = await projectsApi.archiveProjectById(projectId)
-      mergeProjectState(projectId, updated ?? { archived: true })
+      const updated = await projectsApi.archiveProject(projectId)
+      mergeProjectState(projectId, updated)
       successMessage.value = 'Project archived.'
     } catch (error: unknown) {
       projects.value = originalProjects
@@ -147,8 +136,7 @@ export function useProjects() {
     errorMessage.value = ''
 
     try {
-      const response = await projectsApi.fetchMembers(projectId)
-      members.value = Array.isArray(response) ? response : []
+      members.value = await projectsApi.listProjectMembers(projectId)
       return members.value
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load members.'
@@ -159,13 +147,13 @@ export function useProjects() {
     }
   }
 
-  async function addMember(projectId: string, payload: Record<string, unknown>) {
+  async function addMember(projectId: string, payload: AddProjectMemberPayload) {
     saving.value = true
     errorMessage.value = ''
     successMessage.value = ''
 
     try {
-      const created = await projectsApi.addMember(projectId, payload)
+      const created = await projectsApi.addProjectMember(projectId, payload)
       members.value = [...members.value, created]
       successMessage.value = 'Member added.'
       return created
@@ -183,10 +171,10 @@ export function useProjects() {
     successMessage.value = ''
 
     const originalMembers = [...members.value]
-    members.value = members.value.filter((member) => member.id !== memberId)
+    members.value = members.value.filter((member) => member.userId !== memberId)
 
     try {
-      await projectsApi.removeMember(projectId, memberId)
+      await projectsApi.removeProjectMember(projectId, memberId)
       successMessage.value = 'Member removed.'
     } catch (error: unknown) {
       members.value = originalMembers
