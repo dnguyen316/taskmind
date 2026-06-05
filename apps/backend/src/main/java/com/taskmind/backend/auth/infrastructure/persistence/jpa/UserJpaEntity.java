@@ -30,6 +30,9 @@ public class UserJpaEntity {
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
+    @Column(name = "display_name", length = 80)
+    private String displayName;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -41,4 +44,23 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {
     }
+
+    public UserJpaEntity(UUID id, AuthJpaEnums.UserStatus status, String primaryEmail, String passwordHash,
+            String displayName, Instant now) {
+        this.id = id;
+        this.status = status;
+        this.primaryEmail = primaryEmail;
+        this.passwordHash = passwordHash;
+        this.displayName = displayName;
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    public UUID getId() { return id; }
+    public AuthJpaEnums.UserStatus getStatus() { return status; }
+    public String getPrimaryEmail() { return primaryEmail; }
+    public String getPasswordHash() { return passwordHash; }
+    public String getDisplayName() { return displayName; }
+    public void activate(Instant now) { this.status = AuthJpaEnums.UserStatus.ACTIVE; this.updatedAt = now; }
+    public void recordLogin(Instant now) { this.lastLoginAt = now; this.updatedAt = now; }
 }

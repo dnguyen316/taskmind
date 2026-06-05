@@ -21,33 +21,65 @@ paths:
 
   /v1/auth/signup/email:
     post:
-      summary: Sign up with email and password
+      summary: Create a pending email user and dispatch an OTP
       operationId: signupEmail
       tags: [Auth]
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupEmailRequest'
       responses:
-        '201':
-          description: User created and tokens issued
+        '202':
+          description: Pending user created
+        '400':
+          $ref: '#/components/responses/ValidationError'
 
   /v1/auth/verify:
     post:
-      summary: Verify an authentication challenge
+      summary: Verify signup OTP and activate the user
       operationId: verifyAuthChallenge
       tags: [Auth]
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
       responses:
-        '204':
-          description: Challenge verified
+        '200':
+          description: User activated and tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /v1/auth/login:
     post:
-      summary: Log in with email and password
+      summary: Authenticate an active user
       operationId: login
       tags: [Auth]
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: Tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /v1/auth/oauth/google:
     post:
@@ -78,13 +110,25 @@ paths:
 
   /v1/auth/token/refresh:
     post:
-      summary: Rotate a refresh token
+      summary: Rotate a refresh-token session
       operationId: refreshToken
       tags: [Auth]
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-          description: New tokens issued
+          description: Session rotated with new tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /v1/auth/logout:
     post:
@@ -92,6 +136,12 @@ paths:
       operationId: logout
       tags: [Auth]
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
       responses:
         '204':
           description: Session invalidated
@@ -104,6 +154,10 @@ paths:
       responses:
         '200':
           description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -465,6 +519,50 @@ components:
             additionalProperties: true
 
   schemas:
+    SignupEmailRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password, minLength: 8, maxLength: 128}
+        displayName: {type: string, minLength: 2, maxLength: 80}
+    VerifyOtpRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email: {type: string, format: email}
+        otp: {type: string}
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password}
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string}
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string}
+    AuthTokens:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresInSeconds]
+      properties:
+        accessToken: {type: string}
+        refreshToken: {type: string}
+        tokenType: {type: string, example: Bearer}
+        expiresInSeconds: {type: integer, format: int64}
+    AuthUser:
+      type: object
+      required: [userId, email, displayName]
+      properties:
+        userId: {type: string, format: uuid}
+        email: {type: string, format: email}
+        displayName: {type: string}
     ProblemDetail:
       type: object
       properties:

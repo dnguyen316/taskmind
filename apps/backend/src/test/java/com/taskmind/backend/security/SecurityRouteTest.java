@@ -40,8 +40,8 @@ class SecurityRouteTest {
 
     @Test
     void allowsOtherUnauthenticatedAuthFlows() throws Exception {
-        mockMvc.perform(post("/v1/auth/verify"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
         mockMvc.perform(post("/v1/auth/oauth/google"))
                 .andExpect(status().isNotFound());
         mockMvc.perform(post("/v1/auth/password/reset"))

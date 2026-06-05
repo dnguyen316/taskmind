@@ -103,7 +103,7 @@ class ProjectMembershipControllerTest {
               "key": "%s",
               "ownerUserId": "%s"
             }
-            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 8), OWNER_ID);
+            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), OWNER_ID);
 
         var createProjectResponse = mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
                 .contentType(MediaType.APPLICATION_JSON)
