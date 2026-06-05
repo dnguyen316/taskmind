@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { CheckSquareOutlined, FolderOutlined, TeamOutlined, CalendarOutlined, InboxOutlined, BarChartOutlined } from '@ant-design/icons-vue'
 
-const props = defineProps<{ taskCount?: number }>()
+defineProps<{ taskCount?: number }>()
 const route = useRoute()
 
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 const isTasks = computed(() => route.path.startsWith('/tasks'))
 const isProjects = computed(() => route.path.startsWith('/projects'))
+const isTeam = computed(() => route.path.startsWith('/team'))
+const isCalendar = computed(() => route.path.startsWith('/calendar'))
+const isInbox = computed(() => route.path.startsWith('/inbox'))
+const isReports = computed(() => route.path.startsWith('/reports'))
 </script>
 
 <template>
@@ -21,10 +25,10 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <a class="menu-item"><TeamOutlined />Team</a>
-      <a class="menu-item"><CalendarOutlined />Calendar</a>
-      <a class="menu-item"><InboxOutlined />Inbox</a>
-      <a class="menu-item"><BarChartOutlined />Reports</a>
+      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink>
+      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink>
+      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink>
+      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink>
     </nav>
     <div class="user-pill">
       <div class="avatar">AC</div>
@@ -41,6 +45,7 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
 .menu-item { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; color:#334155; }
 .menu-item.active { background:#eaf1ff; color:#1d4ed8; font-weight:600; }
 .menu-item em { margin-left:auto; font-style:normal; background:#e2e8f0; border-radius:999px; padding:0 8px; font-size:12px; }
+.coming-soon { margin-left:auto; color:#64748b; background:#f1f5f9; border-radius:999px; padding:1px 7px; font-size:11px; white-space:nowrap; }
 .group-title { text-transform:uppercase; color:#94a3b8; letter-spacing:.08em; font-size:12px; margin:6px 0; }
 .user-pill { margin-top:auto; padding:10px; border-top:1px solid #e2e8f0; display:flex; gap:10px; align-items:center; }
 .avatar { width:32px; height:32px; border-radius:50%; background:#1e40af; color:#fff; display:grid; place-items:center; font-size:12px; }

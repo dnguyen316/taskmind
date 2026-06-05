@@ -2,6 +2,7 @@ const ACCESS_TOKEN_KEY = 'taskmind.accessToken'
 const REFRESH_TOKEN_KEY = 'taskmind.refreshToken'
 const TOKEN_TYPE_KEY = 'taskmind.tokenType'
 const TOKEN_EXPIRES_AT_KEY = 'taskmind.tokenExpiresAt'
+const TOKEN_EXPIRY_SKEW_MS = 30_000
 
 export interface StoredAuthTokens {
   accessToken: string
@@ -14,46 +15,109 @@ function storageAvailable() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
-export function saveAuthTokens(tokens: StoredAuthTokens) {
-  if (!storageAvailable()) {
-    return
-  }
-
-  const tokenType = tokens.tokenType || 'Bearer'
-  const expiresAt = Date.now() + tokens.expiresInSeconds * 1000
-
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken)
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
-  window.localStorage.setItem(TOKEN_TYPE_KEY, tokenType)
-  window.localStorage.setItem(TOKEN_EXPIRES_AT_KEY, String(expiresAt))
-}
-
-export function clearAuthTokens() {
-  if (!storageAvailable()) {
-    return
-  }
-
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY)
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
-  window.localStorage.removeItem(TOKEN_TYPE_KEY)
-  window.localStorage.removeItem(TOKEN_EXPIRES_AT_KEY)
-}
-
-export function getAccessToken() {
+function safeStorageRead(key: string) {
   if (!storageAvailable()) {
     return null
   }
 
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY)
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeStorageWrite(key: string, value: string) {
+  if (!storageAvailable()) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    clearAuthTokens()
+  }
+}
+
+function safeStorageRemove(key: string) {
+  if (!storageAvailable()) {
+    return
+  }
+
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Ignore storage failures so logout/session-expiry cleanup stays best-effort.
+  }
+}
+
+export function saveAuthTokens(tokens: StoredAuthTokens) {
+  const tokenType = tokens.tokenType || 'Bearer'
+  const expiresAt = Date.now() + tokens.expiresInSeconds * 1000
+
+  safeStorageWrite(ACCESS_TOKEN_KEY, tokens.accessToken)
+  safeStorageWrite(REFRESH_TOKEN_KEY, tokens.refreshToken)
+  safeStorageWrite(TOKEN_TYPE_KEY, tokenType)
+  safeStorageWrite(TOKEN_EXPIRES_AT_KEY, String(expiresAt))
+}
+
+export function clearAuthTokens() {
+  safeStorageRemove(ACCESS_TOKEN_KEY)
+  safeStorageRemove(REFRESH_TOKEN_KEY)
+  safeStorageRemove(TOKEN_TYPE_KEY)
+  safeStorageRemove(TOKEN_EXPIRES_AT_KEY)
+}
+
+export function getAccessToken() {
+  return safeStorageRead(ACCESS_TOKEN_KEY)
+}
+
+export function getRefreshToken() {
+  return safeStorageRead(REFRESH_TOKEN_KEY)
+}
+
+export function getTokenExpiresAt() {
+  const expiresAt = safeStorageRead(TOKEN_EXPIRES_AT_KEY)
+
+  if (!expiresAt) {
+    return null
+  }
+
+  const parsedExpiresAt = Number(expiresAt)
+  return Number.isFinite(parsedExpiresAt) ? parsedExpiresAt : null
+}
+
+export function isAccessTokenExpired(now = Date.now()) {
+  const expiresAt = getTokenExpiresAt()
+  return expiresAt !== null && expiresAt <= now
+}
+
+export function isAccessTokenExpiringSoon(now = Date.now(), skewMs = TOKEN_EXPIRY_SKEW_MS) {
+  const expiresAt = getTokenExpiresAt()
+  return expiresAt !== null && expiresAt <= now + skewMs
 }
 
 export function getAuthorizationHeader() {
   const accessToken = getAccessToken()
 
-  if (!accessToken || !storageAvailable()) {
+  if (!accessToken) {
     return null
   }
 
-  const tokenType = window.localStorage.getItem(TOKEN_TYPE_KEY) || 'Bearer'
+  const tokenType = safeStorageRead(TOKEN_TYPE_KEY) || 'Bearer'
   return `${tokenType} ${accessToken}`
+}
+
+export function getTokenExpiresAt() {
+  if (!storageAvailable()) {
+    return null
+  }
+
+  const rawExpiresAt = window.localStorage.getItem(TOKEN_EXPIRES_AT_KEY)
+  if (!rawExpiresAt) {
+    return null
+  }
+
+  const expiresAt = Number(rawExpiresAt)
+  return Number.isFinite(expiresAt) ? expiresAt : null
 }

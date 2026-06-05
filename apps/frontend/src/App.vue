@@ -8,7 +8,7 @@ import { useTheme } from './composables/useTheme'
 useTheme()
 
 const route = useRoute()
-const showAssistant = computed(() => !['landing', 'login', 'signup'].includes(String(route.name)))
+const showAssistant = computed(() => !['landing', 'login', 'signup', 'forgot-password'].includes(String(route.name)))
 </script>
 
 <template>

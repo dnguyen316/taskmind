@@ -4,10 +4,12 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '../../../components/ThemeToggle.vue'
 import { saveAuthTokens } from '../../../lib/authToken'
+import { useAuthStore } from '../../../stores/auth'
 import { login, signupEmail } from '../api/authApi'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const isSignup = computed(() => route.name === 'signup')
 const name = ref('')
 const email = ref('')
@@ -33,6 +35,7 @@ async function submit() {
         })
 
     saveAuthTokens(tokens)
+    authStore.markAuthenticated()
     const redirectTarget = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     await router.push(redirectTarget)
   } catch (error) {
