@@ -1,0 +1,2 @@
+# Keep the local vibe telemetry directory in the tree.
+# Runtime token ledgers are ignored by .gitignore.

@@ -31,6 +31,11 @@ that does not apply:
 6. **Record skipped checks.** If any targeted check or `make vibe-verify` is skipped,
    record the exact command that was skipped and the reason, such as documentation-only
    work, unavailable dependencies, time constraints, or an environment limitation.
+7. **Record AI token usage when available.** When the coding agent, provider UI, or API
+   reports token counts, append one sanitized event with
+   `make vibe-token-record -- <fields>` so milestone retros can compare usage by model,
+   workflow phase, skill, and agent role. See
+   [`docs/vibe-token-tracking.md`](vibe-token-tracking.md) for fields and examples.
 
 ## Token-saving inspection workflow
 
@@ -49,6 +54,9 @@ Use this inspection pattern before opening large files or scanning broad directo
 5. **Summarize before loading more.** Write down the current findings, assumptions, and
    remaining unknowns before opening additional files. Load more context only when the
    summary shows a concrete gap.
+6. **Use the token report as feedback.** If `make vibe-token-report -- --group-by workflow`
+   shows recurring high prompt-token usage for a workflow step, tighten that step with
+   more specific discovery commands or move repeated guidance into a skill.
 
 This workflow is intentionally small: it should reduce context waste while preserving the
 required closeout evidence for backend sessions across Core, Relay, and Nova.

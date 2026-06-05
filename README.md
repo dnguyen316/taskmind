@@ -57,6 +57,10 @@ make test
 # Required quality gate: Java tests + frontend typecheck
 make vibe-verify
 
+# Optional local AI coding telemetry
+make vibe-token-record -- --provider openai --model gpt-5.5 --prompt-tokens 1000
+make vibe-token-report
+
 # Start local infrastructure: Postgres, Redis, OpenSearch, and S3-compatible local storage
 make infra-up
 
@@ -119,6 +123,7 @@ and build-kit references stay aligned.
 - Backend implementation history: `docs/backend-feature-changelog.md`
 - Agent session hygiene, session-update rules, closeout order, and token-saving inspection
   workflow: `docs/agent-session-workflow.md`
+- Local vibe-coding token telemetry and reporting: `docs/vibe-token-tracking.md`
 
 ## Build-Kit Milestone Tracker
 
