@@ -19,7 +19,7 @@ const landingPage = ref<HTMLElement | null>(null)
 const heroVisual = ref<HTMLElement | null>(null)
 const heroReady = ref(false)
 let revealObserver: IntersectionObserver | undefined
-let revealFallback: ReturnType<typeof window.setTimeout> | undefined
+let revealFallback: number | undefined
 
 const features = [
   {

@@ -4,6 +4,7 @@ import Antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
 import { onSessionExpired } from './lib/authSession'
+import { pinia } from './stores/pinia'
 import 'ant-design-vue/dist/reset.css'
 import './style.css'
 
@@ -30,4 +31,4 @@ onSessionExpired(() => {
   })
 })
 
-app.use(Antd).use(router).mount('#app')
+app.use(pinia).use(Antd).use(router).mount('#app')
