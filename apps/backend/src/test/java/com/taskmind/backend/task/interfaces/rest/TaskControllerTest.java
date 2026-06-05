@@ -316,6 +316,7 @@ class TaskControllerTest {
             """;
 
         mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .header("X-Actor-User-Id", "99999999-9999-9999-9999-999999999998")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(addMemberPayload))
             .andExpect(status().isCreated());

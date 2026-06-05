@@ -41,4 +41,17 @@ public class SessionJpaEntity {
 
     protected SessionJpaEntity() {
     }
+
+    public SessionJpaEntity(UUID id, UserJpaEntity user, String refreshTokenHash, Instant expiresAt, Instant createdAt) {
+        this.id = id; this.user = user; this.refreshTokenHash = refreshTokenHash;
+        this.expiresAt = expiresAt; this.createdAt = createdAt;
+    }
+
+    public UserJpaEntity getUser() { return user; }
+    public String getRefreshTokenHash() { return refreshTokenHash; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public Instant getRevokedAt() { return revokedAt; }
+    public boolean isUsableAt(Instant now) { return revokedAt == null && expiresAt.isAfter(now); }
+    public void rotate(String refreshTokenHash, Instant expiresAt) { this.refreshTokenHash = refreshTokenHash; this.expiresAt = expiresAt; }
+    public void revoke(Instant now) { this.revokedAt = now; }
 }

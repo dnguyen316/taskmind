@@ -35,4 +35,10 @@ public class UserRoleJpaEntity {
 
     protected UserRoleJpaEntity() {
     }
+
+    public UserRoleJpaEntity(UserJpaEntity user, RoleJpaEntity role, Instant assignedAt) {
+        this.id = new UserRoleJpaId(user.getId(), role.getId()); this.user = user; this.role = role; this.assignedAt = assignedAt;
+    }
+
+    public RoleJpaEntity getRole() { return role; }
 }

@@ -10,20 +10,20 @@ CREATE TABLE users (
     CONSTRAINT chk_users_status CHECK (status IN ('PENDING_VERIFICATION', 'ACTIVE', 'LOCKED', 'DISABLED'))
 );
 
-CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email) WHERE primary_email IS NOT NULL;
-CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone) WHERE primary_phone IS NOT NULL;
+CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email);
+CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone);
 
 CREATE TABLE user_identities (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     type VARCHAR(20) NOT NULL,
-    value VARCHAR(320) NOT NULL,
+    identity_value VARCHAR(320) NOT NULL,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT fk_user_identities_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT chk_user_identities_type CHECK (type IN ('EMAIL', 'PHONE')),
-    CONSTRAINT uq_user_identities_type_value UNIQUE (type, value)
+    CONSTRAINT uq_user_identities_type_value UNIQUE (type, identity_value)
 );
 
 CREATE INDEX idx_user_identities_user_id ON user_identities (user_id);

@@ -27,7 +27,7 @@ public class UserIdentityJpaEntity {
     @Column(nullable = false, length = 20)
     private AuthJpaEnums.IdentityType type;
 
-    @Column(nullable = false, length = 320)
+    @Column(name = "identity_value", nullable = false, length = 320)
     private String value;
 
     @Column(name = "is_verified", nullable = false)
@@ -41,4 +41,12 @@ public class UserIdentityJpaEntity {
 
     protected UserIdentityJpaEntity() {
     }
+
+    public UserIdentityJpaEntity(UUID id, UserJpaEntity user, AuthJpaEnums.IdentityType type, String value, Instant now) {
+        this.id = id; this.user = user; this.type = type; this.value = value; this.createdAt = now;
+    }
+
+    public UserJpaEntity getUser() { return user; }
+    public boolean isVerified() { return verified; }
+    public void verify(Instant now) { this.verified = true; this.verifiedAt = now; }
 }

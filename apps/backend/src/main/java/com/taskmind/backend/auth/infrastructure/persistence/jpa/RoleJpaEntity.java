@@ -26,4 +26,7 @@ public class RoleJpaEntity {
 
     protected RoleJpaEntity() {
     }
+
+    public UUID getId() { return id; }
+    public String getName() { return name; }
 }

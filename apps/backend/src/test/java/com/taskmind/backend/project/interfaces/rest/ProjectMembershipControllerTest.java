@@ -82,10 +82,10 @@ class ProjectMembershipControllerTest {
         var projectPayload = """
             {
               "name": "Membership test project",
-              "key": "MTP",
+              "key": "M%s",
               "ownerUserId": "%s"
             }
-            """.formatted(OWNER_ID);
+            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 7).toUpperCase(), OWNER_ID);
 
         var createProjectResponse = mockMvc.perform(post("/v1/projects")
                 .contentType(MediaType.APPLICATION_JSON)

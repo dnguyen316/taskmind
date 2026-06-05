@@ -7,6 +7,84 @@ info:
 servers:
   - url: http://localhost:8080
 paths:
+  /v1/auth/signup/email:
+    post:
+      summary: Create a pending email user and dispatch an OTP
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SignupEmailRequest'}
+      responses:
+        '202': {description: Pending user created}
+  /v1/auth/verify:
+    post:
+      summary: Verify signup OTP and activate the user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VerifyOtpRequest'}
+      responses:
+        '200':
+          description: User activated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthTokens'}
+  /v1/auth/login:
+    post:
+      summary: Authenticate an active user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthTokens'}
+  /v1/auth/token/refresh:
+    post:
+      summary: Rotate a refresh-token session
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshTokenRequest'}
+      responses:
+        '200':
+          description: Session rotated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthTokens'}
+  /v1/auth/logout:
+    post:
+      summary: Revoke a refresh-token session
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshTokenRequest'}
+      responses:
+        '204': {description: Session revoked}
+  /v1/auth/me:
+    get:
+      summary: Return the authenticated user
+      tags: [Auth]
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthUser'}
   /v1/tasks:
     post:
       summary: Create a task
@@ -313,6 +391,11 @@ paths:
           description: Project not found
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     TaskIdPath:
       in: path
@@ -353,6 +436,45 @@ components:
             additionalProperties: true
 
   schemas:
+    SignupEmailRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password, minLength: 8, maxLength: 128}
+        displayName: {type: string, minLength: 2, maxLength: 80}
+    VerifyOtpRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email: {type: string, format: email}
+        otp: {type: string}
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password}
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string}
+    AuthTokens:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresInSeconds]
+      properties:
+        accessToken: {type: string}
+        refreshToken: {type: string}
+        tokenType: {type: string, example: Bearer}
+        expiresInSeconds: {type: integer, format: int64}
+    AuthUser:
+      type: object
+      required: [userId, email, displayName]
+      properties:
+        userId: {type: string, format: uuid}
+        email: {type: string, format: email}
+        displayName: {type: string}
     Project:
       type: object
       required:
