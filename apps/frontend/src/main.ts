@@ -3,6 +3,7 @@ import type { ComponentPublicInstance } from 'vue'
 import Antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
+import { pinia } from './stores/pinia'
 import 'ant-design-vue/dist/reset.css'
 import './style.css'
 
@@ -16,4 +17,4 @@ app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | n
   })
 }
 
-app.use(Antd).use(router).mount('#app')
+app.use(pinia).use(Antd).use(router).mount('#app')

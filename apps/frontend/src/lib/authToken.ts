@@ -57,3 +57,17 @@ export function getAuthorizationHeader() {
   const tokenType = window.localStorage.getItem(TOKEN_TYPE_KEY) || 'Bearer'
   return `${tokenType} ${accessToken}`
 }
+
+export function getTokenExpiresAt() {
+  if (!storageAvailable()) {
+    return null
+  }
+
+  const rawExpiresAt = window.localStorage.getItem(TOKEN_EXPIRES_AT_KEY)
+  if (!rawExpiresAt) {
+    return null
+  }
+
+  const expiresAt = Number(rawExpiresAt)
+  return Number.isFinite(expiresAt) ? expiresAt : null
+}
