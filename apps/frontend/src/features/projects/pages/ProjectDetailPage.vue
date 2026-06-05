@@ -9,12 +9,6 @@ const router = useRouter()
 const projectId = computed(() => String(route.params.id ?? '').trim())
 const { selectedProject, members, loading, saving, errorMessage, fetchProject, fetchMembers, addMember, removeMember } = useProjects()
 
-const memberItems = computed(() =>
-  members.value.map((member) => ({
-    userId: typeof member.userId === 'string' ? member.userId : member.id,
-    role: typeof member.role === 'string' ? member.role : 'MEMBER',
-  })),
-)
 
 async function loadProject() {
   if (!projectId.value) {
@@ -25,7 +19,7 @@ async function loadProject() {
   await fetchMembers(projectId.value)
 }
 
-async function handleAddMember(payload: { userId: string; role: string }) {
+async function handleAddMember(payload: { userId: string; role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' }) {
   await addMember(projectId.value, payload)
 }
 
@@ -52,13 +46,13 @@ watch(projectId, loadProject)
           <a-descriptions bordered :column="1" size="small" title="Metadata">
             <a-descriptions-item label="Name">{{ selectedProject?.name || '—' }}</a-descriptions-item>
             <a-descriptions-item label="Owner">{{ selectedProject?.ownerUserId || '—' }}</a-descriptions-item>
-            <a-descriptions-item label="Status">{{ selectedProject?.archived || selectedProject?.status === 'ARCHIVED' ? 'ARCHIVED' : 'ACTIVE' }}</a-descriptions-item>
+            <a-descriptions-item label="Status">{{ selectedProject?.archivedAt ? 'ARCHIVED' : 'ACTIVE' }}</a-descriptions-item>
             <a-descriptions-item label="Description">{{ selectedProject?.description || 'No description' }}</a-descriptions-item>
           </a-descriptions>
         </a-spin>
 
         <ProjectMembersPanel
-          :members="memberItems"
+          :members="members"
           :loading="loading"
           :saving="saving"
           :error-message="errorMessage"

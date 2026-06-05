@@ -1,62 +1,145 @@
 import { apiClient } from '../../../lib/apiClient'
+import type {
+  AddProjectMemberPayload,
+  CreateProjectPayload,
+  Project,
+  ProjectMembership,
+  ProjectMembershipRole,
+  UpdateProjectPayload,
+} from '../types'
 
-export interface ProjectRecord {
-  id: string
-  name?: string
-  key?: string
-  description?: string | null
-  ownerUserId?: string | null
-  archived?: boolean | null
-  archivedAt?: string | null
-  status?: string | null
-  [key: string]: unknown
+interface FetchProjectsOptions {
+  includeArchived?: boolean
 }
 
-export interface MemberRecord {
-  id: string
-  userId?: string
-  role?: string
-  [key: string]: unknown
-}
-
-export async function fetchProjects({ includeArchived = false }: { includeArchived?: boolean } = {}) {
-  const response = await apiClient.get<ProjectRecord[]>('/v1/projects', {
+export async function listProjects({ includeArchived = false }: FetchProjectsOptions = {}) {
+  const response = await apiClient.get<unknown>('/v1/projects', {
     params: { includeArchived },
   })
 
-  return response.data
+  return adaptProjectListResponse(response.data)
 }
 
-export async function fetchProject(projectId: string) {
-  const response = await apiClient.get<ProjectRecord>(`/v1/projects/${projectId}`)
-  return response.data
+export async function getProject(projectId: string) {
+  const response = await apiClient.get<unknown>(`/v1/projects/${projectId}`)
+  return adaptProjectResponse(response.data)
 }
 
-export async function submitProject(payload: Record<string, unknown>) {
-  const response = await apiClient.post<ProjectRecord>('/v1/projects', payload)
-  return response.data
+export async function createProject(payload: CreateProjectPayload) {
+  const response = await apiClient.post<unknown>('/v1/projects', payload)
+  return adaptProjectResponse(response.data)
 }
 
-export async function saveProject(projectId: string, payload: Record<string, unknown>) {
-  const response = await apiClient.patch<ProjectRecord>(`/v1/projects/${projectId}`, payload)
-  return response.data
+export async function updateProject(projectId: string, payload: UpdateProjectPayload) {
+  const response = await apiClient.patch<unknown>(`/v1/projects/${projectId}`, payload)
+  return adaptProjectResponse(response.data)
 }
 
-export async function archiveProjectById(projectId: string) {
-  const response = await apiClient.patch<ProjectRecord>(`/v1/projects/${projectId}/archive`)
-  return response.data
+export async function archiveProject(projectId: string) {
+  const response = await apiClient.patch<unknown>(`/v1/projects/${projectId}/archive`)
+  return adaptProjectResponse(response.data)
 }
 
-export async function fetchMembers(projectId: string) {
-  const response = await apiClient.get<MemberRecord[]>(`/v1/projects/${projectId}/members`)
-  return response.data
+export async function listProjectMembers(projectId: string) {
+  const response = await apiClient.get<unknown>(`/v1/projects/${projectId}/members`)
+  return adaptProjectMembershipListResponse(response.data)
 }
 
-export async function addMember(projectId: string, payload: Record<string, unknown>) {
-  const response = await apiClient.post<MemberRecord>(`/v1/projects/${projectId}/members`, payload)
-  return response.data
+export async function addProjectMember(projectId: string, payload: AddProjectMemberPayload) {
+  const response = await apiClient.post<unknown>(`/v1/projects/${projectId}/members`, payload)
+  return adaptProjectMembershipResponse(response.data)
 }
 
-export async function removeMember(projectId: string, memberId: string) {
-  await apiClient.delete(`/v1/projects/${projectId}/members/${memberId}`)
+export async function removeProjectMember(projectId: string, userId: string) {
+  await apiClient.delete(`/v1/projects/${projectId}/members/${userId}`)
+}
+
+function adaptProjectListResponse(data: unknown): Project[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid project list response.')
+  }
+
+  return data.map(adaptProjectResponse)
+}
+
+function adaptProjectResponse(data: unknown): Project {
+  if (!isObject(data)) {
+    throw new Error('Invalid project response.')
+  }
+
+  const id = readRequiredString(data, 'id', 'project')
+  const name = readRequiredString(data, 'name', 'project')
+  const key = readRequiredString(data, 'key', 'project')
+  const ownerUserId = readRequiredString(data, 'ownerUserId', 'project')
+  const createdAt = readRequiredString(data, 'createdAt', 'project')
+  const updatedAt = readRequiredString(data, 'updatedAt', 'project')
+
+  return {
+    id,
+    name,
+    key,
+    description: readNullableString(data, 'description'),
+    ownerUserId,
+    archivedAt: readNullableString(data, 'archivedAt'),
+    createdAt,
+    updatedAt,
+  }
+}
+
+function adaptProjectMembershipListResponse(data: unknown): ProjectMembership[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid project membership list response.')
+  }
+
+  return data.map(adaptProjectMembershipResponse)
+}
+
+function adaptProjectMembershipResponse(data: unknown): ProjectMembership {
+  if (!isObject(data)) {
+    throw new Error('Invalid project membership response.')
+  }
+
+  const role = readRequiredString(data, 'role', 'project membership')
+
+  if (!isProjectMembershipRole(role)) {
+    throw new Error('Invalid project membership role response.')
+  }
+
+  return {
+    projectId: readRequiredString(data, 'projectId', 'project membership'),
+    userId: readRequiredString(data, 'userId', 'project membership'),
+    role,
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function readRequiredString(data: Record<string, unknown>, key: string, resourceName: string) {
+  const value = data[key]
+
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`Invalid ${resourceName} response: missing ${key}.`)
+  }
+
+  return value
+}
+
+function readNullableString(data: Record<string, unknown>, key: string) {
+  const value = data[key]
+
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid response: ${key} must be a string or null.`)
+  }
+
+  return value
+}
+
+function isProjectMembershipRole(role: string): role is ProjectMembershipRole {
+  return ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].includes(role)
 }

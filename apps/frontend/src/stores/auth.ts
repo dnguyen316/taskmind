@@ -2,18 +2,18 @@ import { defineStore } from 'pinia'
 import { clearAuthTokens, getStoredAuthSession, saveAuthTokens } from '../lib/authToken'
 import { login, signupEmail } from '../features/auth/api/authApi'
 import type { AuthTokensResponse, LoginPayload, SignupEmailPayload } from '../features/auth/api/authApi'
+import type { StoredAuthSession } from '../lib/authToken'
+
+export const E2E_AUTH_CREDENTIALS = {
+  email: 'superadmin@taskmind.local',
+  password: '1',
+  otp: '1',
+} as const
 
 type AuthMode = 'login' | 'signup'
 
-interface AuthSession {
-  accessToken: string
-  refreshToken: string
-  tokenType: string
-  expiresAt: number
-}
-
 interface AuthState {
-  session: AuthSession | null
+  session: StoredAuthSession | null
   initialized: boolean
   isSubmitting: boolean
   errorMessage: string
@@ -38,6 +38,14 @@ export const useAuthStore = defineStore('auth', {
       return this.session
     },
 
+    async ensureInitialized() {
+      if (this.initialized) {
+        return
+      }
+
+      this.initializeSession()
+    },
+
     async authenticate(mode: AuthMode, payload: LoginPayload | SignupEmailPayload) {
       this.errorMessage = ''
       this.isSubmitting = true
@@ -56,8 +64,7 @@ export const useAuthStore = defineStore('auth', {
 
     logout() {
       clearAuthTokens()
-      this.session = null
-      this.initialized = true
+      this.markUnauthenticated()
       this.errorMessage = ''
     },
 
@@ -69,6 +76,16 @@ export const useAuthStore = defineStore('auth', {
         tokenType: tokens.tokenType || 'Bearer',
         expiresAt: Date.now() + tokens.expiresInSeconds * 1000,
       }
+      this.initialized = true
+    },
+
+    markAuthenticated() {
+      this.session = getStoredAuthSession()
+      this.initialized = true
+    },
+
+    markUnauthenticated() {
+      this.session = null
       this.initialized = true
     },
   },

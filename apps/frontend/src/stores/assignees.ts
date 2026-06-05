@@ -1,10 +1,10 @@
 import { reactive } from 'vue'
 import { defineStore } from 'pinia'
 import * as projectsApi from '../features/projects/api/projectsApi'
-import type { MemberRecord } from '../features/projects/api/projectsApi'
+import type { AddProjectMemberPayload, ProjectMembership } from '../features/projects/types'
 
 export const useAssigneesStore = defineStore('assignees', () => {
-  const membersByProjectId = reactive<Record<string, MemberRecord[]>>({})
+  const membersByProjectId = reactive<Record<string, ProjectMembership[]>>({})
   const loadingByProjectId = reactive<Record<string, boolean>>({})
   const savingByProjectId = reactive<Record<string, boolean>>({})
   const messages = reactive({ error: '', success: '' })
@@ -22,8 +22,8 @@ export const useAssigneesStore = defineStore('assignees', () => {
     messages.error = ''
 
     try {
-      const response = await projectsApi.fetchMembers(projectId)
-      membersByProjectId[projectId] = Array.isArray(response) ? response : []
+      const response = await projectsApi.listProjectMembers(projectId)
+      membersByProjectId[projectId] = response
       return membersByProjectId[projectId]
     } catch (error: unknown) {
       messages.error = error instanceof Error ? error.message : 'Failed to load members.'
@@ -34,13 +34,13 @@ export const useAssigneesStore = defineStore('assignees', () => {
     }
   }
 
-  async function addMember(projectId: string, payload: Record<string, unknown>) {
+  async function addMember(projectId: string, payload: AddProjectMemberPayload) {
     savingByProjectId[projectId] = true
     messages.error = ''
     messages.success = ''
 
     try {
-      const created = await projectsApi.addMember(projectId, payload)
+      const created = await projectsApi.addProjectMember(projectId, payload)
       membersByProjectId[projectId] = [...membersForProject(projectId), created]
       messages.success = 'Member added.'
       return created
@@ -57,10 +57,10 @@ export const useAssigneesStore = defineStore('assignees', () => {
     messages.error = ''
     messages.success = ''
     const originalMembers = [...membersForProject(projectId)]
-    membersByProjectId[projectId] = membersForProject(projectId).filter((member) => getMemberId(member) !== memberId)
+    membersByProjectId[projectId] = membersForProject(projectId).filter((member) => member.userId !== memberId)
 
     try {
-      await projectsApi.removeMember(projectId, memberId)
+      await projectsApi.removeProjectMember(projectId, memberId)
       messages.success = 'Member removed.'
     } catch (error: unknown) {
       membersByProjectId[projectId] = originalMembers
@@ -82,7 +82,3 @@ export const useAssigneesStore = defineStore('assignees', () => {
     removeMember,
   }
 })
-
-function getMemberId(member: MemberRecord) {
-  return typeof member.userId === 'string' ? member.userId : member.id
-}

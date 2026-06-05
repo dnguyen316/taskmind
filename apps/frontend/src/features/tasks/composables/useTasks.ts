@@ -2,7 +2,8 @@ import { computed, reactive, ref } from 'vue'
 import { useProjectsStore } from '../../../stores/projects'
 import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
 import { DEFAULT_USER_ID } from '../constants/taskConstants'
-import type { CreateTaskPayload, Project, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
+import type { Project } from '../../projects/types'
+import type { CreateTaskPayload, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
 import { toTimestamp } from '../utils/taskDates'
 
 export function useTasks() {
@@ -11,13 +12,7 @@ export function useTasks() {
   const errorMessage = ref('')
   const tasks = ref<Task[]>([])
   const projectsStore = useProjectsStore()
-  const projects = computed<Project[]>(() =>
-    projectsStore.projects.map((project) => ({
-      id: project.id,
-      name: typeof project.name === 'string' ? project.name : project.id,
-      isActive: !project.archived && project.status !== 'ARCHIVED',
-    })),
-  )
+  const projects = computed<Project[]>(() => projectsStore.projects.filter((project) => !project.archivedAt))
   const activeProjectId = ref('')
 
   const filters = reactive<TaskFilters>({
@@ -32,13 +27,11 @@ export function useTasks() {
     errorMessage.value = ''
 
     try {
-      const response = await listTasks({
+      tasks.value = await listTasks({
         userId: DEFAULT_USER_ID,
         status: filters.status,
         overdueOnly: filters.overdueOnly,
       })
-
-      tasks.value = Array.isArray(response) ? response : []
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load tasks.'
     } finally {
@@ -53,7 +46,7 @@ export function useTasks() {
       await projectsStore.fetchProjects()
 
       if (!activeProjectId.value && projects.value.length > 0) {
-        const currentProject = projects.value.find((project) => project.isActive) ?? projects.value[0]
+        const currentProject = projects.value.find((project) => !project.archivedAt) ?? projects.value[0]
         activeProjectId.value = currentProject?.id ?? ''
       }
     } catch (error: unknown) {

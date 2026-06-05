@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import type { CreateProjectPayload } from '../types'
 import ProjectCreateForm from '../components/ProjectCreateForm.vue'
 import { useProjects } from '../composables/useProjects'
 
@@ -19,13 +20,13 @@ const {
 } = useProjects()
 
 const successSignal = ref(0)
-const activeProjects = computed(() => projects.value.filter((project) => !project.archived && project.status !== 'ARCHIVED'))
+const activeProjects = computed(() => projects.value.filter((project) => !project.archivedAt))
 
 onMounted(() => {
   void fetchProjects({ force: true })
 })
 
-async function createProject(payload: Record<string, unknown>) {
+async function createProject(payload: CreateProjectPayload) {
   await submitProject(payload)
   successSignal.value += 1
 }

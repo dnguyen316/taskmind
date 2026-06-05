@@ -1,15 +1,15 @@
 import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import * as projectsApi from '../features/projects/api/projectsApi'
-import type { ProjectRecord } from '../features/projects/api/projectsApi'
+import type { CreateProjectPayload, Project, UpdateProjectPayload } from '../features/projects/types'
 
 export interface ProjectFilters {
   includeArchived: boolean
 }
 
 export const useProjectsStore = defineStore('projects', () => {
-  const projects = reactive<ProjectRecord[]>([])
-  const selectedProjects = reactive<Record<string, ProjectRecord>>({})
+  const projects = reactive<Project[]>([])
+  const selectedProjects = reactive<Record<string, Project>>({})
   const selectedProjectRef = reactive<{ id: string }>({ id: '' })
   const filters = reactive<ProjectFilters>({ includeArchived: false })
   const loading = reactive({ list: false, detail: false })
@@ -18,8 +18,8 @@ export const useProjectsStore = defineStore('projects', () => {
   const loadedLists = reactive<Record<string, boolean>>({})
 
   const selectedProject = computed(() => (selectedProjectRef.id ? selectedProjects[selectedProjectRef.id] ?? null : null))
-  const activeProjects = computed(() => projects.filter((project) => !isArchived(project)))
-  const archivedProjects = computed(() => projects.filter((project) => isArchived(project)))
+  const activeProjects = computed(() => projects.filter((project) => !project.archivedAt))
+  const archivedProjects = computed(() => projects.filter((project) => Boolean(project.archivedAt)))
   const activeProjectsCount = computed(() => activeProjects.value.length)
   const archivedProjectsCount = computed(() => archivedProjects.value.length)
 
@@ -27,7 +27,7 @@ export const useProjectsStore = defineStore('projects', () => {
     return includeArchived ? 'with-archived' : 'active-only'
   }
 
-  function setProjects(nextProjects: ProjectRecord[]) {
+  function setProjects(nextProjects: Project[]) {
     projects.splice(0, projects.length, ...nextProjects)
 
     for (const project of nextProjects) {
@@ -35,7 +35,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  function mergeProject(projectId: string, changes: Partial<ProjectRecord>) {
+  function mergeProject(projectId: string, changes: Partial<Project>) {
     const targetIndex = projects.findIndex((project) => project.id === projectId)
 
     if (targetIndex >= 0) {
@@ -59,8 +59,8 @@ export const useProjectsStore = defineStore('projects', () => {
     messages.error = ''
 
     try {
-      const response = await projectsApi.fetchProjects({ includeArchived })
-      setProjects(Array.isArray(response) ? response : [])
+      const response = await projectsApi.listProjects({ includeArchived })
+      setProjects(response)
       loadedLists[key] = true
       return projects
     } catch (error: unknown) {
@@ -81,13 +81,11 @@ export const useProjectsStore = defineStore('projects', () => {
     messages.error = ''
 
     try {
-      const project = await projectsApi.fetchProject(projectId)
-      if (project) {
-        selectedProjects[projectId] = project
-        selectedProjectRef.id = projectId
-        mergeProject(projectId, project)
-      }
-      return project ?? null
+      const project = await projectsApi.getProject(projectId)
+      selectedProjects[projectId] = project
+      selectedProjectRef.id = projectId
+      mergeProject(projectId, project)
+      return project
     } catch (error: unknown) {
       messages.error = error instanceof Error ? error.message : 'Failed to load project.'
       return null
@@ -96,13 +94,13 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function submitProject(payload: Record<string, unknown>) {
+  async function submitProject(payload: CreateProjectPayload) {
     saving.project = true
     messages.error = ''
     messages.success = ''
 
     try {
-      const created = await projectsApi.submitProject(payload)
+      const created = await projectsApi.createProject(payload)
       projects.unshift(created)
       selectedProjects[created.id] = created
       selectedProjectRef.id = created.id
@@ -117,7 +115,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function saveProject(projectId: string, payload: Record<string, unknown>) {
+  async function saveProject(projectId: string, payload: UpdateProjectPayload) {
     saving.project = true
     messages.error = ''
     messages.success = ''
@@ -127,7 +125,7 @@ export const useProjectsStore = defineStore('projects', () => {
     mergeProject(projectId, payload)
 
     try {
-      const updated = await projectsApi.saveProject(projectId, payload)
+      const updated = await projectsApi.updateProject(projectId, payload)
       mergeProject(projectId, updated)
       messages.success = 'Project saved.'
       return updated
@@ -149,12 +147,13 @@ export const useProjectsStore = defineStore('projects', () => {
     messages.success = ''
     const originalProjects = projects.map((project) => ({ ...project }))
     const originalSelectedProject = selectedProjects[projectId] ? { ...selectedProjects[projectId] } : undefined
+    const archivedAt = new Date().toISOString()
 
-    mergeProject(projectId, { archived: true, status: 'ARCHIVED' })
+    mergeProject(projectId, { archivedAt })
 
     try {
-      const updated = await projectsApi.archiveProjectById(projectId)
-      mergeProject(projectId, updated ?? { archived: true, status: 'ARCHIVED' })
+      const updated = await projectsApi.archiveProject(projectId)
+      mergeProject(projectId, updated)
       messages.success = 'Project archived.'
     } catch (error: unknown) {
       setProjects(originalProjects)
@@ -188,7 +187,3 @@ export const useProjectsStore = defineStore('projects', () => {
     mergeProject,
   }
 })
-
-function isArchived(project: ProjectRecord) {
-  return Boolean(project.archived) || Boolean(project.archivedAt) || project.status === 'ARCHIVED'
-}
