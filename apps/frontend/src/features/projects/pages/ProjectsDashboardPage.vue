@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { CreateProjectPayload } from '../types'
+import type { CreateProjectPayload, Project } from '../types'
 import ProjectCreateForm from '../components/ProjectCreateForm.vue'
 import { useProjects } from '../composables/useProjects'
 
@@ -20,7 +20,7 @@ const {
 } = useProjects()
 
 const successSignal = ref(0)
-const activeProjects = computed(() => projects.value.filter((project) => !project.archivedAt))
+const activeProjects = computed<Project[]>(() => projects.value.filter((project) => !project.archivedAt))
 
 onMounted(() => {
   void fetchProjects({ force: true })
@@ -55,7 +55,7 @@ async function createProject(payload: CreateProjectPayload) {
       <a-spin :spinning="loading">
         <a-empty v-if="activeProjects.length === 0" description="No active projects." />
         <a-list v-else item-layout="horizontal" :data-source="activeProjects">
-          <template #renderItem="{ item }">
+          <template #renderItem="{ item }: { item: Project }">
             <a-list-item>
               <template #actions>
                 <a-button type="link" @click="router.push({ name: 'project-detail', params: { id: item.id } })">View</a-button>

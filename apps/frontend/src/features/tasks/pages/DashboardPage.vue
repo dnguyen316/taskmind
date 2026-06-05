@@ -41,7 +41,40 @@ const realTaskMetrics = computed(() => {
   }
 })
 
-const mockOnlyDashboardPreview = {
+interface DashboardQuickAction {
+  label: string
+  milestone: string
+}
+
+interface DashboardProjectStatus {
+  name: string
+  status: 'On track' | 'At risk' | 'Planning'
+  progress: number
+  color: string
+}
+
+interface DashboardRecentActivity {
+  initials: string
+  name: string
+  action: string
+  time: string
+  color: string
+}
+
+interface DashboardPreview {
+  quickActions: DashboardQuickAction[]
+  weekdays: string[]
+  projectStatus: DashboardProjectStatus[]
+  recentActivity: DashboardRecentActivity[]
+}
+
+interface AnalyticsPreviewInsight {
+  title: string
+  description: string
+  action: string
+}
+
+const mockOnlyDashboardPreview: DashboardPreview = {
   quickActions: [
     { label: 'Show blockers', milestone: 'M12' },
     { label: 'Rebalance workload', milestone: 'M12' },
@@ -67,7 +100,7 @@ const mockOnlyDashboardPreview = {
   ],
 }
 
-const analyticsPreviewInsights = computed(() => {
+const analyticsPreviewInsights = computed<AnalyticsPreviewInsight[]>(() => {
   const overdueTasks = visibleTasks.value.filter((task: Task) => isTaskOverdue(task))
   const doneThisSprint = realTaskMetrics.value.completed
 
@@ -92,7 +125,7 @@ const analyticsPreviewInsights = computed(() => {
   ]
 })
 
-const myTasks = computed(() => visibleTasks.value.slice(0, 6))
+const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
 
 onMounted(async () => {
   await fetchProjects()
@@ -146,7 +179,7 @@ onMounted(async () => {
         <a-card class="tasks-card" :loading="loading" title="My Tasks">
           <template #extra><RouterLink to="/tasks">View all</RouterLink></template>
           <a-list :data-source="myTasks">
-            <template #renderItem="{ item }">
+            <template #renderItem="{ item }: { item: Task }">
               <a-list-item>
                 <a-list-item-meta :title="item.title" :description="`${item.projectId ?? 'PRJ'} · ${item.id}`" />
                 <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>

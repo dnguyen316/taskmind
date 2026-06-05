@@ -27,7 +27,7 @@ const schema = yup.object({
 
 function onAdd(values: GenericObject, { resetForm }: SubmissionContext) {
   emit('addMember', { userId: String(values.userId ?? '').trim(), role: String(values.role ?? '').trim() as AddProjectMemberPayload['role'] })
-  resetForm({ values: { userId: '', role: '' } })
+  resetForm({ values: { userId: '', role: 'MEMBER' } })
 }
 </script>
 
@@ -60,7 +60,7 @@ function onAdd(values: GenericObject, { resetForm }: SubmissionContext) {
     <a-spin :spinning="props.loading" class="members-spin">
       <a-empty v-if="!props.loading && props.members.length === 0" description="No members yet." />
       <a-list v-else :data-source="props.members" size="small">
-        <template #renderItem="{ item }">
+        <template #renderItem="{ item }: { item: ProjectMembership }">
           <a-list-item>
             <a-space>
               <span><strong>{{ item.userId }}</strong></span>
