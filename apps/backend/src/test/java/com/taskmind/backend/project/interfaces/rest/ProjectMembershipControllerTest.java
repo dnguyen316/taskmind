@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 class ProjectMembershipControllerTest {
 
     private static final String OWNER_ID = "11111111-1111-1111-1111-111111111111";

@@ -1,7 +1,6 @@
 package com.taskmind.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taskmind.backend.auth.infrastructure.e2e.AuthE2eBypassFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -14,16 +13,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtClaimAuthenticationConverter jwtConverter,
-            ObjectMapper objectMapper, AuthE2eBypassFilter e2eBypassFilter) throws Exception {
+            ObjectMapper objectMapper) throws Exception {
         return http
-                .addFilterBefore(e2eBypassFilter, BearerTokenAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth

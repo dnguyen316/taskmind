@@ -27,7 +27,7 @@ public class UserIdentityJpaEntity {
     @Column(nullable = false, length = 20)
     private AuthJpaEnums.IdentityType type;
 
-    @Column(name = "identity_value", nullable = false, length = 320)
+    @Column(nullable = false, length = 320)
     private String value;
 
     @Column(name = "is_verified", nullable = false)

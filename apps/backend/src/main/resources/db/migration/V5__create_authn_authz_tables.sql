@@ -17,13 +17,13 @@ CREATE TABLE user_identities (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     type VARCHAR(20) NOT NULL,
-    identity_value VARCHAR(320) NOT NULL,
+    value VARCHAR(320) NOT NULL,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT fk_user_identities_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT chk_user_identities_type CHECK (type IN ('EMAIL', 'PHONE')),
-    CONSTRAINT uq_user_identities_type_value UNIQUE (type, identity_value)
+    CONSTRAINT uq_user_identities_type_value UNIQUE (type, value)
 );
 
 CREATE INDEX idx_user_identities_user_id ON user_identities (user_id);
