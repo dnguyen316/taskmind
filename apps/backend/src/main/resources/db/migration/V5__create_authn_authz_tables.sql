@@ -10,8 +10,8 @@ CREATE TABLE users (
     CONSTRAINT chk_users_status CHECK (status IN ('PENDING_VERIFICATION', 'ACTIVE', 'LOCKED', 'DISABLED'))
 );
 
-CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email) WHERE primary_email IS NOT NULL;
-CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone) WHERE primary_phone IS NOT NULL;
+CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email);
+CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone);
 
 CREATE TABLE user_identities (
     id UUID PRIMARY KEY,

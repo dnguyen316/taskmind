@@ -312,6 +312,42 @@ paths:
         '404':
           description: Project not found
 
+  /v1/tasks/{id}/children:
+    get:
+      summary: List direct child tasks
+      tags: [Tasks]
+      responses:
+        '200': {description: Child tasks}
+  /v1/tasks/{id}/ancestors:
+    get:
+      summary: List task ancestors
+      tags: [Tasks]
+      responses:
+        '200': {description: Ancestor tasks}
+  /v1/tasks/{id}/links:
+    get:
+      summary: List cross-task links
+      tags: [Tasks]
+      responses:
+        '200': {description: Task links}
+    post:
+      summary: Create a cross-task link
+      tags: [Tasks]
+      responses:
+        '201': {description: Task link created}
+  /v1/task-links/{linkId}:
+    delete:
+      summary: Delete a cross-task link
+      tags: [Tasks]
+      responses:
+        '204': {description: Task link deleted}
+  /v1/projects/{id}/releases:
+    get:
+      summary: Summarize project releases
+      tags: [Projects]
+      responses:
+        '200': {description: Release summary}
+
 components:
   parameters:
     TaskIdPath:
@@ -483,6 +519,28 @@ components:
           type: string
           format: uuid
           nullable: true
+        taskKey:
+          type: string
+          nullable: true
+        assigneeId:
+          type: string
+          format: uuid
+          nullable: true
+        parentTaskId:
+          type: string
+          format: uuid
+          nullable: true
+        taskLevel:
+          $ref: '#/components/schemas/TaskLevel'
+        taskType:
+          $ref: '#/components/schemas/TaskType'
+        storyPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+        releaseVersion:
+          type: string
+          nullable: true
         title:
           type: string
         description:
@@ -535,6 +593,25 @@ components:
           type: string
           format: uuid
           nullable: true
+        assigneeId:
+          type: string
+          format: uuid
+          nullable: true
+        parentTaskId:
+          type: string
+          format: uuid
+          nullable: true
+        taskLevel:
+          $ref: '#/components/schemas/TaskLevel'
+        taskType:
+          $ref: '#/components/schemas/TaskType'
+        storyPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+        releaseVersion:
+          type: string
+          nullable: true
         title:
           type: string
           minLength: 1
@@ -569,9 +646,32 @@ components:
     UpdateTaskRequest:
       type: object
       properties:
+        version:
+          type: integer
+          format: int64
+          nullable: true
         projectId:
           type: string
           format: uuid
+          nullable: true
+        assigneeId:
+          type: string
+          format: uuid
+          nullable: true
+        parentTaskId:
+          type: string
+          format: uuid
+          nullable: true
+        taskLevel:
+          $ref: '#/components/schemas/TaskLevel'
+        taskType:
+          $ref: '#/components/schemas/TaskType'
+        storyPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+        releaseVersion:
+          type: string
           nullable: true
         title:
           type: string
@@ -644,3 +744,13 @@ components:
         - LOW
         - MEDIUM
         - HIGH
+
+    TaskLevel:
+      type: string
+      enum: [EPIC, STORY, TASK, SUBTASK]
+    TaskType:
+      type: string
+      enum: [EPIC, STORY, TASK, BUG, SUBTASK, MILESTONE]
+    TaskLinkType:
+      type: string
+      enum: [BLOCKS, RELATES_TO, DUPLICATES]

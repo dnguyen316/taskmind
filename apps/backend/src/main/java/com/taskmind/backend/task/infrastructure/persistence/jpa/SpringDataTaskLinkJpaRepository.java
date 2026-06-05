@@ -1,0 +1,1 @@
+package com.taskmind.backend.task.infrastructure.persistence.jpa; import java.util.*; import org.springframework.data.jpa.repository.JpaRepository; public interface SpringDataTaskLinkJpaRepository extends JpaRepository<TaskLinkJpaEntity,UUID>{List<TaskLinkJpaEntity> findBySourceTaskIdOrTargetTaskId(UUID source,UUID target);}

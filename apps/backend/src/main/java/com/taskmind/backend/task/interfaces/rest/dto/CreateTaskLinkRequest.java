@@ -1,0 +1,1 @@
+package com.taskmind.backend.task.interfaces.rest.dto; import com.taskmind.backend.task.domain.model.TaskLinkType; import jakarta.validation.constraints.NotNull; import java.util.UUID; public record CreateTaskLinkRequest(@NotNull UUID targetTaskId,@NotNull TaskLinkType linkType){}

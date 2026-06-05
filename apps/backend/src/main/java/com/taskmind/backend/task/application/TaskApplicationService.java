@@ -1,124 +1,15 @@
 package com.taskmind.backend.task.application;
-
-import com.taskmind.backend.auth.AuthenticatedUser;
-import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
-import com.taskmind.backend.task.domain.model.Task;
-import com.taskmind.backend.task.domain.model.TaskStatus;
-import com.taskmind.backend.task.domain.repository.TaskRepository;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.stereotype.Service;
-
-@Service
-@Transactional(readOnly = true)
-public class TaskApplicationService {
-
-    private final TaskRepository taskRepository;
-    private final ProjectMembershipApplicationService projectMembershipApplicationService;
-
-    public TaskApplicationService(
-        TaskRepository taskRepository,
-        ProjectMembershipApplicationService projectMembershipApplicationService
-    ) {
-        this.taskRepository = taskRepository;
-        this.projectMembershipApplicationService = projectMembershipApplicationService;
-    }
-
-    @Transactional
-    public Task create(AuthenticatedUser requester, CreateTaskCommand command) {
-        var effectiveUserId = requester.isPrivileged() ? command.userId() : requester.userId();
-        projectMembershipApplicationService.validateMembership(command.projectId(), effectiveUserId);
-
-        var now = Instant.now();
-        var task = new Task(
-            UUID.randomUUID(),
-            null,
-            effectiveUserId,
-            command.projectId(),
-            command.title().trim(),
-            command.description(),
-            command.status(),
-            command.priority(),
-            command.dueAt(),
-            command.durationMinutes(),
-            command.energyLevel(),
-            command.source(),
-            command.confidence(),
-            now,
-            now
-        );
-        return taskRepository.save(task);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Task> list(
-        AuthenticatedUser requester,
-        Optional<UUID> userId,
-        Optional<TaskStatus> status,
-        boolean overdueOnly,
-        int page,
-        int size
-    ) {
-        var effectiveUserId = requester.isPrivileged() ? userId : Optional.of(requester.userId());
-        return taskRepository.findFiltered(effectiveUserId, status, overdueOnly, OffsetDateTime.now(), page, size);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Task> findById(UUID id) {
-        return taskRepository.findById(id);
-    }
-
-    @Transactional
-    public Optional<Task> update(AuthenticatedUser requester, UUID id, UpdateTaskCommand command) {
-        return taskRepository.findByIdForUpdate(id)
-            .map(existing -> {
-                validateCanMutate(requester, existing);
-                var nextProjectId = command.projectId() != null ? command.projectId() : existing.projectId();
-                projectMembershipApplicationService.validateMembership(nextProjectId, existing.userId());
-
-                var updated = new Task(
-                    existing.id(),
-                    existing.version(),
-                    existing.userId(),
-                    nextProjectId,
-                    command.title() != null ? command.title().trim() : existing.title(),
-                    command.description() != null ? command.description() : existing.description(),
-                    command.status() != null ? command.status() : existing.status(),
-                    command.priority() != null ? command.priority() : existing.priority(),
-                    command.dueAt() != null ? command.dueAt() : existing.dueAt(),
-                    command.durationMinutes() != null ? command.durationMinutes() : existing.durationMinutes(),
-                    command.energyLevel() != null ? command.energyLevel() : existing.energyLevel(),
-                    existing.source(),
-                    existing.confidence(),
-                    existing.createdAt(),
-                    Instant.now()
-                );
-                return taskRepository.save(updated);
-            });
-    }
-
-    @Transactional
-    public Optional<Task> updateStatus(AuthenticatedUser requester, UUID id, TaskStatus status) {
-        return taskRepository.findByIdForUpdate(id)
-            .map(existing -> {
-                validateCanMutate(requester, existing);
-                return taskRepository.save(existing.withStatus(status, Instant.now()));
-            });
-    }
-
-    @Transactional
-    public Optional<Task> archive(AuthenticatedUser requester, UUID id) {
-        return updateStatus(requester, id, TaskStatus.ARCHIVED);
-    }
-
-    private void validateCanMutate(AuthenticatedUser requester, Task task) {
-        if (!requester.isPrivileged() && !requester.userId().equals(task.userId())) {
-            throw new IllegalArgumentException("Cannot mutate another user's task");
-        }
-    }
-
+import com.taskmind.backend.auth.AuthenticatedUser; import com.taskmind.backend.project.application.ProjectMembershipApplicationService; import com.taskmind.backend.task.domain.*; import com.taskmind.backend.task.domain.model.*; import com.taskmind.backend.task.domain.repository.TaskRepository;
+import java.time.*; import java.util.*; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+@Service @Transactional(readOnly=true) public class TaskApplicationService {
+ private final TaskRepository tasks; private final ProjectMembershipApplicationService memberships; private final TaskKeyAssigner keys;
+ public TaskApplicationService(TaskRepository tasks,ProjectMembershipApplicationService memberships,TaskKeyAssigner keys){this.tasks=tasks;this.memberships=memberships;this.keys=keys;}
+ @Transactional public Task create(AuthenticatedUser requester,CreateTaskCommand c){UUID owner=requester.isPrivileged()?c.userId():requester.userId(); memberships.validateMembership(c.projectId(),owner); if(c.assigneeId()!=null)memberships.validateMembership(c.projectId(),c.assigneeId()); var level=c.taskLevel()==null?TaskLevel.TASK:c.taskLevel();var type=c.taskType()==null?TaskType.TASK:c.taskType();TaskTypeRules.validate(type,level);var now=Instant.now(); var task=new Task(UUID.randomUUID(),null,owner,c.projectId(),keys.assign(c.projectId()),c.assigneeId(),c.parentTaskId(),level,type,c.storyPoints(),c.releaseVersion(),null,c.title().trim(),c.description(),c.status(),c.priority(),c.dueAt(),c.durationMinutes(),c.energyLevel(),c.source(),c.confidence(),now,now); validateParent(task); return tasks.save(task);}
+ public List<Task> list(AuthenticatedUser r,Optional<UUID>u,Optional<TaskStatus>s,boolean o,int p,int z){return tasks.findFiltered(r.isPrivileged()?u:Optional.of(r.userId()),s,o,OffsetDateTime.now(),p,z);}
+ public Optional<Task> findById(UUID id){return tasks.findById(id);} public Optional<Task> findById(AuthenticatedUser r,UUID id){return tasks.findById(id).filter(t->canRead(r,t));}
+ public List<Task> children(AuthenticatedUser r,UUID id){var root=authorized(r,id);return tasks.findChildren(root.id());} public List<Task> ancestors(AuthenticatedUser r,UUID id){authorized(r,id);return tasks.findAncestors(id);}
+ @Transactional public Optional<Task> update(AuthenticatedUser r,UUID id,UpdateTaskCommand c){return tasks.findByIdForUpdate(id).map(e->{validateCanMutate(r,e);if(c.version()!=null&&!c.version().equals(e.version()))throw new org.springframework.orm.ObjectOptimisticLockingFailureException(Task.class,id);UUID project=c.projectId()!=null?c.projectId():e.projectId();memberships.validateMembership(project,e.userId());if(c.assigneeId()!=null)memberships.validateMembership(project,c.assigneeId());var updated=new Task(e.id(),e.version(),e.userId(),project,e.taskKey(),c.assigneeId()!=null?c.assigneeId():e.assigneeId(),c.parentTaskId()!=null?c.parentTaskId():e.parentTaskId(),c.taskLevel()!=null?c.taskLevel():e.taskLevel(),c.taskType()!=null?c.taskType():e.taskType(),c.storyPoints()!=null?c.storyPoints():e.storyPoints(),c.releaseVersion()!=null?c.releaseVersion():e.releaseVersion(),e.deletedAt(),c.title()!=null?c.title().trim():e.title(),c.description()!=null?c.description():e.description(),c.status()!=null?c.status():e.status(),c.priority()!=null?c.priority():e.priority(),c.dueAt()!=null?c.dueAt():e.dueAt(),c.durationMinutes()!=null?c.durationMinutes():e.durationMinutes(),c.energyLevel()!=null?c.energyLevel():e.energyLevel(),e.source(),e.confidence(),e.createdAt(),Instant.now());validateParent(updated);return tasks.save(updated);});}
+ @Transactional public Optional<Task> updateStatus(AuthenticatedUser r,UUID id,TaskStatus s){return tasks.findByIdForUpdate(id).map(e->{validateCanMutate(r,e);return tasks.save(e.withStatus(s,Instant.now()));});} @Transactional public Optional<Task> archive(AuthenticatedUser r,UUID id){return updateStatus(r,id,TaskStatus.ARCHIVED);}
+ private void validateParent(Task t){if(t.parentTaskId()!=null){var p=tasks.findById(t.parentTaskId()).orElseThrow(()->new IllegalArgumentException("Parent task not found"));TaskHierarchyRules.validateParent(t,p,tasks.findAncestors(p.id()));}}
+ private Task authorized(AuthenticatedUser r,UUID id){return findById(r,id).orElseThrow(()->new IllegalArgumentException("Task not found or access denied"));} private boolean canRead(AuthenticatedUser r,Task t){return r.isPrivileged()||r.userId().equals(t.userId())||(t.projectId()!=null&&memberships.isMember(t.projectId(),r.userId()));} private void validateCanMutate(AuthenticatedUser r,Task t){if(!r.isPrivileged()&&!r.userId().equals(t.userId()))throw new IllegalArgumentException("Cannot modify another user's task");}
 }

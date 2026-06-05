@@ -1,85 +1,26 @@
 package com.taskmind.backend.project.interfaces.rest;
 
-import com.taskmind.backend.project.application.ArchiveProjectCommand;
-import com.taskmind.backend.project.application.CreateProjectCommand;
-import com.taskmind.backend.project.application.ProjectApplicationService;
-import com.taskmind.backend.project.application.UpdateProjectCommand;
+import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.project.application.*;
 import com.taskmind.backend.project.domain.model.Project;
-import com.taskmind.backend.project.interfaces.rest.dto.CreateProjectRequest;
-import com.taskmind.backend.project.interfaces.rest.dto.UpdateProjectRequest;
+import com.taskmind.backend.project.interfaces.rest.dto.*;
+import com.taskmind.backend.security.AuthenticatedUserResolver;
 import jakarta.validation.Valid;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import java.util.*;
+import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-@RestController
-@RequestMapping("/v1/projects")
-@Validated
+@RestController @RequestMapping("/v1/projects") @Validated
 public class ProjectController {
-
-    private final ProjectApplicationService projectApplicationService;
-
-    public ProjectController(ProjectApplicationService projectApplicationService) {
-        this.projectApplicationService = projectApplicationService;
-    }
-
-    @PostMapping
-    public ResponseEntity<Project> createProject(@Valid @RequestBody CreateProjectRequest request) {
-        try {
-            var created = projectApplicationService.create(new CreateProjectCommand(
-                request.name(),
-                request.key(),
-                request.description(),
-                request.ownerUserId()
-            ));
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
-        }
-    }
-
-    @GetMapping
-    public List<Project> listProjects(@RequestParam(defaultValue = "false") boolean includeArchived) {
-        return projectApplicationService.list(includeArchived);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Project> getProject(@PathVariable UUID id) {
-        return projectApplicationService.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<Project> updateProject(@PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
-        try {
-            return projectApplicationService.update(id, new UpdateProjectCommand(
-                    request.name(),
-                    request.key(),
-                    request.description()
-                ))
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
-        }
-    }
-
-    @PatchMapping("/{id}/archive")
-    public ResponseEntity<Project> archiveProject(@PathVariable UUID id) {
-        return projectApplicationService.archive(new ArchiveProjectCommand(id))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-    }
+ private final ProjectApplicationService projects; private final ProjectMembershipApplicationService memberships; private final AuthenticatedUserResolver users;
+ public ProjectController(ProjectApplicationService p,ProjectMembershipApplicationService m,AuthenticatedUserResolver u){projects=p;memberships=m;users=u;}
+ @PostMapping public ResponseEntity<Project> createProject(@Valid @RequestBody CreateProjectRequest request,Authentication auth,@RequestHeader(value="X-User-Id",required=false)UUID uid,@RequestHeader(value="X-User-Roles",required=false)String roles){try{var actor=resolve(auth,uid,roles,request.ownerUserId());var owner=actor.isPrivileged()?request.ownerUserId():actor.userId();return ResponseEntity.status(HttpStatus.CREATED).body(projects.create(new CreateProjectCommand(request.name(),request.key(),request.description(),owner)));}catch(IllegalArgumentException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage(),e);}}
+ @GetMapping public List<Project> listProjects(@RequestParam(defaultValue="false")boolean includeArchived,Authentication auth,@RequestHeader(value="X-User-Id",required=false)UUID uid,@RequestHeader(value="X-User-Roles",required=false)String roles){var actor=resolve(auth,uid,roles,null);return projects.list(includeArchived).stream().filter(p->canRead(actor,p)).toList();}
+ @GetMapping("/{id}") public ResponseEntity<Project> getProject(@PathVariable UUID id,Authentication auth,@RequestHeader(value="X-User-Id",required=false)UUID uid,@RequestHeader(value="X-User-Roles",required=false)String roles){var actor=resolve(auth,uid,roles,null);return projects.findById(id).filter(p->canRead(actor,p)).map(ResponseEntity::ok).orElseGet(()->ResponseEntity.notFound().build());}
+ @PatchMapping("/{id}") public ResponseEntity<Project> updateProject(@PathVariable UUID id,@Valid @RequestBody UpdateProjectRequest request,Authentication auth,@RequestHeader(value="X-User-Id",required=false)UUID uid,@RequestHeader(value="X-User-Roles",required=false)String roles){authorizeOwner(resolve(auth,uid,roles,null),id);try{return projects.update(id,new UpdateProjectCommand(request.name(),request.key(),request.description())).map(ResponseEntity::ok).orElseGet(()->ResponseEntity.notFound().build());}catch(IllegalArgumentException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage(),e);}}
+ @PatchMapping("/{id}/archive") public ResponseEntity<Project> archiveProject(@PathVariable UUID id,Authentication auth,@RequestHeader(value="X-User-Id",required=false)UUID uid,@RequestHeader(value="X-User-Roles",required=false)String roles){authorizeOwner(resolve(auth,uid,roles,null),id);return projects.archive(new ArchiveProjectCommand(id)).map(ResponseEntity::ok).orElseGet(()->ResponseEntity.notFound().build());}
+ private AuthenticatedUser resolve(Authentication auth,UUID uid,String roles,UUID fallback){return users.resolve(auth,uid==null?fallback:uid,roles);} private boolean canRead(AuthenticatedUser a,Project p){return a.isPrivileged()||p.ownerUserId().equals(a.userId())||memberships.isMember(p.id(),a.userId());} private void authorizeOwner(AuthenticatedUser a,UUID id){var p=projects.findById(id).orElseThrow();if(!a.isPrivileged()&&!p.ownerUserId().equals(a.userId()))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only the project owner can mutate the project");}
 }

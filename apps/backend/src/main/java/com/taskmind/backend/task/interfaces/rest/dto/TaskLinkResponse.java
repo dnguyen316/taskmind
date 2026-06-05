@@ -1,0 +1,1 @@
+package com.taskmind.backend.task.interfaces.rest.dto; import com.taskmind.backend.task.domain.model.TaskLinkType; import java.time.Instant; import java.util.UUID; public record TaskLinkResponse(UUID id,UUID sourceTaskId,UUID targetTaskId,TaskLinkType linkType,Instant createdAt){}

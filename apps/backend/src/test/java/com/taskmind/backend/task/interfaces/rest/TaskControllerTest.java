@@ -14,12 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class TaskControllerTest {
 
     @Autowired
@@ -316,6 +318,7 @@ class TaskControllerTest {
             """;
 
         mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .header("X-Actor-User-Id", "99999999-9999-9999-9999-999999999998")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(addMemberPayload))
             .andExpect(status().isCreated());
@@ -337,4 +340,17 @@ class TaskControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.projectId").value(projectId));
     }
+    @Test
+    void rejectsStaleTaskUpdateWithConflict() throws Exception {
+        var created = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+                .contentType(MediaType.APPLICATION_JSON).content("""
+                    {"userId":"11111111-1111-1111-1111-111111111111","title":"Versioned","status":"TODO","priority":2,"source":"MANUAL"}
+                    """))
+            .andExpect(status().isCreated()).andReturn();
+        var id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        mockMvc.perform(patch("/v1/tasks/{id}", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"version\":999,\"title\":\"stale\"}"))
+            .andExpect(status().isConflict());
+    }
+
 }

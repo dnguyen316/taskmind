@@ -1,0 +1,3 @@
+package com.taskmind.backend.security;
+import org.springframework.context.annotation.*; import org.springframework.core.annotation.Order; import org.springframework.security.config.annotation.web.builders.HttpSecurity; import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer; import org.springframework.security.web.SecurityFilterChain;
+@Configuration @Profile("test") public class TestProfileSecurityConfig { @Bean @Order(0) SecurityFilterChain testSecurityFilterChain(HttpSecurity http)throws Exception{return http.securityMatcher("/v1/**").csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(a->a.anyRequest().permitAll()).build();}}

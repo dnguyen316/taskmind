@@ -10,6 +10,8 @@ import com.taskmind.backend.task.interfaces.rest.dto.CreateTaskRequest;
 import com.taskmind.backend.task.interfaces.rest.dto.TaskCompletionResponse;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskRequest;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
+import com.taskmind.backend.security.AuthenticatedUserResolver;
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.List;
@@ -36,22 +38,22 @@ import org.springframework.web.server.ResponseStatusException;
 public class TaskController {
 
     private final TaskApplicationService taskApplicationService;
+    private final AuthenticatedUserResolver authenticatedUserResolver;
 
-    public TaskController(TaskApplicationService taskApplicationService) {
-        this.taskApplicationService = taskApplicationService;
-    }
+    public TaskController(TaskApplicationService taskApplicationService, AuthenticatedUserResolver authenticatedUserResolver) { this.taskApplicationService = taskApplicationService; this.authenticatedUserResolver = authenticatedUserResolver; }
 
     @PostMapping
     public ResponseEntity<Task> createTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Id", required = false) UUID requesterUserId,
+        Authentication authentication,
         @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
         @Valid @RequestBody CreateTaskRequest request
     ) {
         try {
-            var requester = toAuthenticatedUser(requesterUserId, rolesHeader);
+            var requester = authenticatedUserResolver.resolve(authentication, requesterUserId, rolesHeader);
             var created = taskApplicationService.create(requester, new CreateTaskCommand(
             request.userId(),
-            request.projectId(),
+            request.projectId(), request.assigneeId(), request.parentTaskId(), request.taskLevel(), request.taskType(), request.storyPoints(), request.releaseVersion(),
             request.title(),
             request.description(),
             request.status(),
@@ -70,7 +72,8 @@ public class TaskController {
 
     @GetMapping
     public List<Task> listTasks(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Id", required = false) UUID requesterUserId,
+        Authentication authentication,
         @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
         @RequestParam(required = false) UUID userId,
         @RequestParam(required = false) TaskStatus status,
@@ -79,7 +82,7 @@ public class TaskController {
         @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
         return taskApplicationService.list(
-            toAuthenticatedUser(requesterUserId, rolesHeader),
+            authenticatedUserResolver.resolve(authentication, requesterUserId, rolesHeader),
             java.util.Optional.ofNullable(userId),
             java.util.Optional.ofNullable(status),
             overdueOnly,
@@ -102,14 +105,15 @@ public class TaskController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<Task> updateTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Id", required = false) UUID requesterUserId,
+        Authentication authentication,
         @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
         @PathVariable UUID id,
         @Valid @RequestBody UpdateTaskRequest request
     ) {
         try {
-            return taskApplicationService.update(toAuthenticatedUser(requesterUserId, rolesHeader), id, new UpdateTaskCommand(
-                request.projectId(),
+            return taskApplicationService.update(authenticatedUserResolver.resolve(authentication, requesterUserId, rolesHeader), id, new UpdateTaskCommand(
+                request.version(), request.projectId(), request.assigneeId(), request.parentTaskId(), request.taskLevel(), request.taskType(), request.storyPoints(), request.releaseVersion(),
                 request.title(),
                 request.description(),
                 request.status(),
@@ -127,34 +131,36 @@ public class TaskController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<Task> updateTaskStatus(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Id", required = false) UUID requesterUserId,
+        Authentication authentication,
         @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
         @PathVariable UUID id,
         @Valid @RequestBody UpdateTaskStatusRequest request
     ) {
-        return taskApplicationService.updateStatus(toAuthenticatedUser(requesterUserId, rolesHeader), id, request.status())
+        return taskApplicationService.updateStatus(authenticatedUserResolver.resolve(authentication, requesterUserId, rolesHeader), id, request.status())
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/archive")
     public ResponseEntity<Task> archiveTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
+        @RequestHeader(value = "X-User-Id", required = false) UUID requesterUserId,
+        Authentication authentication,
         @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
         @PathVariable UUID id
     ) {
-        return taskApplicationService.archive(toAuthenticatedUser(requesterUserId, rolesHeader), id)
+        return taskApplicationService.archive(authenticatedUserResolver.resolve(authentication, requesterUserId, rolesHeader), id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private AuthenticatedUser toAuthenticatedUser(UUID userId, String rolesHeader) {
-        var roles = rolesHeader == null || rolesHeader.isBlank()
-            ? Set.<String>of()
-            : java.util.Arrays.stream(rolesHeader.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .collect(Collectors.toSet());
-        return new AuthenticatedUser(userId, roles);
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTask(@PathVariable UUID id, @RequestHeader(value="X-User-Id",required=false) UUID userId, @RequestHeader(value="X-User-Roles",required=false) String roles, Authentication authentication) {
+        return taskApplicationService.findById(authenticatedUserResolver.resolve(authentication,userId,roles),id).map(ResponseEntity::ok).orElseGet(()->ResponseEntity.notFound().build());
     }
+    @GetMapping("/{id}/children")
+    public List<Task> children(@PathVariable UUID id,@RequestHeader(value="X-User-Id",required=false) UUID userId,@RequestHeader(value="X-User-Roles",required=false) String roles,Authentication authentication){return taskApplicationService.children(authenticatedUserResolver.resolve(authentication,userId,roles),id);}
+    @GetMapping("/{id}/ancestors")
+    public List<Task> ancestors(@PathVariable UUID id,@RequestHeader(value="X-User-Id",required=false) UUID userId,@RequestHeader(value="X-User-Roles",required=false) String roles,Authentication authentication){return taskApplicationService.ancestors(authenticatedUserResolver.resolve(authentication,userId,roles),id);}
 }
