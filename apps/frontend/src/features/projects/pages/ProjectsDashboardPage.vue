@@ -1,64 +1,34 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-
-type ProjectStatus = 'ACTIVE' | 'ARCHIVED'
-
-type ProjectRecord = {
-  id: string
-  name: string
-  description: string
-  owner: string
-  status: ProjectStatus
-}
+import type { CreateProjectPayload } from '../types'
+import ProjectCreateForm from '../components/ProjectCreateForm.vue'
+import { useProjects } from '../composables/useProjects'
 
 const router = useRouter()
+const {
+  projects,
+  loading,
+  saving,
+  errorMessage,
+  successMessage,
+  activeProjectsCount,
+  archivedProjectsCount,
+  fetchProjects,
+  submitProject,
+  archiveProjectById,
+} = useProjects()
 
-const createForm = reactive({
-  name: '',
-  description: '',
-  owner: '',
+const successSignal = ref(0)
+const activeProjects = computed(() => projects.value.filter((project) => !project.archivedAt))
+
+onMounted(() => {
+  void fetchProjects({ force: true })
 })
 
-const projects = reactive<ProjectRecord[]>([
-  {
-    id: crypto.randomUUID(),
-    name: 'TaskMind Core Platform',
-    description: 'Foundational project for workflow orchestration and shared APIs.',
-    owner: 'Platform Team',
-    status: 'ACTIVE',
-  },
-])
-
-const activeProjects = computed(() => projects.filter((project) => project.status === 'ACTIVE'))
-const archivedProjects = computed(() => projects.filter((project) => project.status === 'ARCHIVED'))
-
-function createProject() {
-  const name = createForm.name.trim()
-  if (!name) {
-    return
-  }
-
-  projects.unshift({
-    id: crypto.randomUUID(),
-    name,
-    description: createForm.description.trim(),
-    owner: createForm.owner.trim() || 'Unassigned',
-    status: 'ACTIVE',
-  })
-
-  createForm.name = ''
-  createForm.description = ''
-  createForm.owner = ''
-}
-
-function archiveProject(projectId: string) {
-  const targetProject = projects.find((project) => project.id === projectId)
-  if (!targetProject) {
-    return
-  }
-
-  targetProject.status = 'ARCHIVED'
+async function createProject(payload: CreateProjectPayload) {
+  await submitProject(payload)
+  successSignal.value += 1
 }
 </script>
 
@@ -71,52 +41,36 @@ function archiveProject(projectId: string) {
         <p class="hero-copy">Track active initiatives, spin up new projects, and archive completed workstreams.</p>
       </div>
       <a-space size="middle" class="hero-stats">
-        <a-statistic title="Active projects" :value="activeProjects.length" />
-        <a-statistic title="Archived projects" :value="archivedProjects.length" />
+        <a-statistic title="Active projects" :value="activeProjectsCount" />
+        <a-statistic title="Archived projects" :value="archivedProjectsCount" />
       </a-space>
     </section>
 
-    <a-card title="Create project" class="surface-card">
-      <a-form layout="vertical" @submit.prevent="createProject">
-        <a-row :gutter="12">
-          <a-col :xs="24" :md="8">
-            <a-form-item label="Project name" required>
-              <a-input v-model:value="createForm.name" placeholder="TaskMind Mobile" />
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="8">
-            <a-form-item label="Owner">
-              <a-input v-model:value="createForm.owner" placeholder="Team or owner" />
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="8">
-            <a-form-item label="Description">
-              <a-input v-model:value="createForm.description" placeholder="Short summary" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-button type="primary" html-type="submit">Create project</a-button>
-      </a-form>
-    </a-card>
+    <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
+    <a-alert v-if="successMessage" type="success" show-icon :message="successMessage" />
+
+    <ProjectCreateForm :saving="saving" :success-signal="successSignal" @submit="createProject" />
 
     <a-card title="Project list" class="surface-card">
-      <a-empty v-if="activeProjects.length === 0" description="No active projects." />
-      <a-list v-else item-layout="horizontal" :data-source="activeProjects">
-        <template #renderItem="{ item }">
-          <a-list-item>
-            <template #actions>
-              <a-button type="link" @click="router.push({ name: 'project-detail', params: { id: item.id } })">View</a-button>
-              <a-button danger type="link" @click="archiveProject(item.id)">Archive</a-button>
-            </template>
-            <a-list-item-meta :title="item.name" :description="item.description || 'No description'">
-              <template #avatar>
-                <a-avatar>{{ item.name.slice(0, 1).toUpperCase() }}</a-avatar>
+      <a-spin :spinning="loading">
+        <a-empty v-if="activeProjects.length === 0" description="No active projects." />
+        <a-list v-else item-layout="horizontal" :data-source="activeProjects">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <template #actions>
+                <a-button type="link" @click="router.push({ name: 'project-detail', params: { id: item.id } })">View</a-button>
+                <a-button danger type="link" @click="archiveProjectById(item.id)">Archive</a-button>
               </template>
-            </a-list-item-meta>
-            <span class="owner-pill">{{ item.owner }}</span>
-          </a-list-item>
-        </template>
-      </a-list>
+              <a-list-item-meta :title="item.name" :description="item.description || 'No description'">
+                <template #avatar>
+                  <a-avatar>{{ String(item.name || item.key || item.id).slice(0, 1).toUpperCase() }}</a-avatar>
+                </template>
+              </a-list-item-meta>
+              <span class="owner-pill">{{ item.ownerUserId || 'Unassigned' }}</span>
+            </a-list-item>
+          </template>
+        </a-list>
+      </a-spin>
     </a-card>
   </main>
 </template>

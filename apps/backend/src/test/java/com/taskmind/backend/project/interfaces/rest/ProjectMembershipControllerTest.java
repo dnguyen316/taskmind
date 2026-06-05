@@ -1,5 +1,6 @@
 package com.taskmind.backend.project.interfaces.rest;
 
+import static com.taskmind.backend.security.TestJwtSupport.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,11 +14,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
+@Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class ProjectMembershipControllerTest {
 
     private static final String OWNER_ID = "11111111-1111-1111-1111-111111111111";
@@ -37,7 +40,7 @@ class ProjectMembershipControllerTest {
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
         mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
-                .header("X-Actor-User-Id", MEMBER_ID)
+                .with(jwt(MEMBER_ID))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"userId": "55555555-5555-5555-5555-555555555555", "role": "MEMBER"}
@@ -45,7 +48,7 @@ class ProjectMembershipControllerTest {
             .andExpect(status().isForbidden());
 
         mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, MEMBER_ID)
-                .header("X-Actor-User-Id", MEMBER_ID))
+                .with(jwt(MEMBER_ID)))
             .andExpect(status().isForbidden());
     }
 
@@ -56,7 +59,7 @@ class ProjectMembershipControllerTest {
         addMemberAsOwner(projectId, ADMIN_ID, "ADMIN");
 
         mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
-                .header("X-Actor-User-Id", ADMIN_ID)
+                .with(jwt(ADMIN_ID))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"userId": "66666666-6666-6666-6666-666666666666", "role": "MEMBER"}
@@ -64,7 +67,7 @@ class ProjectMembershipControllerTest {
             .andExpect(status().isCreated());
 
         mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, "66666666-6666-6666-6666-666666666666")
-                .header("X-Actor-User-Id", OWNER_ID))
+                .with(jwt(OWNER_ID)))
             .andExpect(status().isNoContent());
     }
 
@@ -74,7 +77,22 @@ class ProjectMembershipControllerTest {
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
         mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
-                .header("X-Actor-User-Id", NON_MEMBER_ID))
+                .with(jwt(NON_MEMBER_ID)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void arbitraryActorHeaderCannotImpersonateProjectOwner() throws Exception {
+        var projectId = createProject();
+        addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(MEMBER_ID))
+                .header("X-Actor-User-Id", OWNER_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId": "55555555-5555-5555-5555-555555555555", "role": "MEMBER"}
+                    """))
             .andExpect(status().isForbidden());
     }
 
@@ -82,12 +100,12 @@ class ProjectMembershipControllerTest {
         var projectPayload = """
             {
               "name": "Membership test project",
-              "key": "M%s",
+              "key": "%s",
               "ownerUserId": "%s"
             }
-            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 7).toUpperCase(), OWNER_ID);
+            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), OWNER_ID);
 
-        var createProjectResponse = mockMvc.perform(post("/v1/projects")
+        var createProjectResponse = mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(projectPayload))
             .andExpect(status().isCreated())
@@ -105,7 +123,7 @@ class ProjectMembershipControllerTest {
             """.formatted(userId, role);
 
         mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
-                .header("X-Actor-User-Id", OWNER_ID)
+                .with(jwt(OWNER_ID))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(addMemberPayload))
             .andExpect(status().isCreated())
