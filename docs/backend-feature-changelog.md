@@ -1,5 +1,17 @@
 # Backend Feature Changelog
 
+## 2026-06-05 (Agent Session Hygiene Workflow)
+
+### Added
+- Added a backend-aware, service-boundary neutral agent session workflow for Core, Relay, Nova, and shared backend libraries.
+- Documented the required closeout sequence for milestone identification, selective build-kit doc updates, backend changelog entries, Core OpenAPI sync, targeted checks, `make vibe-verify`, and skipped-check notes.
+- Added a token-saving inspection workflow that starts with focused `rg` discovery and limits context loading to active guidance, owning references, identifiers, and adjacent tests before broader scans.
+
+### Why this improves BE quality
+- Keeps backend sessions traceable across services without encouraging cross-boundary changes.
+- Reduces context waste during agent handoffs while preserving verification and contract-sync expectations.
+
+
 ## 2026-06-05 (Backend Static State Review)
 
 ### Static Backend State by Milestone

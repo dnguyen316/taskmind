@@ -94,6 +94,11 @@ npm run build
 - Core OpenAPI spec: `apps/backend/openapi.yaml`
 - Keep `apps/backend/openapi.yaml` in sync whenever Core request or response DTOs change.
 
+## Development Docs
+
+- Build-kit roadmap: `docs/build-kit/01-build-order.md`
+- Agent session hygiene and token-saving inspection workflow: `docs/agent-session-workflow.md`
+
 ## Next Steps
 
 Follow the build-kit roadmap milestone by milestone: `docs/build-kit/01-build-order.md`.

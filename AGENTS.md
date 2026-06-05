@@ -174,6 +174,7 @@ E2E login: superadmin@taskmind.local / password 1 / OTP 1
 
 1. [`docs/build-kit/00-overview.md`](docs/build-kit/00-overview.md) - product + target architecture + service boundaries.
 2. [`docs/build-kit/01-build-order.md`](docs/build-kit/01-build-order.md) - the milestone roadmap M00-M13 (execute in order).
-3. [`docs/build-kit/conventions.md`](docs/build-kit/conventions.md) - coding patterns you must follow.
-4. [`docs/build-kit/reference/`](docs/build-kit/reference/) - distilled contracts (data model, API, events, AI, AWS).
-5. [`docs/build-kit/phases/`](docs/build-kit/phases/) - one self-contained spec per milestone.
+3. [`docs/agent-session-workflow.md`](docs/agent-session-workflow.md) - backend session hygiene, closeout, and token-saving inspection workflow.
+4. [`docs/build-kit/conventions.md`](docs/build-kit/conventions.md) - coding patterns you must follow.
+5. [`docs/build-kit/reference/`](docs/build-kit/reference/) - distilled contracts (data model, API, events, AI, AWS).
+6. [`docs/build-kit/phases/`](docs/build-kit/phases/) - one self-contained spec per milestone.
