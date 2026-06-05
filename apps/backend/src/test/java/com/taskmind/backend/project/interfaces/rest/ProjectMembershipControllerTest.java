@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -28,29 +28,28 @@ class ProjectMembershipControllerTest {
     private static final String MEMBER_ID = "22222222-2222-2222-2222-222222222222";
     private static final String NON_MEMBER_ID = "44444444-4444-4444-4444-444444444444";
 
-    @Autowired private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void forbiddenAddAndRemoveByNonAdminMember() throws Exception {
         var projectId = createProject();
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
-        mockMvc.perform(
-                        post("/v1/projects/{projectId}/members", projectId)
-                                .with(jwt(MEMBER_ID))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(MEMBER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                     {"userId": "55555555-5555-5555-5555-555555555555", "role": "MEMBER"}
                     """))
-                .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden());
 
-        mockMvc.perform(
-                        delete("/v1/projects/{projectId}/members/{userId}", projectId, MEMBER_ID)
-                                .with(jwt(MEMBER_ID)))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, MEMBER_ID)
+                .with(jwt(MEMBER_ID)))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -59,23 +58,17 @@ class ProjectMembershipControllerTest {
 
         addMemberAsOwner(projectId, ADMIN_ID, "ADMIN");
 
-        mockMvc.perform(
-                        post("/v1/projects/{projectId}/members", projectId)
-                                .with(jwt(ADMIN_ID))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(ADMIN_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                     {"userId": "66666666-6666-6666-6666-666666666666", "role": "MEMBER"}
                     """))
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated());
 
-        mockMvc.perform(
-                        delete(
-                                        "/v1/projects/{projectId}/members/{userId}",
-                                        projectId,
-                                        "66666666-6666-6666-6666-666666666666")
-                                .with(jwt(OWNER_ID)))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, "66666666-6666-6666-6666-666666666666")
+                .with(jwt(OWNER_ID)))
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -83,8 +76,9 @@ class ProjectMembershipControllerTest {
         var projectId = createProject();
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
-        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId).with(jwt(NON_MEMBER_ID)))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(NON_MEMBER_ID)))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -92,63 +86,49 @@ class ProjectMembershipControllerTest {
         var projectId = createProject();
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
-        mockMvc.perform(
-                        post("/v1/projects/{projectId}/members", projectId)
-                                .with(jwt(MEMBER_ID))
-                                .header("X-Actor-User-Id", OWNER_ID)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(MEMBER_ID))
+                .header("X-Actor-User-Id", OWNER_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                     {"userId": "55555555-5555-5555-5555-555555555555", "role": "MEMBER"}
                     """))
-                .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden());
     }
 
     private String createProject() throws Exception {
-        var projectPayload =
-                """
+        var projectPayload = """
             {
               "name": "Membership test project",
               "key": "%s",
               "ownerUserId": "%s"
             }
-            """
-                        .formatted(
-                                java.util.UUID.randomUUID().toString().substring(0, 8), OWNER_ID);
+            """.formatted(java.util.UUID.randomUUID().toString().substring(0, 8), OWNER_ID);
 
-        var createProjectResponse =
-                mockMvc.perform(
-                                post("/v1/projects")
-                                        .with(jwt(OWNER_ID))
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(projectPayload))
-                        .andExpect(status().isCreated())
-                        .andReturn();
+        var createProjectResponse = mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(projectPayload))
+            .andExpect(status().isCreated())
+            .andReturn();
 
-        return objectMapper
-                .readTree(createProjectResponse.getResponse().getContentAsString())
-                .get("id")
-                .asText();
+        return objectMapper.readTree(createProjectResponse.getResponse().getContentAsString()).get("id").asText();
     }
 
     private void addMemberAsOwner(String projectId, String userId, String role) throws Exception {
-        var addMemberPayload =
-                """
+        var addMemberPayload = """
             {
               "userId": "%s",
               "role": "%s"
             }
-            """
-                        .formatted(userId, role);
+            """.formatted(userId, role);
 
-        mockMvc.perform(
-                        post("/v1/projects/{projectId}/members", projectId)
-                                .with(jwt(OWNER_ID))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(addMemberPayload))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.projectId").value(projectId))
-                .andExpect(jsonPath("$.userId").value(userId))
-                .andExpect(jsonPath("$.role").value(role));
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(OWNER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(addMemberPayload))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.projectId").value(projectId))
+            .andExpect(jsonPath("$.userId").value(userId))
+            .andExpect(jsonPath("$.role").value(role));
     }
 }

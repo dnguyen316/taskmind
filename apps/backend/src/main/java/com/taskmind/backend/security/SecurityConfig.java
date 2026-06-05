@@ -32,69 +32,47 @@ public class SecurityConfig implements WebMvcConfigurer {
     }
 
     private static final String[] PUBLIC_AUTH_ROUTES = {
-        "/v1/auth/login",
-        "/v1/auth/signup/**",
-        "/v1/auth/verify/**",
-        "/v1/auth/oauth/**",
-        "/v1/auth/password/**",
-        "/v1/auth/token/refresh",
-        "/v1/auth/logout"
+            "/v1/auth/login",
+            "/v1/auth/signup/**",
+            "/v1/auth/verify/**",
+            "/v1/auth/oauth/**",
+            "/v1/auth/password/**",
+            "/v1/auth/token/refresh",
+            "/v1/auth/logout"
     };
 
     @Bean
-    SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtClaimAuthenticationConverter jwtConverter,
-            ObjectMapper objectMapper)
-            throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(
-                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(
-                        auth ->
-                                auth.requestMatchers("/api/health")
-                                        .permitAll()
-                                        .requestMatchers(PUBLIC_AUTH_ROUTES)
-                                        .permitAll()
-                                        .requestMatchers("/v1/**")
-                                        .authenticated()
-                                        .dispatcherTypeMatchers(
-                                                DispatcherType.ERROR, DispatcherType.FORWARD)
-                                        .permitAll()
-                                        .anyRequest()
-                                        .denyAll())
-                .oauth2ResourceServer(
-                        oauth2 ->
-                                oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
-                                        .authenticationEntryPoint(
-                                                (request, response, authException) ->
-                                                        writeProblemDetail(
-                                                                response,
-                                                                HttpStatus.UNAUTHORIZED,
-                                                                "Unauthorized",
-                                                                "Authentication is required to access this resource.",
-                                                                objectMapper))
-                                        .accessDeniedHandler(
-                                                (request, response, accessDeniedException) ->
-                                                        writeProblemDetail(
-                                                                response,
-                                                                HttpStatus.FORBIDDEN,
-                                                                "Forbidden",
-                                                                "You do not have permission to access this resource.",
-                                                                objectMapper)))
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtClaimAuthenticationConverter jwtConverter,
+            ObjectMapper objectMapper) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers(PUBLIC_AUTH_ROUTES).permitAll()
+                        .requestMatchers("/v1/**").authenticated()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
+                        .anyRequest().denyAll())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
+                        .authenticationEntryPoint((request, response, authException) -> writeProblemDetail(response,
+                                HttpStatus.UNAUTHORIZED,
+                                "Unauthorized",
+                                "Authentication is required to access this resource.",
+                                objectMapper))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> writeProblemDetail(response,
+                                HttpStatus.FORBIDDEN,
+                                "Forbidden",
+                                "You do not have permission to access this resource.",
+                                objectMapper)))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .build();
     }
 
-    private void writeProblemDetail(
-            HttpServletResponse response,
-            HttpStatus status,
-            String title,
-            String detail,
-            ObjectMapper objectMapper)
-            throws IOException {
+    private void writeProblemDetail(HttpServletResponse response, HttpStatus status, String title, String detail,
+            ObjectMapper objectMapper) throws IOException {
         var problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
         response.setStatus(status.value());

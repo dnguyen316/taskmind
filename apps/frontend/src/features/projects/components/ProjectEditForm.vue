@@ -5,26 +5,19 @@ import type { GenericObject } from 'vee-validate'
 import type { UpdateProjectPayload } from '../types'
 import * as yup from 'yup'
 
-const props = withDefaults(
-  defineProps<{
-    value: UpdateProjectPayload
-    saving?: boolean
-  }>(),
-  {
-    saving: false,
-  },
-)
+const props = withDefaults(defineProps<{
+  value: UpdateProjectPayload
+  saving?: boolean
+}>(), {
+  saving: false,
+})
 
 const emit = defineEmits<{
   submit: [payload: UpdateProjectPayload]
 }>()
 
 const schema = yup.object({
-  name: yup
-    .string()
-    .trim()
-    .required('Name is required')
-    .max(200, 'Name must be at most 200 characters'),
+  name: yup.string().trim().required('Name is required').max(200, 'Name must be at most 200 characters'),
   key: yup.string().trim().required('Key is required').max(50, 'Key must be at most 50 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
 })
@@ -46,12 +39,7 @@ function handleValidSubmit(values: GenericObject) {
 
 <template>
   <a-card title="Edit project" class="surface-card">
-    <VeeForm
-      :validation-schema="schema"
-      :initial-values="initialValues"
-      @submit="handleValidSubmit"
-      v-slot="{ submitForm }"
-    >
+    <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
           <a-col :xs="24" :md="12">
@@ -86,11 +74,6 @@ function handleValidSubmit(values: GenericObject) {
 </template>
 
 <style scoped>
-.surface-card {
-  border-radius: 18px;
-}
-.field-error {
-  color: #d4380d;
-  font-size: 12px;
-}
+.surface-card { border-radius: 18px; }
+.field-error { color: #d4380d; font-size: 12px; }
 </style>

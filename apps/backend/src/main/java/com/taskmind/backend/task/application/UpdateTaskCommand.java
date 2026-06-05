@@ -6,11 +6,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record UpdateTaskCommand(
-        UUID projectId,
-        String title,
-        String description,
-        TaskStatus status,
-        Integer priority,
-        OffsetDateTime dueAt,
-        Integer durationMinutes,
-        EnergyLevel energyLevel) {}
+    UUID projectId,
+    String title,
+    String description,
+    TaskStatus status,
+    Integer priority,
+    OffsetDateTime dueAt,
+    Integer durationMinutes,
+    EnergyLevel energyLevel
+) {
+}

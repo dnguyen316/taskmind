@@ -28,7 +28,8 @@ public class ProjectMembershipJpaEntity {
     @Column(nullable = false, length = 30)
     private ProjectMembershipRole role;
 
-    protected ProjectMembershipJpaEntity() {}
+    protected ProjectMembershipJpaEntity() {
+    }
 
     private ProjectMembershipJpaEntity(ProjectMembership membership) {
         this.projectId = membership.projectId();

@@ -136,10 +136,7 @@
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
-  transition:
-    border-color 0.14s,
-    background 0.14s,
-    color 0.14s;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
   user-select: none;
   font-family: inherit;
 }
@@ -425,9 +422,7 @@
   min-height: 360px;
   display: flex;
   flex-direction: column;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .dark .tm-kanban-col {
@@ -524,10 +519,7 @@
   padding: 12px 12px 12px 14px;
   cursor: grab;
   overflow: hidden;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s,
-    opacity 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
 }
 
 .dark .tm-kanban-card {

@@ -77,9 +77,7 @@ onMounted(async () => {
   heroReady.value = true
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    landingPage.value
-      ?.querySelectorAll('[data-reveal]')
-      .forEach((element) => element.classList.add('is-visible'))
+    landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => element.classList.add('is-visible'))
     return
   }
 
@@ -94,14 +92,10 @@ onMounted(async () => {
     { threshold: 0.16, rootMargin: '0px 0px -50px' },
   )
 
-  landingPage.value
-    ?.querySelectorAll('[data-reveal]')
-    .forEach((element) => revealObserver?.observe(element))
+  landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => revealObserver?.observe(element))
 
   revealFallback = window.setTimeout(() => {
-    landingPage.value
-      ?.querySelectorAll('[data-reveal]')
-      .forEach((element) => element.classList.add('is-visible'))
+    landingPage.value?.querySelectorAll('[data-reveal]').forEach((element) => element.classList.add('is-visible'))
   }, 1800)
 })
 
@@ -125,9 +119,7 @@ onBeforeUnmount(() => {
           <a href="#how-it-works" @click="closeMobileMenu">How it works</a>
           <a href="#security" @click="closeMobileMenu">Security</a>
           <div class="mobile-nav-actions">
-            <RouterLink class="nav-sign-in" to="/login" @click="closeMobileMenu"
-              >Sign in</RouterLink
-            >
+            <RouterLink class="nav-sign-in" to="/login" @click="closeMobileMenu">Sign in</RouterLink>
             <RouterLink class="primary-button compact-button" to="/signup" @click="closeMobileMenu">
               Start free <ArrowRightOutlined />
             </RouterLink>
@@ -162,8 +154,8 @@ onBeforeUnmount(() => {
         <div class="eyebrow"><span>✦</span> Your AI productivity partner</div>
         <h1>Make space for<br /><em>what matters.</em></h1>
         <p class="hero-description">
-          TaskMind turns your priorities into a clear daily plan, so you can spend less time
-          organizing work and more time doing your best work.
+          TaskMind turns your priorities into a clear daily plan, so you can spend less time organizing
+          work and more time doing your best work.
         </p>
         <div class="hero-actions">
           <RouterLink class="primary-button hero-button" to="/signup">
@@ -178,13 +170,7 @@ onBeforeUnmount(() => {
         </p>
       </div>
 
-      <div
-        ref="heroVisual"
-        class="hero-visual"
-        aria-label="TaskMind daily planning preview"
-        @pointermove="updateHeroTilt"
-        @pointerleave="resetHeroTilt"
-      >
+      <div ref="heroVisual" class="hero-visual" aria-label="TaskMind daily planning preview" @pointermove="updateHeroTilt" @pointerleave="resetHeroTilt">
         <div class="visual-orb visual-orb-main"></div>
         <div class="visual-orb visual-orb-small"></div>
         <div class="dot-grid" aria-hidden="true"></div>
@@ -218,9 +204,7 @@ onBeforeUnmount(() => {
                 <span class="focus-time">3h 15m</span>
               </div>
               <div class="focus-progress"><span></span></div>
-              <div class="focus-progress-meta">
-                <span>3 of 5 tasks complete</span><strong>60%</strong>
-              </div>
+              <div class="focus-progress-meta"><span>3 of 5 tasks complete</span><strong>60%</strong></div>
             </div>
 
             <div class="task-list-heading"><strong>Today</strong><span>4 tasks</span></div>
@@ -231,16 +215,12 @@ onBeforeUnmount(() => {
             </div>
             <div class="preview-task">
               <span class="task-check"></span>
-              <div>
-                <strong>Finalize product narrative</strong><small>Deep work · 10:30 AM</small>
-              </div>
+              <div><strong>Finalize product narrative</strong><small>Deep work · 10:30 AM</small></div>
               <span class="task-tag high-tag">High</span>
             </div>
             <div class="preview-task">
               <span class="task-check"></span>
-              <div>
-                <strong>Prepare customer preview</strong><small>Atlas project · 2:00 PM</small>
-              </div>
+              <div><strong>Prepare customer preview</strong><small>Atlas project · 2:00 PM</small></div>
             </div>
           </div>
         </div>
@@ -264,16 +244,8 @@ onBeforeUnmount(() => {
         <p>Everything you need to move from a crowded mind to a confident plan.</p>
       </div>
       <div class="feature-grid">
-        <article
-          v-for="(feature, index) in features"
-          :key="feature.title"
-          class="feature-card"
-          data-reveal
-          :style="{ '--reveal-delay': `${index * 90}ms` }"
-        >
-          <span class="feature-icon" :class="`feature-icon-${feature.accent}`"
-            ><component :is="feature.icon"
-          /></span>
+        <article v-for="(feature, index) in features" :key="feature.title" class="feature-card" data-reveal :style="{ '--reveal-delay': `${index * 90}ms` }">
+          <span class="feature-icon" :class="`feature-icon-${feature.accent}`"><component :is="feature.icon" /></span>
           <h3>{{ feature.title }}</h3>
           <p>{{ feature.description }}</p>
           <a href="#how-it-works">Learn more <ArrowRightOutlined /></a>
@@ -285,18 +257,11 @@ onBeforeUnmount(() => {
       <div class="outcome-copy" data-reveal>
         <span class="section-label">ONE THOUGHT AHEAD</span>
         <h2>Your workday,<br />made manageable.</h2>
-        <p>
-          TaskMind understands your workload and helps you make the next best decision — while
-          leaving you in control.
-        </p>
+        <p>TaskMind understands your workload and helps you make the next best decision — while leaving you in control.</p>
         <ul>
-          <li v-for="outcome in outcomes" :key="outcome">
-            <span><CheckOutlined /></span>{{ outcome }}
-          </li>
+          <li v-for="outcome in outcomes" :key="outcome"><span><CheckOutlined /></span>{{ outcome }}</li>
         </ul>
-        <RouterLink class="dark-button" to="/signup"
-          >Build your first plan <ArrowRightOutlined
-        /></RouterLink>
+        <RouterLink class="dark-button" to="/signup">Build your first plan <ArrowRightOutlined /></RouterLink>
       </div>
 
       <div id="security" class="trust-card" data-reveal>
@@ -305,18 +270,12 @@ onBeforeUnmount(() => {
         <small>DESIGNED FOR TRUST</small>
         <h3>Your plans stay yours.</h3>
         <p>Secure by design, transparent in every AI suggestion, and always under your control.</p>
-        <div class="trust-detail">
-          <CheckOutlined /><span
-            ><strong>Private by default</strong><small>Your work is never shared.</small></span
-          >
-        </div>
+        <div class="trust-detail"><CheckOutlined /><span><strong>Private by default</strong><small>Your work is never shared.</small></span></div>
       </div>
     </section>
 
     <footer class="site-footer">
-      <RouterLink class="brand footer-brand" to="/"
-        ><span class="brand-mark"><CheckOutlined /></span><span>TaskMind</span></RouterLink
-      >
+      <RouterLink class="brand footer-brand" to="/"><span class="brand-mark"><CheckOutlined /></span><span>TaskMind</span></RouterLink>
       <p>Plan clearly. Work calmly.</p>
       <span>© 2026 TaskMind</span>
     </footer>
@@ -334,9 +293,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   color: var(--ink);
   background: var(--tm-bg);
-  transition:
-    color 180ms ease,
-    background 180ms ease;
+  transition: color 180ms ease, background 180ms ease;
 }
 
 .site-header {
@@ -422,9 +379,7 @@ nav > a:hover,
   font-size: 13px;
   font-weight: 750;
   text-decoration: none;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .primary-button:hover,
@@ -971,9 +926,7 @@ nav > a:hover,
   border-radius: 18px;
   background: var(--tm-surface);
   box-shadow: 0 16px 42px rgba(28, 35, 64, 0.045);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .feature-card:hover {
@@ -1504,24 +1457,16 @@ nav > a:hover,
 }
 
 .hero-ready .hero-copy > * {
-  animation: hero-copy-in 720ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation: hero-copy-in 720ms cubic-bezier(.2,.75,.25,1) both;
 }
 
-.hero-ready .hero-copy > :nth-child(2) {
-  animation-delay: 80ms;
-}
-.hero-ready .hero-copy > :nth-child(3) {
-  animation-delay: 150ms;
-}
-.hero-ready .hero-copy > :nth-child(4) {
-  animation-delay: 220ms;
-}
-.hero-ready .hero-copy > :nth-child(5) {
-  animation-delay: 290ms;
-}
+.hero-ready .hero-copy > :nth-child(2) { animation-delay: 80ms; }
+.hero-ready .hero-copy > :nth-child(3) { animation-delay: 150ms; }
+.hero-ready .hero-copy > :nth-child(4) { animation-delay: 220ms; }
+.hero-ready .hero-copy > :nth-child(5) { animation-delay: 290ms; }
 
 .hero-ready .hero-visual {
-  animation: hero-visual-in 900ms 120ms cubic-bezier(0.16, 0.82, 0.24, 1) both;
+  animation: hero-visual-in 900ms 120ms cubic-bezier(.16,.82,.24,1) both;
 }
 
 .hero-visual {
@@ -1536,13 +1481,10 @@ nav > a:hover,
 .app-preview {
   --preview-offset-x: 0%;
   --preview-scale: 1;
-  transform: translateX(var(--preview-offset-x)) perspective(1400px) rotateX(var(--tilt-x))
-    rotateY(var(--tilt-y)) rotateZ(1.3deg) scale(var(--preview-scale));
+  transform: translateX(var(--preview-offset-x)) perspective(1400px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(1.3deg) scale(var(--preview-scale));
   transform-origin: center;
   transform-style: preserve-3d;
-  transition:
-    transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    box-shadow 220ms ease;
+  transition: transform 220ms cubic-bezier(.2,.75,.25,1), box-shadow 220ms ease;
   will-change: transform;
 }
 
@@ -1561,9 +1503,7 @@ nav > a:hover,
 }
 
 .floating-card {
-  transition:
-    transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    box-shadow 200ms ease;
+  transition: transform 240ms cubic-bezier(.2,.75,.25,1), box-shadow 200ms ease;
   will-change: transform;
 }
 
@@ -1577,39 +1517,19 @@ nav > a:hover,
   transform: translate3d(calc(var(--shift-x) * 0.75), calc(var(--shift-y) * 0.65), 55px);
 }
 
-.visual-orb-main {
-  animation: orb-drift 9s ease-in-out infinite alternate;
-}
-.visual-orb-small {
-  animation: orb-drift-small 7s ease-in-out infinite alternate;
-}
-.dot-grid {
-  animation: dots-breathe 4s ease-in-out infinite;
-}
+.visual-orb-main { animation: orb-drift 9s ease-in-out infinite alternate; }
+.visual-orb-small { animation: orb-drift-small 7s ease-in-out infinite alternate; }
+.dot-grid { animation: dots-breathe 4s ease-in-out infinite; }
 .preview-logo,
-.brand-mark {
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
-.brand:hover .brand-mark {
-  transform: rotate(-7deg) scale(1.08);
-  box-shadow: 0 12px 26px rgba(89, 72, 207, 0.34);
-}
-.focus-progress span {
-  transform-origin: left;
-  animation: progress-grow 1.2s 550ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-}
-.preview-header button span {
-  animation: notification-pulse 2.2s ease-out infinite;
-}
+.brand-mark { transition: transform 180ms ease, box-shadow 180ms ease; }
+.brand:hover .brand-mark { transform: rotate(-7deg) scale(1.08); box-shadow: 0 12px 26px rgba(89,72,207,.34); }
+.focus-progress span { transform-origin: left; animation: progress-grow 1.2s 550ms cubic-bezier(.2,.75,.25,1) both; }
+.preview-header button span { animation: notification-pulse 2.2s ease-out infinite; }
 
 [data-reveal] {
   opacity: 0;
   transform: translateY(28px);
-  transition:
-    opacity 680ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    transform 680ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  transition: opacity 680ms cubic-bezier(.2,.75,.25,1), transform 680ms cubic-bezier(.2,.75,.25,1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
@@ -1644,26 +1564,20 @@ nav > a:hover,
 }
 
 .trust-card {
-  transition:
-    transform 260ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    box-shadow 260ms ease;
+  transition: transform 260ms cubic-bezier(.2,.75,.25,1), box-shadow 260ms ease;
 }
 
 .trust-card:hover {
   transform: translateY(-6px) rotateY(-1.5deg);
-  box-shadow: 0 38px 76px rgba(23, 33, 58, 0.27);
+  box-shadow: 0 38px 76px rgba(23,33,58,.27);
 }
 
 .trust-card:hover .trust-icon {
   transform: rotate(-6deg) scale(1.06);
 }
 
-.trust-icon {
-  transition: transform 200ms ease;
-}
-.trust-card-glow {
-  animation: trust-glow 6s ease-in-out infinite alternate;
-}
+.trust-icon { transition: transform 200ms ease; }
+.trust-card-glow { animation: trust-glow 6s ease-in-out infinite alternate; }
 
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
@@ -1675,129 +1589,65 @@ nav a:focus-visible {
 }
 
 @keyframes hero-copy-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes hero-visual-in {
-  from {
-    opacity: 0;
-    transform: translate3d(30px, 18px, 0) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
+  from { opacity: 0; transform: translate3d(30px, 18px, 0) scale(.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes card-float {
-  0%,
-  100% {
-    margin-top: 0;
-  }
-  50% {
-    margin-top: -8px;
-  }
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -8px; }
 }
 
 @keyframes card-float-delayed {
-  0%,
-  100% {
-    margin-top: -3px;
-  }
-  50% {
-    margin-top: 6px;
-  }
+  0%, 100% { margin-top: -3px; }
+  50% { margin-top: 6px; }
 }
 
 @keyframes orb-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(-12px, 9px, 0) scale(1.025);
-  }
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-12px, 9px, 0) scale(1.025); }
 }
 
 @keyframes orb-drift-small {
-  from {
-    transform: translate3d(0, 5px, 0);
-  }
-  to {
-    transform: translate3d(10px, -6px, 0);
-  }
+  from { transform: translate3d(0, 5px, 0); }
+  to { transform: translate3d(10px, -6px, 0); }
 }
 
 @keyframes dots-breathe {
-  0%,
-  100% {
-    opacity: 0.28;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 0.58;
-    transform: translateY(-4px);
-  }
+  0%, 100% { opacity: .28; transform: translateY(0); }
+  50% { opacity: .58; transform: translateY(-4px); }
 }
 
 @keyframes progress-grow {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @keyframes notification-pulse {
-  0%,
-  55% {
-    box-shadow: 0 0 0 0 rgba(228, 108, 108, 0.4);
-  }
-  100% {
-    box-shadow: 0 0 0 7px rgba(228, 108, 108, 0);
-  }
+  0%, 55% { box-shadow: 0 0 0 0 rgba(228,108,108,.4); }
+  100% { box-shadow: 0 0 0 7px rgba(228,108,108,0); }
 }
 
 @keyframes trust-glow {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.7;
-  }
-  to {
-    transform: translate3d(-18px, 18px, 0) scale(1.12);
-    opacity: 1;
-  }
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: .7; }
+  to { transform: translate3d(-18px, 18px, 0) scale(1.12); opacity: 1; }
 }
 
 @media (max-width: 1120px) {
-  .app-preview {
-    --preview-offset-x: -50%;
-  }
+  .app-preview { --preview-offset-x: -50%; }
 }
 
 @media (max-width: 660px) {
-  .app-preview {
-    --preview-scale: 0.64;
-  }
-  .hero-copy {
-    text-align: center;
-  }
-  .hero-description {
-    max-width: 410px;
-  }
-  .section-heading {
-    max-width: 350px;
-  }
-  .section-heading h2 {
-    text-wrap: balance;
-  }
+  .app-preview { --preview-scale: .64; }
+  .hero-copy { text-align: center; }
+  .hero-description { max-width: 410px; }
+  .section-heading { max-width: 350px; }
+  .section-heading h2 { text-wrap: balance; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1823,4 +1673,5 @@ nav a:focus-visible {
     animation: none !important;
   }
 }
+
 </style>

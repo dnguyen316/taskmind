@@ -34,8 +34,8 @@ Follow this workflow to deliver backend changes safely and consistently.
 
 After implementation, format backend code from `apps/backend` before final checks:
 
-1. `mvn -q spotless:apply`
-2. `mvn -q spotless:check` when you need a no-diff formatter guard
+1. `mvn -q spotless:apply -DspotlessFiles=<changed-java-files>`
+2. `mvn -q spotless:check -DspotlessFiles=<changed-java-files>` when you need a no-diff formatter guard
 
 Then do a quick code review pass to find issues before slower tests:
 

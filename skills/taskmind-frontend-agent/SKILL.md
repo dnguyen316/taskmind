@@ -34,8 +34,8 @@ Follow this workflow to deliver frontend changes consistently.
 
 After implementation, format frontend code from `apps/frontend` before final checks:
 
-1. `npm run format`
-2. `npm run format:check` when you need a no-diff formatter guard
+1. `npm run format -- <changed-fe-files>`
+2. `npm run format:check -- <changed-fe-files>` when you need a no-diff formatter guard
 
 Then do a quick code review pass to find issues before slower checks:
 

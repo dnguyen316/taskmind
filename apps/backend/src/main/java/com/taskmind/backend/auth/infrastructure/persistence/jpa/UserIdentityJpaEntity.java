@@ -39,5 +39,6 @@ public class UserIdentityJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected UserIdentityJpaEntity() {}
+    protected UserIdentityJpaEntity() {
+    }
 }

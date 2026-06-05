@@ -11,30 +11,30 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(
-        properties =
-                "spring.datasource.url=jdbc:h2:mem:flyway-startup;MODE=PostgreSQL;NON_KEYWORDS=KEY,VALUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE")
+@SpringBootTest(properties =
+    "spring.datasource.url=jdbc:h2:mem:flyway-startup;MODE=PostgreSQL;NON_KEYWORDS=KEY,VALUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE")
 @ActiveProfiles("test")
 class FlywayStartupIntegrationTest {
 
-    @Autowired private Flyway flyway;
+    @Autowired
+    private Flyway flyway;
 
-    @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void startsWithCompleteMigrationChain() {
         var appliedMigrations = Arrays.stream(flyway.info().applied()).toList();
 
         assertThat(appliedMigrations)
-                .extracting(migration -> migration.getVersion().getVersion())
-                .containsExactly("1", "2", "3", "4", "5", "6");
+            .extracting(migration -> migration.getVersion().getVersion())
+            .containsExactly("1", "2", "3", "4", "5", "6");
         assertThat(appliedMigrations)
-                .allMatch(migration -> migration.getState() == MigrationState.SUCCESS);
-        assertThat(
-                        jdbcTemplate.queryForObject(
-                                "SELECT COUNT(*) FROM information_schema.columns "
-                                        + "WHERE LOWER(table_name) = 'projects' AND LOWER(column_name) = 'project_key'",
-                                Integer.class))
-                .isEqualTo(1);
+            .allMatch(migration -> migration.getState() == MigrationState.SUCCESS);
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE LOWER(table_name) = 'projects' AND LOWER(column_name) = 'project_key'",
+            Integer.class
+        )).isEqualTo(1);
     }
 }

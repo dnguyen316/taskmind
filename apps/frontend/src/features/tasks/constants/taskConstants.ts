@@ -2,7 +2,12 @@ import type { CreateTaskFormValues, TaskStatus } from '../types'
 
 export const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001'
 
-export const TASK_STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']
+export const TASK_STATUS_OPTIONS: TaskStatus[] = [
+  'TODO',
+  'IN_PROGRESS',
+  'DONE',
+  'ARCHIVED',
+]
 
 export const STATUS_TRANSITIONS: Array<{ label: string; value: TaskStatus }> = [
   { label: 'Start', value: 'IN_PROGRESS' },

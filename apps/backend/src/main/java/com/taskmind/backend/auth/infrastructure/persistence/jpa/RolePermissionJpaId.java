@@ -15,7 +15,8 @@ public class RolePermissionJpaId implements Serializable {
     @Column(name = "permission_id", nullable = false)
     private UUID permissionId;
 
-    protected RolePermissionJpaId() {}
+    protected RolePermissionJpaId() {
+    }
 
     public RolePermissionJpaId(UUID roleId, UUID permissionId) {
         this.roleId = roleId;
@@ -30,8 +31,7 @@ public class RolePermissionJpaId implements Serializable {
         if (!(o instanceof RolePermissionJpaId that)) {
             return false;
         }
-        return Objects.equals(roleId, that.roleId)
-                && Objects.equals(permissionId, that.permissionId);
+        return Objects.equals(roleId, that.roleId) && Objects.equals(permissionId, that.permissionId);
     }
 
     @Override

@@ -6,7 +6,9 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 public record CreateProjectRequest(
-        @NotBlank @Size(max = 200) String name,
-        @NotBlank @Size(max = 20) String key,
-        String description,
-        @NotNull UUID ownerUserId) {}
+    @NotBlank @Size(max = 200) String name,
+    @NotBlank @Size(max = 20) String key,
+    String description,
+    @NotNull UUID ownerUserId
+) {
+}

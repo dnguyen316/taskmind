@@ -18,8 +18,7 @@ public interface SpringDataTaskJpaRepository extends JpaRepository<TaskJpaEntity
     @Query("select t from TaskJpaEntity t where t.id = :id")
     Optional<TaskJpaEntity> findByIdForUpdate(@Param("id") UUID id);
 
-    @Query(
-            """
+    @Query("""
         select t
         from TaskJpaEntity t
         where (:userId is null or t.userId = :userId)
@@ -28,11 +27,12 @@ public interface SpringDataTaskJpaRepository extends JpaRepository<TaskJpaEntity
         order by t.createdAt desc
         """)
     List<TaskJpaEntity> findFiltered(
-            @Param("userId") UUID userId,
-            @Param("status") TaskStatus status,
-            @Param("overdueOnly") boolean overdueOnly,
-            @Param("now") OffsetDateTime now,
-            @Param("doneStatus") TaskStatus doneStatus,
-            @Param("archivedStatus") TaskStatus archivedStatus,
-            Pageable pageable);
+        @Param("userId") UUID userId,
+        @Param("status") TaskStatus status,
+        @Param("overdueOnly") boolean overdueOnly,
+        @Param("now") OffsetDateTime now,
+        @Param("doneStatus") TaskStatus doneStatus,
+        @Param("archivedStatus") TaskStatus archivedStatus,
+        Pageable pageable
+    );
 }

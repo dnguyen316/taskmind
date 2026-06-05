@@ -9,5 +9,6 @@ import org.springframework.test.context.ActiveProfiles;
 class TaskmindBackendApplicationTests {
 
     @Test
-    void contextLoads() {}
+    void contextLoads() {
+    }
 }

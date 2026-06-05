@@ -8,8 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write",
+    "format:check": "prettier --check",
+    "format:all": "prettier --write .",
+    "format:check:all": "prettier --check ."
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",

@@ -33,7 +33,7 @@ Use this skill to deliver production-grade Java backend work with clear boundari
    - Avoid secrets in code, logs, migrations, fixtures, or test output.
 
 5. **Format after implementation**
-   - Run the configured backend formatter from the owning service directory before final tests (for TaskMind backend: `mvn -q spotless:apply`).
+   - Run the configured backend formatter from the owning service directory before final tests (for TaskMind backend: `mvn -q spotless:apply -DspotlessFiles=<changed-java-files>`).
    - Keep generated formatting-only churn separate from logic in your review notes so real behavior changes stay easy to inspect.
 
 6. **Review the diff to find issues quickly**

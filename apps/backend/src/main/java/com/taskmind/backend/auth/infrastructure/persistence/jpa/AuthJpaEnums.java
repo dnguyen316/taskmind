@@ -2,7 +2,8 @@ package com.taskmind.backend.auth.infrastructure.persistence.jpa;
 
 public final class AuthJpaEnums {
 
-    private AuthJpaEnums() {}
+    private AuthJpaEnums() {
+    }
 
     public enum UserStatus {
         PENDING_VERIFICATION,

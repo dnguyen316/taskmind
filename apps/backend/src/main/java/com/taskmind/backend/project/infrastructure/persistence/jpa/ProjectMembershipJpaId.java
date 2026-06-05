@@ -9,7 +9,8 @@ public class ProjectMembershipJpaId implements Serializable {
     private UUID projectId;
     private UUID userId;
 
-    public ProjectMembershipJpaId() {}
+    public ProjectMembershipJpaId() {
+    }
 
     public ProjectMembershipJpaId(UUID projectId, UUID userId) {
         this.projectId = projectId;

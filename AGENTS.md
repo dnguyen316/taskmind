@@ -114,11 +114,13 @@ mvn -q -Dtest=TaskControllerTest#rejectsStaleTaskUpdate test
 After each implementation pass and before final verification, do a deliberate polish loop:
 
 1. **Format backend code** from the owning Spring Boot service directory with
-   `mvn -q spotless:apply` when Java files changed. Re-run `mvn -q spotless:check` if
-   you need a no-diff formatter guard.
-2. **Format frontend code** from `apps/frontend` with `npm run format` when Vue,
-   TypeScript, CSS, JSON, or Markdown files changed. Re-run `npm run format:check` for
-   a no-diff formatter guard.
+   `mvn -q spotless:apply -DspotlessFiles=<changed-java-files>` when Java files changed.
+   Re-run `mvn -q spotless:check -DspotlessFiles=<changed-java-files>` if you need a
+   no-diff formatter guard.
+2. **Format frontend code** from `apps/frontend` with
+   `npm run format -- <changed-fe-files>` when Vue, TypeScript, CSS, JSON, or Markdown
+   files changed. Re-run `npm run format:check -- <changed-fe-files>` for a no-diff
+   formatter guard.
 3. **Code review before tests**: scan your own diff with `git diff --check` and
    `git diff --stat`, then review the changed files by feature boundary to catch missing
    tests, contract drift, dead code, unsafe auth assumptions, and formatting noise quickly.

@@ -6,6 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserIdentityJpaRepository extends JpaRepository<UserIdentityJpaEntity, UUID> {
 
-    Optional<UserIdentityJpaEntity> findByTypeAndValue(
-            AuthJpaEnums.IdentityType type, String value);
+    Optional<UserIdentityJpaEntity> findByTypeAndValue(AuthJpaEnums.IdentityType type, String value);
 }

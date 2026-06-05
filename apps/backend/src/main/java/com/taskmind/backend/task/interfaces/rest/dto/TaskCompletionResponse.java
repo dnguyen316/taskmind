@@ -5,4 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record TaskCompletionResponse(
-        UUID id, TaskStatus status, boolean completed, Instant updatedAt) {}
+    UUID id,
+    TaskStatus status,
+    boolean completed,
+    Instant updatedAt
+) {
+}

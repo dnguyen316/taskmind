@@ -40,23 +40,23 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(
-            AuthenticatedUser requester, @Valid @RequestBody CreateTaskRequest request) {
+        AuthenticatedUser requester,
+        @Valid @RequestBody CreateTaskRequest request
+    ) {
         try {
-            var created =
-                    taskApplicationService.create(
-                            requester,
-                            new CreateTaskCommand(
-                                    request.userId(),
-                                    request.projectId(),
-                                    request.title(),
-                                    request.description(),
-                                    request.status(),
-                                    request.priority(),
-                                    request.dueAt(),
-                                    request.durationMinutes(),
-                                    request.energyLevel(),
-                                    request.source(),
-                                    request.confidence()));
+            var created = taskApplicationService.create(requester, new CreateTaskCommand(
+                request.userId(),
+                request.projectId(),
+                request.title(),
+                request.description(),
+                request.status(),
+                request.priority(),
+                request.dueAt(),
+                request.durationMinutes(),
+                request.energyLevel(),
+                request.source(),
+                request.confidence()
+            ));
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
@@ -65,57 +65,54 @@ public class TaskController {
 
     @GetMapping
     public List<Task> listTasks(
-            AuthenticatedUser requester,
-            @RequestParam(required = false) UUID userId,
-            @RequestParam(required = false) TaskStatus status,
-            @RequestParam(defaultValue = "false") boolean overdueOnly,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        AuthenticatedUser requester,
+        @RequestParam(required = false) UUID userId,
+        @RequestParam(required = false) TaskStatus status,
+        @RequestParam(defaultValue = "false") boolean overdueOnly,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "20") @Min(1) int size
+    ) {
         return taskApplicationService.list(
-                requester,
-                java.util.Optional.ofNullable(userId),
-                java.util.Optional.ofNullable(status),
-                overdueOnly,
-                page,
-                size);
+            requester,
+            java.util.Optional.ofNullable(userId),
+            java.util.Optional.ofNullable(status),
+            overdueOnly,
+            page,
+            size
+        );
     }
 
     @GetMapping("/{id}/completion")
     public ResponseEntity<TaskCompletionResponse> getCompletion(@PathVariable UUID id) {
-        return taskApplicationService
-                .findById(id)
-                .map(
-                        task ->
-                                ResponseEntity.ok(
-                                        new TaskCompletionResponse(
-                                                task.id(),
-                                                task.status(),
-                                                task.status() == TaskStatus.DONE,
-                                                task.updatedAt())))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return taskApplicationService.findById(id)
+            .map(task -> ResponseEntity.ok(new TaskCompletionResponse(
+                task.id(),
+                task.status(),
+                task.status() == TaskStatus.DONE,
+                task.updatedAt()
+            )))
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<Task> updateTask(
-            AuthenticatedUser requester,
-            @PathVariable UUID id,
-            @Valid @RequestBody UpdateTaskRequest request) {
+        AuthenticatedUser requester,
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateTaskRequest request
+    ) {
         try {
-            return taskApplicationService
-                    .update(
-                            requester,
-                            id,
-                            new UpdateTaskCommand(
-                                    request.projectId(),
-                                    request.title(),
-                                    request.description(),
-                                    request.status(),
-                                    request.priority(),
-                                    request.dueAt(),
-                                    request.durationMinutes(),
-                                    request.energyLevel()))
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+            return taskApplicationService.update(requester, id, new UpdateTaskCommand(
+                request.projectId(),
+                request.title(),
+                request.description(),
+                request.status(),
+                request.priority(),
+                request.dueAt(),
+                request.durationMinutes(),
+                request.energyLevel()
+            ))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
@@ -123,28 +120,31 @@ public class TaskController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<Task> updateTaskStatus(
-            AuthenticatedUser requester,
-            @PathVariable UUID id,
-            @Valid @RequestBody UpdateTaskStatusRequest request) {
+        AuthenticatedUser requester,
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateTaskStatusRequest request
+    ) {
         try {
-            return taskApplicationService
-                    .updateStatus(requester, id, request.status())
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+            return taskApplicationService.updateStatus(requester, id, request.status())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
     }
 
     @PatchMapping("/{id}/archive")
-    public ResponseEntity<Task> archiveTask(AuthenticatedUser requester, @PathVariable UUID id) {
+    public ResponseEntity<Task> archiveTask(
+        AuthenticatedUser requester,
+        @PathVariable UUID id
+    ) {
         try {
-            return taskApplicationService
-                    .archive(requester, id)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+            return taskApplicationService.archive(requester, id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
     }
+
 }

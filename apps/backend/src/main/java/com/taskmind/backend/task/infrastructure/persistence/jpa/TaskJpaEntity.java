@@ -70,7 +70,8 @@ public class TaskJpaEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected TaskJpaEntity() {}
+    protected TaskJpaEntity() {
+    }
 
     private TaskJpaEntity(Task task) {
         this.id = task.id();
@@ -96,20 +97,21 @@ public class TaskJpaEntity {
 
     public Task toDomain() {
         return new Task(
-                id,
-                version,
-                userId,
-                projectId,
-                title,
-                description,
-                status,
-                priority,
-                dueAt,
-                durationMinutes,
-                energyLevel,
-                source,
-                confidence,
-                createdAt,
-                updatedAt);
+            id,
+            version,
+            userId,
+            projectId,
+            title,
+            description,
+            status,
+            priority,
+            dueAt,
+            durationMinutes,
+            energyLevel,
+            source,
+            confidence,
+            createdAt,
+            updatedAt
+        );
     }
 }
