@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
+import type { GenericObject, SubmissionContext } from 'vee-validate'
+import type { AddProjectMemberPayload, ProjectMembership } from '../types'
 import * as yup from 'yup'
 
-interface ProjectMember {
-  userId: string
-  role: string
-}
-
 const props = withDefaults(defineProps<{
-  members: ProjectMember[]
+  members: ProjectMembership[]
   loading?: boolean
   saving?: boolean
   errorMessage?: string | null
@@ -19,18 +16,18 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  addMember: [payload: { userId: string; role: string }]
+  addMember: [payload: AddProjectMemberPayload]
   removeMember: [userId: string]
 }>()
 
 const schema = yup.object({
   userId: yup.string().trim().required('User id is required').max(100, 'User id must be at most 100 characters'),
-  role: yup.string().trim().required('Role is required').max(50, 'Role must be at most 50 characters'),
+  role: yup.string().trim().oneOf(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).required('Role is required'),
 })
 
-function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (state?: unknown) => void }) {
-  emit('addMember', { userId: String(values.userId ?? '').trim(), role: String(values.role ?? '').trim() })
-  resetForm({ values: { userId: '', role: '' } })
+function onAdd(values: GenericObject, { resetForm }: SubmissionContext) {
+  emit('addMember', { userId: String(values.userId ?? '').trim(), role: String(values.role ?? '').trim() as AddProjectMemberPayload['role'] })
+  resetForm({ values: { userId: '', role: 'MEMBER' } })
 }
 </script>
 
@@ -63,7 +60,7 @@ function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (sta
     <a-spin :spinning="props.loading" class="members-spin">
       <a-empty v-if="!props.loading && props.members.length === 0" description="No members yet." />
       <a-list v-else :data-source="props.members" size="small">
-        <template #renderItem="{ item }">
+        <template #renderItem="{ item }: { item: ProjectMembership }">
           <a-list-item>
             <a-space>
               <span><strong>{{ item.userId }}</strong></span>

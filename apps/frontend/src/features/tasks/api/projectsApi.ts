@@ -1,10 +1,5 @@
-import { apiClient } from '../../../lib/apiClient'
-import type { Project } from '../types'
+import { listProjects as listCanonicalProjects } from '../../projects/api/projectsApi'
 
-export async function listProjects({ userId }: { userId: string }) {
-  const response = await apiClient.get<Project[]>('/v1/projects', {
-    params: { userId },
-  })
-
-  return Array.isArray(response.data) ? response.data : []
+export async function listProjects() {
+  return listCanonicalProjects({ includeArchived: false })
 }

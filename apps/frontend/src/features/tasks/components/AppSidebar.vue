@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { CheckSquareOutlined, FolderOutlined, TeamOutlined, CalendarOutlined, InboxOutlined, BarChartOutlined } from '@ant-design/icons-vue'
 
-const props = defineProps<{ taskCount?: number }>()
+defineProps<{ taskCount?: number }>()
 const route = useRoute()
 
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 const isTasks = computed(() => route.path.startsWith('/tasks'))
 const isProjects = computed(() => route.path.startsWith('/projects'))
+const isTeam = computed(() => route.path.startsWith('/team'))
+const isCalendar = computed(() => route.path.startsWith('/calendar'))
+const isInbox = computed(() => route.path.startsWith('/inbox'))
+const isReports = computed(() => route.path.startsWith('/reports'))
 </script>
 
 <template>
@@ -21,10 +25,10 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <a class="menu-item"><TeamOutlined />Team</a>
-      <a class="menu-item"><CalendarOutlined />Calendar</a>
-      <a class="menu-item"><InboxOutlined />Inbox</a>
-      <a class="menu-item"><BarChartOutlined />Reports</a>
+      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink>
+      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink>
+      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink>
+      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink>
     </nav>
     <div class="user-pill">
       <div class="avatar">AC</div>
@@ -75,14 +79,21 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
   background: var(--tm-primary-soft);
 }
 
-.menu-item em {
+.menu-item em,
+.coming-soon {
   margin-left: auto;
   padding: 0 8px;
+  color: var(--tm-text-muted);
   font-size: 12px;
   font-style: normal;
-  color: var(--tm-text-muted);
+  white-space: nowrap;
   background: var(--tm-surface-muted);
   border-radius: 999px;
+}
+
+.coming-soon {
+  padding: 1px 7px;
+  font-size: 11px;
 }
 
 .group-title {

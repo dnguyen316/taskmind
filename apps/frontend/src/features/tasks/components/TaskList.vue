@@ -6,7 +6,18 @@ import type { Task, TaskStatus } from '../types'
 const props = defineProps<{ tasks: Task[] }>()
 const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
 
-const columns = [
+interface TaskTableColumn {
+  title: string
+  dataIndex: keyof Task | 'key'
+  key: keyof Task | 'key'
+  width?: number
+}
+
+interface TaskTableRecord extends Task {
+  key: string
+}
+
+const columns: TaskTableColumn[] = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 120 },
   { title: 'TASK', dataIndex: 'title', key: 'title' },
   { title: 'STATUS', dataIndex: 'status', key: 'status', width: 150 },
@@ -15,7 +26,7 @@ const columns = [
   { title: 'EFFORT', dataIndex: 'durationMinutes', key: 'durationMinutes', width: 90 },
 ]
 
-const dataSource = computed(() => props.tasks.map((task) => ({ ...task, key: task.id })))
+const dataSource = computed<TaskTableRecord[]>(() => props.tasks.map((task) => ({ ...task, key: task.id })))
 
 function statusLabel(status: TaskStatus) {
   return status.replace('_', ' ')
@@ -33,7 +44,7 @@ function dueLabel(task: Task) {
 
 <template>
   <a-table :columns="columns" :data-source="dataSource" :pagination="{ pageSize: 12 }" size="middle">
-    <template #bodyCell="{ column, record }">
+    <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
       <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
       <template v-else-if="column.key === 'title'">
         <router-link :to="`/tasks/${record.id}`" class="task-link">{{ record.title }}</router-link>

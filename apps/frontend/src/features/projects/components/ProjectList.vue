@@ -1,14 +1,8 @@
 <script setup lang="ts">
-interface ProjectListItem {
-  id: string
-  name: string
-  key: string
-  description?: string | null
-  ownerUserId?: string | null
-}
+import type { Project } from '../types'
 
 withDefaults(defineProps<{
-  projects: ProjectListItem[]
+  projects: Project[]
   loading?: boolean
   errorMessage?: string | null
 }>(), {
@@ -25,7 +19,7 @@ withDefaults(defineProps<{
       <a-empty v-if="!loading && projects.length === 0" description="No projects available." />
 
       <a-list v-else :data-source="projects" item-layout="vertical" class="project-list">
-        <template #renderItem="{ item }">
+        <template #renderItem="{ item }: { item: Project }">
           <a-list-item class="project-item">
             <a-list-item-meta>
               <template #title>
