@@ -6,6 +6,8 @@ info:
     Initial v1 contract draft for TaskMind backend task and project management endpoints.
 servers:
   - url: http://localhost:8080
+security:
+  - bearerAuth: []
 paths:
   /v1/tasks:
     post:
@@ -313,6 +315,12 @@ paths:
           description: Project not found
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     TaskIdPath:
       in: path

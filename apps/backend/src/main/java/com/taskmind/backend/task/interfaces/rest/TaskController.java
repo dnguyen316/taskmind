@@ -13,9 +13,7 @@ import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -27,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -43,25 +40,23 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
-        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        AuthenticatedUser requester,
         @Valid @RequestBody CreateTaskRequest request
     ) {
         try {
-            var requester = toAuthenticatedUser(requesterUserId, rolesHeader);
             var created = taskApplicationService.create(requester, new CreateTaskCommand(
-            request.userId(),
-            request.projectId(),
-            request.title(),
-            request.description(),
-            request.status(),
-            request.priority(),
-            request.dueAt(),
-            request.durationMinutes(),
-            request.energyLevel(),
-            request.source(),
-            request.confidence()
-        ));
+                request.userId(),
+                request.projectId(),
+                request.title(),
+                request.description(),
+                request.status(),
+                request.priority(),
+                request.dueAt(),
+                request.durationMinutes(),
+                request.energyLevel(),
+                request.source(),
+                request.confidence()
+            ));
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
@@ -70,8 +65,7 @@ public class TaskController {
 
     @GetMapping
     public List<Task> listTasks(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
-        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        AuthenticatedUser requester,
         @RequestParam(required = false) UUID userId,
         @RequestParam(required = false) TaskStatus status,
         @RequestParam(defaultValue = "false") boolean overdueOnly,
@@ -79,7 +73,7 @@ public class TaskController {
         @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
         return taskApplicationService.list(
-            toAuthenticatedUser(requesterUserId, rolesHeader),
+            requester,
             java.util.Optional.ofNullable(userId),
             java.util.Optional.ofNullable(status),
             overdueOnly,
@@ -102,13 +96,12 @@ public class TaskController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<Task> updateTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
-        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        AuthenticatedUser requester,
         @PathVariable UUID id,
         @Valid @RequestBody UpdateTaskRequest request
     ) {
         try {
-            return taskApplicationService.update(toAuthenticatedUser(requesterUserId, rolesHeader), id, new UpdateTaskCommand(
+            return taskApplicationService.update(requester, id, new UpdateTaskCommand(
                 request.projectId(),
                 request.title(),
                 request.description(),
@@ -127,34 +120,31 @@ public class TaskController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<Task> updateTaskStatus(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
-        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        AuthenticatedUser requester,
         @PathVariable UUID id,
         @Valid @RequestBody UpdateTaskStatusRequest request
     ) {
-        return taskApplicationService.updateStatus(toAuthenticatedUser(requesterUserId, rolesHeader), id, request.status())
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            return taskApplicationService.updateStatus(requester, id, request.status())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        }
     }
 
     @PatchMapping("/{id}/archive")
     public ResponseEntity<Task> archiveTask(
-        @RequestHeader("X-User-Id") UUID requesterUserId,
-        @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+        AuthenticatedUser requester,
         @PathVariable UUID id
     ) {
-        return taskApplicationService.archive(toAuthenticatedUser(requesterUserId, rolesHeader), id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            return taskApplicationService.archive(requester, id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        }
     }
 
-    private AuthenticatedUser toAuthenticatedUser(UUID userId, String rolesHeader) {
-        var roles = rolesHeader == null || rolesHeader.isBlank()
-            ? Set.<String>of()
-            : java.util.Arrays.stream(rolesHeader.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .collect(Collectors.toSet());
-        return new AuthenticatedUser(userId, roles);
-    }
 }
