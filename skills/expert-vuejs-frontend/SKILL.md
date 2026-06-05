@@ -38,9 +38,18 @@ Use this skill to deliver production-grade Vue frontend work with strong type sa
    - Ensure keyboard access, focus management, visible focus states, labels, alt text, and ARIA only when semantic HTML is insufficient.
    - Verify forms expose clear required, invalid, disabled, and submitting states.
 
-6. **Validate before finishing**
+6. **Format after implementation**
+   - Run the configured frontend formatter before final checks (for TaskMind frontend: `npm run format -- <changed-fe-files>` from `apps/frontend`).
+   - Keep Vue, TypeScript, CSS, JSON, and Markdown formatting consistent so component intent stays readable.
+
+7. **Review the diff to find issues quickly**
+   - Run `git diff --check` and inspect `git diff --stat` to catch whitespace, broad accidental edits, and formatting-only churn.
+   - Review changed files by UI boundary: API types, route behavior, component props/emits, accessibility, async states, and stale state cleanup.
+   - Fix the earliest typed/API boundary mismatch first so downstream components stay simple.
+
+8. **Validate before finishing**
    - Run the smallest relevant checks first, then the project quality gate when practical.
-   - Prefer `npm run typecheck`, `npm run test`, `npm run build`, and any project-specific lint/E2E commands discovered in `package.json`.
+   - Prefer `npm run format:check -- <changed-fe-files>`, `npm run typecheck`, `npm run test`, `npm run build`, and any project-specific lint/E2E commands discovered in `package.json`.
    - For visible UI changes, inspect manually or capture a screenshot when browser tooling is available.
 
 ## Decision guide

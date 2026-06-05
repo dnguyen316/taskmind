@@ -158,4 +158,3 @@ function getRecencyTimestamp(task: Task) {
 
   return 0
 }
-
