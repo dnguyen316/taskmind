@@ -17,6 +17,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    private static final String[] PUBLIC_AUTH_ROUTES = {
+            "/v1/auth/login",
+            "/v1/auth/signup/**",
+            "/v1/auth/verify/**",
+            "/v1/auth/oauth/**",
+            "/v1/auth/password/**",
+            "/v1/auth/token/refresh",
+            "/v1/auth/logout"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtClaimAuthenticationConverter jwtConverter,
             ObjectMapper objectMapper) throws Exception {
@@ -25,6 +35,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers(PUBLIC_AUTH_ROUTES).permitAll()
                         .requestMatchers("/v1/**").authenticated()
                         .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
                         .anyRequest().denyAll())
