@@ -102,7 +102,7 @@ function archiveProject(projectId: string) {
     <a-card title="Project list" class="surface-card">
       <a-empty v-if="activeProjects.length === 0" description="No active projects." />
       <a-list v-else item-layout="horizontal" :data-source="activeProjects">
-        <template #renderItem="{ item }">
+        <template #renderItem="{ item }: { item: ProjectRecord }">
           <a-list-item>
             <template #actions>
               <a-button type="link" @click="router.push({ name: 'project-detail', params: { id: item.id } })">View</a-button>

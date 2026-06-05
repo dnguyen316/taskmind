@@ -2,12 +2,9 @@
 import { computed } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
+import type { UpdateProjectPayload } from '../types'
 
-interface ProjectEditableFields {
-  name: string
-  key: string
-  description: string | null
-}
+type ProjectEditableFields = Required<Pick<UpdateProjectPayload, 'name' | 'key' | 'description'>>
 
 const props = withDefaults(defineProps<{
   value: ProjectEditableFields
@@ -33,11 +30,24 @@ const initialValues = computed<ProjectEditableFields>(() => ({
 }))
 
 function handleValidSubmit(values: Record<string, unknown>) {
+  const formValues = toProjectEditableFields(values)
   emit('submit', {
-    name: String(values.name ?? "").trim(),
-    key: String(values.key ?? "").trim(),
-    description: String(values.description ?? "").trim() || null,
+    name: formValues.name.trim(),
+    key: formValues.key.trim(),
+    description: formValues.description?.trim() || null,
   })
+}
+
+function toProjectEditableFields(values: Record<string, unknown>): ProjectEditableFields {
+  return {
+    name: stringValue(values.name),
+    key: stringValue(values.key),
+    description: stringValue(values.description),
+  }
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }
 </script>
 

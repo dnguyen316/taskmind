@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
+import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
+import type { AddProjectMemberPayload, ProjectMembership } from '../types'
 
-interface ProjectMember {
-  userId: string
-  role: string
-}
+type ProjectMemberFormValues = AddProjectMemberPayload
 
 const props = withDefaults(defineProps<{
-  members: ProjectMember[]
+  members: ProjectMembership[]
   loading?: boolean
   saving?: boolean
   errorMessage?: string | null
@@ -19,7 +18,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  addMember: [payload: { userId: string; role: string }]
+  addMember: [payload: AddProjectMemberPayload]
   removeMember: [userId: string]
 }>()
 
@@ -28,9 +27,18 @@ const schema = yup.object({
   role: yup.string().trim().required('Role is required').max(50, 'Role must be at most 50 characters'),
 })
 
-function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (state?: unknown) => void }) {
-  emit('addMember', { userId: String(values.userId ?? '').trim(), role: String(values.role ?? '').trim() })
-  resetForm({ values: { userId: '', role: '' } })
+function onAdd(values: Record<string, unknown>, { resetForm }: SubmissionContext<Record<string, unknown>>) {
+  const role = isProjectMembershipRole(values.role) ? values.role : 'MEMBER'
+  emit('addMember', { userId: stringValue(values.userId).trim(), role })
+  resetForm({ values: { userId: '', role: 'MEMBER' } } satisfies Partial<FormState<Record<string, unknown>>>)
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function isProjectMembershipRole(value: unknown): value is ProjectMemberFormValues['role'] {
+  return typeof value === 'string' && ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].includes(value)
 }
 </script>
 
@@ -38,7 +46,7 @@ function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (sta
   <a-card title="Project members" class="surface-card">
     <a-alert v-if="props.errorMessage" type="error" show-icon :message="props.errorMessage" class="space-bottom" />
 
-    <VeeForm :validation-schema="schema" :initial-values="{ userId: '', role: '' }" @submit="onAdd" v-slot="{ submitForm }">
+    <VeeForm :validation-schema="schema" :initial-values="{ userId: '', role: 'MEMBER' }" @submit="onAdd" v-slot="{ submitForm }">
       <a-form layout="inline" @submit.prevent="submitForm" class="member-form">
         <a-form-item label="User id" required>
           <Field name="userId" v-slot="{ field }">
@@ -63,7 +71,7 @@ function onAdd(values: Record<string, unknown>, { resetForm }: { resetForm: (sta
     <a-spin :spinning="props.loading" class="members-spin">
       <a-empty v-if="!props.loading && props.members.length === 0" description="No members yet." />
       <a-list v-else :data-source="props.members" size="small">
-        <template #renderItem="{ item }">
+        <template #renderItem="{ item }: { item: ProjectMembership }">
           <a-list-item>
             <a-space>
               <span><strong>{{ item.userId }}</strong></span>

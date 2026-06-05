@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import {
   BellOutlined,
@@ -11,6 +11,7 @@ import {
 import { useTasks } from '../composables/useTasks'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
+import type { Task } from '../types'
 
 const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
 
@@ -21,10 +22,31 @@ const taskMetrics = computed(() => ({
   completed: visibleTasks.value.filter((task) => task.status === 'DONE').length,
 }))
 
-const quickActions = ['Show blockers', 'Rebalance workload', 'Plan this week', 'Ask Nova anything']
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const quickActions: string[] = ['Show blockers', 'Rebalance workload', 'Plan this week', 'Ask Nova anything']
+const weekdays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-const projectStatus = [
+interface DashboardProjectStatus {
+  name: string
+  status: 'On track' | 'At risk' | 'Planning'
+  progress: number
+  color: string
+}
+
+interface RecentActivityItem {
+  initials: string
+  name: string
+  action: string
+  time: string
+  color: string
+}
+
+interface AiInsight {
+  title: string
+  description: string
+  action: string
+}
+
+const projectStatus: DashboardProjectStatus[] = [
   { name: 'Atlas — Web App v2', status: 'On track', progress: 68, color: '#2563eb' },
   { name: 'Ion — Mobile App', status: 'At risk', progress: 34, color: '#7c3aed' },
   { name: 'Nova — AI Routing Engine', status: 'On track', progress: 82, color: '#0f766e' },
@@ -33,7 +55,7 @@ const projectStatus = [
   { name: 'Pulse — Performance Sprint', status: 'On track', progress: 71, color: '#be185d' },
 ]
 
-const recentActivity = [
+const recentActivity: RecentActivityItem[] = [
   { initials: 'MP', name: 'Maya Patel', action: 'moved TSK-1027 to Review', time: '12m ago', color: '#4338ca' },
   { initials: 'JL', name: 'Jordan Lee', action: 'commented on Atlas blocker thread', time: '32m ago', color: '#0f766e' },
   { initials: 'SR', name: 'Sam Rivera', action: 'added risk note to TSK-1029', time: '1h ago', color: '#c2410c' },
@@ -42,7 +64,7 @@ const recentActivity = [
   { initials: 'NA', name: 'Nova AI', action: 'summarized blockers for Atlas', time: '4h ago', color: '#1e40af' },
 ]
 
-const aiInsights = computed(() => {
+const aiInsights = computed<AiInsight[]>(() => {
   const overdueTasks = visibleTasks.value.filter((task) => isTaskOverdue(task))
   const doneThisSprint = visibleTasks.value.filter((task) => task.status === 'DONE').length
 
@@ -67,7 +89,7 @@ const aiInsights = computed(() => {
   ]
 })
 
-const myTasks = computed(() => visibleTasks.value.slice(0, 6))
+const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
 
 onMounted(async () => {
   await fetchProjects()
@@ -116,9 +138,9 @@ onMounted(async () => {
           <a-card class="tasks-card" :loading="loading" title="My Tasks">
             <template #extra><a href="#">View all</a></template>
             <a-list :data-source="myTasks">
-              <template #renderItem="{ item }">
+              <template #renderItem="{ item }: { item: Task }">
                 <a-list-item>
-                  <a-list-item-meta :title="item.title" :description="`${item.projectKey ?? 'PRJ'} · ${item.id}`" />
+                  <a-list-item-meta :title="item.title" :description="`${item.projectId || 'PRJ'} · ${item.id}`" />
                   <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>
                 </a-list-item>
               </template>

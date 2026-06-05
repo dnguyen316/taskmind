@@ -15,7 +15,13 @@ const metadata = reactive({
 })
 
 const newMember = reactive({ name: '', role: '' })
-const members = reactive([
+interface ProjectMemberRecord {
+  id: string
+  name: string
+  role: string
+}
+
+const members = reactive<ProjectMemberRecord[]>([
   { id: crypto.randomUUID(), name: 'Avery Brooks', role: 'Product Manager' },
   { id: crypto.randomUUID(), name: 'Jules Park', role: 'Lead Engineer' },
 ])
@@ -74,7 +80,7 @@ function removeMember(memberId: string) {
           </a-form>
 
           <a-list class="members-list" :data-source="members" bordered>
-            <template #renderItem="{ item }">
+            <template #renderItem="{ item }: { item: ProjectMemberRecord }">
               <a-list-item>
                 <template #actions>
                   <a-button type="link" danger @click="removeMember(item.id)">Remove</a-button>

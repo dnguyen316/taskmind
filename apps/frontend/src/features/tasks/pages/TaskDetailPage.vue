@@ -1,10 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTasks } from '../composables/useTasks'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import type { EnergyLevel, Task, TaskStatus } from '../types'
 
-const ENERGY_LEVEL_OPTIONS = ['LOW', 'MEDIUM', 'HIGH']
+const ENERGY_LEVEL_OPTIONS: EnergyLevel[] = ['LOW', 'MEDIUM', 'HIGH']
 
 const route = useRoute()
 const router = useRouter()
@@ -13,7 +14,19 @@ const successMessage = ref('')
 const taskNotFound = ref(false)
 const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useTasks()
 
-const formState = reactive({
+interface TaskDetailFormState {
+  id: string
+  projectId: string
+  title: string
+  description: string
+  priority: number
+  dueAt: string
+  durationMinutes: number | null
+  energyLevel: EnergyLevel | undefined
+  status: TaskStatus
+}
+
+const formState = reactive<TaskDetailFormState>({
   id: '',
   projectId: '',
   title: '',
@@ -68,7 +81,7 @@ async function loadTask() {
   }
 }
 
-function hydrateForm(task) {
+function hydrateForm(task: Task) {
   formState.id = task.id
   formState.projectId = task.projectId ?? ''
   formState.title = task.title ?? ''
@@ -91,7 +104,7 @@ async function saveTask() {
 
   try {
     const updated = await updateTaskDetails(formState.id, {
-      projectId: formState.projectId.trim() ? formState.projectId.trim() : null,
+      projectId: formState.projectId.trim(),
       title: formState.title.trim(),
       description: formState.description.trim() || null,
       priority: Number(formState.priority),
@@ -111,7 +124,7 @@ async function saveTask() {
   }
 }
 
-function toDatetimeLocal(value) {
+function toDatetimeLocal(value: string | null) {
   if (!value) {
     return ''
   }

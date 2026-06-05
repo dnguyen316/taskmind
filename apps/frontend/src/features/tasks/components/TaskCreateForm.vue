@@ -1,23 +1,24 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
+import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
 import { DEFAULT_CREATE_TASK_FORM } from '../constants/taskConstants'
+import type { CreateTaskFormValues, CreateTaskPayload, Project } from '../types'
 
-const props = defineProps({
-  saving: { type: Boolean, default: false },
-  onSubmitTask: {
-    type: Function,
-    required: true,
-  },
-  projectOptions: {
-    type: Array,
-    default: () => [],
-  },
-  defaultProjectId: {
-    type: String,
-    default: '',
-  },
+type SubmitTaskPayload = Omit<CreateTaskPayload, 'userId' | 'source'>
+
+interface TaskCreateFormProps {
+  saving?: boolean
+  onSubmitTask: (payload: SubmitTaskPayload) => Promise<void> | void
+  projectOptions?: Project[]
+  defaultProjectId?: string
+}
+
+const props = withDefaults(defineProps<TaskCreateFormProps>(), {
+  saving: false,
+  projectOptions: () => [],
+  defaultProjectId: '',
 })
 
 const schema = yup.object({
@@ -30,20 +31,21 @@ const schema = yup.object({
   status: yup.string().oneOf(['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']).required(),
 })
 
-const initialValues = computed(() => ({
+const initialValues = computed<CreateTaskFormValues>(() => ({
   ...DEFAULT_CREATE_TASK_FORM,
   projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
 }))
 
-async function handleValidSubmit(values, { resetForm }) {
-  const payload = {
-    ...values,
-    projectId: values.projectId,
-    title: values.title.trim(),
-    description: values.description?.trim() || null,
-    dueAt: values.dueAt ? new Date(values.dueAt).toISOString() : null,
-    durationMinutes: Number(values.durationMinutes),
-    priority: Number(values.priority),
+async function handleValidSubmit(values: Record<string, unknown>, { resetForm }: SubmissionContext<Record<string, unknown>>) {
+  const formValues = toCreateTaskFormValues(values)
+  const payload: SubmitTaskPayload = {
+    projectId: formValues.projectId,
+    title: formValues.title.trim(),
+    description: formValues.description?.trim() || null,
+    dueAt: formValues.dueAt ? new Date(formValues.dueAt).toISOString() : null,
+    durationMinutes: Number(formValues.durationMinutes),
+    priority: Number(formValues.priority),
+    status: formValues.status,
   }
 
   await props.onSubmitTask(payload)
@@ -52,9 +54,34 @@ async function handleValidSubmit(values, { resetForm }) {
       ...DEFAULT_CREATE_TASK_FORM,
       projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
     },
-  })
+  } satisfies Partial<FormState<Record<string, unknown>>>)
+}
+
+function toCreateTaskFormValues(values: Record<string, unknown>): CreateTaskFormValues {
+  return {
+    projectId: stringValue(values.projectId),
+    title: stringValue(values.title),
+    description: stringValue(values.description),
+    priority: numberValue(values.priority, DEFAULT_CREATE_TASK_FORM.priority),
+    durationMinutes: numberValue(values.durationMinutes, DEFAULT_CREATE_TASK_FORM.durationMinutes),
+    dueAt: stringValue(values.dueAt),
+    status: isTaskStatus(values.status) ? values.status : DEFAULT_CREATE_TASK_FORM.status,
+  }
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function numberValue(value: unknown, fallback: number): number {
+  return typeof value === 'number' ? value : Number(value ?? fallback)
+}
+
+function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
+  return typeof value === 'string' && ['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED'].includes(value)
 }
 </script>
+
 
 <template>
   <a-card title="Create task" class="surface-card" :bordered="false">
