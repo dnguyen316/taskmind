@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import { getAccessToken, getTokenExpiresAt } from '../lib/authToken'
+import { clearAuthTokens, getStoredAuthSession, saveAuthTokens } from '../lib/authToken'
+import { login, signupEmail } from '../features/auth/api/authApi'
+import type { AuthTokensResponse, LoginPayload, SignupEmailPayload } from '../features/auth/api/authApi'
+import type { StoredAuthSession } from '../lib/authToken'
 
 export const E2E_AUTH_CREDENTIALS = {
   email: 'superadmin@taskmind.local',
@@ -8,39 +10,83 @@ export const E2E_AUTH_CREDENTIALS = {
   otp: '1',
 } as const
 
-export const useAuthStore = defineStore('auth', () => {
-  const initialized = ref(false)
-  const authenticated = ref(false)
+type AuthMode = 'login' | 'signup'
 
-  const isAuthenticated = computed(() => authenticated.value)
+interface AuthState {
+  session: StoredAuthSession | null
+  initialized: boolean
+  isSubmitting: boolean
+  errorMessage: string
+}
 
-  async function ensureInitialized() {
-    if (initialized.value) {
-      return
-    }
+export const useAuthStore = defineStore('auth', {
+  state: (): AuthState => ({
+    session: null,
+    initialized: false,
+    isSubmitting: false,
+    errorMessage: '',
+  }),
 
-    const accessToken = getAccessToken()
-    const expiresAt = getTokenExpiresAt()
-    authenticated.value = Boolean(accessToken && (!expiresAt || expiresAt > Date.now()))
-    initialized.value = true
-  }
+  getters: {
+    isAuthenticated: (state) => Boolean(state.session?.accessToken),
+  },
 
-  function markAuthenticated() {
-    authenticated.value = true
-    initialized.value = true
-  }
+  actions: {
+    initializeSession() {
+      this.session = getStoredAuthSession()
+      this.initialized = true
+      return this.session
+    },
 
-  function markUnauthenticated() {
-    authenticated.value = false
-    initialized.value = true
-  }
+    async ensureInitialized() {
+      if (this.initialized) {
+        return
+      }
 
-  return {
-    E2E_AUTH_CREDENTIALS,
-    initialized,
-    isAuthenticated,
-    ensureInitialized,
-    markAuthenticated,
-    markUnauthenticated,
-  }
+      this.initializeSession()
+    },
+
+    async authenticate(mode: AuthMode, payload: LoginPayload | SignupEmailPayload) {
+      this.errorMessage = ''
+      this.isSubmitting = true
+
+      try {
+        const tokens = mode === 'signup' ? await signupEmail(payload as SignupEmailPayload) : await login(payload)
+        this.applyTokens(tokens)
+        return this.session
+      } catch (error: unknown) {
+        this.errorMessage = error instanceof Error ? error.message : 'Authentication failed. Please try again.'
+        throw error
+      } finally {
+        this.isSubmitting = false
+      }
+    },
+
+    logout() {
+      clearAuthTokens()
+      this.markUnauthenticated()
+      this.errorMessage = ''
+    },
+
+    applyTokens(tokens: AuthTokensResponse) {
+      saveAuthTokens(tokens)
+      this.session = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        tokenType: tokens.tokenType || 'Bearer',
+        expiresAt: Date.now() + tokens.expiresInSeconds * 1000,
+      }
+      this.initialized = true
+    },
+
+    markAuthenticated() {
+      this.session = getStoredAuthSession()
+      this.initialized = true
+    },
+
+    markUnauthenticated() {
+      this.session = null
+      this.initialized = true
+    },
+  },
 })

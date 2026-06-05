@@ -5,6 +5,7 @@ import App from './App.vue'
 import router from './router'
 import { onSessionExpired } from './lib/authSession'
 import { pinia } from './stores/pinia'
+import { useAuthStore } from './stores/auth'
 import 'ant-design-vue/dist/reset.css'
 import './style.css'
 
@@ -18,8 +19,13 @@ app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | n
   })
 }
 
+app.use(pinia)
+
+useAuthStore(pinia).initializeSession()
+
 onSessionExpired(() => {
   const currentRoute = router.currentRoute.value
+  useAuthStore(pinia).markUnauthenticated()
 
   if (currentRoute.name === 'login' || currentRoute.name === 'signup') {
     return
@@ -31,4 +37,4 @@ onSessionExpired(() => {
   })
 })
 
-app.use(pinia).use(Antd).use(router).mount('#app')
+app.use(Antd).use(router).mount('#app')

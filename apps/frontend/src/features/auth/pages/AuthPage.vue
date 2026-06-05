@@ -1,47 +1,43 @@
 <script setup lang="ts">
 import { ArrowLeftOutlined, CheckOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '../../../components/ThemeToggle.vue'
-import { saveAuthTokens } from '../../../lib/authToken'
 import { useAuthStore } from '../../../stores/auth'
-import { login, signupEmail } from '../api/authApi'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { isSubmitting, errorMessage } = storeToRefs(authStore)
+
 const isSignup = computed(() => route.name === 'signup')
 const name = ref('')
 const email = ref('')
 const password = ref('')
-const isSubmitting = ref(false)
-const errorMessage = ref('')
 
 async function submit() {
-  errorMessage.value = ''
-  isSubmitting.value = true
+  const emailAddress = email.value.trim()
 
   try {
-    const emailAddress = email.value.trim()
-    const tokens = isSignup.value
-      ? await signupEmail({
-          email: emailAddress,
-          password: password.value,
-          displayName: name.value.trim(),
-        })
-      : await login({
-          email: emailAddress,
-          password: password.value,
-        })
+    await authStore.authenticate(
+      isSignup.value ? 'signup' : 'login',
+      isSignup.value
+        ? {
+            email: emailAddress,
+            password: password.value,
+            displayName: name.value.trim(),
+          }
+        : {
+            email: emailAddress,
+            password: password.value,
+          },
+    )
 
-    saveAuthTokens(tokens)
-    authStore.markAuthenticated()
     const redirectTarget = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     await router.push(redirectTarget)
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Authentication failed. Please try again.'
-  } finally {
-    isSubmitting.value = false
+  } catch {
+    // The auth store owns user-facing authentication errors.
   }
 }
 </script>

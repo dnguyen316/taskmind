@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue'
-import { listProjects } from '../api/projectsApi'
+import { useProjectsStore } from '../../../stores/projects'
 import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
 import { DEFAULT_USER_ID } from '../constants/taskConstants'
 import type { Project } from '../../projects/types'
@@ -11,7 +11,8 @@ export function useTasks() {
   const saving = ref(false)
   const errorMessage = ref('')
   const tasks = ref<Task[]>([])
-  const projects = ref<Project[]>([])
+  const projectsStore = useProjectsStore()
+  const projects = computed<Project[]>(() => projectsStore.projects.filter((project) => !project.archivedAt))
   const activeProjectId = ref('')
 
   const filters = reactive<TaskFilters>({
@@ -42,7 +43,7 @@ export function useTasks() {
     errorMessage.value = ''
 
     try {
-      projects.value = await listProjects()
+      await projectsStore.fetchProjects()
 
       if (!activeProjectId.value && projects.value.length > 0) {
         const currentProject = projects.value.find((project) => !project.archivedAt) ?? projects.value[0]

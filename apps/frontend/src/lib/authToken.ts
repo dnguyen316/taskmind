@@ -11,6 +11,13 @@ export interface StoredAuthTokens {
   expiresInSeconds: number
 }
 
+export interface StoredAuthSession {
+  accessToken: string
+  refreshToken: string
+  tokenType: string
+  expiresAt: number
+}
+
 function storageAvailable() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
@@ -108,16 +115,21 @@ export function getAuthorizationHeader() {
   return `${tokenType} ${accessToken}`
 }
 
-export function getTokenExpiresAt() {
-  if (!storageAvailable()) {
+export function getStoredAuthSession(): StoredAuthSession | null {
+  const accessToken = getAccessToken()
+  const refreshToken = getRefreshToken()
+  const tokenType = safeStorageRead(TOKEN_TYPE_KEY) || 'Bearer'
+  const expiresAt = getTokenExpiresAt()
+
+  if (!accessToken || !refreshToken || !expiresAt || expiresAt <= Date.now()) {
+    clearAuthTokens()
     return null
   }
 
-  const rawExpiresAt = window.localStorage.getItem(TOKEN_EXPIRES_AT_KEY)
-  if (!rawExpiresAt) {
-    return null
+  return {
+    accessToken,
+    refreshToken,
+    tokenType,
+    expiresAt,
   }
-
-  const expiresAt = Number(rawExpiresAt)
-  return Number.isFinite(expiresAt) ? expiresAt : null
 }
