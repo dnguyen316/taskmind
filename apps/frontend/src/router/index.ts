@@ -7,6 +7,10 @@ import ProjectsDashboardPage from '../features/projects/pages/ProjectsDashboardP
 import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage.vue'
 import LandingPage from '../features/landing/pages/LandingPage.vue'
 import AuthPage from '../features/auth/pages/AuthPage.vue'
+import InboxCapturePage from '../features/ai/pages/InboxCapturePage.vue'
+import CalendarPage from '../features/scheduler/pages/CalendarPage.vue'
+import TeamPage from '../features/team/pages/TeamPage.vue'
+import ReportsPage from '../features/reports/pages/ReportsPage.vue'
 import { pinia } from '../stores/pinia'
 import { useAuthStore } from '../stores/auth'
 
@@ -57,6 +61,27 @@ const routes: RouteRecordRaw[] = [
     component: ProjectDetailPage,
     props: true,
     meta: protectedMeta,
+  },
+
+  {
+    path: '/inbox',
+    name: 'inbox-capture',
+    component: InboxCapturePage,
+  },
+  {
+    path: '/calendar',
+    name: 'calendar',
+    component: CalendarPage,
+  },
+  {
+    path: '/team',
+    name: 'team',
+    component: TeamPage,
+  },
+  {
+    path: '/reports',
+    name: 'reports',
+    component: ReportsPage,
   },
   {
     path: '/tasks',
