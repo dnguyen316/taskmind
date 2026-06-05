@@ -13,6 +13,7 @@ import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,12 @@ public class TaskController {
             var created = taskApplicationService.create(requester, new CreateTaskCommand(
                 request.userId(),
                 request.projectId(),
+                request.assigneeId(),
+                request.parentTaskId(),
+                request.taskLevel(),
+                request.taskType(),
+                request.storyPoints(),
+                request.releaseVersion(),
                 request.title(),
                 request.description(),
                 request.status(),
@@ -74,17 +81,34 @@ public class TaskController {
     ) {
         return taskApplicationService.list(
             requester,
-            java.util.Optional.ofNullable(userId),
-            java.util.Optional.ofNullable(status),
+            Optional.ofNullable(userId),
+            Optional.ofNullable(status),
             overdueOnly,
             page,
             size
         );
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTask(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.findById(requester, id)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/children")
+    public List<Task> children(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.children(requester, id);
+    }
+
+    @GetMapping("/{id}/ancestors")
+    public List<Task> ancestors(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.ancestors(requester, id);
+    }
+
     @GetMapping("/{id}/completion")
-    public ResponseEntity<TaskCompletionResponse> getCompletion(@PathVariable UUID id) {
-        return taskApplicationService.findById(id)
+    public ResponseEntity<TaskCompletionResponse> getCompletion(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.findById(requester, id)
             .map(task -> ResponseEntity.ok(new TaskCompletionResponse(
                 task.id(),
                 task.status(),
@@ -102,15 +126,22 @@ public class TaskController {
     ) {
         try {
             return taskApplicationService.update(requester, id, new UpdateTaskCommand(
-                request.projectId(),
-                request.title(),
-                request.description(),
-                request.status(),
-                request.priority(),
-                request.dueAt(),
-                request.durationMinutes(),
-                request.energyLevel()
-            ))
+                    request.version(),
+                    request.projectId(),
+                    request.assigneeId(),
+                    request.parentTaskId(),
+                    request.taskLevel(),
+                    request.taskType(),
+                    request.storyPoints(),
+                    request.releaseVersion(),
+                    request.title(),
+                    request.description(),
+                    request.status(),
+                    request.priority(),
+                    request.dueAt(),
+                    request.durationMinutes(),
+                    request.energyLevel()
+                ))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
@@ -146,5 +177,4 @@ public class TaskController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
     }
-
 }

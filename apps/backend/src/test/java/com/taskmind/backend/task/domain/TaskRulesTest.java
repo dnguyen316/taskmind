@@ -1,0 +1,6 @@
+package com.taskmind.backend.task.domain;
+import static org.junit.jupiter.api.Assertions.*; import com.taskmind.backend.task.domain.model.*; import java.time.Instant; import java.util.*; import org.junit.jupiter.api.Test;
+class TaskRulesTest { private Task task(TaskLevel l,TaskType t,UUID project){var now=Instant.now();return new Task(UUID.randomUUID(),null,UUID.randomUUID(),project,null,null,null,l,t,null,null,null,"title",null,TaskStatus.TODO,2,null,null,null,TaskSource.MANUAL,null,now,now);}
+ @Test void rejectsInvalidTypeLevel(){assertThrows(IllegalArgumentException.class,()->TaskTypeRules.validate(TaskType.EPIC,TaskLevel.TASK));}
+ @Test void rejectsHierarchyPastFourLevels(){var project=UUID.randomUUID();var child=task(TaskLevel.SUBTASK,TaskType.SUBTASK,project);var parent=task(TaskLevel.TASK,TaskType.TASK,project);assertThrows(IllegalArgumentException.class,()->TaskHierarchyRules.validateParent(child,parent,List.of(task(TaskLevel.STORY,TaskType.STORY,project),task(TaskLevel.EPIC,TaskType.EPIC,project),task(TaskLevel.EPIC,TaskType.EPIC,project))));}
+ @Test void rejectsSelfLink(){var id=UUID.randomUUID();assertThrows(IllegalArgumentException.class,()->new TaskLink(UUID.randomUUID(),null,id,id,TaskLinkType.BLOCKS,UUID.randomUUID(),Instant.now()));}}

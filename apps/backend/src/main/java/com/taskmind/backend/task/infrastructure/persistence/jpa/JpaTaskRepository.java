@@ -1,65 +1,13 @@
 package com.taskmind.backend.task.infrastructure.persistence.jpa;
-
-import com.taskmind.backend.task.domain.model.Task;
-import com.taskmind.backend.task.domain.model.TaskStatus;
-import com.taskmind.backend.task.domain.repository.TaskRepository;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public class JpaTaskRepository implements TaskRepository {
-
-    private final SpringDataTaskJpaRepository taskJpaRepository;
-
-    public JpaTaskRepository(SpringDataTaskJpaRepository taskJpaRepository) {
-        this.taskJpaRepository = taskJpaRepository;
-    }
-
-    @Override
-    public Task save(Task task) {
-        var persisted = taskJpaRepository.save(TaskJpaEntity.fromDomain(task));
-        return persisted.toDomain();
-    }
-
-    @Override
-    public Optional<Task> findById(UUID id) {
-        return taskJpaRepository.findById(id).map(TaskJpaEntity::toDomain);
-    }
-
-    @Override
-    public Optional<Task> findByIdForUpdate(UUID id) {
-        return taskJpaRepository.findByIdForUpdate(id).map(TaskJpaEntity::toDomain);
-    }
-
-    @Override
-    public List<Task> findAll() {
-        return taskJpaRepository.findAll().stream().map(TaskJpaEntity::toDomain).toList();
-    }
-
-    @Override
-    public List<Task> findFiltered(
-        Optional<UUID> userId,
-        Optional<TaskStatus> status,
-        boolean overdueOnly,
-        OffsetDateTime now,
-        int page,
-        int size
-    ) {
-        return taskJpaRepository.findFiltered(
-                userId.orElse(null),
-                status.orElse(null),
-                overdueOnly,
-                now,
-                TaskStatus.DONE,
-                TaskStatus.ARCHIVED,
-                PageRequest.of(page, size)
-            )
-            .stream()
-            .map(TaskJpaEntity::toDomain)
-            .toList();
-    }
+import com.taskmind.backend.task.domain.model.*; import com.taskmind.backend.task.domain.repository.TaskRepository;
+import java.time.OffsetDateTime; import java.util.*; import org.springframework.data.domain.PageRequest; import org.springframework.stereotype.Repository;
+@Repository public class JpaTaskRepository implements TaskRepository {
+ private final SpringDataTaskJpaRepository repo; public JpaTaskRepository(SpringDataTaskJpaRepository repo){this.repo=repo;}
+ public Task save(Task t){return repo.saveAndFlush(TaskJpaEntity.fromDomain(t)).toDomain();}
+ public Optional<Task> findById(UUID id){return repo.findActiveById(id).map(TaskJpaEntity::toDomain);} public Optional<Task> findByIdForUpdate(UUID id){return repo.findByIdForUpdate(id).map(TaskJpaEntity::toDomain);}
+ public List<Task> findAll(){return repo.findAll().stream().map(TaskJpaEntity::toDomain).filter(t->t.deletedAt()==null).toList();}
+ public List<Task> findChildren(UUID id){return repo.findChildren(id).stream().map(TaskJpaEntity::toDomain).toList();}
+ public List<Task> findAncestors(UUID id){var out=new ArrayList<Task>(); var current=findById(id); while(current.isPresent()&&current.get().parentTaskId()!=null){current=findById(current.get().parentTaskId()); current.ifPresent(out::add); if(out.size()>4)break;} return out;}
+ public List<TaskReleaseStatsProjection> releaseStats(UUID id){return repo.releaseStats(id);}
+ public List<Task> findFiltered(Optional<UUID> u,Optional<TaskStatus>s,boolean o,OffsetDateTime n,int p,int z){return repo.findFiltered(u.orElse(null),s.orElse(null),o,n,TaskStatus.DONE,TaskStatus.ARCHIVED,PageRequest.of(p,z)).stream().map(TaskJpaEntity::toDomain).toList();}
 }

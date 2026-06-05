@@ -379,4 +379,24 @@ class TaskControllerTest {
             .andExpect(status().isForbidden());
     }
 
+
+    @Test
+    void rejectsStaleTaskUpdateWithConflict() throws Exception {
+        var created = mockMvc.perform(post("/v1/tasks")
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId":"11111111-1111-1111-1111-111111111111","title":"Versioned","status":"TODO","priority":2,"source":"MANUAL"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+        var id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(patch("/v1/tasks/{id}", id)
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":999,\"title\":\"stale\"}"))
+            .andExpect(status().isConflict());
+    }
+
 }
