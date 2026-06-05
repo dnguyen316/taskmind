@@ -1,5 +1,31 @@
 # Backend Feature Changelog
 
+## 2026-06-05 (Backend Static State Review)
+
+### Static Backend State by Milestone
+- **M01/Core foundations:** Core now has authentication REST controllers, JWT/resource-server security configuration, authenticated-user resolution, E2E bypass production guard and super-admin seeder, auth/security integration tests, and Flyway-owned auth/authz migrations. The older “auth/authz foundation pending” notes are resolved for the foundation layer; future work should focus on hardening and full parity behavior rather than re-scaffolding auth.
+- **M02/Tasks + Projects:** Core now has task CRUD, task hierarchy rules, task links, release summaries, project CRUD, project membership management/authorization, and controller-level coverage for task flows, project-membership flows, security routes, and project access from task creation. The older “project endpoint tests pending” note is resolved for the currently present endpoint coverage, while any newly expanded project CRUD/archive behavior should continue to receive dedicated regression tests.
+- **Current migration ceiling:** `apps/backend/src/main/resources/db/migration/V11__task_type_links_and_constraints.sql`. Future schema work must append `V12__*.sql` or later and must not edit applied migrations.
+
+### Resolved Older Pending Items
+- ✅ Auth/authz foundation is no longer pending: auth flows, JWT validation/conversion, protected route tests, E2E bypass guard, seeder, and Flyway auth tables now exist.
+- ✅ Project endpoint coverage is no longer a blanket gap: project creation is exercised by membership and task authorization tests, and project membership endpoints have direct controller tests. Keep adding targeted project CRUD/archive tests when those contracts change.
+- ✅ M01/M02 implementation should now be treated as an implemented foundation snapshot rather than an in-memory or unauthenticated scaffold.
+
+### Known Remaining BE Gaps
+- **M04 Scheduler:** scheduling preferences, calendar blocks, auto-scheduler, reschedule proposal persistence, and production scheduler orchestration remain to be implemented beyond deterministic planning stubs.
+- **M05 Outbox/Relay:** Core outbox, Redis Streams publishing, Relay consumers, event schemas, and analytics projections are still parity gaps.
+- **M06 Search/Storage:** OpenSearch-backed activity search and S3/LocalStack attachment storage are not yet represented as production-ready Core/Relay flows.
+- **M07-M09 Nova facades and AI workflows:** Core-to-Nova facades, provider routing, capability contracts, agent runtime, chat/audit flows, async spec breakdown, AI feature orchestration, and Jira publish pipeline remain to be built beyond current stub endpoints.
+- **M10 Integrations:** Jira Cloud, GitHub, wiki import/publish, credential handling, and sync workflows remain parity work.
+- **M11 Notifications:** in-app notifications, SSE, email digests, Slack delivery, and reminders remain parity work.
+- **M12 Analytics:** dashboard/report aggregation, throughput reporting, team directory projections, and Relay-backed analytics APIs remain parity work.
+- **M13 Hardening/AWS:** rate limiting, observability, production profile validation, AWS managed data-plane wiring, deployment assets, and security hardening remain final parity gates.
+
+### Docs Updated This Session
+- `docs/backend-feature-changelog.md` is the session log location updated in this pass. Future backend status reviews should add the newest dated entry above this one and keep remaining gaps aligned with `docs/build-kit/01-build-order.md` rather than older scaffold notes.
+
+
 ## 2026-04-16 (Backend Status Review + Execution Task Plan)
 
 ### Reviewed
@@ -13,14 +39,14 @@
 - ✅ Persistence baseline is established with migration-managed PostgreSQL schema for `tasks` and `projects`.
 - ✅ Task APIs are feature-complete for MVP baseline and covered by integration-style controller tests.
 - ✅ Project APIs are implemented end-to-end with JPA persistence and key uniqueness enforcement.
-- ⚠️ Project endpoint test coverage is not yet present in the test suite.
-- ⚠️ Authentication/authorization remains pending for per-user enforcement.
+- ✅ Superseded by 2026-06-05: project endpoint coverage now exists through project membership controller tests and authenticated project creation exercises; add dedicated CRUD/archive regression tests as contracts evolve.
+- ✅ Superseded by 2026-06-05: authentication/authorization foundation now exists with JWT security, auth controllers, authenticated-user resolution, E2E bypass guard/seeder, and auth/security tests.
 - ⚠️ OpenAPI spec currently lags behind implemented project and planner/AI stub endpoints.
 
 ### Task Plan (Next Execution Slice)
-1. Add `ProjectController` integration tests for create/list/get/update/archive + conflict cases.
+1. ✅ Superseded by 2026-06-05: project endpoint coverage now exists for membership flows and authenticated project creation paths; continue adding targeted CRUD/archive tests when contracts change.
 2. Expand `openapi.yaml` to include project endpoints and planner/AI stub contracts.
-3. Introduce JWT auth middleware and enforce owner/user scoping across task/project queries.
+3. ✅ Superseded by 2026-06-05: JWT auth middleware and authenticated-user scoping foundation now exist.
 4. Add service-level validation and observability hooks (structured logs + request correlation IDs) for new planner/AI paths.
 
 ### Why this improves BE quality
