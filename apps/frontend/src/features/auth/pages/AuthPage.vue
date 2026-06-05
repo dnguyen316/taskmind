@@ -3,6 +3,8 @@ import { ArrowLeftOutlined, CheckOutlined, LockOutlined, MailOutlined, UserOutli
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '../../../components/ThemeToggle.vue'
+import { saveAuthTokens } from '../../../lib/authToken'
+import { login, signupEmail } from '../api/authApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,9 +12,34 @@ const isSignup = computed(() => route.name === 'signup')
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const isSubmitting = ref(false)
+const errorMessage = ref('')
 
-function submit() {
-  router.push('/dashboard')
+async function submit() {
+  errorMessage.value = ''
+  isSubmitting.value = true
+
+  try {
+    const emailAddress = email.value.trim()
+    const tokens = isSignup.value
+      ? await signupEmail({
+          email: emailAddress,
+          password: password.value,
+          displayName: name.value.trim(),
+        })
+      : await login({
+          email: emailAddress,
+          password: password.value,
+        })
+
+    saveAuthTokens(tokens)
+    const redirectTarget = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    await router.push(redirectTarget)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Authentication failed. Please try again.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -28,10 +55,11 @@ function submit() {
         <p>{{ isSignup ? 'Make space for what matters in just a few minutes.' : 'Continue building a calmer, clearer workday.' }}</p>
       </div>
       <form @submit.prevent="submit">
-        <label v-if="isSignup">Full name<a-input v-model:value="name" size="large" placeholder="Alex Morgan"><template #prefix><UserOutlined /></template></a-input></label>
+        <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
+        <label v-if="isSignup">Full name<a-input v-model:value="name" size="large" placeholder="Alex Morgan" required><template #prefix><UserOutlined /></template></a-input></label>
         <label>Email address<a-input v-model:value="email" size="large" type="email" placeholder="you@example.com" required><template #prefix><MailOutlined /></template></a-input></label>
-        <label>Password<a-input-password v-model:value="password" size="large" placeholder="••••••••" required><template #prefix><LockOutlined /></template></a-input-password></label>
-        <a-button type="primary" size="large" html-type="submit" block>{{ isSignup ? 'Create free account' : 'Sign in' }}</a-button>
+        <label>Password<a-input-password v-model:value="password" size="large" placeholder="••••••••" required :minlength="isSignup ? 8 : undefined"><template #prefix><LockOutlined /></template></a-input-password></label>
+        <a-button type="primary" size="large" html-type="submit" :loading="isSubmitting" block>{{ isSignup ? 'Create free account' : 'Sign in' }}</a-button>
       </form>
       <p class="switch-copy">
         {{ isSignup ? 'Already have an account?' : 'New to TaskMind?' }}

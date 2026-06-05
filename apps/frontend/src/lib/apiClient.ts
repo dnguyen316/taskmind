@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import { getAuthorizationHeader } from './authToken'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
@@ -8,6 +9,16 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+})
+
+apiClient.interceptors.request.use((config) => {
+  const authorizationHeader = getAuthorizationHeader()
+
+  if (authorizationHeader) {
+    config.headers.Authorization = authorizationHeader
+  }
+
+  return config
 })
 
 apiClient.interceptors.response.use(
