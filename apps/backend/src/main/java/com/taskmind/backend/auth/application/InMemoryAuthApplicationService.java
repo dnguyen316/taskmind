@@ -17,8 +17,10 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
 
     private final PasswordHasher passwordHasher;
     private final TokenService tokenService;
+
     @SuppressWarnings("unused")
     private final OtpService otpService;
+
     private final Map<String, StoredUser> usersByEmail = new ConcurrentHashMap<>();
 
     public InMemoryAuthApplicationService() {
@@ -31,10 +33,17 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
     public AuthTokens signupEmail(SignupEmailCommand command) {
         var normalizedEmail = normalizeEmail(command.email());
         if (usersByEmail.containsKey(normalizedEmail)) {
-            throw new AuthException(AuthFailureReason.INVALID_CREDENTIALS, "Unable to process authentication request.");
+            throw new AuthException(
+                    AuthFailureReason.INVALID_CREDENTIALS,
+                    "Unable to process authentication request.");
         }
 
-        var user = new StoredUser(UUID.randomUUID(), normalizedEmail, command.displayName(), passwordHasher.hash(command.password()));
+        var user =
+                new StoredUser(
+                        UUID.randomUUID(),
+                        normalizedEmail,
+                        command.displayName(),
+                        passwordHasher.hash(command.password()));
         usersByEmail.put(normalizedEmail, user);
         return tokenService.issue(user.id(), user.email());
     }
@@ -45,7 +54,9 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
         var user = usersByEmail.get(normalizedEmail);
 
         if (user == null || !passwordHasher.matches(command.password(), user.passwordHash())) {
-            throw new AuthException(AuthFailureReason.INVALID_CREDENTIALS, "Unable to process authentication request.");
+            throw new AuthException(
+                    AuthFailureReason.INVALID_CREDENTIALS,
+                    "Unable to process authentication request.");
         }
 
         return tokenService.issue(user.id(), user.email());
@@ -63,8 +74,14 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
 
     @Override
     public AuthUserView me(String authorizationHeader) {
-        var user = ((InMemoryTokenService) tokenService).userFromBearer(authorizationHeader)
-            .orElseThrow(() -> new AuthException(AuthFailureReason.TOKEN_INVALID, "Unable to process authentication request."));
+        var user =
+                ((InMemoryTokenService) tokenService)
+                        .userFromBearer(authorizationHeader)
+                        .orElseThrow(
+                                () ->
+                                        new AuthException(
+                                                AuthFailureReason.TOKEN_INVALID,
+                                                "Unable to process authentication request."));
         return new AuthUserView(user.id(), user.email(), user.displayName());
     }
 
@@ -72,8 +89,7 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
         return email.trim().toLowerCase();
     }
 
-    private record StoredUser(UUID id, String email, String displayName, String passwordHash) {
-    }
+    private record StoredUser(UUID id, String email, String displayName, String passwordHash) {}
 
     private static class Base64PasswordHasher implements PasswordHasher {
         @Override
@@ -105,7 +121,9 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
         public AuthTokens rotateRefreshToken(String refreshToken) {
             var user = byRefreshToken.remove(refreshToken);
             if (user == null) {
-                throw new AuthException(AuthFailureReason.TOKEN_INVALID, "Unable to process authentication request.");
+                throw new AuthException(
+                        AuthFailureReason.TOKEN_INVALID,
+                        "Unable to process authentication request.");
             }
             return issue(user.id(), user.email());
         }
@@ -119,14 +137,14 @@ public class InMemoryAuthApplicationService implements AuthApplicationService {
             if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
                 return java.util.Optional.empty();
             }
-            return java.util.Optional.ofNullable(byAccessToken.get(authorizationHeader.substring("Bearer ".length()).trim()));
+            return java.util.Optional.ofNullable(
+                    byAccessToken.get(authorizationHeader.substring("Bearer ".length()).trim()));
         }
     }
 
     private static class NoopOtpService implements OtpService {
         @Override
-        public void dispatchOtp(String channel, String destination) {
-        }
+        public void dispatchOtp(String channel, String destination) {}
 
         @Override
         public boolean verifyOtp(String destination, String otp) {

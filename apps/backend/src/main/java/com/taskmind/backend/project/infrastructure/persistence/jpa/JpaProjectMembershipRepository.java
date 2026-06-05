@@ -12,13 +12,16 @@ public class JpaProjectMembershipRepository implements ProjectMembershipReposito
 
     private final SpringDataProjectMembershipJpaRepository projectMembershipJpaRepository;
 
-    public JpaProjectMembershipRepository(SpringDataProjectMembershipJpaRepository projectMembershipJpaRepository) {
+    public JpaProjectMembershipRepository(
+            SpringDataProjectMembershipJpaRepository projectMembershipJpaRepository) {
         this.projectMembershipJpaRepository = projectMembershipJpaRepository;
     }
 
     @Override
     public ProjectMembership save(ProjectMembership membership) {
-        var persisted = projectMembershipJpaRepository.save(ProjectMembershipJpaEntity.fromDomain(membership));
+        var persisted =
+                projectMembershipJpaRepository.save(
+                        ProjectMembershipJpaEntity.fromDomain(membership));
         return persisted.toDomain();
     }
 
@@ -29,16 +32,16 @@ public class JpaProjectMembershipRepository implements ProjectMembershipReposito
 
     @Override
     public List<ProjectMembership> findByProjectId(UUID projectId) {
-        return projectMembershipJpaRepository.findByProjectId(projectId)
-            .stream()
-            .map(ProjectMembershipJpaEntity::toDomain)
-            .toList();
+        return projectMembershipJpaRepository.findByProjectId(projectId).stream()
+                .map(ProjectMembershipJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public Optional<ProjectMembership> findByProjectIdAndUserId(UUID projectId, UUID userId) {
-        return projectMembershipJpaRepository.findByProjectIdAndUserId(projectId, userId)
-            .map(ProjectMembershipJpaEntity::toDomain);
+        return projectMembershipJpaRepository
+                .findByProjectIdAndUserId(projectId, userId)
+                .map(ProjectMembershipJpaEntity::toDomain);
     }
 
     @Override

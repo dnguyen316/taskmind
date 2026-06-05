@@ -11,7 +11,9 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-const statusOptions = computed(() => TASK_STATUS_OPTIONS.map((status) => ({ label: status.replace('_', ' '), value: status })))
+const statusOptions = computed(() =>
+  TASK_STATUS_OPTIONS.map((status) => ({ label: status.replace('_', ' '), value: status })),
+)
 </script>
 
 <template>
@@ -39,12 +41,22 @@ const statusOptions = computed(() => TASK_STATUS_OPTIONS.map((status) => ({ labe
       <a-select placeholder="Assignee" disabled style="width: 100%" />
     </a-col>
     <a-col :xs="24" :md="1" class="toggle-wrap">
-      <a-switch v-model:checked="props.filters.overdueOnly" size="small" @change="emit('refresh')" />
+      <a-switch
+        v-model:checked="props.filters.overdueOnly"
+        size="small"
+        @change="emit('refresh')"
+      />
     </a-col>
   </a-row>
 </template>
 
 <style scoped>
-.filters-row { margin-bottom: 12px; }
-.toggle-wrap { display:flex; align-items:center; justify-content:center; }
+.filters-row {
+  margin-bottom: 12px;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>

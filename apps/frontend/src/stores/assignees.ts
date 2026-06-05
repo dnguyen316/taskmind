@@ -57,7 +57,9 @@ export const useAssigneesStore = defineStore('assignees', () => {
     messages.error = ''
     messages.success = ''
     const originalMembers = [...membersForProject(projectId)]
-    membersByProjectId[projectId] = membersForProject(projectId).filter((member) => member.userId !== memberId)
+    membersByProjectId[projectId] = membersForProject(projectId).filter(
+      (member) => member.userId !== memberId,
+    )
 
     try {
       await projectsApi.removeProjectMember(projectId, memberId)

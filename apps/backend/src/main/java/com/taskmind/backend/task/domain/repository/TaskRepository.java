@@ -17,11 +17,10 @@ public interface TaskRepository {
     List<Task> findAll();
 
     List<Task> findFiltered(
-        Optional<UUID> userId,
-        Optional<TaskStatus> status,
-        boolean overdueOnly,
-        OffsetDateTime now,
-        int page,
-        int size
-    );
+            Optional<UUID> userId,
+            Optional<TaskStatus> status,
+            boolean overdueOnly,
+            OffsetDateTime now,
+            int page,
+            int size);
 }

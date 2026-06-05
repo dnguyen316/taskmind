@@ -30,7 +30,11 @@ const { isDark, toggleTheme } = useTheme()
   background: var(--tm-surface);
   box-shadow: var(--tm-shadow-sm);
   cursor: pointer;
-  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .theme-toggle:hover {

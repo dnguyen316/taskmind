@@ -7,41 +7,38 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record Task(
-    UUID id,
-    @JsonIgnore
-    Long version,
-    UUID userId,
-    UUID projectId,
-    String title,
-    String description,
-    TaskStatus status,
-    int priority,
-    OffsetDateTime dueAt,
-    Integer durationMinutes,
-    EnergyLevel energyLevel,
-    TaskSource source,
-    BigDecimal confidence,
-    Instant createdAt,
-    Instant updatedAt
-) {
+        UUID id,
+        @JsonIgnore Long version,
+        UUID userId,
+        UUID projectId,
+        String title,
+        String description,
+        TaskStatus status,
+        int priority,
+        OffsetDateTime dueAt,
+        Integer durationMinutes,
+        EnergyLevel energyLevel,
+        TaskSource source,
+        BigDecimal confidence,
+        Instant createdAt,
+        Instant updatedAt) {
 
     public Task withStatus(TaskStatus newStatus, Instant updatedAtTime) {
         return new Task(
-            id,
-            version,
-            userId,
-            projectId,
-            title,
-            description,
-            newStatus,
-            priority,
-            dueAt,
-            durationMinutes,
-            energyLevel,
-            source,
-            confidence,
-            createdAt,
-            updatedAtTime
-        );
+                id,
+                version,
+                userId,
+                projectId,
+                title,
+                description,
+                newStatus,
+                priority,
+                dueAt,
+                durationMinutes,
+                energyLevel,
+                source,
+                confidence,
+                createdAt,
+                updatedAtTime);
     }
 }

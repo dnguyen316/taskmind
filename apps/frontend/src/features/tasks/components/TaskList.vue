@@ -26,13 +26,19 @@ function dueLabel(task: Task) {
   const now = Date.now()
   const dayMs = 1000 * 60 * 60 * 24
   const diffDays = Math.round((due - now) / dayMs)
-  if (Math.abs(diffDays) <= 1) return diffDays < 0 ? 'Yesterday' : diffDays === 0 ? 'Today' : 'Tomorrow'
+  if (Math.abs(diffDays) <= 1)
+    return diffDays < 0 ? 'Yesterday' : diffDays === 0 ? 'Today' : 'Tomorrow'
   return formatDateTime(task.dueAt)
 }
 </script>
 
 <template>
-  <a-table :columns="columns" :data-source="dataSource" :pagination="{ pageSize: 12 }" size="middle">
+  <a-table
+    :columns="columns"
+    :data-source="dataSource"
+    :pagination="{ pageSize: 12 }"
+    size="middle"
+  >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
       <template v-else-if="column.key === 'title'">
@@ -40,19 +46,50 @@ function dueLabel(task: Task) {
         <div class="desc">{{ record.description || 'No description' }}</div>
       </template>
       <template v-else-if="column.key === 'status'">
-        <a-tag :color="record.status === 'DONE' ? 'success' : record.status === 'IN_PROGRESS' ? 'processing' : 'default'" @click="emit('changeStatus', record.id, record.status === 'TODO' ? 'IN_PROGRESS' : record.status === 'IN_PROGRESS' ? 'DONE' : 'TODO')">{{ statusLabel(record.status) }}</a-tag>
+        <a-tag
+          :color="
+            record.status === 'DONE'
+              ? 'success'
+              : record.status === 'IN_PROGRESS'
+                ? 'processing'
+                : 'default'
+          "
+          @click="
+            emit(
+              'changeStatus',
+              record.id,
+              record.status === 'TODO'
+                ? 'IN_PROGRESS'
+                : record.status === 'IN_PROGRESS'
+                  ? 'DONE'
+                  : 'TODO',
+            )
+          "
+          >{{ statusLabel(record.status) }}</a-tag
+        >
       </template>
       <template v-else-if="column.key === 'priority'">P{{ record.priority }}</template>
       <template v-else-if="column.key === 'dueAt'">
         <span :class="{ overdue: isTaskOverdue(record) }">{{ dueLabel(record) }}</span>
       </template>
-      <template v-else-if="column.key === 'durationMinutes'">{{ Math.max(1, Math.round((record.durationMinutes || 30) / 30)) }}</template>
+      <template v-else-if="column.key === 'durationMinutes'">{{
+        Math.max(1, Math.round((record.durationMinutes || 30) / 30))
+      }}</template>
     </template>
   </a-table>
 </template>
 
 <style scoped>
-.task-link { font-weight: 600; }
-.desc { color: #64748b; font-size: 12px; margin-top: 4px; }
-.overdue { color: #cf1322; font-weight: 600; }
+.task-link {
+  font-weight: 600;
+}
+.desc {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.overdue {
+  color: #cf1322;
+  font-weight: 600;
+}
 </style>

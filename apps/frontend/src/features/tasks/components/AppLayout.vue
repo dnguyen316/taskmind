@@ -14,7 +14,23 @@ defineProps<{ taskCount?: number }>()
 </template>
 
 <style scoped>
-.dashboard-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; background:#f8fafc; }
-.content { padding:26px 30px; display:grid; gap:16px; }
-@media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } :deep(.sidebar) { display:none; } }
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+.content {
+  padding: 26px 30px;
+  display: grid;
+  gap: 16px;
+}
+@media (max-width: 1200px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+  :deep(.sidebar) {
+    display: none;
+  }
+}
 </style>

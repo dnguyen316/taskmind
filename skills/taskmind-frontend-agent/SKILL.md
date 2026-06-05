@@ -30,7 +30,18 @@ Follow this workflow to deliver frontend changes consistently.
 - Keep route navigation and data loading predictable; prefer explicit loading/error states.
 - Keep visual consistency with existing Ant Design Vue patterns.
 
-## 4) Validate locally
+## 4) Format, review, and validate locally
+
+After implementation, format frontend code from `apps/frontend` before final checks:
+
+1. `npm run format`
+2. `npm run format:check` when you need a no-diff formatter guard
+
+Then do a quick code review pass to find issues before slower checks:
+
+- Run `git diff --check` and inspect `git diff --stat`.
+- Review changed files by TaskMind boundary: typed API modules, route definitions, page orchestration, component props/emits, composable cleanup, accessibility, and async states.
+- Confirm every frontend API payload/response still aligns with Core OpenAPI and DTO behavior.
 
 From `apps/frontend` run:
 

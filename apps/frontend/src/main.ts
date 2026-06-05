@@ -11,7 +11,11 @@ import './style.css'
 
 const app = createApp(App)
 
-app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | null, info: string) => {
+app.config.errorHandler = (
+  error: unknown,
+  instance: ComponentPublicInstance | null,
+  info: string,
+) => {
   console.error('Global Vue error handler:', {
     error,
     info,

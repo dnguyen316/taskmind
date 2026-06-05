@@ -26,7 +26,9 @@ const formState = reactive({
 })
 
 const taskId = computed(() => String(route.params.id ?? '').trim())
-const isValidId = computed(() => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value))
+const isValidId = computed(() =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value),
+)
 const isEmptyState = computed(() => !loading.value && !errorMessage.value && taskNotFound.value)
 
 onMounted(() => {
@@ -156,7 +158,11 @@ function toDatetimeLocal(value) {
             <a-col :xs="24" :md="12">
               <a-form-item label="Status">
                 <a-select v-model:value="formState.status">
-                  <a-select-option v-for="status in TASK_STATUS_OPTIONS" :key="status" :value="status">
+                  <a-select-option
+                    v-for="status in TASK_STATUS_OPTIONS"
+                    :key="status"
+                    :value="status"
+                  >
                     {{ status }}
                   </a-select-option>
                 </a-select>
@@ -165,13 +171,23 @@ function toDatetimeLocal(value) {
           </a-row>
 
           <a-form-item label="Description">
-            <a-textarea v-model:value="formState.description" :rows="3" placeholder="Optional context" />
+            <a-textarea
+              v-model:value="formState.description"
+              :rows="3"
+              placeholder="Optional context"
+            />
           </a-form-item>
 
           <a-row :gutter="12">
             <a-col :xs="24" :md="6">
               <a-form-item label="Priority (1 highest)">
-                <a-input-number v-model:value="formState.priority" :min="1" :max="4" :step="1" style="width: 100%" />
+                <a-input-number
+                  v-model:value="formState.priority"
+                  :min="1"
+                  :max="4"
+                  :step="1"
+                  style="width: 100%"
+                />
               </a-form-item>
             </a-col>
 
@@ -183,14 +199,27 @@ function toDatetimeLocal(value) {
 
             <a-col :xs="24" :md="6">
               <a-form-item label="Duration (minutes)">
-                <a-input-number v-model:value="formState.durationMinutes" :min="1" :step="5" style="width: 100%" />
+                <a-input-number
+                  v-model:value="formState.durationMinutes"
+                  :min="1"
+                  :step="5"
+                  style="width: 100%"
+                />
               </a-form-item>
             </a-col>
 
             <a-col :xs="24" :md="6">
               <a-form-item label="Energy level">
-                <a-select v-model:value="formState.energyLevel" allow-clear placeholder="Select energy level">
-                  <a-select-option v-for="energy in ENERGY_LEVEL_OPTIONS" :key="energy" :value="energy">
+                <a-select
+                  v-model:value="formState.energyLevel"
+                  allow-clear
+                  placeholder="Select energy level"
+                >
+                  <a-select-option
+                    v-for="energy in ENERGY_LEVEL_OPTIONS"
+                    :key="energy"
+                    :value="energy"
+                  >
                     {{ energy }}
                   </a-select-option>
                 </a-select>
@@ -198,7 +227,12 @@ function toDatetimeLocal(value) {
             </a-col>
           </a-row>
 
-          <a-button type="primary" html-type="submit" :loading="saving" :disabled="loading || isEmptyState">
+          <a-button
+            type="primary"
+            html-type="submit"
+            :loading="saving"
+            :disabled="loading || isEmptyState"
+          >
             Save changes
           </a-button>
         </a-form>

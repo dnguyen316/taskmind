@@ -22,7 +22,11 @@ const props = defineProps({
 
 const schema = yup.object({
   projectId: yup.string().trim().required('Project selection is required'),
-  title: yup.string().trim().required('Title is required').max(200, 'Title must be at most 200 characters'),
+  title: yup
+    .string()
+    .trim()
+    .required('Title is required')
+    .max(200, 'Title must be at most 200 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
   priority: yup.number().integer().min(1).max(4).required(),
   durationMinutes: yup.number().integer().min(1).max(1440).required('Duration is required'),
@@ -58,14 +62,27 @@ async function handleValidSubmit(values, { resetForm }) {
 
 <template>
   <a-card title="Create task" class="surface-card" :bordered="false">
-    <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
+    <VeeForm
+      :validation-schema="schema"
+      :initial-values="initialValues"
+      @submit="handleValidSubmit"
+      v-slot="{ submitForm }"
+    >
       <a-form layout="vertical" @submit.prevent="submitForm">
         <a-row :gutter="12">
           <a-col :xs="24" :md="12">
             <a-form-item label="Project" required>
               <Field name="projectId" v-slot="{ value, handleChange }">
-                <a-select :value="value" placeholder="Select a project" @update:value="handleChange">
-                  <a-select-option v-for="project in projectOptions" :key="project.id" :value="project.id">
+                <a-select
+                  :value="value"
+                  placeholder="Select a project"
+                  @update:value="handleChange"
+                >
+                  <a-select-option
+                    v-for="project in projectOptions"
+                    :key="project.id"
+                    :value="project.id"
+                  >
                     {{ project.name }}
                   </a-select-option>
                 </a-select>
@@ -108,7 +125,14 @@ async function handleValidSubmit(values, { resetForm }) {
           <a-col :xs="24" :md="8">
             <a-form-item label="Priority (1 highest)">
               <Field name="priority" v-slot="{ value, handleChange }">
-                <a-input-number :value="value" :min="1" :max="4" :step="1" style="width: 100%" @update:value="handleChange" />
+                <a-input-number
+                  :value="value"
+                  :min="1"
+                  :max="4"
+                  :step="1"
+                  style="width: 100%"
+                  @update:value="handleChange"
+                />
               </Field>
               <ErrorMessage class="field-error" name="priority" />
             </a-form-item>
@@ -117,7 +141,13 @@ async function handleValidSubmit(values, { resetForm }) {
           <a-col :xs="24" :md="8">
             <a-form-item label="Duration (minutes)">
               <Field name="durationMinutes" v-slot="{ value, handleChange }">
-                <a-input-number :value="value" :min="1" :step="5" style="width: 100%" @update:value="handleChange" />
+                <a-input-number
+                  :value="value"
+                  :min="1"
+                  :step="5"
+                  style="width: 100%"
+                  @update:value="handleChange"
+                />
               </Field>
               <ErrorMessage class="field-error" name="durationMinutes" />
             </a-form-item>

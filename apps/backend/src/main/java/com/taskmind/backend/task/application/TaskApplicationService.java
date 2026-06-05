@@ -10,8 +10,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
@@ -21,9 +21,8 @@ public class TaskApplicationService {
     private final ProjectMembershipApplicationService projectMembershipApplicationService;
 
     public TaskApplicationService(
-        TaskRepository taskRepository,
-        ProjectMembershipApplicationService projectMembershipApplicationService
-    ) {
+            TaskRepository taskRepository,
+            ProjectMembershipApplicationService projectMembershipApplicationService) {
         this.taskRepository = taskRepository;
         this.projectMembershipApplicationService = projectMembershipApplicationService;
     }
@@ -31,40 +30,41 @@ public class TaskApplicationService {
     @Transactional
     public Task create(AuthenticatedUser requester, CreateTaskCommand command) {
         var effectiveUserId = requester.isPrivileged() ? command.userId() : requester.userId();
-        projectMembershipApplicationService.validateMembership(command.projectId(), effectiveUserId);
+        projectMembershipApplicationService.validateMembership(
+                command.projectId(), effectiveUserId);
 
         var now = Instant.now();
-        var task = new Task(
-            UUID.randomUUID(),
-            null,
-            effectiveUserId,
-            command.projectId(),
-            command.title().trim(),
-            command.description(),
-            command.status(),
-            command.priority(),
-            command.dueAt(),
-            command.durationMinutes(),
-            command.energyLevel(),
-            command.source(),
-            command.confidence(),
-            now,
-            now
-        );
+        var task =
+                new Task(
+                        UUID.randomUUID(),
+                        null,
+                        effectiveUserId,
+                        command.projectId(),
+                        command.title().trim(),
+                        command.description(),
+                        command.status(),
+                        command.priority(),
+                        command.dueAt(),
+                        command.durationMinutes(),
+                        command.energyLevel(),
+                        command.source(),
+                        command.confidence(),
+                        now,
+                        now);
         return taskRepository.save(task);
     }
 
     @Transactional(readOnly = true)
     public List<Task> list(
-        AuthenticatedUser requester,
-        Optional<UUID> userId,
-        Optional<TaskStatus> status,
-        boolean overdueOnly,
-        int page,
-        int size
-    ) {
+            AuthenticatedUser requester,
+            Optional<UUID> userId,
+            Optional<TaskStatus> status,
+            boolean overdueOnly,
+            int page,
+            int size) {
         var effectiveUserId = requester.isPrivileged() ? userId : Optional.of(requester.userId());
-        return taskRepository.findFiltered(effectiveUserId, status, overdueOnly, OffsetDateTime.now(), page, size);
+        return taskRepository.findFiltered(
+                effectiveUserId, status, overdueOnly, OffsetDateTime.now(), page, size);
     }
 
     @Transactional(readOnly = true)
@@ -74,40 +74,62 @@ public class TaskApplicationService {
 
     @Transactional
     public Optional<Task> update(AuthenticatedUser requester, UUID id, UpdateTaskCommand command) {
-        return taskRepository.findByIdForUpdate(id)
-            .map(existing -> {
-                validateCanMutate(requester, existing);
-                var nextProjectId = command.projectId() != null ? command.projectId() : existing.projectId();
-                projectMembershipApplicationService.validateMembership(nextProjectId, existing.userId());
+        return taskRepository
+                .findByIdForUpdate(id)
+                .map(
+                        existing -> {
+                            validateCanMutate(requester, existing);
+                            var nextProjectId =
+                                    command.projectId() != null
+                                            ? command.projectId()
+                                            : existing.projectId();
+                            projectMembershipApplicationService.validateMembership(
+                                    nextProjectId, existing.userId());
 
-                var updated = new Task(
-                    existing.id(),
-                    existing.version(),
-                    existing.userId(),
-                    nextProjectId,
-                    command.title() != null ? command.title().trim() : existing.title(),
-                    command.description() != null ? command.description() : existing.description(),
-                    command.status() != null ? command.status() : existing.status(),
-                    command.priority() != null ? command.priority() : existing.priority(),
-                    command.dueAt() != null ? command.dueAt() : existing.dueAt(),
-                    command.durationMinutes() != null ? command.durationMinutes() : existing.durationMinutes(),
-                    command.energyLevel() != null ? command.energyLevel() : existing.energyLevel(),
-                    existing.source(),
-                    existing.confidence(),
-                    existing.createdAt(),
-                    Instant.now()
-                );
-                return taskRepository.save(updated);
-            });
+                            var updated =
+                                    new Task(
+                                            existing.id(),
+                                            existing.version(),
+                                            existing.userId(),
+                                            nextProjectId,
+                                            command.title() != null
+                                                    ? command.title().trim()
+                                                    : existing.title(),
+                                            command.description() != null
+                                                    ? command.description()
+                                                    : existing.description(),
+                                            command.status() != null
+                                                    ? command.status()
+                                                    : existing.status(),
+                                            command.priority() != null
+                                                    ? command.priority()
+                                                    : existing.priority(),
+                                            command.dueAt() != null
+                                                    ? command.dueAt()
+                                                    : existing.dueAt(),
+                                            command.durationMinutes() != null
+                                                    ? command.durationMinutes()
+                                                    : existing.durationMinutes(),
+                                            command.energyLevel() != null
+                                                    ? command.energyLevel()
+                                                    : existing.energyLevel(),
+                                            existing.source(),
+                                            existing.confidence(),
+                                            existing.createdAt(),
+                                            Instant.now());
+                            return taskRepository.save(updated);
+                        });
     }
 
     @Transactional
     public Optional<Task> updateStatus(AuthenticatedUser requester, UUID id, TaskStatus status) {
-        return taskRepository.findByIdForUpdate(id)
-            .map(existing -> {
-                validateCanMutate(requester, existing);
-                return taskRepository.save(existing.withStatus(status, Instant.now()));
-            });
+        return taskRepository
+                .findByIdForUpdate(id)
+                .map(
+                        existing -> {
+                            validateCanMutate(requester, existing);
+                            return taskRepository.save(existing.withStatus(status, Instant.now()));
+                        });
     }
 
     @Transactional
@@ -120,5 +142,4 @@ public class TaskApplicationService {
             throw new IllegalArgumentException("Cannot mutate another user's task");
         }
     }
-
 }

@@ -42,8 +42,7 @@ public class ProjectJpaEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected ProjectJpaEntity() {
-    }
+    protected ProjectJpaEntity() {}
 
     private ProjectJpaEntity(Project project) {
         this.id = project.id();
@@ -63,15 +62,6 @@ public class ProjectJpaEntity {
 
     public Project toDomain() {
         return new Project(
-            id,
-            version,
-            name,
-            key,
-            description,
-            ownerUserId,
-            archivedAt,
-            createdAt,
-            updatedAt
-        );
+                id, version, name, key, description, ownerUserId, archivedAt, createdAt, updatedAt);
     }
 }

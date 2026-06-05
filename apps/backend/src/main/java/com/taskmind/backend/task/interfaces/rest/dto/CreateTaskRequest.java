@@ -15,16 +15,14 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record CreateTaskRequest(
-    @NotNull UUID userId,
-    UUID projectId,
-    @NotBlank String title,
-    String description,
-    @NotNull TaskStatus status,
-    @Min(1) @Max(4) int priority,
-    OffsetDateTime dueAt,
-    @Positive Integer durationMinutes,
-    EnergyLevel energyLevel,
-    @NotNull TaskSource source,
-    @DecimalMin("0.0") @DecimalMax("1.0") BigDecimal confidence
-) {
-}
+        @NotNull UUID userId,
+        UUID projectId,
+        @NotBlank String title,
+        String description,
+        @NotNull TaskStatus status,
+        @Min(1) @Max(4) int priority,
+        OffsetDateTime dueAt,
+        @Positive Integer durationMinutes,
+        EnergyLevel energyLevel,
+        @NotNull TaskSource source,
+        @DecimalMin("0.0") @DecimalMax("1.0") BigDecimal confidence) {}

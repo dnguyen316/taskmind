@@ -18,14 +18,14 @@ public class ProjectMembershipApplicationService {
     private final ProjectRepository projectRepository;
 
     public ProjectMembershipApplicationService(
-        ProjectMembershipRepository projectMembershipRepository,
-        ProjectRepository projectRepository
-    ) {
+            ProjectMembershipRepository projectMembershipRepository,
+            ProjectRepository projectRepository) {
         this.projectMembershipRepository = projectMembershipRepository;
         this.projectRepository = projectRepository;
     }
 
-    public ProjectMembership addMember(AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
+    public ProjectMembership addMember(
+            AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
         assertProjectExists(projectId);
         assertCanManageMembers(actor, projectId);
         try {
@@ -45,8 +45,8 @@ public class ProjectMembershipApplicationService {
         assertProjectExists(projectId);
         assertCanListMembers(actor, projectId);
         return projectMembershipRepository.findByProjectId(projectId).stream()
-            .sorted(Comparator.comparing(ProjectMembership::userId))
-            .toList();
+                .sorted(Comparator.comparing(ProjectMembership::userId))
+                .toList();
     }
 
     public boolean isMember(UUID projectId, UUID userId) {
@@ -67,26 +67,30 @@ public class ProjectMembershipApplicationService {
 
     private void assertCanManageMembers(AuthenticatedUser actor, UUID projectId) {
         if (!isOwner(actor.userId(), projectId) && !isAdmin(actor.userId(), projectId)) {
-            throw new ProjectMembershipForbiddenException("Actor is not allowed to manage project members");
+            throw new ProjectMembershipForbiddenException(
+                    "Actor is not allowed to manage project members");
         }
     }
 
     private void assertCanListMembers(AuthenticatedUser actor, UUID projectId) {
         if (!isMember(projectId, actor.userId())) {
-            throw new ProjectMembershipForbiddenException("Actor is not allowed to list project members");
+            throw new ProjectMembershipForbiddenException(
+                    "Actor is not allowed to list project members");
         }
     }
 
     private boolean isOwner(UUID actorUserId, UUID projectId) {
-        return projectRepository.findById(projectId)
-            .map(project -> project.ownerUserId().equals(actorUserId))
-            .orElse(false);
+        return projectRepository
+                .findById(projectId)
+                .map(project -> project.ownerUserId().equals(actorUserId))
+                .orElse(false);
     }
 
     private boolean isAdmin(UUID actorUserId, UUID projectId) {
-        return projectMembershipRepository.findByProjectIdAndUserId(projectId, actorUserId)
-            .map(ProjectMembership::role)
-            .map(role -> role == ProjectMembershipRole.ADMIN)
-            .orElse(false);
+        return projectMembershipRepository
+                .findByProjectIdAndUserId(projectId, actorUserId)
+                .map(ProjectMembership::role)
+                .map(role -> role == ProjectMembershipRole.ADMIN)
+                .orElse(false);
     }
 }

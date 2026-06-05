@@ -42,24 +42,23 @@ public class JpaTaskRepository implements TaskRepository {
 
     @Override
     public List<Task> findFiltered(
-        Optional<UUID> userId,
-        Optional<TaskStatus> status,
-        boolean overdueOnly,
-        OffsetDateTime now,
-        int page,
-        int size
-    ) {
-        return taskJpaRepository.findFiltered(
-                userId.orElse(null),
-                status.orElse(null),
-                overdueOnly,
-                now,
-                TaskStatus.DONE,
-                TaskStatus.ARCHIVED,
-                PageRequest.of(page, size)
-            )
-            .stream()
-            .map(TaskJpaEntity::toDomain)
-            .toList();
+            Optional<UUID> userId,
+            Optional<TaskStatus> status,
+            boolean overdueOnly,
+            OffsetDateTime now,
+            int page,
+            int size) {
+        return taskJpaRepository
+                .findFiltered(
+                        userId.orElse(null),
+                        status.orElse(null),
+                        overdueOnly,
+                        now,
+                        TaskStatus.DONE,
+                        TaskStatus.ARCHIVED,
+                        PageRequest.of(page, size))
+                .stream()
+                .map(TaskJpaEntity::toDomain)
+                .toList();
     }
 }

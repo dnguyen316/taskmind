@@ -32,7 +32,16 @@ Use this skill to deliver production-grade Java backend work with clear boundari
    - Use optimistic locking or idempotency where concurrent writes can conflict.
    - Avoid secrets in code, logs, migrations, fixtures, or test output.
 
-5. **Test like a backend owner**
+5. **Format after implementation**
+   - Run the configured backend formatter from the owning service directory before final tests (for TaskMind backend: `mvn -q spotless:apply`).
+   - Keep generated formatting-only churn separate from logic in your review notes so real behavior changes stay easy to inspect.
+
+6. **Review the diff to find issues quickly**
+   - Run `git diff --check` and inspect `git diff --stat` before tests to catch whitespace, unexpectedly broad changes, and generated noise.
+   - Review changed files by owning layer: contract, auth, validation, transaction boundary, persistence mapping, migration, and test coverage.
+   - Prefer fixing root causes in the responsible layer instead of patching symptoms across callers.
+
+7. **Test like a backend owner**
    - Start with the smallest failing test that captures the behavior or bug.
    - Cover service/domain logic with unit tests and HTTP/persistence behavior with slice or integration tests as appropriate.
    - Add regression tests for bugs, boundary cases, authorization failures, transaction rollbacks, and migration-sensitive behavior.

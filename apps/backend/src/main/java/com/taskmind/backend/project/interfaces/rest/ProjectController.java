@@ -37,12 +37,13 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<Project> createProject(@Valid @RequestBody CreateProjectRequest request) {
         try {
-            var created = projectApplicationService.create(new CreateProjectCommand(
-                request.name(),
-                request.key(),
-                request.description(),
-                request.ownerUserId()
-            ));
+            var created =
+                    projectApplicationService.create(
+                            new CreateProjectCommand(
+                                    request.name(),
+                                    request.key(),
+                                    request.description(),
+                                    request.ownerUserId()));
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
@@ -50,27 +51,30 @@ public class ProjectController {
     }
 
     @GetMapping
-    public List<Project> listProjects(@RequestParam(defaultValue = "false") boolean includeArchived) {
+    public List<Project> listProjects(
+            @RequestParam(defaultValue = "false") boolean includeArchived) {
         return projectApplicationService.list(includeArchived);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProject(@PathVariable UUID id) {
-        return projectApplicationService.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return projectApplicationService
+                .findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Project> updateProject(@PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
+    public ResponseEntity<Project> updateProject(
+            @PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
         try {
-            return projectApplicationService.update(id, new UpdateProjectCommand(
-                    request.name(),
-                    request.key(),
-                    request.description()
-                ))
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+            return projectApplicationService
+                    .update(
+                            id,
+                            new UpdateProjectCommand(
+                                    request.name(), request.key(), request.description()))
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
         }
@@ -78,8 +82,9 @@ public class ProjectController {
 
     @PatchMapping("/{id}/archive")
     public ResponseEntity<Project> archiveProject(@PathVariable UUID id) {
-        return projectApplicationService.archive(new ArchiveProjectCommand(id))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return projectApplicationService
+                .archive(new ArchiveProjectCommand(id))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

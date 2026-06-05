@@ -22,9 +22,17 @@ const emit = defineEmits<{
 }>()
 
 const schema = yup.object({
-  name: yup.string().trim().required('Name is required').max(200, 'Name must be at most 200 characters'),
+  name: yup
+    .string()
+    .trim()
+    .required('Name is required')
+    .max(200, 'Name must be at most 200 characters'),
   key: yup.string().trim().required('Key is required').max(50, 'Key must be at most 50 characters'),
-  ownerUserId: yup.string().trim().required('Owner user id is required').max(100, 'Owner user id must be at most 100 characters'),
+  ownerUserId: yup
+    .string()
+    .trim()
+    .required('Owner user id is required')
+    .max(100, 'Owner user id must be at most 100 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
 })
 
@@ -97,13 +105,20 @@ watch(
           <ErrorMessage class="field-error" name="description" />
         </a-form-item>
 
-        <a-button type="primary" html-type="submit" :loading="props.saving">Create project</a-button>
+        <a-button type="primary" html-type="submit" :loading="props.saving"
+          >Create project</a-button
+        >
       </a-form>
     </VeeForm>
   </a-card>
 </template>
 
 <style scoped>
-.surface-card { border-radius: 18px; }
-.field-error { color: #d4380d; font-size: 12px; }
+.surface-card {
+  border-radius: 18px;
+}
+.field-error {
+  color: #d4380d;
+  font-size: 12px;
+}
 </style>

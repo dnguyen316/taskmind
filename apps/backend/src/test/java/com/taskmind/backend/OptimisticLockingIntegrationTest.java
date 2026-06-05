@@ -20,83 +20,90 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class OptimisticLockingIntegrationTest {
 
-    @Autowired
-    private JpaTaskRepository taskRepository;
+    @Autowired private JpaTaskRepository taskRepository;
 
-    @Autowired
-    private JpaProjectRepository projectRepository;
+    @Autowired private JpaProjectRepository projectRepository;
 
     @Test
     void rejectsStaleTaskUpdate() {
         var now = Instant.now();
-        var created = taskRepository.save(new Task(
-            UUID.randomUUID(),
-            null,
-            UUID.randomUUID(),
-            null,
-            "Concurrent task",
-            null,
-            TaskStatus.TODO,
-            2,
-            null,
-            null,
-            null,
-            TaskSource.MANUAL,
-            null,
-            now,
-            now
-        ));
+        var created =
+                taskRepository.save(
+                        new Task(
+                                UUID.randomUUID(),
+                                null,
+                                UUID.randomUUID(),
+                                null,
+                                "Concurrent task",
+                                null,
+                                TaskStatus.TODO,
+                                2,
+                                null,
+                                null,
+                                null,
+                                TaskSource.MANUAL,
+                                null,
+                                now,
+                                now));
 
         var firstSnapshot = taskRepository.findById(created.id()).orElseThrow();
         var staleSnapshot = taskRepository.findById(created.id()).orElseThrow();
 
         taskRepository.save(firstSnapshot.withStatus(TaskStatus.IN_PROGRESS, Instant.now()));
 
-        assertThrows(ObjectOptimisticLockingFailureException.class,
-            () -> taskRepository.save(staleSnapshot.withStatus(TaskStatus.DONE, Instant.now())));
+        assertThrows(
+                ObjectOptimisticLockingFailureException.class,
+                () ->
+                        taskRepository.save(
+                                staleSnapshot.withStatus(TaskStatus.DONE, Instant.now())));
     }
 
     @Test
     void rejectsStaleProjectUpdate() {
         var now = Instant.now();
-        var projectKey = "CP" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-        var created = projectRepository.save(new Project(
-            UUID.randomUUID(),
-            null,
-            "Concurrency project",
-            projectKey,
-            null,
-            UUID.randomUUID(),
-            null,
-            now,
-            now
-        ));
+        var projectKey =
+                "CP" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
+        var created =
+                projectRepository.save(
+                        new Project(
+                                UUID.randomUUID(),
+                                null,
+                                "Concurrency project",
+                                projectKey,
+                                null,
+                                UUID.randomUUID(),
+                                null,
+                                now,
+                                now));
 
         var firstSnapshot = projectRepository.findById(created.id()).orElseThrow();
         var staleSnapshot = projectRepository.findById(created.id()).orElseThrow();
 
-        projectRepository.save(new Project(
-            firstSnapshot.id(),
-            firstSnapshot.version(),
-            "Concurrency project v2",
-            firstSnapshot.key(),
-            firstSnapshot.description(),
-            firstSnapshot.ownerUserId(),
-            firstSnapshot.archivedAt(),
-            firstSnapshot.createdAt(),
-            Instant.now()
-        ));
+        projectRepository.save(
+                new Project(
+                        firstSnapshot.id(),
+                        firstSnapshot.version(),
+                        "Concurrency project v2",
+                        firstSnapshot.key(),
+                        firstSnapshot.description(),
+                        firstSnapshot.ownerUserId(),
+                        firstSnapshot.archivedAt(),
+                        firstSnapshot.createdAt(),
+                        Instant.now()));
 
-        assertThrows(ObjectOptimisticLockingFailureException.class, () -> projectRepository.save(new Project(
-            staleSnapshot.id(),
-            staleSnapshot.version(),
-            "Concurrency project stale",
-            staleSnapshot.key(),
-            staleSnapshot.description(),
-            staleSnapshot.ownerUserId(),
-            staleSnapshot.archivedAt(),
-            staleSnapshot.createdAt(),
-            Instant.now()
-        )));
+        assertThrows(
+                ObjectOptimisticLockingFailureException.class,
+                () ->
+                        projectRepository.save(
+                                new Project(
+                                        staleSnapshot.id(),
+                                        staleSnapshot.version(),
+                                        "Concurrency project stale",
+                                        staleSnapshot.key(),
+                                        staleSnapshot.description(),
+                                        staleSnapshot.ownerUserId(),
+                                        staleSnapshot.archivedAt(),
+                                        staleSnapshot.createdAt(),
+                                        Instant.now())));
     }
 }

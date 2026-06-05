@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { clearAuthTokens, getStoredAuthSession, saveAuthTokens } from '../lib/authToken'
 import { login, signupEmail } from '../features/auth/api/authApi'
-import type { AuthTokensResponse, LoginPayload, SignupEmailPayload } from '../features/auth/api/authApi'
+import type {
+  AuthTokensResponse,
+  LoginPayload,
+  SignupEmailPayload,
+} from '../features/auth/api/authApi'
 import type { StoredAuthSession } from '../lib/authToken'
 
 export const E2E_AUTH_CREDENTIALS = {
@@ -51,11 +55,15 @@ export const useAuthStore = defineStore('auth', {
       this.isSubmitting = true
 
       try {
-        const tokens = mode === 'signup' ? await signupEmail(payload as SignupEmailPayload) : await login(payload)
+        const tokens =
+          mode === 'signup'
+            ? await signupEmail(payload as SignupEmailPayload)
+            : await login(payload)
         this.applyTokens(tokens)
         return this.session
       } catch (error: unknown) {
-        this.errorMessage = error instanceof Error ? error.message : 'Authentication failed. Please try again.'
+        this.errorMessage =
+          error instanceof Error ? error.message : 'Authentication failed. Please try again.'
         throw error
       } finally {
         this.isSubmitting = false

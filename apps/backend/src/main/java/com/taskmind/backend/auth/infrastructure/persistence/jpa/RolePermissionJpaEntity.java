@@ -13,8 +13,7 @@ import java.time.Instant;
 @Table(name = "role_permissions")
 public class RolePermissionJpaEntity {
 
-    @EmbeddedId
-    private RolePermissionJpaId id;
+    @EmbeddedId private RolePermissionJpaId id;
 
     @ManyToOne(optional = false)
     @MapsId("roleId")
@@ -29,6 +28,5 @@ public class RolePermissionJpaEntity {
     @Column(name = "granted_at", nullable = false)
     private Instant grantedAt;
 
-    protected RolePermissionJpaEntity() {
-    }
+    protected RolePermissionJpaEntity() {}
 }

@@ -20,35 +20,41 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import({SecurityConfig.class, JwtClaimAuthenticationConverter.class})
 class SecurityRouteTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @MockBean
-    private AuthApplicationService authApplicationService;
+    @MockBean private AuthApplicationService authApplicationService;
 
-    @MockBean
-    private JwtDecoder jwtDecoder;
+    @MockBean private JwtDecoder jwtDecoder;
 
     @Test
     void allowsUnauthenticatedLoginAndSignupRequests() throws Exception {
-        mockMvc.perform(post("/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(
+                        post("/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(
+                        post("/v1/auth/signup/email")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void allowsOtherUnauthenticatedAuthFlows() throws Exception {
-        mockMvc.perform(post("/v1/auth/verify"))
-                .andExpect(status().isNotFound());
-        mockMvc.perform(post("/v1/auth/oauth/google"))
-                .andExpect(status().isNotFound());
-        mockMvc.perform(post("/v1/auth/password/reset"))
-                .andExpect(status().isNotFound());
-        mockMvc.perform(post("/v1/auth/token/refresh").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post("/v1/auth/verify")).andExpect(status().isNotFound());
+        mockMvc.perform(post("/v1/auth/oauth/google")).andExpect(status().isNotFound());
+        mockMvc.perform(post("/v1/auth/password/reset")).andExpect(status().isNotFound());
+        mockMvc.perform(
+                        post("/v1/auth/token/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/v1/auth/logout").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(
+                        post("/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -61,16 +67,13 @@ class SecurityRouteTest {
 
     @Test
     void requiresAuthenticationForTaskAndProjectRoutes() throws Exception {
-        mockMvc.perform(get("/v1/tasks"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v1/tasks")).andExpect(status().isUnauthorized());
 
-        mockMvc.perform(get("/v1/projects"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v1/projects")).andExpect(status().isUnauthorized());
     }
 
     @Test
     void deniesUnknownRoutes() throws Exception {
-        mockMvc.perform(get("/unknown"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/unknown")).andExpect(status().isUnauthorized());
     }
 }

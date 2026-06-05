@@ -1,7 +1,12 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
 import { ApiError } from './apiError'
 import { notifySessionExpired } from './authSession'
-import { clearAuthTokens, getAuthorizationHeader, getRefreshToken, saveAuthTokens } from './authToken'
+import {
+  clearAuthTokens,
+  getAuthorizationHeader,
+  getRefreshToken,
+  saveAuthTokens,
+} from './authToken'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 const REFRESH_TOKEN_PATH = '/v1/auth/token/refresh'
@@ -82,11 +87,16 @@ apiClient.interceptors.response.use(
   },
 )
 
-function shouldRefresh(error: AxiosError<ErrorResponseBody>, requestConfig: RetryableRequestConfig | undefined) {
-  return error.response?.status === 401
-    && Boolean(requestConfig)
-    && requestConfig?._retry !== true
-    && !isPublicAuthEndpoint(requestConfig?.url)
+function shouldRefresh(
+  error: AxiosError<ErrorResponseBody>,
+  requestConfig: RetryableRequestConfig | undefined,
+) {
+  return (
+    error.response?.status === 401 &&
+    Boolean(requestConfig) &&
+    requestConfig?._retry !== true &&
+    !isPublicAuthEndpoint(requestConfig?.url)
+  )
 }
 
 async function refreshAccessToken() {
@@ -126,7 +136,9 @@ function isPublicAuthEndpoint(url: string | undefined) {
   }
 
   const path = normalizePath(url)
-  return PUBLIC_AUTH_ENDPOINTS.some((endpoint) => path === endpoint || path.startsWith(`${endpoint}/`))
+  return PUBLIC_AUTH_ENDPOINTS.some(
+    (endpoint) => path === endpoint || path.startsWith(`${endpoint}/`),
+  )
 }
 
 function normalizePath(url: string) {
@@ -145,15 +157,17 @@ function normalizeApiError(error: AxiosError<ErrorResponseBody>) {
 
   if (error.response) {
     const details = error.response.data
-    const message = details?.message
-      || details?.detail
-      || details?.title
-      || `${method} ${path ?? ''} failed (${error.response.status})`
-    const traceId = details?.traceId
-      || details?.trace_id
-      || details?.requestId
-      || getHeaderValue(error.response.headers?.['x-trace-id'])
-      || getHeaderValue(error.response.headers?.['x-request-id'])
+    const message =
+      details?.message ||
+      details?.detail ||
+      details?.title ||
+      `${method} ${path ?? ''} failed (${error.response.status})`
+    const traceId =
+      details?.traceId ||
+      details?.trace_id ||
+      details?.requestId ||
+      getHeaderValue(error.response.headers?.['x-trace-id']) ||
+      getHeaderValue(error.response.headers?.['x-request-id'])
 
     return new ApiError({
       status: error.response.status,

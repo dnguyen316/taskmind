@@ -29,17 +29,17 @@ public class ProjectApplicationService {
         }
 
         var now = Instant.now();
-        var project = new Project(
-            UUID.randomUUID(),
-            null,
-            command.name().trim(),
-            normalizedKey,
-            command.description(),
-            command.ownerUserId(),
-            null,
-            now,
-            now
-        );
+        var project =
+                new Project(
+                        UUID.randomUUID(),
+                        null,
+                        command.name().trim(),
+                        normalizedKey,
+                        command.description(),
+                        command.ownerUserId(),
+                        null,
+                        now,
+                        now);
         try {
             return projectRepository.save(project);
         } catch (DataIntegrityViolationException e) {
@@ -55,47 +55,60 @@ public class ProjectApplicationService {
     @Transactional(readOnly = true)
     public List<Project> list(boolean includeArchived) {
         return projectRepository.findAll().stream()
-            .filter(project -> includeArchived || project.archivedAt() == null)
-            .sorted(Comparator.comparing(Project::createdAt).reversed())
-            .toList();
+                .filter(project -> includeArchived || project.archivedAt() == null)
+                .sorted(Comparator.comparing(Project::createdAt).reversed())
+                .toList();
     }
 
     @Transactional
     public Optional<Project> update(UUID id, UpdateProjectCommand command) {
-        return projectRepository.findByIdForUpdate(id)
-            .map(existing -> {
-                var updatedKey = command.key() != null ? command.key().trim().toUpperCase() : existing.key();
-                if (!existing.key().equals(updatedKey) && projectRepository.existsByKey(updatedKey)) {
-                    throw new IllegalArgumentException("Project key already exists");
-                }
+        return projectRepository
+                .findByIdForUpdate(id)
+                .map(
+                        existing -> {
+                            var updatedKey =
+                                    command.key() != null
+                                            ? command.key().trim().toUpperCase()
+                                            : existing.key();
+                            if (!existing.key().equals(updatedKey)
+                                    && projectRepository.existsByKey(updatedKey)) {
+                                throw new IllegalArgumentException("Project key already exists");
+                            }
 
-                var updated = new Project(
-                    existing.id(),
-                    existing.version(),
-                    command.name() != null ? command.name().trim() : existing.name(),
-                    updatedKey,
-                    command.description() != null ? command.description() : existing.description(),
-                    existing.ownerUserId(),
-                    existing.archivedAt(),
-                    existing.createdAt(),
-                    Instant.now()
-                );
-                try {
-                    return projectRepository.save(updated);
-                } catch (DataIntegrityViolationException e) {
-                    throw new IllegalArgumentException("Project key already exists", e);
-                }
-            });
+                            var updated =
+                                    new Project(
+                                            existing.id(),
+                                            existing.version(),
+                                            command.name() != null
+                                                    ? command.name().trim()
+                                                    : existing.name(),
+                                            updatedKey,
+                                            command.description() != null
+                                                    ? command.description()
+                                                    : existing.description(),
+                                            existing.ownerUserId(),
+                                            existing.archivedAt(),
+                                            existing.createdAt(),
+                                            Instant.now());
+                            try {
+                                return projectRepository.save(updated);
+                            } catch (DataIntegrityViolationException e) {
+                                throw new IllegalArgumentException("Project key already exists", e);
+                            }
+                        });
     }
 
     @Transactional
     public Optional<Project> archive(ArchiveProjectCommand command) {
-        return projectRepository.findByIdForUpdate(command.projectId())
-            .map(existing -> {
-                if (existing.archivedAt() != null) {
-                    return existing;
-                }
-                return projectRepository.save(existing.withArchivedAt(Instant.now(), Instant.now()));
-            });
+        return projectRepository
+                .findByIdForUpdate(command.projectId())
+                .map(
+                        existing -> {
+                            if (existing.archivedAt() != null) {
+                                return existing;
+                            }
+                            return projectRepository.save(
+                                    existing.withArchivedAt(Instant.now(), Instant.now()));
+                        });
     }
 }

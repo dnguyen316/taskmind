@@ -24,6 +24,5 @@ public class RoleJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected RoleJpaEntity() {
-    }
+    protected RoleJpaEntity() {}
 }

@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -25,15 +25,14 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class TaskControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
     @Test
     void createsTask() throws Exception {
-        var payload = """
+        var payload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "title": "Write backend APIs",
@@ -43,18 +42,21 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.title").value("Write backend APIs"))
-            .andExpect(jsonPath("$.status").value("TODO"))
-            .andExpect(jsonPath("$.priority").value(2));
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Write backend APIs"))
+                .andExpect(jsonPath("$.status").value("TODO"))
+                .andExpect(jsonPath("$.priority").value(2));
     }
 
     @Test
     void rejectsInvalidPriority() throws Exception {
-        var payload = """
+        var payload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "title": "Invalid priority",
@@ -64,15 +66,18 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-            .andExpect(status().isBadRequest());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void updatesExistingTask() throws Exception {
-        var createPayload = """
+        var createPayload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "title": "Task to patch",
@@ -82,33 +87,40 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
+        var createResponse =
+                mockMvc.perform(
+                                post("/v1/tasks")
+                                        .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
 
         var responseBody = createResponse.getResponse().getContentAsString();
         var id = objectMapper.readTree(responseBody).get("id").asText();
 
-        var patchPayload = """
+        var patchPayload =
+                """
             {
               "status": "IN_PROGRESS",
               "priority": 1
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}", id).with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(patchPayload))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-            .andExpect(jsonPath("$.priority").value(1));
+        mockMvc.perform(
+                        patch("/v1/tasks/{id}", id)
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(patchPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.priority").value(1));
     }
 
     @Test
     void updatesTaskStatusAndChecksCompletion() throws Exception {
-        var createPayload = """
+        var createPayload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "title": "Check completion",
@@ -118,35 +130,48 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
+        var createResponse =
+                mockMvc.perform(
+                                post("/v1/tasks")
+                                        .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
 
-        var id = objectMapper.readTree(createResponse.getResponse().getContentAsString()).get("id").asText();
+        var id =
+                objectMapper
+                        .readTree(createResponse.getResponse().getContentAsString())
+                        .get("id")
+                        .asText();
 
-        var statusPayload = """
+        var statusPayload =
+                """
             {
               "status": "DONE"
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}/status", id).with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(statusPayload))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("DONE"));
+        mockMvc.perform(
+                        patch("/v1/tasks/{id}/status", id)
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(statusPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DONE"));
 
-        mockMvc.perform(get("/v1/tasks/{id}/completion", id).with(jwt("11111111-1111-1111-1111-111111111111")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.completed").value(true))
-            .andExpect(jsonPath("$.status").value("DONE"));
+        mockMvc.perform(
+                        get("/v1/tasks/{id}/completion", id)
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completed").value(true))
+                .andExpect(jsonPath("$.status").value("DONE"));
     }
 
     @Test
     void userCannotReadAnotherUsersTasksEvenWhenUserIdFilterIsProvided() throws Exception {
-        var payloadA = """
+        var payloadA =
+                """
             {
               "userId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
               "title": "User A task",
@@ -156,7 +181,8 @@ class TaskControllerTest {
             }
             """;
 
-        var payloadB = """
+        var payloadB =
+                """
             {
               "userId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
               "title": "User B task",
@@ -166,25 +192,37 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).contentType(MediaType.APPLICATION_JSON).content(payloadA))
-            .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").with(jwt("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")).contentType(MediaType.APPLICATION_JSON).content(payloadB))
-            .andExpect(status().isCreated());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payloadA))
+                .andExpect(status().isCreated());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payloadB))
+                .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).queryParam("userId", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        mockMvc.perform(
+                        get("/v1/tasks")
+                                .with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+                                .queryParam("userId", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
         mockMvc.perform(get("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     }
 
     @Test
     void filtersByStatusAndPagination() throws Exception {
-        var todoPayload = """
+        var todoPayload =
+                """
             {
               "userId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
               "title": "Todo task",
@@ -193,7 +231,8 @@ class TaskControllerTest {
               "source": "MANUAL"
             }
             """;
-        var donePayload = """
+        var donePayload =
+                """
             {
               "userId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
               "title": "Done task",
@@ -203,25 +242,36 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111")).contentType(MediaType.APPLICATION_JSON).content(todoPayload))
-            .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111")).contentType(MediaType.APPLICATION_JSON).content(donePayload))
-            .andExpect(status().isCreated());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(todoPayload))
+                .andExpect(status().isCreated());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(donePayload))
+                .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .queryParam("userId", "cccccccc-cccc-cccc-cccc-cccccccccccc")
-                .queryParam("status", "TODO")
-                .queryParam("page", "0")
-                .queryParam("size", "1"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].status").value("TODO"));
+        mockMvc.perform(
+                        get("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("userId", "cccccccc-cccc-cccc-cccc-cccccccccccc")
+                                .queryParam("status", "TODO")
+                                .queryParam("page", "0")
+                                .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].status").value("TODO"));
     }
 
     @Test
     void filtersOverdueAndArchivesTask() throws Exception {
         var overdueDate = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1).toString();
-        var createPayload = """
+        var createPayload =
+                """
             {
               "userId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
               "title": "Overdue task",
@@ -230,37 +280,52 @@ class TaskControllerTest {
               "dueAt": "%s",
               "source": "MANUAL"
             }
-            """.formatted(overdueDate);
+            """
+                        .formatted(overdueDate);
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
+        var createResponse =
+                mockMvc.perform(
+                                post("/v1/tasks")
+                                        .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
 
-        var id = objectMapper.readTree(createResponse.getResponse().getContentAsString()).get("id").asText();
+        var id =
+                objectMapper
+                        .readTree(createResponse.getResponse().getContentAsString())
+                        .get("id")
+                        .asText();
 
-        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
-                .queryParam("overdueOnly", "true"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].id").value(id));
+        mockMvc.perform(
+                        get("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
+                                .queryParam("overdueOnly", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(id));
 
-        mockMvc.perform(patch("/v1/tasks/{id}/archive", id).with(jwt("11111111-1111-1111-1111-111111111111")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("ARCHIVED"));
+        mockMvc.perform(
+                        patch("/v1/tasks/{id}/archive", id)
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ARCHIVED"));
 
-        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
-                .queryParam("overdueOnly", "true"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(
+                        get("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
+                                .queryParam("overdueOnly", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
     void rejectsProjectTaskCreationForNonMember() throws Exception {
-        var projectPayload = """
+        var projectPayload =
+                """
             {
               "name": "Membership protected project",
               "key": "MPP",
@@ -268,15 +333,23 @@ class TaskControllerTest {
             }
             """;
 
-        var projectResponse = mockMvc.perform(post("/v1/projects").with(jwt("99999999-9999-9999-9999-999999999999"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(projectPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
+        var projectResponse =
+                mockMvc.perform(
+                                post("/v1/projects")
+                                        .with(jwt("99999999-9999-9999-9999-999999999999"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(projectPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
 
-        var projectId = objectMapper.readTree(projectResponse.getResponse().getContentAsString()).get("id").asText();
+        var projectId =
+                objectMapper
+                        .readTree(projectResponse.getResponse().getContentAsString())
+                        .get("id")
+                        .asText();
 
-        var taskPayload = """
+        var taskPayload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "projectId": "%s",
@@ -285,17 +358,21 @@ class TaskControllerTest {
               "priority": 2,
               "source": "MANUAL"
             }
-            """.formatted(projectId);
+            """
+                        .formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(taskPayload))
-            .andExpect(status().isForbidden());
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(taskPayload))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void allowsProjectTaskCreationForMember() throws Exception {
-        var projectPayload = """
+        var projectPayload =
+                """
             {
               "name": "Membership allowed project",
               "key": "MAP",
@@ -303,27 +380,38 @@ class TaskControllerTest {
             }
             """;
 
-        var projectResponse = mockMvc.perform(post("/v1/projects").with(jwt("99999999-9999-9999-9999-999999999998"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(projectPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
+        var projectResponse =
+                mockMvc.perform(
+                                post("/v1/projects")
+                                        .with(jwt("99999999-9999-9999-9999-999999999998"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(projectPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
 
-        var projectId = objectMapper.readTree(projectResponse.getResponse().getContentAsString()).get("id").asText();
+        var projectId =
+                objectMapper
+                        .readTree(projectResponse.getResponse().getContentAsString())
+                        .get("id")
+                        .asText();
 
-        var addMemberPayload = """
+        var addMemberPayload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "role": "MEMBER"
             }
             """;
 
-        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId).with(jwt("99999999-9999-9999-9999-999999999998"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(addMemberPayload))
-            .andExpect(status().isCreated());
+        mockMvc.perform(
+                        post("/v1/projects/{projectId}/members", projectId)
+                                .with(jwt("99999999-9999-9999-9999-999999999998"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(addMemberPayload))
+                .andExpect(status().isCreated());
 
-        var taskPayload = """
+        var taskPayload =
+                """
             {
               "userId": "11111111-1111-1111-1111-111111111111",
               "projectId": "%s",
@@ -332,17 +420,22 @@ class TaskControllerTest {
               "priority": 2,
               "source": "MANUAL"
             }
-            """.formatted(projectId);
+            """
+                        .formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(taskPayload))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.projectId").value(projectId));
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(taskPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.projectId").value(projectId));
     }
+
     @Test
     void arbitraryIdentityAndRoleHeadersCannotImpersonateOrElevatePrivileges() throws Exception {
-        var victimPayload = """
+        var victimPayload =
+                """
             {
               "userId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
               "title": "Victim task",
@@ -352,31 +445,38 @@ class TaskControllerTest {
             }
             """;
 
-        var victimResponse = mockMvc.perform(post("/v1/tasks")
-                .with(jwt("ffffffff-ffff-ffff-ffff-ffffffffffff"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(victimPayload))
-            .andExpect(status().isCreated())
-            .andReturn();
-        var victimTaskId = objectMapper.readTree(victimResponse.getResponse().getContentAsString()).get("id").asText();
+        var victimResponse =
+                mockMvc.perform(
+                                post("/v1/tasks")
+                                        .with(jwt("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(victimPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        var victimTaskId =
+                objectMapper
+                        .readTree(victimResponse.getResponse().getContentAsString())
+                        .get("id")
+                        .asText();
 
         var attackerPayload = victimPayload.replace("Victim task", "Attempted impersonation");
-        mockMvc.perform(post("/v1/tasks")
-                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
-                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
-                .header("X-User-Roles", "ADMIN,MANAGER")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(attackerPayload))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.userId").value("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"));
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+                                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
+                                .header("X-User-Roles", "ADMIN,MANAGER")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(attackerPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"));
 
-        mockMvc.perform(patch("/v1/tasks/{id}/status", victimTaskId)
-                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
-                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
-                .header("X-User-Roles", "ADMIN")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"status\":\"DONE\"}"))
-            .andExpect(status().isForbidden());
+        mockMvc.perform(
+                        patch("/v1/tasks/{id}/status", victimTaskId)
+                                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+                                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
+                                .header("X-User-Roles", "ADMIN")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"status\":\"DONE\"}"))
+                .andExpect(status().isForbidden());
     }
-
 }

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface SpringDataProjectMembershipJpaRepository
-    extends JpaRepository<ProjectMembershipJpaEntity, ProjectMembershipJpaId> {
+        extends JpaRepository<ProjectMembershipJpaEntity, ProjectMembershipJpaId> {
 
     List<ProjectMembershipJpaEntity> findByProjectId(UUID projectId);
 

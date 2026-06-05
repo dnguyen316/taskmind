@@ -39,6 +39,5 @@ public class UserJpaEntity {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
-    protected UserJpaEntity() {
-    }
+    protected UserJpaEntity() {}
 }

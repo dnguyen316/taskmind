@@ -7,19 +7,28 @@ interface ProjectListItem {
   ownerUserId?: string | null
 }
 
-withDefaults(defineProps<{
-  projects: ProjectListItem[]
-  loading?: boolean
-  errorMessage?: string | null
-}>(), {
-  loading: false,
-  errorMessage: null,
-})
+withDefaults(
+  defineProps<{
+    projects: ProjectListItem[]
+    loading?: boolean
+    errorMessage?: string | null
+  }>(),
+  {
+    loading: false,
+    errorMessage: null,
+  },
+)
 </script>
 
 <template>
   <a-card title="Projects" class="surface-card">
-    <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" class="space-bottom" />
+    <a-alert
+      v-if="errorMessage"
+      type="error"
+      show-icon
+      :message="errorMessage"
+      class="space-bottom"
+    />
 
     <a-spin :spinning="loading">
       <a-empty v-if="!loading && projects.length === 0" description="No projects available." />
@@ -49,8 +58,20 @@ withDefaults(defineProps<{
 </template>
 
 <style scoped>
-.surface-card { border-radius: 18px; }
-.space-bottom { margin-bottom: 12px; }
-.project-item { border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 10px; padding: 12px 16px; background: #f8fafc; }
-.project-name { font-weight: 600; }
+.surface-card {
+  border-radius: 18px;
+}
+.space-bottom {
+  margin-bottom: 12px;
+}
+.project-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  padding: 12px 16px;
+  background: #f8fafc;
+}
+.project-name {
+  font-weight: 600;
+}
 </style>

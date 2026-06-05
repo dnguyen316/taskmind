@@ -24,6 +24,5 @@ public class PermissionJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected PermissionJpaEntity() {
-    }
+    protected PermissionJpaEntity() {}
 }

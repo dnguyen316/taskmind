@@ -30,7 +30,18 @@ Follow this workflow to deliver backend changes safely and consistently.
 - Keep persistence adapters focused on mapping between domain model and JPA entities.
 - Keep OpenAPI and DTO fields synchronized whenever request/response payloads change.
 
-## 4) Validate locally
+## 4) Format, review, and validate locally
+
+After implementation, format backend code from `apps/backend` before final checks:
+
+1. `mvn -q spotless:apply`
+2. `mvn -q spotless:check` when you need a no-diff formatter guard
+
+Then do a quick code review pass to find issues before slower tests:
+
+- Run `git diff --check` and inspect `git diff --stat`.
+- Review changed files by TaskMind layer: REST/OpenAPI, application transaction boundary, domain invariant, JPA mapping, Flyway migration, and tests.
+- Confirm no frontend contract consumer was missed when Core request/response DTOs changed.
 
 From `apps/backend` run the smallest set that validates your touched area first, then full tests if needed:
 

@@ -12,7 +12,9 @@ export function useTasks() {
   const errorMessage = ref('')
   const tasks = ref<Task[]>([])
   const projectsStore = useProjectsStore()
-  const projects = computed<Project[]>(() => projectsStore.projects.filter((project) => !project.archivedAt))
+  const projects = computed<Project[]>(() =>
+    projectsStore.projects.filter((project) => !project.archivedAt),
+  )
   const activeProjectId = ref('')
 
   const filters = reactive<TaskFilters>({
@@ -46,7 +48,8 @@ export function useTasks() {
       await projectsStore.fetchProjects()
 
       if (!activeProjectId.value && projects.value.length > 0) {
-        const currentProject = projects.value.find((project) => !project.archivedAt) ?? projects.value[0]
+        const currentProject =
+          projects.value.find((project) => !project.archivedAt) ?? projects.value[0]
         activeProjectId.value = currentProject?.id ?? ''
       }
     } catch (error: unknown) {
@@ -158,4 +161,3 @@ function getRecencyTimestamp(task: Task) {
 
   return 0
 }
-

@@ -15,8 +15,7 @@ public class UserRoleJpaId implements Serializable {
     @Column(name = "role_id", nullable = false)
     private UUID roleId;
 
-    protected UserRoleJpaId() {
-    }
+    protected UserRoleJpaId() {}
 
     public UserRoleJpaId(UUID userId, UUID roleId) {
         this.userId = userId;

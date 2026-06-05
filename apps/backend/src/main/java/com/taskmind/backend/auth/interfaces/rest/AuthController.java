@@ -34,20 +34,26 @@ public class AuthController {
     }
 
     @PostMapping("/signup/email")
-    public ResponseEntity<AuthTokensResponse> signupEmail(@Valid @RequestBody SignupEmailRequest request) {
-        var tokens = authApplicationService.signupEmail(new SignupEmailCommand(request.email(), request.password(), request.displayName()));
+    public ResponseEntity<AuthTokensResponse> signupEmail(
+            @Valid @RequestBody SignupEmailRequest request) {
+        var tokens =
+                authApplicationService.signupEmail(
+                        new SignupEmailCommand(
+                                request.email(), request.password(), request.displayName()));
         return ResponseEntity.status(HttpStatus.CREATED).body(toTokensResponse(tokens));
     }
 
     @PostMapping("/login")
     public AuthTokensResponse login(@Valid @RequestBody LoginRequest request) {
-        var tokens = authApplicationService.login(new LoginCommand(request.email(), request.password()));
+        var tokens =
+                authApplicationService.login(new LoginCommand(request.email(), request.password()));
         return toTokensResponse(tokens);
     }
 
     @PostMapping("/token/refresh")
     public AuthTokensResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        var tokens = authApplicationService.refresh(new RefreshTokenCommand(request.refreshToken()));
+        var tokens =
+                authApplicationService.refresh(new RefreshTokenCommand(request.refreshToken()));
         return toTokensResponse(tokens);
     }
 
@@ -58,12 +64,18 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public AuthUserResponse me(@RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+    public AuthUserResponse me(
+            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
         var user = authApplicationService.me(authorizationHeader);
         return new AuthUserResponse(user.userId(), user.email(), user.displayName());
     }
 
-    private AuthTokensResponse toTokensResponse(com.taskmind.backend.auth.application.AuthTokens tokens) {
-        return new AuthTokensResponse(tokens.accessToken(), tokens.refreshToken(), tokens.tokenType(), tokens.expiresInSeconds());
+    private AuthTokensResponse toTokensResponse(
+            com.taskmind.backend.auth.application.AuthTokens tokens) {
+        return new AuthTokensResponse(
+                tokens.accessToken(),
+                tokens.refreshToken(),
+                tokens.tokenType(),
+                tokens.expiresInSeconds());
     }
 }

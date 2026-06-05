@@ -45,6 +45,5 @@ public class OtpChallengeJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected OtpChallengeJpaEntity() {
-    }
+    protected OtpChallengeJpaEntity() {}
 }
