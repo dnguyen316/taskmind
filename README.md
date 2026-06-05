@@ -89,18 +89,47 @@ npm run build
 | OpenSearch / ES | 9200 | no |
 | S3 / LocalStack | 4566 / 9000 | no |
 
-## API Contract
+## Current Core API Areas
 
-- Core OpenAPI spec: `apps/backend/openapi.yaml`
-- Keep `apps/backend/openapi.yaml` in sync whenever Core request or response DTOs change.
+Core (`apps/backend`) is the only public API surface the frontend calls. Its current
+contract areas are:
+
+- **Health** - service readiness and liveness checks.
+- **Auth** - login, signup, verification, OAuth, password, token refresh, logout, and the
+  local/test/staging E2E bypass flow.
+- **Tasks** - task creation, listing, updates, status transitions, completion details, and
+  archive behavior.
+- **Task links** - task-to-task relationship endpoints.
+- **Task releases** - release grouping and task release assignment endpoints.
+- **Projects** - project creation, listing, detail, and update endpoints.
+- **Project memberships** - project member listing and membership management endpoints.
+- **Planner/AI scaffold endpoints** - deterministic Core facade endpoints for capture,
+  goal breakdown, daily planning, reschedule proposals, and weekly review surfaces while
+  deeper Nova orchestration is built out.
+
+## Core API Contract
+
+Core contracts live in `apps/backend/openapi.yaml`. Update that OpenAPI file in the same
+change set whenever Core request or response DTOs change so frontend integration, tests,
+and build-kit references stay aligned.
 
 ## Development Docs
 
-- Build-kit roadmap: `docs/build-kit/01-build-order.md`
-- Agent session hygiene and token-saving inspection workflow: `docs/agent-session-workflow.md`
+- Build-kit roadmap and milestone order: `docs/build-kit/01-build-order.md`
+- Backend implementation history: `docs/backend-feature-changelog.md`
+- Agent session hygiene, session-update rules, closeout order, and token-saving inspection
+  workflow: `docs/agent-session-workflow.md`
 
-## Next Steps
+## Build-Kit Milestone Tracker
 
-Follow the build-kit roadmap milestone by milestone: `docs/build-kit/01-build-order.md`.
+Use `docs/build-kit/01-build-order.md` as the source-of-truth tracker for rebuild status.
+Work the milestones in order, verify each one with `make vibe-verify` before moving on,
+and record backend-visible implementation progress in `docs/backend-feature-changelog.md`.
 
-The current repository is still scaffold-era and does not yet contain the full target reactor (`libs/events`, `libs/ai-contracts`, `apps/relay`, `apps/ai`, root `pom.xml`, and infra wrappers). Start with the next incomplete build-kit milestone, **M00 Bootstrap**, to establish the full monorepo shape and green `make vibe-verify`. After M00 is complete, continue to the next backend/Core milestone, **M01 Core foundations**.
+| Milestone | Focus | Tracker |
+|-----------|-------|---------|
+| M00 | Bootstrap monorepo, reactor, services, frontend shell, CI gate | `docs/build-kit/01-build-order.md` |
+| M01 | Core foundations: persistence, JWT security, E2E bypass, health, error handling | `docs/build-kit/01-build-order.md` |
+| M02 | Tasks and projects Core modules plus OpenAPI contract | `docs/build-kit/01-build-order.md` |
+| M03 | Frontend shell, auth, tasks, and projects pages | `docs/build-kit/01-build-order.md` |
+| M04-M13 | Scheduler, Relay/eventing, search/storage, Nova AI, integrations, notifications, analytics, and AWS hardening | `docs/build-kit/01-build-order.md` |
