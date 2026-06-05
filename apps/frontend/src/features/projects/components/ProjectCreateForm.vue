@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
-import type { FormContext } from 'vee-validate'
+import type { FormContext, GenericObject } from 'vee-validate'
 import type { CreateProjectPayload } from '../types'
 import * as yup from 'yup'
 
-type CreateProjectFormValues = CreateProjectPayload
+interface CreateProjectFormValues {
+  name: string
+  key: string
+  ownerUserId: string
+  description: string | null
+}
 
 const props = withDefaults(defineProps<{ saving?: boolean; successSignal?: number }>(), {
   saving: false,
@@ -32,27 +37,13 @@ const initialValues = computed<CreateProjectFormValues>(() => ({
 
 const formRef = ref<FormContext | null>(null)
 
-function handleValidSubmit(values: Record<string, unknown>) {
-  const formValues = toCreateProjectFormValues(values)
+function handleValidSubmit(values: GenericObject) {
   emit('submit', {
-    name: formValues.name.trim(),
-    key: formValues.key.trim(),
-    ownerUserId: formValues.ownerUserId.trim(),
-    description: formValues.description?.trim() || null,
+    name: String(values.name ?? '').trim(),
+    key: String(values.key ?? '').trim(),
+    ownerUserId: String(values.ownerUserId ?? '').trim(),
+    description: String(values.description ?? '').trim() || null,
   })
-}
-
-function toCreateProjectFormValues(values: Record<string, unknown>): CreateProjectFormValues {
-  return {
-    name: stringValue(values.name),
-    key: stringValue(values.key),
-    ownerUserId: stringValue(values.ownerUserId),
-    description: stringValue(values.description),
-  }
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === 'string' ? value : ''
 }
 
 watch(

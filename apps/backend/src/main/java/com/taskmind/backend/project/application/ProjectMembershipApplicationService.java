@@ -1,5 +1,6 @@
 package com.taskmind.backend.project.application;
 
+import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.domain.model.ProjectMembership;
 import com.taskmind.backend.project.domain.model.ProjectMembershipRole;
 import com.taskmind.backend.project.domain.repository.ProjectMembershipRepository;
@@ -24,9 +25,9 @@ public class ProjectMembershipApplicationService {
         this.projectRepository = projectRepository;
     }
 
-    public ProjectMembership addMember(UUID actorUserId, UUID projectId, UUID userId, ProjectMembershipRole role) {
+    public ProjectMembership addMember(AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
         assertProjectExists(projectId);
-        assertCanManageMembers(actorUserId, projectId);
+        assertCanManageMembers(actor, projectId);
         try {
             return projectMembershipRepository.save(new ProjectMembership(projectId, userId, role));
         } catch (DataIntegrityViolationException e) {
@@ -34,15 +35,15 @@ public class ProjectMembershipApplicationService {
         }
     }
 
-    public void removeMember(UUID actorUserId, UUID projectId, UUID userId) {
+    public void removeMember(AuthenticatedUser actor, UUID projectId, UUID userId) {
         assertProjectExists(projectId);
-        assertCanManageMembers(actorUserId, projectId);
+        assertCanManageMembers(actor, projectId);
         projectMembershipRepository.deleteByProjectIdAndUserId(projectId, userId);
     }
 
-    public List<ProjectMembership> listMembers(UUID actorUserId, UUID projectId) {
+    public List<ProjectMembership> listMembers(AuthenticatedUser actor, UUID projectId) {
         assertProjectExists(projectId);
-        assertCanListMembers(actorUserId, projectId);
+        assertCanListMembers(actor, projectId);
         return projectMembershipRepository.findByProjectId(projectId).stream()
             .sorted(Comparator.comparing(ProjectMembership::userId))
             .toList();
@@ -64,14 +65,14 @@ public class ProjectMembershipApplicationService {
         }
     }
 
-    private void assertCanManageMembers(UUID actorUserId, UUID projectId) {
-        if (!isOwner(actorUserId, projectId) && !isAdmin(actorUserId, projectId)) {
+    private void assertCanManageMembers(AuthenticatedUser actor, UUID projectId) {
+        if (!isOwner(actor.userId(), projectId) && !isAdmin(actor.userId(), projectId)) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to manage project members");
         }
     }
 
-    private void assertCanListMembers(UUID actorUserId, UUID projectId) {
-        if (!isMember(projectId, actorUserId)) {
+    private void assertCanListMembers(AuthenticatedUser actor, UUID projectId) {
+        if (!isMember(projectId, actor.userId())) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to list project members");
         }
     }

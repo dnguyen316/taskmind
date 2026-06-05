@@ -1,5 +1,6 @@
 package com.taskmind.backend.project.interfaces.rest;
 
+import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.project.domain.model.ProjectMembership;
 import com.taskmind.backend.project.interfaces.rest.dto.AddProjectMemberRequest;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,11 +35,11 @@ public class ProjectMembershipController {
     @PostMapping
     public ResponseEntity<ProjectMembership> addMember(
         @PathVariable UUID projectId,
-        @RequestHeader("X-Actor-User-Id") UUID actorUserId,
+        AuthenticatedUser actor,
         @Valid @RequestBody AddProjectMemberRequest request
     ) {
         try {
-            var membership = projectMembershipApplicationService.addMember(actorUserId, projectId, request.userId(), request.role());
+            var membership = projectMembershipApplicationService.addMember(actor, projectId, request.userId(), request.role());
             return ResponseEntity.status(HttpStatus.CREATED).body(membership);
         } catch (ProjectMembershipForbiddenException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
@@ -54,10 +54,10 @@ public class ProjectMembershipController {
     public ResponseEntity<Void> removeMember(
         @PathVariable UUID projectId,
         @PathVariable UUID userId,
-        @RequestHeader("X-Actor-User-Id") UUID actorUserId
+        AuthenticatedUser actor
     ) {
         try {
-            projectMembershipApplicationService.removeMember(actorUserId, projectId, userId);
+            projectMembershipApplicationService.removeMember(actor, projectId, userId);
         } catch (ProjectMembershipForbiddenException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (ProjectMembershipNotFoundException e) {
@@ -69,10 +69,10 @@ public class ProjectMembershipController {
     @GetMapping
     public List<ProjectMembership> listMembers(
         @PathVariable UUID projectId,
-        @RequestHeader("X-Actor-User-Id") UUID actorUserId
+        AuthenticatedUser actor
     ) {
         try {
-            return projectMembershipApplicationService.listMembers(actorUserId, projectId);
+            return projectMembershipApplicationService.listMembers(actor, projectId);
         } catch (ProjectMembershipForbiddenException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (ProjectMembershipNotFoundException e) {

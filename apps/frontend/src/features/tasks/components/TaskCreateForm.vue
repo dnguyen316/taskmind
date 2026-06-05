@@ -4,7 +4,8 @@ import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
 import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
 import { DEFAULT_CREATE_TASK_FORM } from '../constants/taskConstants'
-import type { CreateTaskFormValues, CreateTaskPayload, Project } from '../types'
+import type { Project } from '../../projects/types'
+import type { CreateTaskFormValues, CreateTaskPayload } from '../types'
 
 type SubmitTaskPayload = Omit<CreateTaskPayload, 'userId' | 'source'>
 

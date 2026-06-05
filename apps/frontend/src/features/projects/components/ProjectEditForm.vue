@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
-import * as yup from 'yup'
+import type { GenericObject } from 'vee-validate'
 import type { UpdateProjectPayload } from '../types'
-
-type ProjectEditableFields = Required<Pick<UpdateProjectPayload, 'name' | 'key' | 'description'>>
+import * as yup from 'yup'
 
 const props = withDefaults(defineProps<{
-  value: ProjectEditableFields
+  value: UpdateProjectPayload
   saving?: boolean
 }>(), {
   saving: false,
 })
 
 const emit = defineEmits<{
-  submit: [payload: ProjectEditableFields]
+  submit: [payload: UpdateProjectPayload]
 }>()
 
 const schema = yup.object({
@@ -23,31 +22,18 @@ const schema = yup.object({
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
 })
 
-const initialValues = computed<ProjectEditableFields>(() => ({
+const initialValues = computed<UpdateProjectPayload>(() => ({
   name: props.value?.name ?? '',
   key: props.value?.key ?? '',
   description: props.value?.description ?? null,
 }))
 
-function handleValidSubmit(values: Record<string, unknown>) {
-  const formValues = toProjectEditableFields(values)
+function handleValidSubmit(values: GenericObject) {
   emit('submit', {
-    name: formValues.name.trim(),
-    key: formValues.key.trim(),
-    description: formValues.description?.trim() || null,
+    name: String(values.name ?? '').trim(),
+    key: String(values.key ?? '').trim(),
+    description: String(values.description ?? '').trim() || null,
   })
-}
-
-function toProjectEditableFields(values: Record<string, unknown>): ProjectEditableFields {
-  return {
-    name: stringValue(values.name),
-    key: stringValue(values.key),
-    description: stringValue(values.description),
-  }
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === 'string' ? value : ''
 }
 </script>
 

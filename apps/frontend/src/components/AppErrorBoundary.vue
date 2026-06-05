@@ -12,7 +12,7 @@ onErrorCaptured((error, instance, info) => {
   console.error('Captured UI error in AppErrorBoundary.', {
     error,
     info,
-    component: instance?.$.type,
+    component: instance?.$options?.name ?? instance?.$options?.__name ?? 'anonymous',
   })
 
   return false
