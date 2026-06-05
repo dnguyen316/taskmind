@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { CheckSquareOutlined, FolderOutlined, TeamOutlined, CalendarOutlined, InboxOutlined, BarChartOutlined } from '@ant-design/icons-vue'
 
-const props = defineProps<{ taskCount?: number }>()
+defineProps<{ taskCount?: number }>()
 const route = useRoute()
 
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 const isTasks = computed(() => route.path.startsWith('/tasks'))
 const isProjects = computed(() => route.path.startsWith('/projects'))
+const isTeam = computed(() => route.path.startsWith('/team'))
+const isCalendar = computed(() => route.path.startsWith('/calendar'))
+const isInbox = computed(() => route.path.startsWith('/inbox'))
+const isReports = computed(() => route.path.startsWith('/reports'))
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar tm-shell-sidebar">
     <div class="brand">Taskmind <span>AI</span></div>
     <nav class="menu-group">
       <RouterLink to="/dashboard" class="menu-item" :class="{ active: isDashboard }"><CheckSquareOutlined />Dashboard</RouterLink>
@@ -21,10 +25,10 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <a class="menu-item"><TeamOutlined />Team</a>
-      <a class="menu-item"><CalendarOutlined />Calendar</a>
-      <a class="menu-item"><InboxOutlined />Inbox</a>
-      <a class="menu-item"><BarChartOutlined />Reports</a>
+      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink>
+      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink>
+      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink>
+      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink>
     </nav>
     <div class="user-pill">
       <div class="avatar">AC</div>
@@ -34,15 +38,95 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
 </template>
 
 <style scoped>
-.sidebar { background:#fff; border-right:1px solid #e2e8f0; padding:24px 16px; display:flex; flex-direction:column; }
-.brand { font-size:28px; font-weight:700; margin-bottom:20px; }
-.brand span { font-size:12px; color:#2563eb; margin-left:8px; }
-.menu-group { display:grid; gap:6px; margin-bottom:18px; }
-.menu-item { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; color:#334155; }
-.menu-item.active { background:#eaf1ff; color:#1d4ed8; font-weight:600; }
-.menu-item em { margin-left:auto; font-style:normal; background:#e2e8f0; border-radius:999px; padding:0 8px; font-size:12px; }
-.group-title { text-transform:uppercase; color:#94a3b8; letter-spacing:.08em; font-size:12px; margin:6px 0; }
-.user-pill { margin-top:auto; padding:10px; border-top:1px solid #e2e8f0; display:flex; gap:10px; align-items:center; }
-.avatar { width:32px; height:32px; border-radius:50%; background:#1e40af; color:#fff; display:grid; place-items:center; font-size:12px; }
-.user-pill p { margin:0; color:#64748b; font-size:12px; }
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  border-right: 1px solid var(--tm-border);
+}
+
+.brand {
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--tm-text);
+}
+
+.brand span {
+  margin-left: 8px;
+  color: var(--tm-accent-blue);
+  font-size: 12px;
+}
+
+.menu-group {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.menu-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--tm-text-muted);
+  border-radius: calc(var(--tm-radius) - 4px);
+}
+
+.menu-item.active {
+  color: var(--tm-accent-blue-strong);
+  font-weight: 600;
+  background: var(--tm-primary-soft);
+}
+
+.menu-item em,
+.coming-soon {
+  margin-left: auto;
+  padding: 0 8px;
+  color: var(--tm-text-muted);
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+  background: var(--tm-surface-muted);
+  border-radius: 999px;
+}
+
+.coming-soon {
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+.group-title {
+  margin: 6px 0;
+  color: var(--tm-text-soft);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.user-pill {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: auto;
+  padding: 10px;
+  border-top: 1px solid var(--tm-border);
+}
+
+.avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  color: var(--tm-accent-contrast);
+  font-size: 12px;
+  background: var(--tm-accent-navy);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.user-pill p {
+  margin: 0;
+  color: var(--tm-muted);
+  font-size: 12px;
+}
 </style>

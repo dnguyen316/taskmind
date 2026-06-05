@@ -1,1 +1,26 @@
-package com.taskmind.backend.task.interfaces.rest; import com.taskmind.backend.security.AuthenticatedUserResolver; import com.taskmind.backend.task.application.TaskReleaseApplicationService; import com.taskmind.backend.task.interfaces.rest.dto.ReleaseSummaryResponse; import java.util.UUID; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*; @RestController @RequestMapping("/v1/projects/{projectId}/releases") public class TaskReleaseController{private final TaskReleaseApplicationService service;private final AuthenticatedUserResolver users;public TaskReleaseController(TaskReleaseApplicationService s,AuthenticatedUserResolver u){service=s;users=u;}@GetMapping public ReleaseSummaryResponse summary(@PathVariable UUID projectId,@RequestHeader(value="X-User-Id",required=false)UUID id,@RequestHeader(value="X-User-Roles",required=false)String roles,Authentication auth){return service.summary(users.resolve(auth,id,roles),projectId);}}
+package com.taskmind.backend.task.interfaces.rest;
+
+import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.task.application.TaskReleaseApplicationService;
+import com.taskmind.backend.task.interfaces.rest.dto.ReleaseSummaryResponse;
+import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/v1/projects/{projectId}/releases")
+public class TaskReleaseController {
+
+    private final TaskReleaseApplicationService taskReleaseApplicationService;
+
+    public TaskReleaseController(TaskReleaseApplicationService taskReleaseApplicationService) {
+        this.taskReleaseApplicationService = taskReleaseApplicationService;
+    }
+
+    @GetMapping
+    public ReleaseSummaryResponse summary(AuthenticatedUser requester, @PathVariable UUID projectId) {
+        return taskReleaseApplicationService.summary(requester, projectId);
+    }
+}

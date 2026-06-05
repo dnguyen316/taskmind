@@ -1,73 +1,131 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   BellOutlined,
-  CalendarOutlined,
-  InboxOutlined,
   SearchOutlined,
-  MessageOutlined,
-  BarChartOutlined,
 } from '@ant-design/icons-vue'
 import { useTasks } from '../composables/useTasks'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
+import type { Task } from '../types'
 
 const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
 
-const taskMetrics = computed(() => ({
-  active: visibleTasks.value.length,
-  dueThisWeek: visibleTasks.value.filter((task) => task.dueAt).length,
-  overdue: visibleTasks.value.filter((task) => isTaskOverdue(task)).length,
-  completed: visibleTasks.value.filter((task) => task.status === 'DONE').length,
-}))
+const startOfToday = () => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today
+}
 
-const quickActions = ['Show blockers', 'Rebalance workload', 'Plan this week', 'Ask Nova anything']
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const endOfNextSevenDays = () => {
+  const end = startOfToday()
+  end.setDate(end.getDate() + 7)
+  end.setHours(23, 59, 59, 999)
+  return end
+}
 
-const projectStatus = [
-  { name: 'Atlas — Web App v2', status: 'On track', progress: 68, color: '#2563eb' },
-  { name: 'Ion — Mobile App', status: 'At risk', progress: 34, color: '#7c3aed' },
-  { name: 'Nova — AI Routing Engine', status: 'On track', progress: 82, color: '#0f766e' },
-  { name: 'Echo — Customer Insights', status: 'Planning', progress: 12, color: '#c2410c' },
-  { name: 'Orbit — Onboarding Flow', status: 'On track', progress: 54, color: '#16a34a' },
-  { name: 'Pulse — Performance Sprint', status: 'On track', progress: 71, color: '#be185d' },
-]
+const realTaskMetrics = computed(() => {
+  const today = startOfToday()
+  const nextSevenDays = endOfNextSevenDays()
 
-const recentActivity = [
-  { initials: 'MP', name: 'Maya Patel', action: 'moved TSK-1027 to Review', time: '12m ago', color: '#4338ca' },
-  { initials: 'JL', name: 'Jordan Lee', action: 'commented on Atlas blocker thread', time: '32m ago', color: '#0f766e' },
-  { initials: 'SR', name: 'Sam Rivera', action: 'added risk note to TSK-1029', time: '1h ago', color: '#c2410c' },
-  { initials: 'TP', name: 'Theo Park', action: 'created sprint follow-up tasks', time: '2h ago', color: '#1d4ed8' },
-  { initials: 'KT', name: 'Kai Tanaka', action: 'updated delivery forecast', time: '3h ago', color: '#be185d' },
-  { initials: 'NA', name: 'Nova AI', action: 'summarized blockers for Atlas', time: '4h ago', color: '#1e40af' },
-]
+  return {
+    active: visibleTasks.value.filter((task: Task) => task.status !== 'DONE').length,
+    dueThisWeek: visibleTasks.value.filter((task: Task) => {
+      if (!task.dueAt) return false
+      const dueAt = new Date(task.dueAt)
+      return dueAt >= today && dueAt <= nextSevenDays
+    }).length,
+    overdue: visibleTasks.value.filter((task: Task) => isTaskOverdue(task)).length,
+    completed: visibleTasks.value.filter((task: Task) => task.status === 'DONE').length,
+  }
+})
 
-const aiInsights = computed(() => {
-  const overdueTasks = visibleTasks.value.filter((task) => isTaskOverdue(task))
-  const doneThisSprint = visibleTasks.value.filter((task) => task.status === 'DONE').length
+interface DashboardQuickAction {
+  label: string
+  milestone: string
+}
+
+interface DashboardProjectStatus {
+  name: string
+  status: 'On track' | 'At risk' | 'Planning'
+  progress: number
+  color: string
+}
+
+interface DashboardRecentActivity {
+  initials: string
+  name: string
+  action: string
+  time: string
+  color: string
+}
+
+interface DashboardPreview {
+  quickActions: DashboardQuickAction[]
+  weekdays: string[]
+  projectStatus: DashboardProjectStatus[]
+  recentActivity: DashboardRecentActivity[]
+}
+
+interface AnalyticsPreviewInsight {
+  title: string
+  description: string
+  action: string
+}
+
+const mockOnlyDashboardPreview: DashboardPreview = {
+  quickActions: [
+    { label: 'Show blockers', milestone: 'M12' },
+    { label: 'Rebalance workload', milestone: 'M12' },
+    { label: 'Plan this week', milestone: 'M04' },
+    { label: 'Ask Nova anything', milestone: 'M08' },
+  ],
+  weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  projectStatus: [
+    { name: 'Atlas — Web App v2', status: 'On track', progress: 68, color: 'var(--tm-accent-blue)' },
+    { name: 'Ion — Mobile App', status: 'At risk', progress: 34, color: 'var(--tm-accent-purple)' },
+    { name: 'Nova — AI Routing Engine', status: 'On track', progress: 82, color: 'var(--tm-accent-teal)' },
+    { name: 'Echo — Customer Insights', status: 'Planning', progress: 12, color: 'var(--tm-accent-orange)' },
+    { name: 'Orbit — Onboarding Flow', status: 'On track', progress: 54, color: 'var(--tm-accent-green)' },
+    { name: 'Pulse — Performance Sprint', status: 'On track', progress: 71, color: 'var(--tm-accent-pink)' },
+  ],
+  recentActivity: [
+    { initials: 'MP', name: 'Maya Patel', action: 'moved TSK-1027 to Review', time: '12m ago', color: 'var(--tm-accent-indigo)' },
+    { initials: 'JL', name: 'Jordan Lee', action: 'commented on Atlas blocker thread', time: '32m ago', color: 'var(--tm-accent-teal)' },
+    { initials: 'SR', name: 'Sam Rivera', action: 'added risk note to TSK-1029', time: '1h ago', color: 'var(--tm-accent-orange)' },
+    { initials: 'TP', name: 'Theo Park', action: 'created sprint follow-up tasks', time: '2h ago', color: 'var(--tm-accent-blue-strong)' },
+    { initials: 'KT', name: 'Kai Tanaka', action: 'updated delivery forecast', time: '3h ago', color: 'var(--tm-accent-pink)' },
+    { initials: 'NA', name: 'Nova AI', action: 'summarized blockers for Atlas', time: '4h ago', color: 'var(--tm-accent-navy)' },
+  ],
+}
+
+const analyticsPreviewInsights = computed<AnalyticsPreviewInsight[]>(() => {
+  const overdueTasks = visibleTasks.value.filter((task: Task) => isTaskOverdue(task))
+  const doneThisSprint = realTaskMetrics.value.completed
 
   return [
     {
-      title: overdueTasks.length ? 'Atlas at risk of slipping' : 'Sprint flow healthy',
+      title: overdueTasks.length ? 'Risk preview from current tasks' : 'Sprint flow preview',
       description: overdueTasks.length
-        ? `${overdueTasks.length} urgent tasks share dependencies. Resolving blockers unlocks downstream work.`
-        : 'No overdue items detected. Keep momentum by pulling one next-highest priority task.',
-      action: overdueTasks.length ? 'Show blockers' : 'Pull into sprint',
+        ? `${overdueTasks.length} overdue task(s) are visible locally. M12 will replace this placeholder with Relay-backed risk analytics.`
+        : 'No overdue items detected in the current task list. M12 will replace this placeholder with real trend analytics.',
+      action: 'Coming in M12',
     },
     {
-      title: 'Workload imbalance detected',
-      description: `A few owners hold most active items. You closed ${doneThisSprint} tasks this sprint—consider redistributing urgent work.`,
-      action: 'Reassign',
+      title: 'Workload analytics placeholder',
+      description: `Team workload balancing needs the M12 analytics read model. Current completed task count is ${doneThisSprint}.`,
+      action: 'Coming in M12',
     },
     {
-      title: 'Velocity trend up 12% w/w',
-      description: `Pulse sprint is outperforming forecast with ${taskMetrics.value.active} tasks currently in flight.`,
-      action: 'Pull into sprint',
+      title: 'Nova insight placeholder',
+      description: 'User-facing AI dashboard insight generation is implemented in M08, then replaced by real dashboard widgets in M12.',
+      action: 'Coming in M08/M12',
     },
   ]
 })
 
-const myTasks = computed(() => visibleTasks.value.slice(0, 6))
+const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
 
 onMounted(async () => {
   await fetchProjects()
@@ -76,119 +134,372 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout :task-count="taskMetrics.active">
+  <AppLayout :task-count="realTaskMetrics.active">
+    <header class="topbar">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Live task/project basics now; analytics widgets come in M12.</p>
+      </div>
+      <div class="topbar-actions">
+        <a-input size="large" placeholder="Search tasks, projects, people...">
+          <template #prefix><SearchOutlined /></template>
+        </a-input>
+        <a-button shape="circle"><BellOutlined /></a-button>
+        <RouterLink to="/tasks"><a-button type="primary" size="large">+ New task</a-button></RouterLink>
+      </div>
+    </header>
 
-      <header class="topbar">
-        <div>
-          <h1>Dashboard</h1>
-          <p>What's happening across your team today</p>
-        </div>
-        <div class="topbar-actions">
-          <a-input size="large" placeholder="Search tasks, projects, people...">
-            <template #prefix><SearchOutlined /></template>
-          </a-input>
-          <a-button shape="circle"><BellOutlined /></a-button>
-          <a-button type="primary" size="large">+ New</a-button>
-        </div>
-      </header>
+    <section class="brief-card tm-card-surface">
+      <h2>Good morning <span>REAL TASK METRICS</span><span class="muted-pill">Dashboard analytics coming in M12</span></h2>
+      <p>
+        You have <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong> and
+        <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong> from the live task API.
+      </p>
+      <div class="chip-row">
+        <a-button
+          v-for="action in mockOnlyDashboardPreview.quickActions"
+          :key="action.label"
+          class="chip"
+          disabled
+        >
+          {{ action.label }} <span>Coming in {{ action.milestone }}</span>
+        </a-button>
+      </div>
+    </section>
 
-      <section class="brief-card">
-        <h2>Good morning, Alex <span>NOVA AI · DAILY BRIEF</span></h2>
-        <p>
-          You have <strong>{{ taskMetrics.dueThisWeek }} tasks due this week</strong> and
-          <strong>{{ taskMetrics.overdue }} urgent blocker(s)</strong>. Keep sprint velocity strong by pulling the
-          next scoped task today.
-        </p>
-        <div class="chip-row">
-          <a-button v-for="action in quickActions" :key="action" class="chip">{{ action }}</a-button>
-        </div>
-      </section>
+    <section class="kpi-grid" aria-label="Live task metrics">
+      <article class="kpi-card tm-card-surface"><h3>Active Tasks</h3><strong>{{ realTaskMetrics.active }}</strong><p>Live non-completed tasks</p></article>
+      <article class="kpi-card tm-card-surface"><h3>Due Next 7 Days</h3><strong>{{ realTaskMetrics.dueThisWeek }}</strong><p>Live due dates</p></article>
+      <article class="kpi-card tm-card-surface"><h3>Overdue</h3><strong>{{ realTaskMetrics.overdue }}</strong><p>{{ realTaskMetrics.overdue ? 'Needs attention' : 'All clear' }}</p></article>
+      <article class="kpi-card tm-card-surface"><h3>Completed</h3><strong>{{ realTaskMetrics.completed }}</strong><p>Live completed tasks</p></article>
+    </section>
 
-      <section class="kpi-grid">
-        <article class="kpi-card"><h3>Active Tasks</h3><strong>{{ taskMetrics.active }}</strong><p>In progress now</p></article>
-        <article class="kpi-card"><h3>Due This Week</h3><strong>{{ taskMetrics.dueThisWeek }}</strong><p>Prioritize today</p></article>
-        <article class="kpi-card"><h3>Overdue</h3><strong>{{ taskMetrics.overdue }}</strong><p>{{ taskMetrics.overdue ? 'Needs attention' : 'All clear' }}</p></article>
-        <article class="kpi-card"><h3>Completed</h3><strong>{{ taskMetrics.completed }}</strong><p>Done this sprint</p></article>
-      </section>
-
-      <section class="bottom-grid">
-        <div class="left-column">
-          <a-card class="tasks-card" :loading="loading" title="My Tasks">
-            <template #extra><a href="#">View all</a></template>
-            <a-list :data-source="myTasks">
-              <template #renderItem="{ item }">
-                <a-list-item>
-                  <a-list-item-meta :title="item.title" :description="`${item.projectKey ?? 'PRJ'} · ${item.id}`" />
-                  <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>
-                </a-list-item>
-              </template>
-            </a-list>
-          </a-card>
-
-          <a-card class="workload-card" title="Team Workload — This Week">
-            <template #extra>
-              <div class="legend"><span>To Do</span><span>In Progress</span><span>Done</span></div>
+    <section class="bottom-grid">
+      <div class="left-column">
+        <a-card class="tasks-card tm-card-surface" :loading="loading" title="My Tasks">
+          <template #extra><RouterLink to="/tasks">View all</RouterLink></template>
+          <a-list class="tm-list-surface" :data-source="myTasks">
+            <template #renderItem="{ item }: { item: Task }">
+              <a-list-item>
+                <a-list-item-meta :title="item.title" :description="`${item.projectId ?? 'PRJ'} · ${item.id}`" />
+                <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>
+              </a-list-item>
             </template>
-            <div class="weeklines">
-              <div v-for="day in weekdays" :key="day" class="weekline"><i></i><label>{{ day }}</label></div>
+          </a-list>
+        </a-card>
+
+        <a-card class="workload-card placeholder-card tm-card-surface" title="Team Workload — This Week">
+          <template #extra>
+            <a-tag color="default">Mock preview · Coming in M12</a-tag>
+          </template>
+          <div class="legend"><span>To Do</span><span>In Progress</span><span>Done</span></div>
+          <div class="weeklines">
+            <div v-for="day in mockOnlyDashboardPreview.weekdays" :key="day" class="weekline"><i></i><label>{{ day }}</label></div>
+          </div>
+        </a-card>
+
+        <a-card class="status-card placeholder-card tm-card-surface" title="Project Status">
+          <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
+          <div class="project-row" v-for="project in mockOnlyDashboardPreview.projectStatus" :key="project.name">
+            <p>{{ project.name }}</p>
+            <div class="project-progress">
+              <a-tag :color="project.status === 'At risk' ? 'orange' : project.status === 'Planning' ? 'default' : 'green'">{{ project.status }}</a-tag>
+              <a-progress :percent="project.progress" :show-info="false" :stroke-color="project.color" />
+              <span>{{ project.progress }}%</span>
             </div>
-          </a-card>
+          </div>
+        </a-card>
+      </div>
 
-          <a-card class="status-card" title="Project Status">
-            <template #extra><a href="#">View all</a></template>
-            <div class="project-row" v-for="project in projectStatus" :key="project.name">
-              <p>{{ project.name }}</p>
-              <div class="project-progress">
-                <a-tag :color="project.status === 'At risk' ? 'orange' : project.status === 'Planning' ? 'default' : 'green'">{{ project.status }}</a-tag>
-                <a-progress :percent="project.progress" :show-info="false" :stroke-color="project.color" />
-                <span>{{ project.progress }}%</span>
-              </div>
-            </div>
-          </a-card>
-        </div>
+      <div class="right-column">
+        <a-card class="insights-card placeholder-card tm-card-surface" title="AI Insights">
+          <template #extra><a-tag color="blue">Coming in M08/M12</a-tag></template>
+          <ul>
+            <li v-for="insight in analyticsPreviewInsights" :key="insight.title"><h4>{{ insight.title }}</h4><p>{{ insight.description }}</p><span class="placeholder-link">{{ insight.action }}</span></li>
+          </ul>
+        </a-card>
 
-        <div class="right-column">
-          <a-card class="insights-card" title="AI Insights">
-            <template #extra><a-tag color="blue">{{ aiInsights.length }} NEW</a-tag></template>
-            <ul>
-              <li v-for="insight in aiInsights" :key="insight.title"><h4>{{ insight.title }}</h4><p>{{ insight.description }}</p><a href="#">{{ insight.action }}</a></li>
-            </ul>
-          </a-card>
-
-          <a-card class="activity-card" title="Recent Activity">
-            <div v-for="item in recentActivity" :key="item.name + item.time" class="activity-item">
-              <div class="activity-avatar" :style="{ backgroundColor: item.color }">{{ item.initials }}</div>
-              <div><strong>{{ item.name }}</strong> {{ item.action }}<p>{{ item.time }}</p></div>
-            </div>
-          </a-card>
-
-        </div>
-      </section>
-    
+        <a-card class="activity-card placeholder-card tm-card-surface" title="Recent Activity">
+          <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
+          <div v-for="item in mockOnlyDashboardPreview.recentActivity" :key="item.name + item.time" class="activity-item">
+            <div class="activity-avatar" :style="{ backgroundColor: item.color }">{{ item.initials }}</div>
+            <div><strong>{{ item.name }}</strong> {{ item.action }}<p>{{ item.time }}</p></div>
+          </div>
+        </a-card>
+      </div>
+    </section>
   </AppLayout>
 </template>
 
 <style scoped>
-.topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-.topbar h1 { margin:0; }
-.topbar p { margin:2px 0 0; color:#64748b; }
-.topbar-actions { display:flex; gap:10px; align-items:center; }
-.topbar-actions .ant-input-affix-wrapper { width:360px; }
-.brief-card,.kpi-card,.tasks-card,.insights-card,.workload-card,.status-card,.activity-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; }
-.brief-card { border-color:#c7d2fe; padding:20px; }
-.brief-card h2 { margin:0; }
-.brief-card span { font-size:12px; color:#4338ca; background:#eef2ff; border-radius:999px; padding:4px 8px; margin-left:8px; }
-.chip-row { display:flex; flex-wrap:wrap; gap:10px; } .chip{border-radius:999px}
-.kpi-grid { display:grid; gap:12px; grid-template-columns:repeat(4,minmax(0,1fr)); }
-.kpi-card { padding:16px; } .kpi-card h3{margin:0;font-size:12px;text-transform:uppercase;color:#64748b}.kpi-card strong{font-size:44px}
-.bottom-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:12px; align-items:start; }
-.left-column,.right-column{display:grid;gap:12px}
-.legend{display:flex;gap:10px;color:#64748b;font-size:12px}
-.weeklines{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding-top:16px}
-.weekline i{display:block;height:5px;border-radius:999px;background:linear-gradient(90deg,#94a3b8,#2563eb,#16a34a)} .weekline label{display:block;text-align:center;color:#64748b;font-size:12px;margin-top:8px}
-.project-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid #eef2f7}.project-row:last-child{border-bottom:none}.project-row p{margin:0}
-.project-progress{display:flex;align-items:center;gap:10px;min-width:320px}.project-progress .ant-progress{width:120px}.project-progress span{color:#475569;font-size:12px}
-.activity-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f7}.activity-item:last-child{border-bottom:none}.activity-avatar{width:30px;height:30px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:11px}.activity-item p{margin:3px 0 0;color:#64748b;font-size:12px}
-@media (max-width: 1200px) { .kpi-grid,.bottom-grid { grid-template-columns:1fr; } }
-@media (max-width: 860px) { .topbar { flex-direction:column; align-items:stretch; } .topbar-actions .ant-input-affix-wrapper, .project-progress { width:100%; min-width:0; } .weeklines{grid-template-columns:1fr} }
+.topbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar h1 {
+  margin: 0;
+  color: var(--tm-text);
+}
+
+.topbar p {
+  margin: 2px 0 0;
+  color: var(--tm-muted);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.topbar-actions .ant-input-affix-wrapper {
+  width: 360px;
+  color: var(--tm-text);
+  background: var(--tm-card-bg);
+  border-color: var(--tm-border);
+}
+
+.brief-card {
+  padding: 20px;
+  border-color: var(--tm-primary-soft-border);
+}
+
+.brief-card h2 {
+  margin: 0;
+  color: var(--tm-text);
+}
+
+.brief-card span {
+  margin-left: 8px;
+  padding: 4px 8px;
+  color: var(--tm-accent-indigo);
+  font-size: 12px;
+  background: var(--tm-primary-soft);
+  border-radius: 999px;
+}
+
+.brief-card .muted-pill {
+  color: var(--tm-muted);
+  background: var(--tm-surface-subtle);
+}
+
+.brief-card p,
+.kpi-card p {
+  color: var(--tm-text-muted);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  color: var(--tm-text);
+  background: var(--tm-surface-subtle);
+  border-color: var(--tm-border);
+  border-radius: 999px;
+}
+
+.chip span {
+  margin-left: 4px;
+  color: var(--tm-muted);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpi-card {
+  padding: 16px;
+}
+
+.kpi-card h3 {
+  margin: 0;
+  color: var(--tm-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.kpi-card strong {
+  color: var(--tm-text);
+  font-size: 44px;
+}
+
+.placeholder-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.placeholder-card::before {
+  position: absolute;
+  top: 12px;
+  right: -34px;
+  padding: 2px 34px;
+  color: var(--tm-text-soft);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  content: 'Placeholder';
+  background: var(--tm-surface-subtle);
+  border: 1px solid var(--tm-border);
+  transform: rotate(35deg);
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.left-column,
+.right-column {
+  display: grid;
+  gap: 12px;
+}
+
+.legend {
+  display: flex;
+  gap: 10px;
+  color: var(--tm-muted);
+  font-size: 12px;
+}
+
+.weeklines {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.weekline i {
+  display: block;
+  height: 5px;
+  background: linear-gradient(90deg, var(--tm-text-soft), var(--tm-accent-blue), var(--tm-accent-green));
+  border-radius: 999px;
+}
+
+.weekline label {
+  display: block;
+  margin-top: 8px;
+  color: var(--tm-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.project-row {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--tm-border-soft);
+}
+
+.project-row:last-child,
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.project-row p {
+  margin: 0;
+  color: var(--tm-text);
+}
+
+.project-progress {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 320px;
+}
+
+.project-progress .ant-progress {
+  width: 120px;
+}
+
+.project-progress span,
+.due,
+.placeholder-link {
+  color: var(--tm-text-muted);
+  font-size: 12px;
+}
+
+.placeholder-link {
+  font-weight: 600;
+}
+
+.insights-card ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.insights-card li + li {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--tm-border-soft);
+}
+
+.insights-card h4 {
+  margin: 0 0 4px;
+  color: var(--tm-text);
+}
+
+.insights-card p {
+  margin: 0 0 6px;
+  color: var(--tm-text-muted);
+}
+
+.activity-item {
+  display: flex;
+  gap: 10px;
+  padding: 9px 0;
+  color: var(--tm-text);
+  border-bottom: 1px solid var(--tm-border-soft);
+}
+
+.activity-avatar {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  color: var(--tm-accent-contrast);
+  font-size: 11px;
+  border-radius: 50%;
+  place-items: center;
+}
+
+.activity-item p {
+  margin: 3px 0 0;
+  color: var(--tm-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1200px) {
+  .kpi-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-actions .ant-input-affix-wrapper,
+  .project-progress {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .weeklines {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

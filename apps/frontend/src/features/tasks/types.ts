@@ -55,9 +55,3 @@ export interface CreateTaskFormValues {
   dueAt: string
   status: TaskStatus
 }
-
-export interface Project {
-  id: string
-  name: string
-  isActive?: boolean
-}

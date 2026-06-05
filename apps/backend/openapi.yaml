@@ -6,7 +6,161 @@ info:
     Initial v1 contract draft for TaskMind backend task and project management endpoints.
 servers:
   - url: http://localhost:8080
+security:
+  - bearerAuth: []
 paths:
+  /api/health:
+    get:
+      summary: Check Core API health
+      operationId: getHealth
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Core API is healthy
+
+  /v1/auth/signup/email:
+    post:
+      summary: Create a pending email user and dispatch an OTP
+      operationId: signupEmail
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupEmailRequest'
+      responses:
+        '202':
+          description: Pending user created
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /v1/auth/verify:
+    post:
+      summary: Verify signup OTP and activate the user
+      operationId: verifyAuthChallenge
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: User activated and tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/auth/login:
+    post:
+      summary: Authenticate an active user
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/auth/oauth/google:
+    post:
+      summary: Authenticate with Google OAuth
+      operationId: authenticateWithGoogle
+      tags: [Auth]
+      security: []
+      responses:
+        '200':
+          description: Tokens issued
+
+  /v1/auth/password/{flow}:
+    post:
+      summary: Run a public password recovery flow
+      description: Public password flows include password reset requests and reset completion.
+      operationId: runPasswordFlow
+      tags: [Auth]
+      security: []
+      parameters:
+        - name: flow
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Password flow accepted
+
+  /v1/auth/token/refresh:
+    post:
+      summary: Rotate a refresh-token session
+      operationId: refreshToken
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Session rotated with new tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/auth/logout:
+    post:
+      summary: Log out and invalidate a refresh-token session
+      operationId: logout
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Session invalidated
+
+  /v1/auth/me:
+    get:
+      summary: Get the authenticated user
+      operationId: getCurrentUser
+      tags: [Auth]
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/tasks:
     post:
       summary: Create a task
@@ -349,6 +503,12 @@ paths:
         '200': {description: Release summary}
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     TaskIdPath:
       in: path
@@ -380,6 +540,12 @@ components:
         format: uuid
 
   responses:
+    Unauthorized:
+      description: Authentication is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
     ValidationError:
       description: Input validation failure
       content:
@@ -389,6 +555,66 @@ components:
             additionalProperties: true
 
   schemas:
+    SignupEmailRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password, minLength: 8, maxLength: 128}
+        displayName: {type: string, minLength: 2, maxLength: 80}
+    VerifyOtpRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email: {type: string, format: email}
+        otp: {type: string}
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password}
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string}
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string}
+    AuthTokens:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresInSeconds]
+      properties:
+        accessToken: {type: string}
+        refreshToken: {type: string}
+        tokenType: {type: string, example: Bearer}
+        expiresInSeconds: {type: integer, format: int64}
+    AuthUser:
+      type: object
+      required: [userId, email, displayName]
+      properties:
+        userId: {type: string, format: uuid}
+        email: {type: string, format: email}
+        displayName: {type: string}
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+
     Project:
       type: object
       required:

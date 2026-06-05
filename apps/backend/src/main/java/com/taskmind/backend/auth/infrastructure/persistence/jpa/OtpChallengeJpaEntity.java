@@ -47,4 +47,18 @@ public class OtpChallengeJpaEntity {
 
     protected OtpChallengeJpaEntity() {
     }
+
+    public OtpChallengeJpaEntity(UUID id, UserJpaEntity user, AuthJpaEnums.OtpChannel channel, String destination,
+            String otpHash, Instant expiresAt, Instant createdAt) {
+        this.id = id; this.user = user; this.channel = channel; this.destination = destination;
+        this.otpHash = otpHash; this.expiresAt = expiresAt; this.createdAt = createdAt;
+    }
+
+    public UserJpaEntity getUser() { return user; }
+    public String getOtpHash() { return otpHash; }
+    public int getAttemptCount() { return attemptCount; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public Instant getConsumedAt() { return consumedAt; }
+    public void recordFailedAttempt() { this.attemptCount++; }
+    public void consume(Instant now) { this.consumedAt = now; }
 }

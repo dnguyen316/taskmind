@@ -1,5 +1,6 @@
 package com.taskmind.backend.task.interfaces.rest;
 
+import static com.taskmind.backend.security.TestJwtSupport.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -14,14 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class TaskControllerTest {
 
     @Autowired
@@ -42,7 +43,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isCreated())
@@ -63,7 +64,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
             .andExpect(status().isBadRequest());
@@ -81,7 +82,7 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -97,7 +98,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(patch("/v1/tasks/{id}", id).with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(patchPayload))
             .andExpect(status().isOk())
@@ -117,7 +118,7 @@ class TaskControllerTest {
             }
             """;
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -131,13 +132,13 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(patch("/v1/tasks/{id}/status", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(patch("/v1/tasks/{id}/status", id).with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(statusPayload))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("DONE"));
 
-        mockMvc.perform(get("/v1/tasks/{id}/completion", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111"))
+        mockMvc.perform(get("/v1/tasks/{id}/completion", id).with(jwt("11111111-1111-1111-1111-111111111111")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.completed").value(true))
             .andExpect(jsonPath("$.status").value("DONE"));
@@ -165,17 +166,17 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa").contentType(MediaType.APPLICATION_JSON).content(payloadA))
+        mockMvc.perform(post("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).contentType(MediaType.APPLICATION_JSON).content(payloadA))
             .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb").contentType(MediaType.APPLICATION_JSON).content(payloadB))
+        mockMvc.perform(post("/v1/tasks").with(jwt("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")).contentType(MediaType.APPLICATION_JSON).content(payloadB))
             .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa").queryParam("userId", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+        mockMvc.perform(get("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).queryParam("userId", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
-        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+        mockMvc.perform(get("/v1/tasks").with(jwt("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].userId").value("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
@@ -202,12 +203,12 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111").contentType(MediaType.APPLICATION_JSON).content(todoPayload))
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111")).contentType(MediaType.APPLICATION_JSON).content(todoPayload))
             .andExpect(status().isCreated());
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111").contentType(MediaType.APPLICATION_JSON).content(donePayload))
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111")).contentType(MediaType.APPLICATION_JSON).content(donePayload))
             .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .queryParam("userId", "cccccccc-cccc-cccc-cccc-cccccccccccc")
                 .queryParam("status", "TODO")
                 .queryParam("page", "0")
@@ -231,7 +232,7 @@ class TaskControllerTest {
             }
             """.formatted(overdueDate);
 
-        var createResponse = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        var createResponse = mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
             .andExpect(status().isCreated())
@@ -239,18 +240,18 @@ class TaskControllerTest {
 
         var id = objectMapper.readTree(createResponse.getResponse().getContentAsString()).get("id").asText();
 
-        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
                 .queryParam("overdueOnly", "true"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].id").value(id));
 
-        mockMvc.perform(patch("/v1/tasks/{id}/archive", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111"))
+        mockMvc.perform(patch("/v1/tasks/{id}/archive", id).with(jwt("11111111-1111-1111-1111-111111111111")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("ARCHIVED"));
 
-        mockMvc.perform(get("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(get("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .queryParam("userId", "dddddddd-dddd-dddd-dddd-dddddddddddd")
                 .queryParam("overdueOnly", "true"))
             .andExpect(status().isOk())
@@ -267,7 +268,7 @@ class TaskControllerTest {
             }
             """;
 
-        var projectResponse = mockMvc.perform(post("/v1/projects")
+        var projectResponse = mockMvc.perform(post("/v1/projects").with(jwt("99999999-9999-9999-9999-999999999999"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(projectPayload))
             .andExpect(status().isCreated())
@@ -286,7 +287,7 @@ class TaskControllerTest {
             }
             """.formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(taskPayload))
             .andExpect(status().isForbidden());
@@ -302,7 +303,7 @@ class TaskControllerTest {
             }
             """;
 
-        var projectResponse = mockMvc.perform(post("/v1/projects")
+        var projectResponse = mockMvc.perform(post("/v1/projects").with(jwt("99999999-9999-9999-9999-999999999998"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(projectPayload))
             .andExpect(status().isCreated())
@@ -317,8 +318,7 @@ class TaskControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
-                .header("X-Actor-User-Id", "99999999-9999-9999-9999-999999999998")
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId).with(jwt("99999999-9999-9999-9999-999999999998"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(addMemberPayload))
             .andExpect(status().isCreated());
@@ -334,22 +334,68 @@ class TaskControllerTest {
             }
             """.formatted(projectId);
 
-        mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(taskPayload))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.projectId").value(projectId));
     }
     @Test
+    void arbitraryIdentityAndRoleHeadersCannotImpersonateOrElevatePrivileges() throws Exception {
+        var victimPayload = """
+            {
+              "userId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "title": "Victim task",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """;
+
+        var victimResponse = mockMvc.perform(post("/v1/tasks")
+                .with(jwt("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(victimPayload))
+            .andExpect(status().isCreated())
+            .andReturn();
+        var victimTaskId = objectMapper.readTree(victimResponse.getResponse().getContentAsString()).get("id").asText();
+
+        var attackerPayload = victimPayload.replace("Victim task", "Attempted impersonation");
+        mockMvc.perform(post("/v1/tasks")
+                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
+                .header("X-User-Roles", "ADMIN,MANAGER")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(attackerPayload))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.userId").value("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"));
+
+        mockMvc.perform(patch("/v1/tasks/{id}/status", victimTaskId)
+                .with(jwt("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+                .header("X-User-Id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
+                .header("X-User-Roles", "ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"DONE\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+
+    @Test
     void rejectsStaleTaskUpdateWithConflict() throws Exception {
-        var created = mockMvc.perform(post("/v1/tasks").header("X-User-Id", "11111111-1111-1111-1111-111111111111")
-                .contentType(MediaType.APPLICATION_JSON).content("""
+        var created = mockMvc.perform(post("/v1/tasks")
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                     {"userId":"11111111-1111-1111-1111-111111111111","title":"Versioned","status":"TODO","priority":2,"source":"MANUAL"}
                     """))
-            .andExpect(status().isCreated()).andReturn();
+            .andExpect(status().isCreated())
+            .andReturn();
         var id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
-        mockMvc.perform(patch("/v1/tasks/{id}", id).header("X-User-Id", "11111111-1111-1111-1111-111111111111")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"version\":999,\"title\":\"stale\"}"))
+
+        mockMvc.perform(patch("/v1/tasks/{id}", id)
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":999,\"title\":\"stale\"}"))
             .andExpect(status().isConflict());
     }
 
