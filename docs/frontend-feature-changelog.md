@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-06 (M04 Scheduler UI Slice)
+
+### Added
+
+- Added the scheduler frontend API/composable layer for Core-only scheduling preferences, generation, block list/update, and completion calls.
+- Replaced the calendar placeholder with live scheduler states for loading, API errors, empty schedules, preference editing, generated block results, missed-block warnings, and reschedule proposal review.
+- Added focused scheduler components for the calendar toolbar, preference form, scheduled block list, and reschedule proposal list.
+
+### Frontend-visible change recorded
+
+- `/calendar` now surfaces persisted scheduler-owned blocks from Core, lets users save optimistic-lock protected scheduling preferences, marks missed blocks prominently, supports block completion and time edits, and displays proposals returned by schedule generation.
+- The scheduler feature continues to call only Core `/v1/scheduler/**` endpoints; no Relay or Nova direct frontend calls were introduced.
+
+### Verification notes
+
+- E2E status: blocked in this container because no browser binary/Playwright install and no Docker/Postgres runtime are available for a full `/calendar` super-admin bypass flow; use `superadmin@taskmind.local` / `1` / `1` once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-06 (M03 Auth Session Flow + FE Workflow Closeout)
 
 ### Added
