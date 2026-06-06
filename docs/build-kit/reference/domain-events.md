@@ -54,7 +54,8 @@ The envelope is validated against `libs/events/.../schema/domain-event-v1.json` 
 
 | Constant group | Strings |
 |----------------|---------|
-| Task | `task.created`, `task.status_changed`, `task.completed`, `task.archived`, `task.deleted` |
+| Task | `task.created`, `task.updated`, `task.status_changed`, `task.completed`, `task.archived`, `task.deleted` |
+| Project | `project.created`, `project.updated`, `project.archived` |
 | AI | `ai.capture_submitted`, `ai.suggestion_accepted`, `ai.suggestion_rejected`, `ai.spec_breakdown_completed`, `ai.spec_breakdown_failed` |
 | Planner | `planner.daily_generated`, `planner.overflow`, `planner.confirmed` |
 | Scheduler | `scheduler.block_completed`, `scheduler.block_missed` |

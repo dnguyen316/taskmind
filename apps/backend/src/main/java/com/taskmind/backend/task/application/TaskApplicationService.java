@@ -1,6 +1,7 @@
 package com.taskmind.backend.task.application;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.events.TaskDomainEventPublisher;
 import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.task.domain.*;
 import com.taskmind.backend.task.domain.model.*;
@@ -16,14 +17,17 @@ public class TaskApplicationService {
     private final TaskRepository tasks;
     private final ProjectMembershipApplicationService memberships;
     private final TaskKeyAssigner keys;
+    private final TaskDomainEventPublisher events;
 
     public TaskApplicationService(
             TaskRepository tasks,
             ProjectMembershipApplicationService memberships,
-            TaskKeyAssigner keys) {
+            TaskKeyAssigner keys,
+            TaskDomainEventPublisher events) {
         this.tasks = tasks;
         this.memberships = memberships;
         this.keys = keys;
+        this.events = events;
     }
 
     @Transactional
@@ -61,7 +65,9 @@ public class TaskApplicationService {
                         now,
                         now);
         validateParent(task);
-        return tasks.save(task);
+        Task saved = tasks.save(task);
+        events.taskCreated(saved, requester.userId());
+        return saved;
     }
 
     public List<Task> list(
@@ -146,7 +152,9 @@ public class TaskApplicationService {
                                             e.createdAt(),
                                             Instant.now());
                             validateParent(updated);
-                            return tasks.save(updated);
+                            Task saved = tasks.save(updated);
+                            events.taskUpdated(e, saved, r.userId());
+                            return saved;
                         });
     }
 
@@ -156,7 +164,9 @@ public class TaskApplicationService {
                 .map(
                         e -> {
                             validateCanMutate(r, e);
-                            return tasks.save(e.withStatus(s, Instant.now()));
+                            Task saved = tasks.save(e.withStatus(s, Instant.now()));
+                            events.taskUpdated(e, saved, r.userId());
+                            return saved;
                         });
     }
 
