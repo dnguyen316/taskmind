@@ -237,4 +237,35 @@ class SchedulerControllerTest {
                 .andExpect(jsonPath("$[0].status").value("MISSED"));
     }
 
+    @Test
+    void rejectsStalePreferenceUpdateWithConflict() throws Exception {
+        var userId = "17171717-1717-1717-1717-171717171717";
+
+        mockMvc.perform(get("/v1/scheduler/preferences").with(jwt(userId)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/v1/scheduler/preferences")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"version":999,"workdayStart":"08:00:00","workdayEnd":"16:00:00","blockGranularityMinutes":30,"maxDailyFocusMinutes":240}
+                    """))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void rejectsInvalidScheduleGenerationWindow() throws Exception {
+        mockMvc.perform(
+                        post("/v1/scheduler/generate")
+                                .with(jwt("18181818-1818-1818-1818-181818181818"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"from":"2026-06-09T08:00:00Z","to":"2026-06-08T18:00:00Z"}
+                    """))
+                .andExpect(status().isBadRequest());
+    }
+
 }

@@ -48,8 +48,6 @@ public class AutoScheduler {
         var occupied = new ArrayList<>(occupiedBlocks);
         var cursor = nextWindowStart(from, preferences);
         var blocks = new ArrayList<ScheduledBlock>();
-        var dailyMinutes = minutesAlreadyBooked(occupied, cursor);
-        var day = cursor.toLocalDate();
         for (var task : sorted) {
             var minutes =
                     roundedDuration(
@@ -57,16 +55,19 @@ public class AutoScheduler {
                                     ? task.durationMinutes()
                                     : estimateMinutes(task),
                             preferences.blockGranularityMinutes());
-            while (!cursor.plusMinutes(minutes).isAfter(to)) {
-                if (!cursor.toLocalDate().equals(day)) {
-                    day = cursor.toLocalDate();
-                    dailyMinutes = minutesAlreadyBooked(occupied, cursor);
+            var taskCursor = cursor;
+            var dailyMinutes = minutesAlreadyBooked(occupied, taskCursor);
+            var day = taskCursor.toLocalDate();
+            while (!taskCursor.plusMinutes(minutes).isAfter(to)) {
+                if (!taskCursor.toLocalDate().equals(day)) {
+                    day = taskCursor.toLocalDate();
+                    dailyMinutes = minutesAlreadyBooked(occupied, taskCursor);
                 }
-                var dayEnd = cursor.with(preferences.workdayEnd());
-                var end = cursor.plusMinutes(minutes);
-                var overlapping = firstOverlap(occupied, cursor, end);
+                var dayEnd = taskCursor.with(preferences.workdayEnd());
+                var end = taskCursor.plusMinutes(minutes);
+                var overlapping = firstOverlap(occupied, taskCursor, end);
                 if (overlapping != null) {
-                    cursor = nextWindowStart(overlapping.endsAt(), preferences);
+                    taskCursor = nextWindowStart(overlapping.endsAt(), preferences);
                     continue;
                 }
                 if (dailyMinutes + minutes <= preferences.maxDailyFocusMinutes()
@@ -77,7 +78,7 @@ public class AutoScheduler {
                                     null,
                                     userId,
                                     task.id(),
-                                    cursor,
+                                    taskCursor,
                                     end,
                                     ScheduledBlockStatus.SCHEDULED,
                                     "Auto-scheduled by priority, due date, and availability",
@@ -88,12 +89,12 @@ public class AutoScheduler {
                     blocks.add(block);
                     occupied.add(block);
                     cursor = end;
-                    dailyMinutes += minutes;
                     break;
                 }
-                cursor =
+                taskCursor =
                         nextWindowStart(
-                                cursor.plusDays(1).with(preferences.workdayStart()), preferences);
+                                taskCursor.plusDays(1).with(preferences.workdayStart()),
+                                preferences);
             }
         }
         return blocks;
