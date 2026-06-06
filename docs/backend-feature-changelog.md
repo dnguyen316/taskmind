@@ -1,5 +1,15 @@
 # Backend Feature Changelog
 
+## 2026-06-06 (M04 Scheduler OpenAPI Contract Sync)
+
+### Changed
+- Expanded the public Core OpenAPI scheduler contract with examples for scheduling preferences, scheduled blocks, schedule generation, and reschedule proposals.
+- Called out optimistic-lock version fields on scheduler update request DTOs and aligned the complete-block response set with the Core controller's ownership guard.
+
+### Verification Notes
+- Advanced primary milestone: M04 Scheduler.
+- Documentation-only Core contract sync; no frontend changes, UI E2E, Codex skills, or delegated sub-agents were applicable.
+
 ## 2026-06-06 (M05 Eventing + Relay)
 
 ### Added
