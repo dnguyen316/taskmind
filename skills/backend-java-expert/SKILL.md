@@ -24,6 +24,7 @@ Use this skill to deliver production-grade Java backend work with clear boundari
    - Keep transaction boundaries explicit at the application service layer.
    - Validate inputs at boundaries and enforce invariants in domain code.
    - Use constructor injection, immutable DTOs/records where appropriate, and narrow interfaces.
+   - Prefer explicit Java local variable declarations over `var`; backend code should expose concrete types at the assignment site for readability and safer refactoring.
    - Never hide import failures behind try/catch blocks.
 
 4. **Protect data and contracts**

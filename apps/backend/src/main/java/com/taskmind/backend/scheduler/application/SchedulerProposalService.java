@@ -27,7 +27,7 @@ public class SchedulerProposalService {
 
     @Transactional
     public List<RescheduleProposal> overdueProposals(AuthenticatedUser requester) {
-        var now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         commands.markMissedBlocks(requester, now);
         return engine.propose(
                 blocks.findByUserIdBetween(requester.userId(), now.minusDays(30), now), now);

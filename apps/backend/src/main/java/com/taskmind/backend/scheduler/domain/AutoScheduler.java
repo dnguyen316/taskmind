@@ -6,6 +6,7 @@ import com.taskmind.backend.scheduler.domain.model.SchedulingPreferences;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,8 +32,8 @@ public class AutoScheduler {
             List<ScheduledBlock> occupiedBlocks,
             OffsetDateTime from,
             OffsetDateTime to) {
-        var now = Instant.now();
-        var sorted =
+        Instant now = Instant.now();
+        List<Task> sorted =
                 tasks.stream()
                         .filter(
                                 task ->
@@ -45,34 +46,34 @@ public class AutoScheduler {
                                         .thenComparing(Task::priority)
                                         .thenComparing(Task::createdAt))
                         .toList();
-        var occupied = new ArrayList<>(occupiedBlocks);
-        var cursor = nextWindowStart(from, preferences);
-        var blocks = new ArrayList<ScheduledBlock>();
-        for (var task : sorted) {
-            var minutes =
+        ArrayList<ScheduledBlock> occupied = new ArrayList<>(occupiedBlocks);
+        OffsetDateTime cursor = nextWindowStart(from, preferences);
+        ArrayList<ScheduledBlock> blocks = new ArrayList<ScheduledBlock>();
+        for (Task task : sorted) {
+            int minutes =
                     roundedDuration(
                             task.durationMinutes() != null
                                     ? task.durationMinutes()
                                     : estimateMinutes(task),
                             preferences.blockGranularityMinutes());
-            var taskCursor = cursor;
-            var dailyMinutes = minutesAlreadyBooked(occupied, taskCursor);
-            var day = taskCursor.toLocalDate();
+            OffsetDateTime taskCursor = cursor;
+            int dailyMinutes = minutesAlreadyBooked(occupied, taskCursor);
+            LocalDate day = taskCursor.toLocalDate();
             while (!taskCursor.plusMinutes(minutes).isAfter(to)) {
                 if (!taskCursor.toLocalDate().equals(day)) {
                     day = taskCursor.toLocalDate();
                     dailyMinutes = minutesAlreadyBooked(occupied, taskCursor);
                 }
-                var dayEnd = taskCursor.with(preferences.workdayEnd());
-                var end = taskCursor.plusMinutes(minutes);
-                var overlapping = firstOverlap(occupied, taskCursor, end);
+                OffsetDateTime dayEnd = taskCursor.with(preferences.workdayEnd());
+                OffsetDateTime end = taskCursor.plusMinutes(minutes);
+                ScheduledBlock overlapping = firstOverlap(occupied, taskCursor, end);
                 if (overlapping != null) {
                     taskCursor = nextWindowStart(overlapping.endsAt(), preferences);
                     continue;
                 }
                 if (dailyMinutes + minutes <= preferences.maxDailyFocusMinutes()
                         && !end.isAfter(dayEnd)) {
-                    var block =
+                    ScheduledBlock block =
                             new ScheduledBlock(
                                     UUID.randomUUID(),
                                     null,
@@ -102,15 +103,17 @@ public class AutoScheduler {
 
     private OffsetDateTime nextWindowStart(
             OffsetDateTime candidate, SchedulingPreferences preferences) {
-        var start = candidate.with(preferences.workdayStart());
-        var end = candidate.with(preferences.workdayEnd());
+        OffsetDateTime start = candidate.with(preferences.workdayStart());
+        OffsetDateTime end = candidate.with(preferences.workdayEnd());
         if (candidate.isBefore(start)) return start;
         if (!candidate.isBefore(end)) return candidate.plusDays(1).with(preferences.workdayStart());
         return candidate;
     }
 
     private ScheduledBlock firstOverlap(
-            List<ScheduledBlock> blocks, OffsetDateTime candidateStart, OffsetDateTime candidateEnd) {
+            List<ScheduledBlock> blocks,
+            OffsetDateTime candidateStart,
+            OffsetDateTime candidateEnd) {
         return blocks.stream()
                 .filter(block -> block.status() == ScheduledBlockStatus.SCHEDULED)
                 .filter(
@@ -128,8 +131,7 @@ public class AutoScheduler {
                 .mapToInt(
                         block ->
                                 (int)
-                                        java.time.Duration.between(
-                                                        block.startsAt(), block.endsAt())
+                                        java.time.Duration.between(block.startsAt(), block.endsAt())
                                                 .toMinutes())
                 .sum();
     }

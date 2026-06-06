@@ -18,7 +18,8 @@ public class JpaProjectRepository implements ProjectRepository {
 
     @Override
     public Project save(Project project) {
-        var persisted = projectJpaRepository.save(ProjectJpaEntity.fromDomain(project));
+        ProjectJpaEntity persisted =
+                projectJpaRepository.save(ProjectJpaEntity.fromDomain(project));
         return persisted.toDomain();
     }
 

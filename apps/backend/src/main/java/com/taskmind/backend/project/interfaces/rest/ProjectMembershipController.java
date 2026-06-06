@@ -2,6 +2,8 @@ package com.taskmind.backend.project.interfaces.rest;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
+import com.taskmind.backend.project.application.ProjectMembershipForbiddenException;
+import com.taskmind.backend.project.application.ProjectMembershipNotFoundException;
 import com.taskmind.backend.project.domain.model.ProjectMembership;
 import com.taskmind.backend.project.interfaces.rest.dto.AddProjectMemberRequest;
 import jakarta.validation.Valid;
@@ -18,8 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import com.taskmind.backend.project.application.ProjectMembershipForbiddenException;
-import com.taskmind.backend.project.application.ProjectMembershipNotFoundException;
 
 @RestController
 @RequestMapping("/v1/projects/{projectId}/members")
@@ -28,18 +28,20 @@ public class ProjectMembershipController {
 
     private final ProjectMembershipApplicationService projectMembershipApplicationService;
 
-    public ProjectMembershipController(ProjectMembershipApplicationService projectMembershipApplicationService) {
+    public ProjectMembershipController(
+            ProjectMembershipApplicationService projectMembershipApplicationService) {
         this.projectMembershipApplicationService = projectMembershipApplicationService;
     }
 
     @PostMapping
     public ResponseEntity<ProjectMembership> addMember(
-        @PathVariable UUID projectId,
-        AuthenticatedUser actor,
-        @Valid @RequestBody AddProjectMemberRequest request
-    ) {
+            @PathVariable UUID projectId,
+            AuthenticatedUser actor,
+            @Valid @RequestBody AddProjectMemberRequest request) {
         try {
-            var membership = projectMembershipApplicationService.addMember(actor, projectId, request.userId(), request.role());
+            ProjectMembership membership =
+                    projectMembershipApplicationService.addMember(
+                            actor, projectId, request.userId(), request.role());
             return ResponseEntity.status(HttpStatus.CREATED).body(membership);
         } catch (ProjectMembershipForbiddenException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
@@ -52,10 +54,7 @@ public class ProjectMembershipController {
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> removeMember(
-        @PathVariable UUID projectId,
-        @PathVariable UUID userId,
-        AuthenticatedUser actor
-    ) {
+            @PathVariable UUID projectId, @PathVariable UUID userId, AuthenticatedUser actor) {
         try {
             projectMembershipApplicationService.removeMember(actor, projectId, userId);
         } catch (ProjectMembershipForbiddenException e) {
@@ -68,9 +67,7 @@ public class ProjectMembershipController {
 
     @GetMapping
     public List<ProjectMembership> listMembers(
-        @PathVariable UUID projectId,
-        AuthenticatedUser actor
-    ) {
+            @PathVariable UUID projectId, AuthenticatedUser actor) {
         try {
             return projectMembershipApplicationService.listMembers(actor, projectId);
         } catch (ProjectMembershipForbiddenException e) {

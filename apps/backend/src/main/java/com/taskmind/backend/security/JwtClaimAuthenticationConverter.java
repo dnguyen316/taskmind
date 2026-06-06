@@ -15,30 +15,33 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtClaimAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public class JwtClaimAuthenticationConverter
+        implements Converter<Jwt, AbstractAuthenticationToken> {
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        var authorities = extractAuthorities(jwt);
-        var principalName = jwt.getSubject();
+        Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
+        String principalName = jwt.getSubject();
         return new JwtAuthenticationToken(jwt, authorities, principalName);
     }
 
     private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
         Set<String> authorities = new LinkedHashSet<>();
 
-        authorities.addAll(readStringListClaim(jwt, "roles").stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(role -> !role.isBlank())
-                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
-                .collect(Collectors.toSet()));
+        authorities.addAll(
+                readStringListClaim(jwt, "roles").stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(role -> !role.isBlank())
+                        .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                        .collect(Collectors.toSet()));
 
-        authorities.addAll(readStringListClaim(jwt, "authorities").stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(authority -> !authority.isBlank())
-                .collect(Collectors.toSet()));
+        authorities.addAll(
+                readStringListClaim(jwt, "authorities").stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(authority -> !authority.isBlank())
+                        .collect(Collectors.toSet()));
 
         String scope = jwt.getClaimAsString("scope");
         if (scope != null && !scope.isBlank()) {
@@ -49,13 +52,11 @@ public class JwtClaimAuthenticationConverter implements Converter<Jwt, AbstractA
             }
         }
 
-        return authorities.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
+        return authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
     }
 
     private List<String> readStringListClaim(Jwt jwt, String claimName) {
-        var claim = jwt.getClaims().get(claimName);
+        Object claim = jwt.getClaims().get(claimName);
         if (claim instanceof List<?> list) {
             return list.stream().filter(String.class::isInstance).map(String.class::cast).toList();
         }

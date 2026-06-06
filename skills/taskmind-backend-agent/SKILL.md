@@ -48,6 +48,7 @@ Before choosing code surfaces:
 - Keep domain model behavior explicit and self-validating when business rules are added.
 - Keep persistence adapters focused on mapping between domain model and JPA entities.
 - Keep OpenAPI and DTO fields synchronized whenever request/response payloads change.
+- Use explicit local variable types in Java backend code; do not add `var` in `apps/backend/src/main/java`.
 
 ## 5) Format, review, and validate locally
 
