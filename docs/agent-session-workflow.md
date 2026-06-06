@@ -1,10 +1,15 @@
 # Agent Session Workflow
 
-Use this lightweight workflow to keep backend implementation sessions traceable without
-turning every pass into a broad repository audit. It is backend-aware but
-service-boundary neutral: apply it to Core (`apps/backend`), Relay (`apps/relay`), Nova
-(`apps/ai`), and shared backend libraries while keeping each change inside the service or
-library that owns the concern.
+Use this lightweight workflow to keep implementation sessions traceable without
+turning every pass into a broad repository audit. It started as the backend closeout
+standard, and the same habits now apply to frontend sessions: identify the milestone,
+update only the owning docs, record the changelog entry, run focused checks before the
+full quality gate, and document anything skipped.
+
+For backend work, keep changes inside Core (`apps/backend`), Relay (`apps/relay`), Nova
+(`apps/ai`), or the shared backend library that owns the concern. For frontend work, keep
+changes inside `apps/frontend`, call Core only through typed feature APIs, and avoid
+direct Relay or Nova calls.
 
 ## Backend session closeout sequence
 
@@ -36,6 +41,38 @@ that does not apply:
    `make vibe-token-record -- <fields>` so milestone retros can compare usage by model,
    workflow phase, skill, and agent role. See
    [`docs/vibe-token-tracking.md`](vibe-token-tracking.md) for fields and examples.
+
+## Frontend session closeout sequence
+
+Apply the backend best-practice loop above to `apps/frontend` with frontend-specific
+ownership and verification:
+
+1. **Identify the touched milestone.** Most shell/auth/task/project UI work advances
+   **M03**. Later feature slices should map to their owning milestones (for example M04
+   scheduler, M08 AI, M10 integrations, M11 notifications, or M12 reports/dashboard).
+2. **Keep docs scoped to behavior.** Update [`docs/build-kit/reference/frontend.md`](build-kit/reference/frontend.md)
+   or the active phase doc only when UX behavior, route guards, API contracts, state
+   ownership, or verification expectations change. Avoid doc churn for pure styling or
+   formatting.
+3. **Add the frontend changelog entry.** Add a dated entry to
+   [`docs/frontend-feature-changelog.md`](frontend-feature-changelog.md) for
+   frontend-visible behavior, workflow changes, known gaps, and follow-up work.
+4. **Keep Core contracts aligned.** If a frontend change depends on a new or changed Core
+   request/response shape, update `apps/backend/openapi.yaml` and the owning frontend API
+   typings together. If the frontend only consumes an already-documented Core contract,
+   cite that contract in the changelog instead of editing OpenAPI.
+5. **Run checks in the right order.** Format changed frontend files with
+   `npm run format -- <changed-fe-files>`, run `npm run typecheck`, run `npm run build`
+   for runnable UI changes, then run `make vibe-verify` before claiming the session is
+   complete.
+6. **Record UI proof or skipped E2E.** For UI milestones, record the browser E2E flow on
+   `localhost:5173` with the super-admin bypass. If a browser is unavailable, record the
+   exact skipped E2E flow and environment limitation in the final response and changelog.
+7. **Record skills and agent role.** Note which Codex skills, if any, were used and whether
+   the work was completed locally or with delegated agents. If no skill or sub-agent was
+   applicable, say so in the changelog/final response instead of inventing one.
+8. **Record AI token usage when available.** Use the same token-recording guidance as the
+   backend workflow when token counts are available.
 
 ## Token-saving inspection workflow
 

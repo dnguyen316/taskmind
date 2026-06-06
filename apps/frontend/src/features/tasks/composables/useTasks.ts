@@ -1,7 +1,7 @@
 import { computed, reactive, ref } from 'vue'
+import { useCurrentUserId } from '../../../composables/useCurrentUserId'
 import { useProjectsStore } from '../../../stores/projects'
 import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
-import { DEFAULT_USER_ID } from '../constants/taskConstants'
 import type { Project } from '../../projects/types'
 import type { CreateTaskPayload, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
 import { toTimestamp } from '../utils/taskDates'
@@ -12,7 +12,10 @@ export function useTasks() {
   const errorMessage = ref('')
   const tasks = ref<Task[]>([])
   const projectsStore = useProjectsStore()
-  const projects = computed<Project[]>(() => projectsStore.projects.filter((project) => !project.archivedAt))
+  const { requireCurrentUserId } = useCurrentUserId()
+  const projects = computed<Project[]>(() =>
+    projectsStore.projects.filter((project) => !project.archivedAt),
+  )
   const activeProjectId = ref('')
 
   const filters = reactive<TaskFilters>({
@@ -28,7 +31,7 @@ export function useTasks() {
 
     try {
       tasks.value = await listTasks({
-        userId: DEFAULT_USER_ID,
+        userId: requireCurrentUserId(),
         status: filters.status,
         overdueOnly: filters.overdueOnly,
       })
@@ -46,7 +49,8 @@ export function useTasks() {
       await projectsStore.fetchProjects()
 
       if (!activeProjectId.value && projects.value.length > 0) {
-        const currentProject = projects.value.find((project) => !project.archivedAt) ?? projects.value[0]
+        const currentProject =
+          projects.value.find((project) => !project.archivedAt) ?? projects.value[0]
         activeProjectId.value = currentProject?.id ?? ''
       }
     } catch (error: unknown) {
@@ -64,7 +68,7 @@ export function useTasks() {
       }
 
       await createTask({
-        userId: DEFAULT_USER_ID,
+        userId: requireCurrentUserId(),
         source: 'MANUAL',
         ...formValues,
       })
@@ -94,7 +98,7 @@ export function useTasks() {
     errorMessage.value = ''
 
     try {
-      return await getTaskById(taskId, { userId: DEFAULT_USER_ID })
+      return await getTaskById(taskId, { userId: requireCurrentUserId() })
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load task.'
       return null

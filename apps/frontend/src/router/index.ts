@@ -67,21 +67,25 @@ const routes: RouteRecordRaw[] = [
     path: '/inbox',
     name: 'inbox-capture',
     component: InboxCapturePage,
+    meta: protectedMeta,
   },
   {
     path: '/calendar',
     name: 'calendar',
     component: CalendarPage,
+    meta: protectedMeta,
   },
   {
     path: '/team',
     name: 'team',
     component: TeamPage,
+    meta: protectedMeta,
   },
   {
     path: '/reports',
     name: 'reports',
     component: ReportsPage,
+    meta: protectedMeta,
   },
   {
     path: '/tasks',
@@ -117,7 +121,12 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore(pinia)
-  await authStore.ensureInitialized()
+
+  try {
+    await authStore.ensureInitialized()
+  } catch {
+    // Expired/invalid sessions are normalized by the auth store and handled below.
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return {

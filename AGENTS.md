@@ -124,7 +124,11 @@ After each implementation pass and before final verification, do a deliberate po
 3. **Code review before tests**: scan your own diff with `git diff --check` and
    `git diff --stat`, then review the changed files by feature boundary to catch missing
    tests, contract drift, dead code, unsafe auth assumptions, and formatting noise quickly.
-4. Run the smallest targeted tests/typechecks for the touched area, then the required
+4. **Session docs/changelog**: for behavior changes, update the owning build-kit reference
+   and the relevant feature changelog (`docs/backend-feature-changelog.md` for backend,
+   `docs/frontend-feature-changelog.md` for frontend) using the session workflow. Record
+   applicable skills and agent/delegation usage when the workflow asks for closeout notes.
+5. Run the smallest targeted tests/typechecks for the touched area, then the required
    `make vibe-verify` gate before claiming work is done.
 
 ## Hard rules (guardrails)
@@ -174,7 +178,7 @@ E2E login: superadmin@taskmind.local / password 1 / OTP 1
 
 1. [`docs/build-kit/00-overview.md`](docs/build-kit/00-overview.md) - product + target architecture + service boundaries.
 2. [`docs/build-kit/01-build-order.md`](docs/build-kit/01-build-order.md) - the milestone roadmap M00-M13 (execute in order).
-3. [`docs/agent-session-workflow.md`](docs/agent-session-workflow.md) - backend session hygiene, closeout, and token-saving inspection workflow.
+3. [`docs/agent-session-workflow.md`](docs/agent-session-workflow.md) - backend and frontend session hygiene, closeout, changelog, and token-saving inspection workflow.
 4. [`docs/build-kit/conventions.md`](docs/build-kit/conventions.md) - coding patterns you must follow.
 5. [`docs/build-kit/reference/`](docs/build-kit/reference/) - distilled contracts (data model, API, events, AI, AWS).
 6. [`docs/build-kit/phases/`](docs/build-kit/phases/) - one self-contained spec per milestone.
