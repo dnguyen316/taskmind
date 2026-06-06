@@ -1,0 +1,4 @@
+taskmind:
+  ai:
+    provider:
+      default: mock
