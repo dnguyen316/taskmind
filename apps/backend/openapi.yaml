@@ -540,6 +540,7 @@ paths:
   /v1/scheduler/generate:
     post:
       summary: Generate scheduled blocks for current user's tasks
+      description: Persists new scheduled blocks from TODO and IN_PROGRESS tasks, respects scheduling preferences and existing scheduled blocks, and returns reschedule proposals for missed work.
       operationId: generateSchedule
       tags: [Scheduler]
       requestBody:
@@ -561,6 +562,7 @@ paths:
   /v1/scheduler/blocks:
     get:
       summary: List scheduled blocks for the current user
+      description: Returns persisted scheduler-owned calendar blocks; overdue scheduled blocks are surfaced with MISSED status.
       operationId: listScheduledBlocks
       tags: [Scheduler]
       parameters:
@@ -587,6 +589,7 @@ paths:
   /v1/scheduler/blocks/{id}:
     patch:
       summary: Update a scheduled block
+      description: Reschedules an existing persisted scheduler block with optimistic-lock protection.
       operationId: updateScheduledBlock
       tags: [Scheduler]
       parameters:
@@ -609,6 +612,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScheduledBlock'
+        '403':
+          description: Scheduled block belongs to another user
         '404':
           description: Scheduled block not found
         '409':
@@ -1147,6 +1152,7 @@ components:
 
     GenerateScheduleResponse:
       type: object
+      description: Scheduler-owned generation result; planning compatibility endpoints do not define this contract.
       required: [blocks, proposals]
       properties:
         blocks:
@@ -1160,6 +1166,7 @@ components:
 
     ScheduledBlock:
       type: object
+      description: Persisted calendar block owned by the scheduler module.
       required: [id, version, userId, taskId, startsAt, endsAt, status, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
@@ -1185,6 +1192,7 @@ components:
 
     RescheduleProposal:
       type: object
+      description: Scheduler-generated proposal for a missed or otherwise conflicting block.
       required: [blockId, taskId, reason]
       properties:
         blockId: {type: string, format: uuid}

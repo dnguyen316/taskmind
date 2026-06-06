@@ -3,9 +3,11 @@ package com.taskmind.backend.scheduler.application;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.scheduler.domain.AutoScheduler;
 import com.taskmind.backend.scheduler.domain.model.ScheduledBlock;
+import com.taskmind.backend.scheduler.domain.model.ScheduledBlockStatus;
 import com.taskmind.backend.scheduler.domain.model.SchedulingPreferences;
 import com.taskmind.backend.scheduler.domain.repository.ScheduledBlockRepository;
 import com.taskmind.backend.scheduler.domain.repository.SchedulingPreferencesRepository;
+import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
 import java.time.Instant;
@@ -78,20 +80,29 @@ public class SchedulerCommandService {
         var to = command.to() == null ? from.plusDays(7) : command.to();
         if (!from.isBefore(to))
             throw new IllegalArgumentException("Schedule generation window is invalid");
+        markMissedBlocks(requester, OffsetDateTime.now());
+        var occupiedBlocks = blocks.findByUserIdBetween(requester.userId(), from, to);
+        var alreadyScheduledTaskIds =
+                occupiedBlocks.stream()
+                        .filter(
+                                block ->
+                                        block.status() == ScheduledBlockStatus.SCHEDULED
+                                                || block.status() == ScheduledBlockStatus.COMPLETED)
+                        .map(ScheduledBlock::taskId)
+                        .collect(java.util.stream.Collectors.toSet());
         var schedulableTasks =
-                tasks.findFiltered(
-                        Optional.of(requester.userId()),
-                        Optional.of(TaskStatus.TODO),
-                        false,
-                        OffsetDateTime.now(),
-                        0,
-                        100);
+                schedulableTasks(requester).stream()
+                        .filter(task -> !alreadyScheduledTaskIds.contains(task.id()))
+                        .toList();
         return blocks.saveAll(
-                autoScheduler.schedule(requester.userId(), prefs, schedulableTasks, from, to));
+                autoScheduler.schedule(
+                        requester.userId(), prefs, schedulableTasks, occupiedBlocks, from, to));
     }
 
+    @Transactional
     public List<ScheduledBlock> listBlocks(
             AuthenticatedUser requester, OffsetDateTime from, OffsetDateTime to) {
+        markMissedBlocks(requester, OffsetDateTime.now());
         var windowStart = from == null ? OffsetDateTime.now().minusDays(7) : from;
         var windowEnd = to == null ? OffsetDateTime.now().plusDays(30) : to;
         return blocks.findByUserIdBetween(requester.userId(), windowStart, windowEnd);
@@ -131,6 +142,46 @@ public class SchedulerCommandService {
                             return blocks.save(
                                     existing.completed(OffsetDateTime.now(), Instant.now()));
                         });
+    }
+
+    @Transactional
+    public List<ScheduledBlock> markMissedBlocks(AuthenticatedUser requester, OffsetDateTime now) {
+        var missed =
+                blocks.findByUserIdBetween(requester.userId(), now.minusDays(30), now).stream()
+                        .filter(block -> block.shouldMarkMissed(now))
+                        .map(block -> block.missed(Instant.now()))
+                        .toList();
+        return missed.isEmpty() ? List.of() : blocks.saveAll(missed);
+    }
+
+    private List<Task> schedulableTasks(AuthenticatedUser requester) {
+        var now = OffsetDateTime.now();
+        var todo =
+                tasks.findFiltered(
+                        Optional.of(requester.userId()),
+                        Optional.of(TaskStatus.TODO),
+                        false,
+                        now,
+                        0,
+                        100);
+        var inProgress =
+                tasks.findFiltered(
+                        Optional.of(requester.userId()),
+                        Optional.of(TaskStatus.IN_PROGRESS),
+                        false,
+                        now,
+                        0,
+                        100);
+        return java.util.stream.Stream.concat(todo.stream(), inProgress.stream())
+                .collect(
+                        java.util.stream.Collectors.toMap(
+                                Task::id,
+                                task -> task,
+                                (left, right) -> left,
+                                java.util.LinkedHashMap::new))
+                .values()
+                .stream()
+                .toList();
     }
 
     private void validateOwner(AuthenticatedUser requester, ScheduledBlock block) {

@@ -14,15 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class SchedulerProposalService {
     private final ScheduledBlockRepository blocks;
     private final RescheduleProposalEngine engine;
+    private final SchedulerCommandService commands;
 
     public SchedulerProposalService(
-            ScheduledBlockRepository blocks, RescheduleProposalEngine engine) {
+            ScheduledBlockRepository blocks,
+            RescheduleProposalEngine engine,
+            SchedulerCommandService commands) {
         this.blocks = blocks;
         this.engine = engine;
+        this.commands = commands;
     }
 
+    @Transactional
     public List<RescheduleProposal> overdueProposals(AuthenticatedUser requester) {
         var now = OffsetDateTime.now();
+        commands.markMissedBlocks(requester, now);
         return engine.propose(
                 blocks.findByUserIdBetween(requester.userId(), now.minusDays(30), now), now);
     }

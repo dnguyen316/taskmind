@@ -46,6 +46,19 @@ public record ScheduledBlock(
     }
 
     public ScheduledBlock completed(OffsetDateTime completedTime, Instant now) {
+        return withStatus(ScheduledBlockStatus.COMPLETED, completedTime, now);
+    }
+
+    public ScheduledBlock missed(Instant now) {
+        return withStatus(ScheduledBlockStatus.MISSED, completedAt, now);
+    }
+
+    public boolean shouldMarkMissed(OffsetDateTime now) {
+        return status == ScheduledBlockStatus.SCHEDULED && completedAt == null && endsAt.isBefore(now);
+    }
+
+    private ScheduledBlock withStatus(
+            ScheduledBlockStatus nextStatus, OffsetDateTime nextCompletedAt, Instant now) {
         return new ScheduledBlock(
                 id,
                 version,
@@ -53,9 +66,9 @@ public record ScheduledBlock(
                 taskId,
                 startsAt,
                 endsAt,
-                ScheduledBlockStatus.COMPLETED,
+                nextStatus,
                 rationale,
-                completedTime,
+                nextCompletedAt,
                 deletedAt,
                 createdAt,
                 now);

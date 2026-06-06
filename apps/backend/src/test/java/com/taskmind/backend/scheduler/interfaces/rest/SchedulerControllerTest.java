@@ -157,4 +157,84 @@ class SchedulerControllerTest {
                                 .content("{\"version\":999,\"rationale\":\"stale\"}"))
                 .andExpect(status().isConflict());
     }
+    @Test
+    void schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates() throws Exception {
+        var userId = "15151515-1515-1515-1515-151515151515";
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"userId":"15151515-1515-1515-1515-151515151515","title":"Already started","status":"IN_PROGRESS","priority":1,"durationMinutes":30,"source":"MANUAL"}
+                    """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(
+                        post("/v1/scheduler/generate")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"from":"2026-06-15T08:00:00Z","to":"2026-06-16T18:00:00Z"}
+                    """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.blocks.length()").value(1))
+                .andExpect(jsonPath("$.blocks[0].startsAt").value("2026-06-15T09:00:00Z"));
+
+        mockMvc.perform(
+                        post("/v1/scheduler/generate")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"from":"2026-06-15T08:00:00Z","to":"2026-06-16T18:00:00Z"}
+                    """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.blocks.length()").value(0));
+
+        mockMvc.perform(
+                        get("/v1/scheduler/blocks")
+                                .with(jwt(userId))
+                                .queryParam("from", "2026-06-15T00:00:00Z")
+                                .queryParam("to", "2026-06-17T00:00:00Z"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void schedulerGenerateMarksMissedBlocksAndReturnsRescheduleProposals() throws Exception {
+        var userId = "16161616-1616-1616-1616-161616161616";
+        mockMvc.perform(
+                        post("/v1/tasks")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"userId":"16161616-1616-1616-1616-161616161616","title":"Missed schedule","status":"TODO","priority":1,"durationMinutes":30,"source":"MANUAL"}
+                    """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(
+                        post("/v1/scheduler/generate")
+                                .with(jwt(userId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                    {"from":"2026-06-01T08:00:00Z","to":"2026-06-02T18:00:00Z"}
+                    """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.blocks.length()").value(1))
+                .andExpect(jsonPath("$.proposals.length()").value(1))
+                .andExpect(jsonPath("$.proposals[0].reason").value("Block is overdue and should be moved"));
+
+        mockMvc.perform(
+                        get("/v1/scheduler/blocks")
+                                .with(jwt(userId))
+                                .queryParam("from", "2026-06-01T00:00:00Z")
+                                .queryParam("to", "2026-06-03T00:00:00Z"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("MISSED"));
+    }
+
 }
