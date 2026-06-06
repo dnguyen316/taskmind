@@ -1,0 +1,26 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: taskmind-ai
+
+taskmind:
+  ai:
+    provider:
+      default: ${TASKMIND_AI_PROVIDER_DEFAULT:mock}
+      mock:
+        model-id: ${TASKMIND_AI_MOCK_MODEL_ID:nova-mock-v1}
+      openai:
+        api-key: ${OPENAI_API_KEY:}
+        model-id: ${TASKMIND_AI_OPENAI_MODEL:gpt-4.1-mini}
+      anthropic:
+        api-key: ${ANTHROPIC_API_KEY:}
+        model-id: ${TASKMIND_AI_ANTHROPIC_MODEL:claude-3-5-sonnet-latest}
+    service-token: ${TASKMIND_AI_SERVICE_TOKEN:local-ai-token}
+  core:
+    base-url: ${TASKMIND_CORE_BASE_URL:http://localhost:8080}
+    service-token: ${TASKMIND_CORE_SERVICE_TOKEN:local-core-token}
+  relay:
+    base-url: ${TASKMIND_RELAY_BASE_URL:http://localhost:8081}
+    service-token: ${TASKMIND_RELAY_SERVICE_TOKEN:local-relay-token}

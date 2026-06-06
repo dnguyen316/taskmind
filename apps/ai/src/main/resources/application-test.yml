@@ -1,0 +1,26 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
+
+taskmind:
+  ai:
+    provider:
+      default: mock
+      mock:
+        model-id: nova-test-mock-v1
+      openai:
+        api-key: ""
+      anthropic:
+        api-key: ""
+    service-token: test-ai-token
+  core:
+    base-url: http://localhost:18080
+    service-token: test-core-token
+  relay:
+    base-url: http://localhost:18081
+    service-token: test-relay-token
