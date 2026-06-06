@@ -4,10 +4,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
-        <relativePath/>
+        <groupId>com.taskmind</groupId>
+        <artifactId>taskmind</artifactId>
+        <version>0.1.0</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>com.taskmind</groupId>
@@ -34,6 +34,17 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.taskmind</groupId>
+            <artifactId>taskmind-events</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
 

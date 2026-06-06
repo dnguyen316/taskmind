@@ -1,5 +1,18 @@
 # Backend Feature Changelog
 
+## 2026-06-06 (M05 Eventing + Relay)
+
+### Added
+- Added the shared `taskmind-events` library with a domain event envelope, event type registry, JSON schema validation, mapper, and transport abstraction.
+- Added Core activity and transactional outbox tables after the scheduler migration ceiling, plus the analytics schema bootstrap consumed by Relay.
+- Added Core activity/event/outbox packages so task and project writes persist activity and outbox rows in the same transaction as state changes.
+- Added Redis Stream outbox publishing to `taskmind.events` with retryable publish failures and backpressure checks.
+- Added the Relay service with stream ingest, event-store idempotency, task/project projections, daily metrics, DLQ handling, service-token-protected `/internal/**` routes, and context query endpoints.
+
+### Verification Notes
+- Advanced primary milestone: M05 Eventing + Relay.
+- No frontend changes or UI E2E were applicable. No Codex skill or delegated sub-agent was used.
+
 ## 2026-06-05 (Agent Session Hygiene Workflow)
 
 ### Added

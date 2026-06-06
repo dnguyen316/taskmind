@@ -1,5 +1,6 @@
 package com.taskmind.backend.project.application;
 
+import com.taskmind.backend.events.ProjectDomainEventPublisher;
 import com.taskmind.backend.project.domain.model.Project;
 import com.taskmind.backend.project.domain.repository.ProjectRepository;
 import java.time.Instant;
@@ -16,9 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectApplicationService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectDomainEventPublisher events;
 
-    public ProjectApplicationService(ProjectRepository projectRepository) {
+    public ProjectApplicationService(
+            ProjectRepository projectRepository, ProjectDomainEventPublisher events) {
         this.projectRepository = projectRepository;
+        this.events = events;
     }
 
     @Transactional
@@ -41,7 +45,9 @@ public class ProjectApplicationService {
                         now,
                         now);
         try {
-            return projectRepository.save(project);
+            Project saved = projectRepository.save(project);
+            events.projectCreated(saved);
+            return saved;
         } catch (DataIntegrityViolationException e) {
             throw new IllegalArgumentException("Project key already exists", e);
         }
@@ -91,7 +97,9 @@ public class ProjectApplicationService {
                                             existing.createdAt(),
                                             Instant.now());
                             try {
-                                return projectRepository.save(updated);
+                                Project saved = projectRepository.save(updated);
+                                events.projectUpdated(saved, existing.ownerUserId());
+                                return saved;
                             } catch (DataIntegrityViolationException e) {
                                 throw new IllegalArgumentException("Project key already exists", e);
                             }
@@ -107,8 +115,11 @@ public class ProjectApplicationService {
                             if (existing.archivedAt() != null) {
                                 return existing;
                             }
-                            return projectRepository.save(
-                                    existing.withArchivedAt(Instant.now(), Instant.now()));
+                            Project saved =
+                                    projectRepository.save(
+                                            existing.withArchivedAt(Instant.now(), Instant.now()));
+                            events.projectArchived(saved, existing.ownerUserId());
+                            return saved;
                         });
     }
 }
