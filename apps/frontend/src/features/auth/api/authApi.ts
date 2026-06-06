@@ -7,6 +7,12 @@ export interface AuthTokensResponse {
   expiresInSeconds: number
 }
 
+export interface AuthUserResponse {
+  userId: string
+  email: string
+  displayName: string
+}
+
 export interface LoginPayload {
   email: string
   password: string
@@ -16,12 +22,34 @@ export interface SignupEmailPayload extends LoginPayload {
   displayName: string
 }
 
+export interface VerifyOtpPayload {
+  email: string
+  otp: string
+}
+
+export interface LogoutPayload {
+  refreshToken: string
+}
+
 export async function login(payload: LoginPayload) {
   const response = await apiClient.post<AuthTokensResponse>('/v1/auth/login', payload)
   return response.data
 }
 
 export async function signupEmail(payload: SignupEmailPayload) {
-  const response = await apiClient.post<AuthTokensResponse>('/v1/auth/signup/email', payload)
+  await apiClient.post<void>('/v1/auth/signup/email', payload)
+}
+
+export async function verifyOtp(payload: VerifyOtpPayload) {
+  const response = await apiClient.post<AuthTokensResponse>('/v1/auth/verify', payload)
+  return response.data
+}
+
+export async function logout(payload: LogoutPayload) {
+  await apiClient.post<void>('/v1/auth/logout', payload)
+}
+
+export async function getCurrentUser() {
+  const response = await apiClient.get<AuthUserResponse>('/v1/auth/me')
   return response.data
 }

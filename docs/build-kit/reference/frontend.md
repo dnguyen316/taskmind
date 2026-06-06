@@ -116,6 +116,18 @@ flowchart TD
 - Keep page components focused on composition. Put reactive logic in `composables/`, server calls in `api/`, and reusable UI in `components/`.
 - Keep `apps/backend/openapi.yaml` synchronized whenever Core request or response shapes change.
 
+## Frontend agent workflow
+
+Frontend sessions use the same closeout discipline as the backend workflow in
+[`docs/agent-session-workflow.md`](../../agent-session-workflow.md): map the change to a
+milestone, update only behavior-owning docs, record a dated frontend changelog entry,
+format before verification, run targeted checks before `make vibe-verify`, and record any
+skipped browser E2E proof with the exact reason.
+
+For M03 shell work, the usual closeout evidence is `npm run typecheck`, `npm run build`,
+`make vibe-verify`, and a browser flow of login/signup, project creation, task creation,
+status change, and logout when a browser is available.
+
 ## Build & run
 
 Run these from `apps/frontend` unless stated otherwise.

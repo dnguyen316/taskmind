@@ -1,10 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { CheckSquareOutlined, FolderOutlined, TeamOutlined, CalendarOutlined, InboxOutlined, BarChartOutlined } from '@ant-design/icons-vue'
+import { storeToRefs } from 'pinia'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import {
+  BarChartOutlined,
+  CalendarOutlined,
+  CheckSquareOutlined,
+  FolderOutlined,
+  InboxOutlined,
+  LogoutOutlined,
+  TeamOutlined,
+} from '@ant-design/icons-vue'
+
+import { useAuthStore } from '../../../stores/auth'
 
 defineProps<{ taskCount?: number }>()
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const { currentUser } = storeToRefs(authStore)
 
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 const isTasks = computed(() => route.path.startsWith('/tasks'))
@@ -13,26 +27,66 @@ const isTeam = computed(() => route.path.startsWith('/team'))
 const isCalendar = computed(() => route.path.startsWith('/calendar'))
 const isInbox = computed(() => route.path.startsWith('/inbox'))
 const isReports = computed(() => route.path.startsWith('/reports'))
+const userInitials = computed(() => initials(authStore.currentUserDisplayName))
+const userEmail = computed(() => currentUser.value?.email ?? 'Signed in')
+
+async function signOut() {
+  await authStore.logout()
+  await router.push({ name: 'login' })
+}
+
+function initials(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean)
+
+  if (parts.length === 0) {
+    return 'TM'
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('')
+}
 </script>
 
 <template>
   <aside class="sidebar tm-shell-sidebar">
     <div class="brand">Taskmind <span>AI</span></div>
     <nav class="menu-group">
-      <RouterLink to="/dashboard" class="menu-item" :class="{ active: isDashboard }"><CheckSquareOutlined />Dashboard</RouterLink>
-      <RouterLink to="/tasks" class="menu-item" :class="{ active: isTasks }"><CheckSquareOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink>
-      <RouterLink to="/projects" class="menu-item" :class="{ active: isProjects }"><FolderOutlined />Projects</RouterLink>
+      <RouterLink to="/dashboard" class="menu-item" :class="{ active: isDashboard }"
+        ><CheckSquareOutlined />Dashboard</RouterLink
+      >
+      <RouterLink to="/tasks" class="menu-item" :class="{ active: isTasks }"
+        ><CheckSquareOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink
+      >
+      <RouterLink to="/projects" class="menu-item" :class="{ active: isProjects }"
+        ><FolderOutlined />Projects</RouterLink
+      >
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink>
-      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink>
-      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink>
-      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink>
+      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"
+        ><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink
+      >
+      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"
+        ><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink
+      >
+      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"
+        ><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink
+      >
+      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"
+        ><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink
+      >
     </nav>
     <div class="user-pill">
-      <div class="avatar">AC</div>
-      <div><strong>Alex Chen</strong><p>Acme · Product</p></div>
+      <div class="avatar">{{ userInitials }}</div>
+      <div class="user-meta">
+        <strong>{{ authStore.currentUserDisplayName }}</strong>
+        <p>{{ userEmail }}</p>
+      </div>
+      <a-button class="logout-button" type="text" title="Log out" @click="signOut"
+        ><LogoutOutlined
+      /></a-button>
     </div>
   </aside>
 </template>
@@ -124,9 +178,26 @@ const isReports = computed(() => route.path.startsWith('/reports'))
   place-items: center;
 }
 
+.user-meta {
+  min-width: 0;
+}
+
+.user-meta strong,
+.user-meta p {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-pill p {
   margin: 0;
   color: var(--tm-muted);
   font-size: 12px;
+}
+
+.logout-button {
+  margin-left: auto;
+  color: var(--tm-text-muted);
 }
 </style>
