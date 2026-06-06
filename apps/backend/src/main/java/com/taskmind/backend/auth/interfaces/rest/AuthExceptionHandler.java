@@ -11,7 +11,7 @@ public class AuthExceptionHandler {
 
     @ExceptionHandler(AuthException.class)
     public ProblemDetail handleAuthException(AuthException ex) {
-        var problemDetail = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problemDetail.setTitle("Authentication failed");
         problemDetail.setDetail("Authentication failed.");
         return problemDetail;

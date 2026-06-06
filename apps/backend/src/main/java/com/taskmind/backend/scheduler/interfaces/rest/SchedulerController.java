@@ -72,11 +72,13 @@ public class SchedulerController {
     public GenerateScheduleResponse generate(
             AuthenticatedUser requester,
             @RequestBody(required = false) GenerateScheduleRequest request) {
-        var body = request == null ? new GenerateScheduleRequest(null, null) : request;
+        GenerateScheduleRequest body =
+                request == null ? new GenerateScheduleRequest(null, null) : request;
         try {
-            var generated =
+            List<ScheduledBlockResponse> generated =
                     commands
-                            .generate(requester, new GenerateScheduleCommand(body.from(), body.to()))
+                            .generate(
+                                    requester, new GenerateScheduleCommand(body.from(), body.to()))
                             .stream()
                             .map(ScheduledBlockResponse::fromDomain)
                             .toList();

@@ -40,7 +40,8 @@ public class JpaAuthApplicationService implements AuthApplicationService {
     private final OtpService otpService;
     private final Duration refreshTtl;
 
-    public JpaAuthApplicationService(UserJpaRepository users,
+    public JpaAuthApplicationService(
+            UserJpaRepository users,
             UserIdentityJpaRepository identities,
             RoleJpaRepository roles,
             UserRoleJpaRepository userRoles,
@@ -63,48 +64,55 @@ public class JpaAuthApplicationService implements AuthApplicationService {
     @Override
     @Transactional
     public void signupEmail(SignupEmailCommand command) {
-        var email = normalize(command.email());
+        String email = normalize(command.email());
         if (users.findByPrimaryEmail(email).isPresent()) {
             throw failure(AuthFailureReason.INVALID_CREDENTIALS);
         }
 
-        var now = Instant.now();
-        var user = new UserJpaEntity(
-                UUID.randomUUID(),
-                AuthJpaEnums.UserStatus.PENDING_VERIFICATION,
-                email,
-                passwordHasher.hash(command.password()),
-                command.displayName().trim(),
-                now);
+        Instant now = Instant.now();
+        UserJpaEntity user =
+                new UserJpaEntity(
+                        UUID.randomUUID(),
+                        AuthJpaEnums.UserStatus.PENDING_VERIFICATION,
+                        email,
+                        passwordHasher.hash(command.password()),
+                        command.displayName().trim(),
+                        now);
         users.save(user);
-        identities.save(new UserIdentityJpaEntity(UUID.randomUUID(), user, AuthJpaEnums.IdentityType.EMAIL, email, now));
+        identities.save(
+                new UserIdentityJpaEntity(
+                        UUID.randomUUID(), user, AuthJpaEnums.IdentityType.EMAIL, email, now));
         otpService.dispatchOtp("EMAIL", email);
     }
 
     @Override
     @Transactional
     public AuthTokens verifyOtp(VerifyOtpCommand command) {
-        var email = normalize(command.email());
-        var identity = identities.findByTypeAndValue(AuthJpaEnums.IdentityType.EMAIL, email)
-                .orElseThrow(() -> failure(AuthFailureReason.USER_NOT_FOUND));
-        var user = identity.getUser();
+        String email = normalize(command.email());
+        UserIdentityJpaEntity identity =
+                identities
+                        .findByTypeAndValue(AuthJpaEnums.IdentityType.EMAIL, email)
+                        .orElseThrow(() -> failure(AuthFailureReason.USER_NOT_FOUND));
+        UserJpaEntity user = identity.getUser();
         if (user.getStatus() != AuthJpaEnums.UserStatus.PENDING_VERIFICATION
                 || !otpService.verifyOtp(email, command.otp())) {
             throw failure(AuthFailureReason.INVALID_CREDENTIALS);
         }
 
-        var now = Instant.now();
+        Instant now = Instant.now();
         identity.verify(now);
         user.activate(now);
-        roles.findByName("MEMBER").ifPresent(role -> userRoles.save(new UserRoleJpaEntity(user, role, now)));
+        roles.findByName("MEMBER")
+                .ifPresent(role -> userRoles.save(new UserRoleJpaEntity(user, role, now)));
         return issueSession(user);
     }
 
     @Override
     @Transactional
     public AuthTokens login(LoginCommand command) {
-        var user = users.findByPrimaryEmail(normalize(command.email()))
-                .orElseThrow(() -> failure(AuthFailureReason.INVALID_CREDENTIALS));
+        UserJpaEntity user =
+                users.findByPrimaryEmail(normalize(command.email()))
+                        .orElseThrow(() -> failure(AuthFailureReason.INVALID_CREDENTIALS));
         if (user.getStatus() != AuthJpaEnums.UserStatus.ACTIVE
                 || !passwordHasher.matches(command.password(), user.getPasswordHash())) {
             throw failure(AuthFailureReason.INVALID_CREDENTIALS);
@@ -117,16 +125,18 @@ public class JpaAuthApplicationService implements AuthApplicationService {
     @Override
     @Transactional
     public AuthTokens refresh(RefreshTokenCommand command) {
-        var refreshTokenHash = tokenService.hashRefreshToken(command.refreshToken());
-        var now = Instant.now();
-        var session = sessions.findLockedByRefreshTokenHash(refreshTokenHash)
-                .orElseThrow(() -> failure(AuthFailureReason.TOKEN_INVALID));
+        String refreshTokenHash = tokenService.hashRefreshToken(command.refreshToken());
+        Instant now = Instant.now();
+        SessionJpaEntity session =
+                sessions.findLockedByRefreshTokenHash(refreshTokenHash)
+                        .orElseThrow(() -> failure(AuthFailureReason.TOKEN_INVALID));
         if (!session.isUsableAt(now)) {
             throw failure(AuthFailureReason.TOKEN_EXPIRED);
         }
 
-        var user = session.getUser();
-        var tokens = tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
+        UserJpaEntity user = session.getUser();
+        AuthTokens tokens =
+                tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
         session.rotate(tokenService.hashRefreshToken(tokens.refreshToken()), now.plus(refreshTtl));
         return tokens;
     }
@@ -141,19 +151,23 @@ public class JpaAuthApplicationService implements AuthApplicationService {
     @Override
     @Transactional(readOnly = true)
     public AuthUserView me(UUID authenticatedUserId) {
-        var user = users.findById(authenticatedUserId).orElseThrow(() -> failure(AuthFailureReason.USER_NOT_FOUND));
+        UserJpaEntity user =
+                users.findById(authenticatedUserId)
+                        .orElseThrow(() -> failure(AuthFailureReason.USER_NOT_FOUND));
         return new AuthUserView(user.getId(), user.getPrimaryEmail(), user.getDisplayName());
     }
 
     private AuthTokens issueSession(UserJpaEntity user) {
-        var tokens = tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
-        var now = Instant.now();
-        sessions.save(new SessionJpaEntity(
-                UUID.randomUUID(),
-                user,
-                tokenService.hashRefreshToken(tokens.refreshToken()),
-                now.plus(refreshTtl),
-                now));
+        AuthTokens tokens =
+                tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
+        Instant now = Instant.now();
+        sessions.save(
+                new SessionJpaEntity(
+                        UUID.randomUUID(),
+                        user,
+                        tokenService.hashRefreshToken(tokens.refreshToken()),
+                        now.plus(refreshTtl),
+                        now));
         return tokens;
     }
 

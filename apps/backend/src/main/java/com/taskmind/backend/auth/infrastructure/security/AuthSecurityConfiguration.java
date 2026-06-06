@@ -19,7 +19,8 @@ public class AuthSecurityConfiguration {
 
     @Bean
     PasswordHasher passwordHasher() {
-        var encoder = new BCryptPasswordEncoder(12);
+        org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder =
+                new BCryptPasswordEncoder(12);
         return new PasswordHasher() {
             @Override
             public String hash(String rawPassword) {
@@ -36,9 +37,11 @@ public class AuthSecurityConfiguration {
     @Bean
     SecretKey jwtSecretKey(@Value("${taskmind.auth.jwt.secret}") String secret) {
         if (secret.length() < 32) {
-            throw new IllegalStateException("taskmind.auth.jwt.secret must contain at least 32 characters");
+            throw new IllegalStateException(
+                    "taskmind.auth.jwt.secret must contain at least 32 characters");
         }
-        return new SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
+        return new SecretKeySpec(
+                secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
     }
 
     @Bean

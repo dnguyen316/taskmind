@@ -26,25 +26,44 @@ public class JwtTokenService implements TokenService {
     private final Duration accessTtl;
     private final SecureRandom random = new SecureRandom();
 
-    public JwtTokenService(JwtEncoder encoder, @Value("${taskmind.auth.jwt.access-ttl:PT1H}") Duration accessTtl) {
-        this.encoder = encoder; this.accessTtl = accessTtl;
+    public JwtTokenService(
+            JwtEncoder encoder, @Value("${taskmind.auth.jwt.access-ttl:PT1H}") Duration accessTtl) {
+        this.encoder = encoder;
+        this.accessTtl = accessTtl;
     }
 
     @Override
     public AuthTokens issue(UUID userId, String email, Set<String> roles) {
-        var now = Instant.now();
-        var claims = JwtClaimsSet.builder().issuer("taskmind-core").issuedAt(now).expiresAt(now.plus(accessTtl))
-                .subject(userId.toString()).claim("email", email).claim("roles", roles).build();
-        var access = encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
-        byte[] bytes = new byte[32]; random.nextBytes(bytes);
-        var refresh = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        Instant now = Instant.now();
+        org.springframework.security.oauth2.jwt.JwtClaimsSet claims =
+                JwtClaimsSet.builder()
+                        .issuer("taskmind-core")
+                        .issuedAt(now)
+                        .expiresAt(now.plus(accessTtl))
+                        .subject(userId.toString())
+                        .claim("email", email)
+                        .claim("roles", roles)
+                        .build();
+        String access =
+                encoder.encode(
+                                JwtEncoderParameters.from(
+                                        JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                        .getTokenValue();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String refresh = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         return new AuthTokens(access, refresh, "Bearer", accessTtl.toSeconds());
     }
 
     @Override
     public String hashRefreshToken(String refreshToken) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(refreshToken.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
+            return HexFormat.of()
+                    .formatHex(
+                            MessageDigest.getInstance("SHA-256")
+                                    .digest(refreshToken.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

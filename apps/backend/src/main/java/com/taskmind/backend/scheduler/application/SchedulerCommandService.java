@@ -15,7 +15,10 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +61,7 @@ public class SchedulerCommandService {
             LocalTime end,
             int granularity,
             int maxFocus) {
-        var existing =
+        SchedulingPreferences existing =
                 preferences
                         .findByUserIdForUpdate(requester.userId())
                         .orElseGet(
@@ -75,22 +78,23 @@ public class SchedulerCommandService {
     @Transactional
     public List<ScheduledBlock> generate(
             AuthenticatedUser requester, GenerateScheduleCommand command) {
-        var prefs = preferencesFor(requester);
-        var from = command.from() == null ? OffsetDateTime.now() : command.from();
-        var to = command.to() == null ? from.plusDays(7) : command.to();
+        SchedulingPreferences prefs = preferencesFor(requester);
+        OffsetDateTime from = command.from() == null ? OffsetDateTime.now() : command.from();
+        OffsetDateTime to = command.to() == null ? from.plusDays(7) : command.to();
         if (!from.isBefore(to))
             throw new IllegalArgumentException("Schedule generation window is invalid");
         markMissedBlocks(requester, OffsetDateTime.now());
-        var occupiedBlocks = blocks.findByUserIdBetween(requester.userId(), from, to);
-        var alreadyScheduledTaskIds =
+        List<ScheduledBlock> occupiedBlocks =
+                blocks.findByUserIdBetween(requester.userId(), from, to);
+        Set<UUID> alreadyScheduledTaskIds =
                 occupiedBlocks.stream()
                         .filter(
                                 block ->
                                         block.status() == ScheduledBlockStatus.SCHEDULED
                                                 || block.status() == ScheduledBlockStatus.COMPLETED)
                         .map(ScheduledBlock::taskId)
-                        .collect(java.util.stream.Collectors.toSet());
-        var schedulableTasks =
+                        .collect(Collectors.toSet());
+        List<Task> schedulableTasks =
                 schedulableTasks(requester).stream()
                         .filter(task -> !alreadyScheduledTaskIds.contains(task.id()))
                         .toList();
@@ -103,8 +107,8 @@ public class SchedulerCommandService {
     public List<ScheduledBlock> listBlocks(
             AuthenticatedUser requester, OffsetDateTime from, OffsetDateTime to) {
         markMissedBlocks(requester, OffsetDateTime.now());
-        var windowStart = from == null ? OffsetDateTime.now().minusDays(7) : from;
-        var windowEnd = to == null ? OffsetDateTime.now().plusDays(30) : to;
+        OffsetDateTime windowStart = from == null ? OffsetDateTime.now().minusDays(7) : from;
+        OffsetDateTime windowEnd = to == null ? OffsetDateTime.now().plusDays(30) : to;
         return blocks.findByUserIdBetween(requester.userId(), windowStart, windowEnd);
     }
 
@@ -123,7 +127,7 @@ public class SchedulerCommandService {
                             if (version != null && !version.equals(existing.version()))
                                 throw new ObjectOptimisticLockingFailureException(
                                         ScheduledBlock.class, id);
-                            var updated =
+                            ScheduledBlock updated =
                                     existing.rescheduled(
                                             startsAt != null ? startsAt : existing.startsAt(),
                                             endsAt != null ? endsAt : existing.endsAt(),
@@ -146,7 +150,7 @@ public class SchedulerCommandService {
 
     @Transactional
     public List<ScheduledBlock> markMissedBlocks(AuthenticatedUser requester, OffsetDateTime now) {
-        var missed =
+        List<ScheduledBlock> missed =
                 blocks.findByUserIdBetween(requester.userId(), now.minusDays(30), now).stream()
                         .filter(block -> block.shouldMarkMissed(now))
                         .map(block -> block.missed(Instant.now()))
@@ -155,8 +159,8 @@ public class SchedulerCommandService {
     }
 
     private List<Task> schedulableTasks(AuthenticatedUser requester) {
-        var now = OffsetDateTime.now();
-        var todo =
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Task> todo =
                 tasks.findFiltered(
                         Optional.of(requester.userId()),
                         Optional.of(TaskStatus.TODO),
@@ -164,7 +168,7 @@ public class SchedulerCommandService {
                         now,
                         0,
                         100);
-        var inProgress =
+        List<Task> inProgress =
                 tasks.findFiltered(
                         Optional.of(requester.userId()),
                         Optional.of(TaskStatus.IN_PROGRESS),
@@ -172,9 +176,9 @@ public class SchedulerCommandService {
                         now,
                         0,
                         100);
-        return java.util.stream.Stream.concat(todo.stream(), inProgress.stream())
+        return Stream.concat(todo.stream(), inProgress.stream())
                 .collect(
-                        java.util.stream.Collectors.toMap(
+                        Collectors.toMap(
                                 Task::id,
                                 task -> task,
                                 (left, right) -> left,

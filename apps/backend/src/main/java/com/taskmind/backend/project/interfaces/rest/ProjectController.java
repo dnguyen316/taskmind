@@ -34,26 +34,25 @@ public class ProjectController {
     private final ProjectMembershipApplicationService projectMembershipApplicationService;
 
     public ProjectController(
-        ProjectApplicationService projectApplicationService,
-        ProjectMembershipApplicationService projectMembershipApplicationService
-    ) {
+            ProjectApplicationService projectApplicationService,
+            ProjectMembershipApplicationService projectMembershipApplicationService) {
         this.projectApplicationService = projectApplicationService;
         this.projectMembershipApplicationService = projectMembershipApplicationService;
     }
 
     @PostMapping
     public ResponseEntity<Project> createProject(
-        AuthenticatedUser requester,
-        @Valid @RequestBody CreateProjectRequest request
-    ) {
+            AuthenticatedUser requester, @Valid @RequestBody CreateProjectRequest request) {
         try {
-            var ownerUserId = requester.isPrivileged() ? request.ownerUserId() : requester.userId();
-            var created = projectApplicationService.create(new CreateProjectCommand(
-                request.name(),
-                request.key(),
-                request.description(),
-                ownerUserId
-            ));
+            UUID ownerUserId =
+                    requester.isPrivileged() ? request.ownerUserId() : requester.userId();
+            Project created =
+                    projectApplicationService.create(
+                            new CreateProjectCommand(
+                                    request.name(),
+                                    request.key(),
+                                    request.description(),
+                                    ownerUserId));
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
@@ -62,60 +61,62 @@ public class ProjectController {
 
     @GetMapping
     public List<Project> listProjects(
-        AuthenticatedUser requester,
-        @RequestParam(defaultValue = "false") boolean includeArchived
-    ) {
+            AuthenticatedUser requester,
+            @RequestParam(defaultValue = "false") boolean includeArchived) {
         return projectApplicationService.list(includeArchived).stream()
-            .filter(project -> canRead(requester, project))
-            .toList();
+                .filter(project -> canRead(requester, project))
+                .toList();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProject(AuthenticatedUser requester, @PathVariable UUID id) {
-        return projectApplicationService.findById(id)
-            .filter(project -> canRead(requester, project))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return projectApplicationService
+                .findById(id)
+                .filter(project -> canRead(requester, project))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<Project> updateProject(
-        AuthenticatedUser requester,
-        @PathVariable UUID id,
-        @Valid @RequestBody UpdateProjectRequest request
-    ) {
+            AuthenticatedUser requester,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProjectRequest request) {
         authorizeOwner(requester, id);
         try {
-            return projectApplicationService.update(id, new UpdateProjectCommand(
-                    request.name(),
-                    request.key(),
-                    request.description()
-                ))
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+            return projectApplicationService
+                    .update(
+                            id,
+                            new UpdateProjectCommand(
+                                    request.name(), request.key(), request.description()))
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
         }
     }
 
     @PatchMapping("/{id}/archive")
-    public ResponseEntity<Project> archiveProject(AuthenticatedUser requester, @PathVariable UUID id) {
+    public ResponseEntity<Project> archiveProject(
+            AuthenticatedUser requester, @PathVariable UUID id) {
         authorizeOwner(requester, id);
-        return projectApplicationService.archive(new ArchiveProjectCommand(id))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return projectApplicationService
+                .archive(new ArchiveProjectCommand(id))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private boolean canRead(AuthenticatedUser requester, Project project) {
         return requester.isPrivileged()
-            || project.ownerUserId().equals(requester.userId())
-            || projectMembershipApplicationService.isMember(project.id(), requester.userId());
+                || project.ownerUserId().equals(requester.userId())
+                || projectMembershipApplicationService.isMember(project.id(), requester.userId());
     }
 
     private void authorizeOwner(AuthenticatedUser requester, UUID projectId) {
-        var project = projectApplicationService.findById(projectId).orElseThrow();
+        Project project = projectApplicationService.findById(projectId).orElseThrow();
         if (!requester.isPrivileged() && !project.ownerUserId().equals(requester.userId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the project owner can mutate the project");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only the project owner can mutate the project");
         }
     }
 }

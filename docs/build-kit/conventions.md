@@ -35,6 +35,7 @@ Rules:
 - **Application services own transactions** (`@Transactional`) and orchestration. They
   depend on **domain repository ports**, never on Spring Data interfaces directly.
 - **Domain entities are self-validating** and free of framework annotations where possible.
+- **Use explicit Java local variable types in backend code.** Do not introduce `var` in service code; explicit types make refactors, reviews, and cross-layer contract changes easier to reason about.
 - Persistence concerns live in `*JpaEntity` mappers.
 - **Infrastructure adapters** implement the domain ports and translate between `*JpaEntity`
   and the domain model. The Spring Data interface (`SpringData*JpaRepository`) is wrapped by

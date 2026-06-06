@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ProblemDetail handleOptimisticLockingFailure(ObjectOptimisticLockingFailureException ex) {
-        var problemDetail = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+    public ProblemDetail handleOptimisticLockingFailure(
+            ObjectOptimisticLockingFailureException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problemDetail.setTitle("Concurrent update conflict");
         problemDetail.setDetail("The resource was updated by another request. Refresh and retry.");
         return problemDetail;
