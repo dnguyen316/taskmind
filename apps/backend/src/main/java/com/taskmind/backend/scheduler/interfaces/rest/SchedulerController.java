@@ -73,13 +73,17 @@ public class SchedulerController {
             AuthenticatedUser requester,
             @RequestBody(required = false) GenerateScheduleRequest request) {
         var body = request == null ? new GenerateScheduleRequest(null, null) : request;
-        var generated =
-                commands
-                        .generate(requester, new GenerateScheduleCommand(body.from(), body.to()))
-                        .stream()
-                        .map(ScheduledBlockResponse::fromDomain)
-                        .toList();
-        return new GenerateScheduleResponse(generated, proposals.overdueProposals(requester));
+        try {
+            var generated =
+                    commands
+                            .generate(requester, new GenerateScheduleCommand(body.from(), body.to()))
+                            .stream()
+                            .map(ScheduledBlockResponse::fromDomain)
+                            .toList();
+            return new GenerateScheduleResponse(generated, proposals.overdueProposals(requester));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        }
     }
 
     @GetMapping("/blocks")
