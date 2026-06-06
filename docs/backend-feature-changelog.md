@@ -1,5 +1,18 @@
 # Backend Feature Changelog
 
+## 2026-06-06 (M06 Search & Storage on AWS)
+
+### Added
+- Added Relay activity-event search indexing behind `taskmind.activity-search.enabled`, with task domain events mapped to the `activity-events` OpenSearch-compatible document shape.
+- Added Core `GET /v1/activity/search` facade behavior that requires authentication and returns a predictable `503` when search is not configured.
+- Added Core task-scoped attachment upload, list, download, and delete flows with DDD layering, Flyway-managed metadata, filesystem test/local storage, and S3-ready object storage.
+- Updated the Core OpenAPI contract for activity search and attachment endpoints and added targeted backend/Relay coverage for disabled search, ownership, persistence, storage, indexing, and contract alignment.
+
+### Verification Notes
+- Advanced primary milestone: M06 Search & Storage on AWS.
+- No frontend UI implementation or browser E2E was completed in this backend-focused pass; frontend hooks/components remain follow-up work for the UI slice.
+- No Codex skill or delegated sub-agent was used.
+
 ## 2026-06-06 (M04 Scheduler OpenAPI Contract Sync)
 
 ### Changed

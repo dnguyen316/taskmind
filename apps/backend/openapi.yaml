@@ -670,6 +670,112 @@ paths:
         '404':
           description: Scheduled block not found
 
+  /v1/activity/search:
+    get:
+      summary: Search authenticated user activity events
+      operationId: searchActivity
+      tags: [Activity]
+      parameters:
+        - in: query
+          name: q
+          schema: {type: string}
+        - in: query
+          name: size
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      responses:
+        '200':
+          description: Matching activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivitySearchDocument'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Activity search is disabled or not configured
+
+  /v1/tasks/{taskId}/attachments:
+    post:
+      summary: Upload a task attachment
+      operationId: uploadTaskAttachment
+      tags: [Attachments]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPathAsTaskId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, mediaKind]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mediaKind:
+                  $ref: '#/components/schemas/MediaKind'
+      responses:
+        '201':
+          description: Attachment metadata created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskAttachment'
+        '403':
+          description: Task not found or access denied
+    get:
+      summary: List task attachments
+      operationId: listTaskAttachments
+      tags: [Attachments]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPathAsTaskId'
+      responses:
+        '200':
+          description: Active task attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskAttachment'
+        '403':
+          description: Task not found or access denied
+
+  /v1/tasks/{taskId}/attachments/{attachmentId}/download:
+    get:
+      summary: Download a task attachment through Core
+      operationId: downloadTaskAttachment
+      tags: [Attachments]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPathAsTaskId'
+        - $ref: '#/components/parameters/AttachmentIdPath'
+      responses:
+        '200':
+          description: Attachment bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found
+
+  /v1/tasks/{taskId}/attachments/{attachmentId}:
+    delete:
+      summary: Delete a task attachment
+      operationId: deleteTaskAttachment
+      tags: [Attachments]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPathAsTaskId'
+        - $ref: '#/components/parameters/AttachmentIdPath'
+      responses:
+        '204':
+          description: Attachment deleted
+        '404':
+          description: Attachment not found
+
 components:
   securitySchemes:
     bearerAuth:
@@ -681,6 +787,20 @@ components:
     TaskIdPath:
       in: path
       name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TaskIdPathAsTaskId:
+      in: path
+      name: taskId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttachmentIdPath:
+      in: path
+      name: attachmentId
       required: true
       schema:
         type: string
@@ -835,6 +955,44 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+    MediaKind:
+      type: string
+      enum: [IMAGE, DOCUMENT, AUDIO, VIDEO, OTHER]
+
+    TaskAttachment:
+      type: object
+      required: [id, taskId, ownerUserId, objectKey, fileName, contentType, sizeBytes, mediaKind, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        version: {type: integer, format: int64, nullable: true}
+        taskId: {type: string, format: uuid}
+        ownerUserId: {type: string, format: uuid}
+        objectKey: {type: string}
+        fileName: {type: string}
+        contentType: {type: string}
+        sizeBytes: {type: integer, format: int64}
+        mediaKind:
+          $ref: '#/components/schemas/MediaKind'
+        deletedAt: {type: string, format: date-time, nullable: true}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+
+    ActivitySearchDocument:
+      type: object
+      required: [eventId, eventType, actorUserId, userId, entityType, entityId, occurredAt]
+      properties:
+        eventId: {type: string, format: uuid}
+        eventType: {type: string}
+        actorUserId: {type: string, format: uuid}
+        userId: {type: string, format: uuid}
+        projectId: {type: string, format: uuid, nullable: true}
+        entityType: {type: string}
+        entityId: {type: string, format: uuid}
+        title: {type: string}
+        status: {type: string}
+        payload: {type: object, additionalProperties: true}
+        occurredAt: {type: string, format: date-time}
+
     SignupEmailRequest:
       type: object
       required: [email, password, displayName]
