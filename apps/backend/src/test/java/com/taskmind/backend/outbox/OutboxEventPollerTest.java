@@ -15,6 +15,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -24,9 +25,11 @@ import org.springframework.test.context.ActiveProfiles;
 class OutboxEventPollerTest {
     @Autowired OutboxEventWriter writer;
     @Autowired OutboxEventJpaRepository repository;
+    @Autowired JdbcTemplate jdbcTemplate;
 
     @Test
     void pollerPublishesPendingOutboxEvent() {
+        jdbcTemplate.update("delete from outbox_events");
         UUID userId = UUID.randomUUID();
         UUID projectId = UUID.randomUUID();
         ObjectMapper objectMapper = new ObjectMapper();

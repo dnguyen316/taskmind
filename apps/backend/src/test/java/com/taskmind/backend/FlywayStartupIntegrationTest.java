@@ -29,7 +29,7 @@ class FlywayStartupIntegrationTest {
                 .extracting(migration -> migration.getVersion().getVersion())
                 .containsExactly(
                         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                        "15");
+                        "15", "16");
         assertThat(appliedMigrations)
                 .allMatch(migration -> migration.getState() == MigrationState.SUCCESS);
         assertThat(

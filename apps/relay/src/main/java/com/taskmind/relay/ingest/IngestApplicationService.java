@@ -9,6 +9,7 @@ import com.taskmind.relay.projection.DailyMetricsProjector;
 import com.taskmind.relay.projection.ProjectProjectionHandler;
 import com.taskmind.relay.projection.TaskProjectionHandler;
 import com.taskmind.relay.sink.EventStoreWriter;
+import com.taskmind.relay.sink.ElasticsearchIndexer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,14 +23,16 @@ public class IngestApplicationService {
     private final DailyMetricsProjector dailyMetricsProjector;
     private final RelayDeadLetterWriter deadLetterWriter;
     private final RelayPipelineMetrics metrics;
+    private final ElasticsearchIndexer elasticsearchIndexer;
 
-    public IngestApplicationService(EventStoreWriter eventStoreWriter, TaskProjectionHandler taskProjectionHandler, ProjectProjectionHandler projectProjectionHandler, DailyMetricsProjector dailyMetricsProjector, RelayDeadLetterWriter deadLetterWriter, RelayPipelineMetrics metrics) {
+    public IngestApplicationService(EventStoreWriter eventStoreWriter, TaskProjectionHandler taskProjectionHandler, ProjectProjectionHandler projectProjectionHandler, DailyMetricsProjector dailyMetricsProjector, RelayDeadLetterWriter deadLetterWriter, RelayPipelineMetrics metrics, ElasticsearchIndexer elasticsearchIndexer) {
         this.eventStoreWriter = eventStoreWriter;
         this.taskProjectionHandler = taskProjectionHandler;
         this.projectProjectionHandler = projectProjectionHandler;
         this.dailyMetricsProjector = dailyMetricsProjector;
         this.deadLetterWriter = deadLetterWriter;
         this.metrics = metrics;
+        this.elasticsearchIndexer = elasticsearchIndexer;
     }
 
     @Transactional
@@ -45,6 +48,7 @@ public class IngestApplicationService {
             taskProjectionHandler.project(event);
             projectProjectionHandler.project(event);
             dailyMetricsProjector.project(event);
+            elasticsearchIndexer.index(event);
             metrics.recordIngested();
             return true;
         } catch (RuntimeException ex) {
