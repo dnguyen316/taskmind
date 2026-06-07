@@ -12,6 +12,7 @@ import com.taskmind.relay.sink.EventStoreWriter;
 import com.taskmind.relay.sink.ElasticsearchIndexer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 @Service
 public class IngestApplicationService {
@@ -54,6 +55,9 @@ public class IngestApplicationService {
         } catch (RuntimeException ex) {
             deadLetterWriter.write(event, rawPayload, ex);
             metrics.recordDeadLetter();
+            if (event != null) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            }
             return false;
         }
     }

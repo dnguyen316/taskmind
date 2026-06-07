@@ -1,5 +1,18 @@
 # Backend Feature Changelog
 
+## 2026-06-07 (M06 Relay Activity Search Ingest Semantics)
+
+### Changed
+
+- Clarified Relay activity indexing as part of the ingest atomic unit: indexing failures now write DLQ/metrics evidence and roll back event-store/projection writes so `analytics.event_store` dedupe cannot make a missing OpenSearch document unretryable.
+- Added focused Relay coverage proving a task event whose first indexing attempt fails can be retried and indexed with the same event id.
+
+### Verification Notes
+
+- Advanced primary milestone: M06 Search & Storage on AWS.
+- No frontend UI implementation or browser E2E was required for this Relay backend fix.
+- No Codex skill or delegated sub-agent was used.
+
 ## 2026-06-06 (M04 Scheduler Status Clarification)
 
 ### Status correction

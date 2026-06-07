@@ -54,6 +54,10 @@ Relay, plus Core's activity-search read API, target OpenSearch:
   user inside a VPC. Add an OpenSearch/SigV4 request interceptor to the Elasticsearch REST
   client.
 - Index: `activity-events`; documents: `ActivityEventDocument`.
+- Relay ingest keeps event-store/projection writes atomic with activity indexing. An
+  OpenSearch indexing exception is DLQ'd and counted, but the event-store insert is
+  rolled back so a later retry can index the same event instead of being blocked by
+  `analytics.event_store` dedupe.
 - **Local**: use an OpenSearch or Elasticsearch 8.x container. The Spring Data ES client
   works against both for development and tests. The `test` profile excludes
   ES/OpenSearch autoconfiguration.
