@@ -11,6 +11,7 @@ import InboxCapturePage from '../features/ai/pages/InboxCapturePage.vue'
 import CalendarPage from '../features/scheduler/pages/CalendarPage.vue'
 import TeamPage from '../features/team/pages/TeamPage.vue'
 import ReportsPage from '../features/reports/pages/ReportsPage.vue'
+import ActivitySearchPage from '../features/activity/pages/ActivitySearchPage.vue'
 import { pinia } from '../stores/pinia'
 import { useAuthStore } from '../stores/auth'
 
@@ -85,6 +86,12 @@ const routes: RouteRecordRaw[] = [
     path: '/reports',
     name: 'reports',
     component: ReportsPage,
+    meta: protectedMeta,
+  },
+  {
+    path: '/activity',
+    name: 'activity-search',
+    component: ActivitySearchPage,
     meta: protectedMeta,
   },
   {

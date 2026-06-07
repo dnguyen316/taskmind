@@ -1,5 +1,25 @@
 # Frontend Feature Changelog
 
+## 2026-06-07 (M06 Search & Storage UI Slice)
+
+### Added
+
+- Added typed Core-only frontend wrappers for task attachment upload, list, download, delete, and activity search.
+- Added OpenAPI-aligned task attachment, media-kind, and activity-search document types for the M06 Core contracts.
+- Added a task detail attachment panel for uploading files with a media kind, listing metadata, downloading through Core, and deleting task-scoped attachments.
+- Added an activity-search frontend feature with a protected `/activity` route, typed composable, search panel, and sidebar entry that calls only Core `/v1/activity/search`.
+
+### Frontend-visible change recorded
+
+- Task detail pages now surface task-scoped attachment management through Core `/v1/tasks/{taskId}/attachments/**` endpoints.
+- `/activity` now provides an authenticated activity search UI backed by Core's M06 search facade; the frontend does not call Relay, Nova, S3, or OpenSearch directly.
+
+### Verification notes
+
+- Exact verification commands for this M06 frontend slice: `cd apps/frontend && npm run typecheck`; `cd apps/frontend && npm run build`; `make vibe-verify`.
+- Browser E2E outcome: skipped/not proven in this container because no browser binary, no Playwright/Cypress E2E dependency, and no Docker/Postgres runtime are available for a full super-admin bypass flow; use `superadmin@taskmind.local` / password `1` / OTP `1` once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-06 (M04 Scheduler UI Slice)
 
 ### Added
