@@ -15,7 +15,9 @@
 
 ### Verification notes
 
-- E2E status: blocked in this container because no browser binary/Playwright install and no Docker/Postgres runtime are available for a full `/calendar` super-admin bypass flow; use `superadmin@taskmind.local` / `1` / `1` once local services are running.
+- Exact verification commands recorded for the M04 UI slice: `cd apps/frontend && npm run typecheck`; `cd apps/frontend && npm run build`; `make vibe-verify`. The docs-only traceability update re-ran `make vibe-verify` successfully on 2026-06-06.
+- Browser E2E outcome: skipped/not proven in this container because no browser binary, no Playwright/Cypress E2E dependency, and no Docker/Postgres runtime are available for a full `/calendar` super-admin bypass flow; use `superadmin@taskmind.local` / password `1` / OTP `1` once local services are running.
+- Status: scheduler UI is implemented as a slice, but M04 must remain open until `make vibe-verify` and the `/calendar` browser flow both pass in milestone closeout.
 - Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-06 (M03 Auth Session Flow + FE Workflow Closeout)
