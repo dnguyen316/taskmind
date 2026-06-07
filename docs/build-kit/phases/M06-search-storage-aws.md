@@ -121,6 +121,11 @@ Requirements:
   `spring.elasticsearch.uris` pointing to the OpenSearch endpoint. Production must be able
   to add SigV4 signing or fine-grained authentication without changing application code.
 - **Index name:** Relay indexes activity documents into `activity-events`.
+- **Atomic ingest/indexing:** Relay treats event-store, analytics projection, and activity
+  indexing as one ingest atomic unit. If activity indexing throws, Relay records DLQ and
+  failure metrics, then rolls back event-store/projection writes so
+  `analytics.event_store` dedupe cannot permanently suppress a later retry of the same
+  event.
 - **Conditional search:** OpenSearch/Elasticsearch beans must be conditional on a
   configured search repository. The application must run without search when disabled;
   the `test` profile should exclude OpenSearch/Elasticsearch autoconfiguration unless a
