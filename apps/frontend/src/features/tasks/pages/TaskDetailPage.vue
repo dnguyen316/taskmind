@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import { useTasks } from '../composables/useTasks'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
 import type { EnergyLevel, Task, TaskStatus } from '../types'
@@ -39,7 +40,9 @@ const formState = reactive<TaskDetailFormState>({
 })
 
 const taskId = computed(() => String(route.params.id ?? '').trim())
-const isValidId = computed(() => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value))
+const isValidId = computed(() =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value),
+)
 const isEmptyState = computed(() => !loading.value && !errorMessage.value && taskNotFound.value)
 
 onMounted(() => {
@@ -158,63 +161,99 @@ function toDatetimeLocal(value: string | null) {
           description="No task found for this ID. It may have been removed or belongs to another user."
         />
 
-        <a-form v-else layout="vertical" @submit.prevent="saveTask">
-          <a-row :gutter="12">
-            <a-col :xs="24" :md="12">
-              <a-form-item label="Title" required>
-                <a-input v-model:value="formState.title" placeholder="Task title" />
-              </a-form-item>
-            </a-col>
+        <template v-else>
+          <a-form layout="vertical" @submit.prevent="saveTask">
+            <a-row :gutter="12">
+              <a-col :xs="24" :md="12">
+                <a-form-item label="Title" required>
+                  <a-input v-model:value="formState.title" placeholder="Task title" />
+                </a-form-item>
+              </a-col>
 
-            <a-col :xs="24" :md="12">
-              <a-form-item label="Status">
-                <a-select v-model:value="formState.status">
-                  <a-select-option v-for="status in TASK_STATUS_OPTIONS" :key="status" :value="status">
-                    {{ status }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
+              <a-col :xs="24" :md="12">
+                <a-form-item label="Status">
+                  <a-select v-model:value="formState.status">
+                    <a-select-option
+                      v-for="status in TASK_STATUS_OPTIONS"
+                      :key="status"
+                      :value="status"
+                    >
+                      {{ status }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+            </a-row>
 
-          <a-form-item label="Description">
-            <a-textarea v-model:value="formState.description" :rows="3" placeholder="Optional context" />
-          </a-form-item>
+            <a-form-item label="Description">
+              <a-textarea
+                v-model:value="formState.description"
+                :rows="3"
+                placeholder="Optional context"
+              />
+            </a-form-item>
 
-          <a-row :gutter="12">
-            <a-col :xs="24" :md="6">
-              <a-form-item label="Priority (1 highest)">
-                <a-input-number v-model:value="formState.priority" :min="1" :max="4" :step="1" style="width: 100%" />
-              </a-form-item>
-            </a-col>
+            <a-row :gutter="12">
+              <a-col :xs="24" :md="6">
+                <a-form-item label="Priority (1 highest)">
+                  <a-input-number
+                    v-model:value="formState.priority"
+                    :min="1"
+                    :max="4"
+                    :step="1"
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
 
-            <a-col :xs="24" :md="6">
-              <a-form-item label="Due at">
-                <a-input v-model:value="formState.dueAt" type="datetime-local" />
-              </a-form-item>
-            </a-col>
+              <a-col :xs="24" :md="6">
+                <a-form-item label="Due at">
+                  <a-input v-model:value="formState.dueAt" type="datetime-local" />
+                </a-form-item>
+              </a-col>
 
-            <a-col :xs="24" :md="6">
-              <a-form-item label="Duration (minutes)">
-                <a-input-number v-model:value="formState.durationMinutes" :min="1" :step="5" style="width: 100%" />
-              </a-form-item>
-            </a-col>
+              <a-col :xs="24" :md="6">
+                <a-form-item label="Duration (minutes)">
+                  <a-input-number
+                    v-model:value="formState.durationMinutes"
+                    :min="1"
+                    :step="5"
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
 
-            <a-col :xs="24" :md="6">
-              <a-form-item label="Energy level">
-                <a-select v-model:value="formState.energyLevel" allow-clear placeholder="Select energy level">
-                  <a-select-option v-for="energy in ENERGY_LEVEL_OPTIONS" :key="energy" :value="energy">
-                    {{ energy }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
+              <a-col :xs="24" :md="6">
+                <a-form-item label="Energy level">
+                  <a-select
+                    v-model:value="formState.energyLevel"
+                    allow-clear
+                    placeholder="Select energy level"
+                  >
+                    <a-select-option
+                      v-for="energy in ENERGY_LEVEL_OPTIONS"
+                      :key="energy"
+                      :value="energy"
+                    >
+                      {{ energy }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+            </a-row>
 
-          <a-button type="primary" html-type="submit" :loading="saving" :disabled="loading || isEmptyState">
-            Save changes
-          </a-button>
-        </a-form>
+            <a-button
+              type="primary"
+              html-type="submit"
+              :loading="saving"
+              :disabled="loading || isEmptyState"
+            >
+              Save changes
+            </a-button>
+          </a-form>
+
+          <TaskAttachmentsPanel v-if="formState.id" :task-id="formState.id" />
+        </template>
       </a-space>
     </a-card>
   </main>

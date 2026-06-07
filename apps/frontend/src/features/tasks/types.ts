@@ -18,6 +18,37 @@ export interface Task {
   updatedAt: string
 }
 
+export type MediaKind = 'IMAGE' | 'DOCUMENT' | 'AUDIO' | 'VIDEO' | 'OTHER'
+
+export interface TaskAttachment {
+  id: string
+  version: number | null
+  taskId: string
+  ownerUserId: string
+  objectKey: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  mediaKind: MediaKind
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ActivitySearchDocument {
+  eventId: string
+  eventType: string
+  actorUserId: string
+  userId: string
+  projectId: string | null
+  entityType: string
+  entityId: string
+  title: string | null
+  status: string | null
+  payload: Record<string, unknown> | null
+  occurredAt: string
+}
+
 export interface TaskFilters {
   status?: TaskStatus
   overdueOnly: boolean

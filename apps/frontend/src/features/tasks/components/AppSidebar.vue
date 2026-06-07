@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
+  AuditOutlined,
   BarChartOutlined,
   CalendarOutlined,
   CheckSquareOutlined,
@@ -27,6 +28,7 @@ const isTeam = computed(() => route.path.startsWith('/team'))
 const isCalendar = computed(() => route.path.startsWith('/calendar'))
 const isInbox = computed(() => route.path.startsWith('/inbox'))
 const isReports = computed(() => route.path.startsWith('/reports'))
+const isActivity = computed(() => route.path.startsWith('/activity'))
 const userInitials = computed(() => initials(authStore.currentUserDisplayName))
 const userEmail = computed(() => currentUser.value?.email ?? 'Signed in')
 
@@ -76,6 +78,9 @@ function initials(value: string) {
       >
       <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"
         ><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink
+      >
+      <RouterLink to="/activity" class="menu-item" :class="{ active: isActivity }"
+        ><AuditOutlined />Activity</RouterLink
       >
     </nav>
     <div class="user-pill">
