@@ -59,6 +59,19 @@ it is not a claim that every capability is already implemented in the current tr
 | Nova chat | M07, expanded by M08+ | `/v1/nova/**` Core facades | Own chat sessions in Redis, agent runtime, tool selection, and provider calls. | Core authenticates the user and exposes allowed facades/tools; Relay supplies context when requested through internal APIs. | Tools must be scoped to the authenticated user and service-token protected internal calls. |
 | Spec breakdown | M09 | Core spec-breakdown facades | Convert a product spec and related context into an Epic → Story → Subtask draft hierarchy. | Core owns async job state, attachments, accepted task hierarchy, and Jira publish flow. | Long-running jobs should use the standard async job envelope and require user review before persistence/publish. |
 
+## M07 Nova internal foundation endpoints
+
+Nova exposes the following service-token-protected internal endpoints for Core-to-Nova integration. Core remains the only frontend-facing API owner; these endpoints are not browser-facing.
+
+| Endpoint | Purpose | Notes |
+|----------|---------|-------|
+| `POST /internal/ai/chat` | Create or continue a Nova chat turn. | Uses `ChatRequest`/`ChatResponse`, writes an `ai_runs` row with capability `chat`, and stores short-lived session state through the chat session store. |
+| `POST /internal/ai/capabilities/{capabilityId}:run` | Execute a registered capability through the provider router and agent runtime. | M07 registers placeholder `capture` and `weekly-review` capabilities that return deterministic mock-provider output until M08 adds product workflows. |
+| `GET /internal/ai/runs/{runId}` | Fetch provider-neutral audit metadata for a Nova run. | Returns `AiRunSummary`; prompt and response payloads stay internal to the audit table. |
+| `GET /internal/ai/capabilities` | List registered capabilities with input/output schema metadata. | Used by Core integration and verification; unknown capability execution returns `UNKNOWN_CAPABILITY`. |
+
+All `/internal/**` routes require `X-Service-Token` (or the matching service bearer token for internal clients); `/api/health` remains public for service health checks.
+
 ## Provider and model routing
 
 - Build Nova on Spring AI 1.0.0 with a provider router abstraction so capability code is

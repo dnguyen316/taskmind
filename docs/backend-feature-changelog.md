@@ -1,5 +1,20 @@
 # Backend Feature Changelog
 
+## 2026-06-12 (M07 Nova Service Foundation)
+
+### Added
+
+- Added Nova service-token protection for internal AI routes while keeping `/api/health` public.
+- Added the Flyway-owned `ai.ai_runs` audit schema, deterministic mock provider, provider router, capability registry/runtime, chat session handling with Redis-ready storage and in-memory test fallback, and internal Nova REST endpoints for chat, capability execution, audit lookup, and capability discovery.
+- Added focused Nova coverage for internal route security, mock-provider determinism, capability execution, chat continuation behavior, and audit writes.
+
+### Verification Notes
+
+- Advanced primary milestone: M07 Nova AI.
+- Core AI facades and OpenAPI synchronization remain follow-up work for the Core slice of M07; this pass scoped changes to `apps/ai` plus Nova reference docs.
+- No frontend UI implementation or browser E2E was required for this Nova foundation slice.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-07 (M06 Relay Activity Search Ingest Semantics)
 
 ### Changed
