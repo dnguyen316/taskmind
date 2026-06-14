@@ -68,6 +68,120 @@ class PlanningControllerTest {
         org.assertj.core.api.Assertions.assertThat(payload).contains("ai.capture_submitted").contains("length");
     }
 
+
+    @Test
+    void acceptCapturedDraftCreatesRequesterScopedTaskAndPublishesEvent() throws Exception {
+        Integer beforeCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.suggestion_accepted'",
+                        Integer.class);
+
+        var response = mockMvc.perform(post("/v1/ai/capture/accept")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "draft": {
+                        "title": "Accept captured task",
+                        "status": "TODO",
+                        "priority": 2,
+                        "durationMinutes": 45,
+                        "confidence": 0.86
+                      },
+                      "description": "Created from the capture panel"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.taskId").exists())
+            .andReturn();
+
+        String taskId = objectMapper.readTree(response.getResponse().getContentAsString()).get("taskId").asText();
+        String ownerUserId =
+                jdbcTemplate.queryForObject("select user_id from tasks where id = ?", String.class, java.util.UUID.fromString(taskId));
+        Integer afterCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.suggestion_accepted'",
+                        Integer.class);
+        String payload =
+                jdbcTemplate.queryForObject(
+                        "select payload from outbox_events where event_type='ai.suggestion_accepted' order by created_at desc limit 1",
+                        String.class);
+
+        org.assertj.core.api.Assertions.assertThat(ownerUserId).isEqualTo(REQUESTER_ID);
+        org.assertj.core.api.Assertions.assertThat(afterCount).isEqualTo(beforeCount + 1);
+        org.assertj.core.api.Assertions.assertThat(payload)
+                .contains("ai.suggestion_accepted")
+                .contains(taskId)
+                .contains("Accept captured task");
+    }
+
+    @Test
+    void managerAcceptCapturedDraftStillCreatesTaskForAuthenticatedRequester() throws Exception {
+        var response = mockMvc.perform(post("/v1/ai/capture/accept")
+                .with(jwt(REQUESTER_ID, "MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "draft": {
+                        "title": "Manager scoped capture",
+                        "status": "TODO",
+                        "priority": 3,
+                        "durationMinutes": 30,
+                        "confidence": 0.75
+                      }
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        String taskId = objectMapper.readTree(response.getResponse().getContentAsString()).get("taskId").asText();
+        String ownerUserId =
+                jdbcTemplate.queryForObject("select user_id from tasks where id = ?", String.class, java.util.UUID.fromString(taskId));
+
+        org.assertj.core.api.Assertions.assertThat(ownerUserId).isEqualTo(REQUESTER_ID);
+    }
+
+    @Test
+    void rejectCapturedDraftPublishesRejectedEvent() throws Exception {
+        Integer beforeCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.suggestion_rejected'",
+                        Integer.class);
+
+        mockMvc.perform(post("/v1/ai/capture/reject")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "draft": {
+                        "title": "Reject captured task",
+                        "status": "TODO",
+                        "priority": 2,
+                        "durationMinutes": 20,
+                        "confidence": 0.4
+                      },
+                      "reason": "Duplicate"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rejected").value(true));
+
+        Integer afterCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.suggestion_rejected'",
+                        Integer.class);
+        String payload =
+                jdbcTemplate.queryForObject(
+                        "select payload from outbox_events where event_type='ai.suggestion_rejected' order by created_at desc limit 1",
+                        String.class);
+
+        org.assertj.core.api.Assertions.assertThat(afterCount).isEqualTo(beforeCount + 1);
+        org.assertj.core.api.Assertions.assertThat(payload)
+                .contains("ai.suggestion_rejected")
+                .contains("Reject captured task")
+                .contains("Duplicate");
+    }
+
     @Test
     void translateTaskFallsBackToDeterministicTranslationWhenNovaUnavailable() throws Exception {
         mockMvc.perform(post("/v1/ai/tasks/translate")

@@ -1,12 +1,15 @@
 package com.taskmind.backend.task.interfaces.rest;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.ai.application.AiDomainEventPublisher;
 import com.taskmind.backend.ai.application.AiFacadeApplicationService;
+import com.taskmind.backend.task.application.CreateTaskCommand;
 import com.taskmind.backend.task.application.TaskApplicationService;
 import com.taskmind.backend.task.application.TaskLinkApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskLink;
 import com.taskmind.backend.task.domain.model.TaskLinkType;
+import com.taskmind.backend.task.domain.model.TaskSource;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.CapturedTaskDraft;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.GoalDraftTask;
@@ -16,13 +19,17 @@ import com.taskmind.backend.task.interfaces.rest.PlanningController.ReschedulePr
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +37,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.taskmind.events.EventTypes;
 
 @RestController
 @RequestMapping("/v1")
@@ -39,14 +47,17 @@ public class PlanningController {
     private final TaskApplicationService taskApplicationService;
     private final TaskLinkApplicationService taskLinkApplicationService;
     private final AiFacadeApplicationService aiFacadeApplicationService;
+    private final AiDomainEventPublisher aiDomainEventPublisher;
 
     public PlanningController(
             TaskApplicationService taskApplicationService,
             TaskLinkApplicationService taskLinkApplicationService,
-            AiFacadeApplicationService aiFacadeApplicationService) {
+            AiFacadeApplicationService aiFacadeApplicationService,
+            AiDomainEventPublisher aiDomainEventPublisher) {
         this.taskApplicationService = taskApplicationService;
         this.taskLinkApplicationService = taskLinkApplicationService;
         this.aiFacadeApplicationService = aiFacadeApplicationService;
+        this.aiDomainEventPublisher = aiDomainEventPublisher;
     }
 
     @PostMapping("/ai/capture")
@@ -65,6 +76,57 @@ public class PlanningController {
                                 draft.confidence()))
                         .toList(),
                 result.clarificationQuestion());
+    }
+
+
+    @PostMapping("/ai/capture/accept")
+    public CaptureAcceptResponse acceptCapturedDraft(
+            AuthenticatedUser requester, @Valid @RequestBody CaptureAcceptRequest request) {
+        Task created =
+                taskApplicationService.create(
+                        requester,
+                        new CreateTaskCommand(
+                                requester.userId(),
+                                request.projectId(),
+                                request.assigneeId(),
+                                request.parentTaskId(),
+                                null,
+                                null,
+                                null,
+                                null,
+                                request.draft().title(),
+                                request.description(),
+                                request.draft().status(),
+                                request.draft().priority(),
+                                request.dueAt(),
+                                request.draft().durationMinutes(),
+                                null,
+                                TaskSource.AI_CAPTURE,
+                                BigDecimal.valueOf(request.draft().confidence())));
+        aiDomainEventPublisher.publish(
+                requester.userId(),
+                EventTypes.AI_SUGGESTION_ACCEPTED,
+                Map.of(
+                        "eventType", EventTypes.AI_SUGGESTION_ACCEPTED,
+                        "taskId", created.id(),
+                        "title", created.title(),
+                        "source", created.source().name(),
+                        "confidence", created.confidence()));
+        return new CaptureAcceptResponse(created.id());
+    }
+
+    @PostMapping("/ai/capture/reject")
+    public CaptureRejectResponse rejectCapturedDraft(
+            AuthenticatedUser requester, @Valid @RequestBody CaptureRejectRequest request) {
+        aiDomainEventPublisher.publish(
+                requester.userId(),
+                EventTypes.AI_SUGGESTION_REJECTED,
+                Map.of(
+                        "eventType", EventTypes.AI_SUGGESTION_REJECTED,
+                        "title", request.draft().title(),
+                        "reason", request.reason(),
+                        "confidence", request.draft().confidence()));
+        return new CaptureRejectResponse(true);
     }
 
     @PostMapping("/ai/tasks/describe")
@@ -225,6 +287,28 @@ public class PlanningController {
             double confidence) {}
 
     public record CaptureResponse(List<CapturedTaskDraft> drafts, String clarificationQuestion) {}
+
+
+    public record CaptureAcceptRequest(
+            @NotNull AcceptedTaskDraft draft,
+            UUID projectId,
+            UUID assigneeId,
+            UUID parentTaskId,
+            String description,
+            OffsetDateTime dueAt) {}
+
+    public record AcceptedTaskDraft(
+            @NotBlank String title,
+            @NotNull TaskStatus status,
+            @Min(1) @Max(4) int priority,
+            @Min(1) int durationMinutes,
+            @DecimalMin("0.0") @DecimalMax("1.0") double confidence) {}
+
+    public record CaptureAcceptResponse(UUID taskId) {}
+
+    public record CaptureRejectRequest(@NotNull AcceptedTaskDraft draft, @NotBlank String reason) {}
+
+    public record CaptureRejectResponse(boolean rejected) {}
 
     public record DescribeTaskRequest(@NotBlank String title, String notes) {}
 

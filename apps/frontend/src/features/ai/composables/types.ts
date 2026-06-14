@@ -10,6 +10,24 @@ export interface CaptureResponse {
   drafts: CapturedTaskDraft[]
   clarificationQuestion: string | null
 }
+export interface CaptureAcceptRequest {
+  draft: CapturedTaskDraft
+  projectId?: string | null
+  assigneeId?: string | null
+  parentTaskId?: string | null
+  description?: string | null
+  dueAt?: string | null
+}
+export interface CaptureAcceptResponse {
+  taskId: string
+}
+export interface CaptureRejectRequest {
+  draft: CapturedTaskDraft
+  reason: string
+}
+export interface CaptureRejectResponse {
+  rejected: boolean
+}
 export interface GoalBreakdownResponse {
   goalId: string
   milestones: Array<{ title: string; targetDate: string | null; notes: string[] }>

@@ -110,6 +110,53 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+
+  /v1/ai/capture/accept:
+    post:
+      summary: Accept an AI capture draft as a task
+      operationId: acceptAiCaptureDraft
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiCaptureAcceptRequest'
+      responses:
+        '200':
+          description: Created task identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiCaptureAcceptResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/ai/capture/reject:
+    post:
+      summary: Reject an AI capture draft
+      operationId: rejectAiCaptureDraft
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiCaptureRejectRequest'
+      responses:
+        '200':
+          description: Rejection acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiCaptureRejectResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/ai/tasks/describe:
     post:
       summary: Generate a task description draft
@@ -1838,6 +1885,50 @@ components:
         durationMinutes: {type: integer}
         source: {type: string}
         confidence: {type: number, format: double}
+
+
+    AiAcceptedTaskDraft:
+      type: object
+      required: [title, status, priority, durationMinutes, confidence]
+      properties:
+        title: {type: string, minLength: 1}
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority: {type: integer, minimum: 1, maximum: 4}
+        durationMinutes: {type: integer, minimum: 1}
+        confidence: {type: number, format: double, minimum: 0, maximum: 1}
+
+    AiCaptureAcceptRequest:
+      type: object
+      required: [draft]
+      properties:
+        draft:
+          $ref: '#/components/schemas/AiAcceptedTaskDraft'
+        projectId: {type: string, format: uuid, nullable: true}
+        assigneeId: {type: string, format: uuid, nullable: true}
+        parentTaskId: {type: string, format: uuid, nullable: true}
+        description: {type: string, nullable: true}
+        dueAt: {type: string, format: date-time, nullable: true}
+
+    AiCaptureAcceptResponse:
+      type: object
+      required: [taskId]
+      properties:
+        taskId: {type: string, format: uuid}
+
+    AiCaptureRejectRequest:
+      type: object
+      required: [draft, reason]
+      properties:
+        draft:
+          $ref: '#/components/schemas/AiAcceptedTaskDraft'
+        reason: {type: string, minLength: 1}
+
+    AiCaptureRejectResponse:
+      type: object
+      required: [rejected]
+      properties:
+        rejected: {type: boolean}
 
     AiDescribeTaskRequest:
       type: object

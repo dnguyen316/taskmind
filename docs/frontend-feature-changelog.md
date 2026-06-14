@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-14 (M08 Capture Acceptance Path)
+
+### Added
+
+- Added per-draft Accept and Reject controls to the AI capture panel.
+- Extended the capture composable with typed calls for Core-only `/v1/ai/capture/accept` and `/v1/ai/capture/reject` requests.
+- Added typed capture accept/reject request and response contracts for the frontend AI feature.
+
+### Frontend-visible change recorded
+
+- Users can now promote AI-captured drafts into tasks or reject unwanted drafts directly from the capture panel without calling Nova directly from the browser.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this slice.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-07 (M06 Search & Storage UI Slice)
 
 ### Added

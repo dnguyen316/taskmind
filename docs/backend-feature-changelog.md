@@ -10,6 +10,21 @@
 
 - Primary milestone: local development support for Core/frontend integration.
 - Core OpenAPI was not changed because no request or response schema changed.
+# Backend Feature Changelog
+
+## 2026-06-14 (M08 Capture Acceptance Path)
+
+### Added
+
+- Added authenticated Core endpoints for accepting and rejecting AI capture drafts under `/v1/ai/capture/accept` and `/v1/ai/capture/reject`.
+- Accepted capture drafts now create real requester-scoped tasks through `TaskApplicationService` and emit `ai.suggestion_accepted` funnel events.
+- Rejected capture drafts now emit `ai.suggestion_rejected` funnel events with the provided rejection reason.
+- Updated the Core OpenAPI contract with capture accept/reject paths and schemas.
+- Extended `PlanningControllerTest` coverage for successful accept, authenticated requester scoping, and accept/reject event publication.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=PlanningControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
 - Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-14 (M08 Nova Typed Capabilities)
