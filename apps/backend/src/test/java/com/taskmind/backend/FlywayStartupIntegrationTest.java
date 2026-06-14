@@ -29,13 +29,19 @@ class FlywayStartupIntegrationTest {
                 .extracting(migration -> migration.getVersion().getVersion())
                 .containsExactly(
                         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                        "15", "16");
+                        "15", "16", "17");
         assertThat(appliedMigrations)
                 .allMatch(migration -> migration.getState() == MigrationState.SUCCESS);
         assertThat(
                         jdbcTemplate.queryForObject(
                                 "SELECT COUNT(*) FROM information_schema.columns "
                                         + "WHERE LOWER(table_name) = 'projects' AND LOWER(column_name) = 'project_key'",
+                                Integer.class))
+                .isEqualTo(1);
+        assertThat(
+                        jdbcTemplate.queryForObject(
+                                "SELECT COUNT(*) FROM information_schema.tables "
+                                        + "WHERE LOWER(table_schema) = 'analytics' AND LOWER(table_name) = 'ai_funnel_daily_metrics'",
                                 Integer.class))
                 .isEqualTo(1);
     }

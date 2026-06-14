@@ -61,7 +61,7 @@ The envelope is validated against `libs/events/.../schema/domain-event-v1.json` 
 | Scheduler | `scheduler.block_completed`, `scheduler.block_missed` |
 | Review | `review.weekly_generated`, `review.recommendation_adopted` |
 
-`EventTypeRegistry` enumerates known types for funnel projection.
+`EventTypeRegistry` enumerates known types for funnel projection. Relay projects `ai.capture_submitted`, `ai.suggestion_accepted`, and `ai.suggestion_rejected` into `analytics.ai_funnel_daily_metrics` for daily AI funnel counts.
 
 ## Configuration
 

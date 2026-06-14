@@ -5,6 +5,7 @@ import com.taskmind.events.DomainEventMapper;
 import com.taskmind.events.DomainEventValidator;
 import com.taskmind.relay.dlq.RelayDeadLetterWriter;
 import com.taskmind.relay.observability.RelayPipelineMetrics;
+import com.taskmind.relay.projection.AiFunnelProjectionHandler;
 import com.taskmind.relay.projection.DailyMetricsProjector;
 import com.taskmind.relay.projection.ProjectProjectionHandler;
 import com.taskmind.relay.projection.TaskProjectionHandler;
@@ -22,15 +23,17 @@ public class IngestApplicationService {
     private final TaskProjectionHandler taskProjectionHandler;
     private final ProjectProjectionHandler projectProjectionHandler;
     private final DailyMetricsProjector dailyMetricsProjector;
+    private final AiFunnelProjectionHandler aiFunnelProjectionHandler;
     private final RelayDeadLetterWriter deadLetterWriter;
     private final RelayPipelineMetrics metrics;
     private final ElasticsearchIndexer elasticsearchIndexer;
 
-    public IngestApplicationService(EventStoreWriter eventStoreWriter, TaskProjectionHandler taskProjectionHandler, ProjectProjectionHandler projectProjectionHandler, DailyMetricsProjector dailyMetricsProjector, RelayDeadLetterWriter deadLetterWriter, RelayPipelineMetrics metrics, ElasticsearchIndexer elasticsearchIndexer) {
+    public IngestApplicationService(EventStoreWriter eventStoreWriter, TaskProjectionHandler taskProjectionHandler, ProjectProjectionHandler projectProjectionHandler, DailyMetricsProjector dailyMetricsProjector, AiFunnelProjectionHandler aiFunnelProjectionHandler, RelayDeadLetterWriter deadLetterWriter, RelayPipelineMetrics metrics, ElasticsearchIndexer elasticsearchIndexer) {
         this.eventStoreWriter = eventStoreWriter;
         this.taskProjectionHandler = taskProjectionHandler;
         this.projectProjectionHandler = projectProjectionHandler;
         this.dailyMetricsProjector = dailyMetricsProjector;
+        this.aiFunnelProjectionHandler = aiFunnelProjectionHandler;
         this.deadLetterWriter = deadLetterWriter;
         this.metrics = metrics;
         this.elasticsearchIndexer = elasticsearchIndexer;
@@ -49,6 +52,7 @@ public class IngestApplicationService {
             taskProjectionHandler.project(event);
             projectProjectionHandler.project(event);
             dailyMetricsProjector.project(event);
+            aiFunnelProjectionHandler.project(event);
             elasticsearchIndexer.index(event);
             metrics.recordIngested();
             return true;
