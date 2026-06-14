@@ -63,3 +63,4 @@
 
 - Add an automated browser E2E harness or document the manual super-admin bypass flow once local app orchestration is available in the agent environment.
 - Continue recording frontend-visible behavior changes in this changelog, newest entry first.
+- Added M08 AI feature composables and starter panels for capture, goal breakdown, weekly review, describe/autocomplete, translate, and Nova chat through Core facade endpoints.

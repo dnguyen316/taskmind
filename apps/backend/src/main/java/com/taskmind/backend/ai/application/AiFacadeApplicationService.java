@@ -38,6 +38,77 @@ public class AiFacadeApplicationService {
                 () -> fallbacks.capture(text));
     }
 
+    public GoalBreakdownResult goalBreakdown(
+            UUID userId,
+            UUID goalId,
+            java.time.OffsetDateTime deadline,
+            Integer weeklyAvailabilityMinutes) {
+        return runOrFallback(
+                AiCapabilityId.GOAL_BREAKDOWN,
+                userId,
+                Map.of(
+                        "goalId",
+                        goalId,
+                        "deadline",
+                        deadline == null ? "" : deadline.toString(),
+                        "weeklyAvailabilityMinutes",
+                        weeklyAvailabilityMinutes == null ? 0 : weeklyAvailabilityMinutes),
+                GoalBreakdownResult.class,
+                () -> fallbacks.goalBreakdown(goalId, deadline, weeklyAvailabilityMinutes));
+    }
+
+    public WeeklyReviewResult weeklyReview(UUID userId) {
+        return runOrFallback(
+                AiCapabilityId.WEEKLY_REVIEW,
+                userId,
+                Map.of("userId", userId),
+                WeeklyReviewResult.class,
+                () -> fallbacks.weeklyReview(userId));
+    }
+
+    public ProjectBriefResult projectBrief(
+            UUID userId, UUID projectId, String name, String description) {
+        return runOrFallback(
+                AiCapabilityId.PROJECT_BRIEF,
+                userId,
+                Map.of(
+                        "projectId",
+                        projectId,
+                        "name",
+                        name == null ? "" : name,
+                        "description",
+                        description == null ? "" : description),
+                ProjectBriefResult.class,
+                () -> fallbacks.projectBrief(projectId, name, description));
+    }
+
+    public DurationEstimateResult durationEstimate(UUID userId, String title, String description) {
+        return runOrFallback(
+                AiCapabilityId.DURATION_ESTIMATE,
+                userId,
+                Map.of("title", title == null ? "" : title, "description", description == null ? "" : description),
+                DurationEstimateResult.class,
+                () -> fallbacks.durationEstimate(title, description));
+    }
+
+    public RationalePhraseResult rationalePhrase(UUID userId, String title, String context) {
+        return runOrFallback(
+                AiCapabilityId.RATIONALE_PHRASE,
+                userId,
+                Map.of("title", title == null ? "" : title, "context", context == null ? "" : context),
+                RationalePhraseResult.class,
+                () -> fallbacks.rationalePhrase(title, context));
+    }
+
+    public DashboardInsightsResult dashboardInsights(UUID userId) {
+        return runOrFallback(
+                AiCapabilityId.DASHBOARD_INSIGHTS,
+                userId,
+                Map.of("userId", userId),
+                DashboardInsightsResult.class,
+                () -> fallbacks.dashboardInsights(userId));
+    }
+
     public DescribeTaskResult describe(UUID userId, String title, String notes) {
         return runOrFallback(
                 new AiCapabilityId("describe-task"),
@@ -97,6 +168,24 @@ public class AiFacadeApplicationService {
         }
         if (type.equals(CaptureResult.class)) {
             return output.has("drafts");
+        }
+        if (type.equals(GoalBreakdownResult.class)) {
+            return output.has("milestones") && output.has("tasks");
+        }
+        if (type.equals(WeeklyReviewResult.class)) {
+            return output.has("summary") && output.has("recommendations");
+        }
+        if (type.equals(ProjectBriefResult.class)) {
+            return output.has("summary") && output.has("suggestedNextSteps");
+        }
+        if (type.equals(DurationEstimateResult.class)) {
+            return output.has("durationMinutes") && output.has("rationale");
+        }
+        if (type.equals(RationalePhraseResult.class)) {
+            return output.has("rationale");
+        }
+        if (type.equals(DashboardInsightsResult.class)) {
+            return output.has("insights") && output.has("recommendations");
         }
         if (type.equals(DescribeTaskResult.class)) {
             return output.has("description");
