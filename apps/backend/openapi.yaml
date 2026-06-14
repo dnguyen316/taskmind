@@ -1485,7 +1485,6 @@ components:
         - id
         - name
         - key
-        - ownerUserId
         - createdAt
         - updatedAt
       properties:
@@ -1504,6 +1503,8 @@ components:
         ownerUserId:
           type: string
           format: uuid
+          nullable: true
+          description: Optional for privileged callers; non-privileged requests are owned by the authenticated user.
         archivedAt:
           type: string
           format: date-time
@@ -1520,7 +1521,6 @@ components:
       required:
         - name
         - key
-        - ownerUserId
       properties:
         name:
           type: string
@@ -1536,6 +1536,8 @@ components:
         ownerUserId:
           type: string
           format: uuid
+          nullable: true
+          description: Optional for privileged callers; non-privileged requests are owned by the authenticated user.
 
     UpdateProjectRequest:
       type: object

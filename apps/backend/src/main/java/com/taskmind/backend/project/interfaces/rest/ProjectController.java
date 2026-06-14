@@ -44,8 +44,10 @@ public class ProjectController {
     public ResponseEntity<Project> createProject(
             AuthenticatedUser requester, @Valid @RequestBody CreateProjectRequest request) {
         try {
-            UUID ownerUserId =
-                    requester.isPrivileged() ? request.ownerUserId() : requester.userId();
+            UUID ownerUserId = requester.userId();
+            if (requester.isPrivileged() && request.ownerUserId() != null) {
+                ownerUserId = request.ownerUserId();
+            }
             Project created =
                     projectApplicationService.create(
                             new CreateProjectCommand(
