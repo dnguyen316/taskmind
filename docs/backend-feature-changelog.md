@@ -1,3 +1,17 @@
+## 2026-06-14 (M08 Nova Typed Capabilities)
+
+### Changed
+
+- Replaced M08 Nova placeholder capability registrations with concrete typed capability classes for capture, describe task, autocomplete task, translate task, weekly review, goal breakdown, project brief, duration estimate, rationale phrase, and dashboard insights.
+- Added required-input validation and strict output schema metadata for the typed Nova capabilities while keeping provider routing and deterministic mock outputs inside Nova.
+- Added focused Nova coverage for each typed capability input validation path and deterministic output shape.
+
+### Verification Notes
+
+- Advanced primary milestone: M08 AI features, Nova capability implementation slice.
+- Core OpenAPI was not changed because this pass kept existing Core facade contracts and made Nova normal mock-provider responses match those expected shapes.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-14 (AI outbox funnel events)
 
 ### Changed

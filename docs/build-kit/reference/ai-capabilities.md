@@ -66,7 +66,7 @@ Nova exposes the following service-token-protected internal endpoints for Core-t
 | Endpoint | Purpose | Notes |
 |----------|---------|-------|
 | `POST /internal/ai/chat` | Create or continue a Nova chat turn. | Uses `ChatRequest`/`ChatResponse`, writes an `ai_runs` row with capability `chat`, and stores short-lived session state through the chat session store. |
-| `POST /internal/ai/capabilities/{capabilityId}:run` | Execute a registered capability through the provider router and agent runtime. | M07 registers placeholder `capture` and `weekly-review` capabilities that return deterministic mock-provider output until M08 adds product workflows. |
+| `POST /internal/ai/capabilities/{capabilityId}:run` | Execute a registered capability through the provider router and agent runtime. | M08 registers typed capabilities for capture, goal breakdown, weekly review, project brief, describe task, autocomplete task, translate task, duration estimate, rationale phrase, and dashboard insights; the mock provider returns deterministic structured output for local verification. |
 | `GET /internal/ai/runs/{runId}` | Fetch provider-neutral audit metadata for a Nova run. | Returns `AiRunSummary`; prompt and response payloads stay internal to the audit table. |
 | `GET /internal/ai/capabilities` | List registered capabilities with input/output schema metadata. | Used by Core integration and verification; unknown capability execution returns `UNKNOWN_CAPABILITY`. |
 
