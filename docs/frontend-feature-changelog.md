@@ -1,7 +1,25 @@
 ## 2026-06-14
+
 - Refactored the Projects dashboard into the shared app shell, removed the user-facing owner-id field from project creation, and aligned project creation/list styling with TaskMind surface-card layout patterns.
 
 # Frontend Feature Changelog
+
+## 2026-06-14 (M03 Silent Auth Initialization)
+
+### Changed
+
+- Added a silent profile-refresh mode for auth initialization so expired stored sessions are cleared without surfacing a login form error.
+- Kept login and signup verification profile fetches on the default non-silent path so user-submitted authentication failures still populate form errors.
+
+### Frontend-visible change recorded
+
+- Loading the SPA with an expired or invalid stored token now returns the user to unauthenticated routing without showing a stale session error in auth forms.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused store behavior change.
+- Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-14 (M08 Weekly Review Current User Request)
 

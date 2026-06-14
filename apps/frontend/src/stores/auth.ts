@@ -24,6 +24,10 @@ export const E2E_AUTH_CREDENTIALS = {
 
 type AuthMode = 'login' | 'signup'
 
+interface FetchCurrentUserOptions {
+  silent?: boolean
+}
+
 interface AuthState {
   session: StoredAuthSession | null
   currentUser: AuthUserResponse | null
@@ -66,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
       }
 
       if (this.session && !this.currentUser) {
-        await this.fetchCurrentUser()
+        await this.fetchCurrentUser({ silent: true })
       }
     },
 
@@ -132,7 +136,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async fetchCurrentUser() {
+    async fetchCurrentUser({ silent = false }: FetchCurrentUserOptions = {}) {
       if (!this.session) {
         this.currentUser = null
         return null
@@ -146,8 +150,12 @@ export const useAuthStore = defineStore('auth', {
       } catch (error: unknown) {
         clearAuthTokens()
         this.markUnauthenticated()
-        this.errorMessage =
-          error instanceof Error ? error.message : 'Your session has expired. Please sign in again.'
+        if (!silent) {
+          this.errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'Your session has expired. Please sign in again.'
+        }
         throw error
       } finally {
         this.isLoadingProfile = false
