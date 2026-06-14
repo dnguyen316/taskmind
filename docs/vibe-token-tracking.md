@@ -97,6 +97,27 @@ Review the report during retro or milestone closeout and look for:
 5. **Low token/high value runs.** Capture those patterns in `docs/agent-session-workflow.md`
    or a TaskMind skill so future agents repeat the efficient path.
 
+
+## Retrospective cadence
+
+Use token reports to improve the agent workflow instead of only archiving usage. When
+Codex Cloud or another provider exposes counts:
+
+1. Run `make vibe-token-report -- --group-by workflow` after each large milestone or after
+   three substantial AI-assisted sessions, whichever comes first.
+2. Run `make vibe-token-report -- --group-by skill` after introducing or materially
+   changing local Codex skills.
+3. If one workflow phase repeatedly dominates prompt tokens, tighten the discovery steps
+   in [`docs/agent-session-workflow.md`](agent-session-workflow.md), update
+   [`docs/ai/memory.md`](ai/memory.md), or move repeated guidance into a focused skill.
+4. If completion or reasoning tokens dominate, split future work into smaller lifecycle
+   notes under `docs/ai/` or narrower task stubs.
+5. Record resulting workflow changes in the relevant feature changelog when they affect
+   how agents complete backend or frontend work.
+
+Do not invent token counts. If the provider does not expose usage for a session, skip the
+record and note that counts were unavailable.
+
 ## Hygiene rules
 
 - Do not paste raw prompts, secrets, tokens, keys, customer data, or large code snippets in
