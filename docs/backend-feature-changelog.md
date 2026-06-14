@@ -1,5 +1,17 @@
 # Backend Feature Changelog
 
+## 2026-06-14 (M08 Core AI Facade Utilities)
+
+### Added
+
+- Added a Core AI facade application service with deterministic local fallbacks for capture, task describe, task autocomplete, and task translate flows.
+- Wired `/v1/ai/capture`, `/v1/ai/tasks/describe`, `/v1/ai/tasks/describe/autocomplete`, and `/v1/ai/tasks/translate` through the Core-to-Nova capability client while preserving local fallback behavior when Nova is unavailable or returns placeholder output.
+- Registered Nova placeholder capability IDs for the new M08 task utility capabilities and synchronized the Core OpenAPI contract for the added AI utility endpoints.
+
+### Verification Notes
+
+- Advanced primary milestone: M08 AI features, Core facade utility slice.
+- No frontend UI implementation or browser E2E was completed in this backend-focused pass.
 ## 2026-06-14 (Agent Workflow Token Optimization)
 
 ### Added

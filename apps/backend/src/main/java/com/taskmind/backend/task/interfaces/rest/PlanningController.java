@@ -1,6 +1,7 @@
 package com.taskmind.backend.task.interfaces.rest;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.ai.application.AiFacadeApplicationService;
 import com.taskmind.backend.task.application.TaskApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
@@ -33,32 +34,58 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlanningController {
 
     private final TaskApplicationService taskApplicationService;
+    private final AiFacadeApplicationService aiFacadeApplicationService;
 
-    public PlanningController(TaskApplicationService taskApplicationService) {
+    public PlanningController(
+            TaskApplicationService taskApplicationService,
+            AiFacadeApplicationService aiFacadeApplicationService) {
         this.taskApplicationService = taskApplicationService;
+        this.aiFacadeApplicationService = aiFacadeApplicationService;
     }
 
     @PostMapping("/ai/capture")
-    public CaptureResponse capture(@Valid @RequestBody CaptureRequest request) {
-        ArrayList<CapturedTaskDraft> drafts = new ArrayList<CapturedTaskDraft>();
-        List<String> lines =
-                request.text()
-                        .lines()
-                        .map(String::trim)
-                        .filter(line -> !line.isBlank())
-                        .limit(10)
-                        .toList();
+    public CaptureResponse capture(
+            AuthenticatedUser requester, @Valid @RequestBody CaptureRequest request) {
+        com.taskmind.backend.ai.application.CaptureResult result =
+                aiFacadeApplicationService.capture(requester.userId(), request.text());
+        return new CaptureResponse(
+                result.drafts().stream()
+                        .map(draft -> new CapturedTaskDraft(
+                                draft.title(),
+                                draft.status(),
+                                draft.priority(),
+                                draft.durationMinutes(),
+                                draft.source(),
+                                draft.confidence()))
+                        .toList(),
+                result.clarificationQuestion());
+    }
 
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            double confidence = Math.max(0.5d, 0.9d - (i * 0.05d));
-            drafts.add(new CapturedTaskDraft(line, "TODO", 3, 30, "AI_CAPTURE", confidence));
-        }
+    @PostMapping("/ai/tasks/describe")
+    public DescribeTaskResponse describeTask(
+            AuthenticatedUser requester, @Valid @RequestBody DescribeTaskRequest request) {
+        com.taskmind.backend.ai.application.DescribeTaskResult result =
+                aiFacadeApplicationService.describe(
+                        requester.userId(), request.title(), request.notes());
+        return new DescribeTaskResponse(result.description(), result.rationale());
+    }
 
-        String clarificationQuestion =
-                drafts.isEmpty() ? "Could you share at least one action-oriented task?" : null;
+    @PostMapping("/ai/tasks/describe/autocomplete")
+    public DescribeTaskAutocompleteResponse autocompleteTask(
+            AuthenticatedUser requester,
+            @Valid @RequestBody DescribeTaskAutocompleteRequest request) {
+        com.taskmind.backend.ai.application.DescribeTaskAutocompleteResult result =
+                aiFacadeApplicationService.autocomplete(requester.userId(), request.text());
+        return new DescribeTaskAutocompleteResponse(result.suggestions());
+    }
 
-        return new CaptureResponse(drafts, clarificationQuestion);
+    @PostMapping("/ai/tasks/translate")
+    public TranslateTaskResponse translateTask(
+            AuthenticatedUser requester, @Valid @RequestBody TranslateTaskRequest request) {
+        com.taskmind.backend.ai.application.TranslateTaskResult result =
+                aiFacadeApplicationService.translate(
+                        requester.userId(), request.text(), request.targetLanguage());
+        return new TranslateTaskResponse(result.translatedText(), result.targetLanguage());
     }
 
     @PostMapping("/ai/goals/{goalId}/breakdown")
@@ -178,6 +205,18 @@ public class PlanningController {
             double confidence) {}
 
     public record CaptureResponse(List<CapturedTaskDraft> drafts, String clarificationQuestion) {}
+
+    public record DescribeTaskRequest(@NotBlank String title, String notes) {}
+
+    public record DescribeTaskResponse(String description, String rationale) {}
+
+    public record DescribeTaskAutocompleteRequest(@NotBlank String text) {}
+
+    public record DescribeTaskAutocompleteResponse(List<String> suggestions) {}
+
+    public record TranslateTaskRequest(@NotBlank String text, @NotBlank String targetLanguage) {}
+
+    public record TranslateTaskResponse(String translatedText, String targetLanguage) {}
 
     public record GoalBreakdownRequest(
             OffsetDateTime deadline, @Min(0) @Max(10080) Integer weeklyAvailabilityMinutes) {}

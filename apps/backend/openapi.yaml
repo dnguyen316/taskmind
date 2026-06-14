@@ -87,6 +87,92 @@ paths:
         '502':
           $ref: '#/components/responses/NovaFacadeError'
 
+  /v1/ai/capture:
+    post:
+      summary: Convert free-form capture text into task drafts
+      operationId: captureTasksWithAi
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiCaptureRequest'
+      responses:
+        '200':
+          description: Structured task drafts with optional clarification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiCaptureResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/ai/tasks/describe:
+    post:
+      summary: Generate a task description draft
+      operationId: describeTaskWithAi
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDescribeTaskRequest'
+      responses:
+        '200':
+          description: Generated task description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDescribeTaskResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/ai/tasks/describe/autocomplete:
+    post:
+      summary: Suggest task-description completions
+      operationId: autocompleteTaskDescriptionWithAi
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDescribeTaskAutocompleteRequest'
+      responses:
+        '200':
+          description: Suggested completions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDescribeTaskAutocompleteResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/ai/tasks/translate:
+    post:
+      summary: Translate task text
+      operationId: translateTaskWithAi
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiTranslateTaskRequest'
+      responses:
+        '200':
+          description: Translated task text
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiTranslateTaskResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/auth/signup/email:
     post:
       summary: Create a pending email user and dispatch an OTP
@@ -1612,6 +1698,75 @@ components:
         maxDailyFocusMinutes: {type: integer, minimum: 15, maximum: 1440}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+
+    AiCaptureRequest:
+      type: object
+      required: [text]
+      properties:
+        text: {type: string, minLength: 1}
+
+    AiCaptureResponse:
+      type: object
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AiCapturedTaskDraft'
+        clarificationQuestion: {type: string, nullable: true}
+
+    AiCapturedTaskDraft:
+      type: object
+      required: [title, status, priority, durationMinutes, source, confidence]
+      properties:
+        title: {type: string}
+        status: {type: string}
+        priority: {type: integer}
+        durationMinutes: {type: integer}
+        source: {type: string}
+        confidence: {type: number, format: double}
+
+    AiDescribeTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string, minLength: 1}
+        notes: {type: string, nullable: true}
+
+    AiDescribeTaskResponse:
+      type: object
+      required: [description, rationale]
+      properties:
+        description: {type: string}
+        rationale: {type: string}
+
+    AiDescribeTaskAutocompleteRequest:
+      type: object
+      required: [text]
+      properties:
+        text: {type: string, minLength: 1}
+
+    AiDescribeTaskAutocompleteResponse:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items: {type: string}
+
+    AiTranslateTaskRequest:
+      type: object
+      required: [text, targetLanguage]
+      properties:
+        text: {type: string, minLength: 1}
+        targetLanguage: {type: string, minLength: 1}
+
+    AiTranslateTaskResponse:
+      type: object
+      required: [translatedText, targetLanguage]
+      properties:
+        translatedText: {type: string}
+        targetLanguage: {type: string}
 
     UpdateSchedulingPreferencesRequest:
       type: object

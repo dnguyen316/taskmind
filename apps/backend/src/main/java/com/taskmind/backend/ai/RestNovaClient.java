@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.ai.contracts.audit.AiRunSummary;
 import com.taskmind.ai.contracts.capability.CapabilitiesResponse;
 import com.taskmind.ai.contracts.capability.CapabilityError;
+import com.taskmind.ai.contracts.capability.CapabilityRequest;
+import com.taskmind.ai.contracts.capability.CapabilityResponse;
 import com.taskmind.ai.contracts.chat.ChatRequest;
 import com.taskmind.ai.contracts.chat.ChatResponse;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +44,19 @@ public class RestNovaClient implements NovaClient {
                                 .body(request)
                                 .retrieve()
                                 .body(ChatResponse.class));
+    }
+
+    @Override
+    public CapabilityResponse executeCapability(String capabilityId, CapabilityRequest request) {
+        return exchange(
+                () ->
+                        restClient
+                                .post()
+                                .uri("/internal/ai/capabilities/{capabilityId}:run", capabilityId)
+                                .header(SERVICE_TOKEN_HEADER, properties.serviceToken())
+                                .body(request)
+                                .retrieve()
+                                .body(CapabilityResponse.class));
     }
 
     @Override

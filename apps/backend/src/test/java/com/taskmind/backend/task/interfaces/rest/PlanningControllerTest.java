@@ -28,6 +28,37 @@ class PlanningControllerTest {
     private MockMvc mockMvc;
 
     @Test
+    void captureFallsBackToDeterministicDraftsWhenNovaUnavailable() throws Exception {
+        mockMvc.perform(post("/v1/ai/capture")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "text": "Draft launch memo\\nBook design review"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.drafts[0].title").value("Draft launch memo"))
+            .andExpect(jsonPath("$.drafts[1].source").value("AI_CAPTURE"));
+    }
+
+    @Test
+    void translateTaskFallsBackToDeterministicTranslationWhenNovaUnavailable() throws Exception {
+        mockMvc.perform(post("/v1/ai/tasks/translate")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "text": "Write release notes",
+                      "targetLanguage": "French"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.translatedText").value("[French] Write release notes"))
+            .andExpect(jsonPath("$.targetLanguage").value("French"));
+    }
+
+    @Test
     void arbitraryRoleHeaderCannotElevateDailyPlannerAccess() throws Exception {
         createTask(OTHER_USER_ID, "Other user's task");
 
