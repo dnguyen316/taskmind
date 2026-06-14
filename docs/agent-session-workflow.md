@@ -1,7 +1,9 @@
 # Agent Session Workflow
 
 Use this lightweight workflow to keep implementation sessions traceable without
-turning every pass into a broad repository audit. It started as the backend closeout
+turning every pass into a broad repository audit. For substantial feature slices, start
+with the compact lifecycle templates in [`docs/ai/`](ai/README.md) so Codex Cloud
+sessions can resume from small artifacts instead of replaying long chat history. It started as the backend closeout
 standard, and the same habits now apply to frontend sessions: identify the milestone,
 update only the owning docs, record the changelog entry, run focused checks before the
 full quality gate, and document anything skipped.
@@ -80,9 +82,9 @@ Use this inspection pattern before opening large files or scanning broad directo
 
 1. **Start with file discovery.** Use `rg --files` with path or glob filters instead of
    broad recursive listings.
-2. **Read only the active guidance.** Read `AGENTS.md`, the active build-kit phase doc,
-   and the specific reference doc that owns the behavior or contract under review. Avoid
-   loading unrelated phases or the whole reference tree.
+2. **Read only the active guidance.** Read `AGENTS.md`, [`docs/ai/memory.md`](ai/memory.md),
+   the active build-kit phase doc, and the specific reference doc that owns the behavior
+   or contract under review. Avoid loading unrelated phases or the whole reference tree.
 3. **Search identifiers before opening files.** Use `rg -n` for endpoint paths, class
    names, DTO names, migration names, event names, configuration keys, and test names
    before opening implementation files.
@@ -93,7 +95,31 @@ Use this inspection pattern before opening large files or scanning broad directo
    summary shows a concrete gap.
 6. **Use the token report as feedback.** If `make vibe-token-report -- --group-by workflow`
    shows recurring high prompt-token usage for a workflow step, tighten that step with
-   more specific discovery commands or move repeated guidance into a skill.
+   more specific discovery commands, update [`docs/ai/memory.md`](ai/memory.md), or move
+   repeated guidance into a focused Codex skill under `.codex/skills/`.
+
+## Read-only QA sessions
+
+Use read-only QA when the session is an audit, research pass, or planning pass rather
+than an implementation pass. In this mode:
+
+1. Do not claim implementation completion or milestone completion.
+2. Separate `Static inspection performed` from `Tests run` in the final response.
+3. List each skipped check with the exact command and the reason it was skipped.
+4. Emit actionable issues as `task-stub{title="..."}` blocks with concrete steps.
+5. Treat `make vibe-verify` as the required implementation gate once a later session
+   applies the stubs.
+
+## Local Codex skills
+
+TaskMind keeps optional, focused Codex skills in `.codex/skills/` for common workflows:
+
+- `taskmind-backend-feature` for backend and shared Java work.
+- `taskmind-frontend-feature` for Vue/TypeScript/UI work.
+- `taskmind-static-qa` for review-only sessions and task-stub generation.
+
+Use a skill only when it matches the current task, and keep skill instructions small by
+linking back to canonical docs instead of duplicating build-kit content.
 
 This workflow is intentionally small: it should reduce context waste while preserving the
 required closeout evidence for backend sessions across Core, Relay, and Nova.
