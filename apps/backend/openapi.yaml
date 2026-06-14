@@ -207,6 +207,7 @@ paths:
       tags: [AI]
       requestBody:
         required: true
+        description: Empty JSON object; review is generated for the authenticated principal.
         content:
           application/json:
             schema:
@@ -1922,9 +1923,9 @@ components:
 
     AiWeeklyReviewRequest:
       type: object
-      required: [userId]
-      properties:
-        userId: {type: string, format: uuid}
+      description: Empty request; user scope comes from the authenticated principal, not the request body.
+      additionalProperties: false
+      properties: {}
 
     AiWeeklyReviewResponse:
       type: object

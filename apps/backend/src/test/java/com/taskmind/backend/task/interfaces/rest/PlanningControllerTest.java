@@ -97,6 +97,31 @@ class PlanningControllerTest {
             .andExpect(jsonPath("$.plan[0].title").value("Other user's privileged task"));
     }
 
+    @Test
+    void weeklyReviewUsesAuthenticatedPrincipal() throws Exception {
+        mockMvc.perform(post("/v1/review/weekly/generate")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(REQUESTER_ID))
+            .andExpect(jsonPath("$.summary").exists());
+    }
+
+    @Test
+    void weeklyReviewIgnoresCrossUserRequestBodyId() throws Exception {
+        mockMvc.perform(post("/v1/review/weekly/generate")
+                .with(jwt(REQUESTER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "88888888-8888-8888-8888-888888888888"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(REQUESTER_ID));
+    }
+
     private void createTask(String userId, String title) throws Exception {
         mockMvc.perform(post("/v1/tasks")
                 .with(jwt(userId))
