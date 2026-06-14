@@ -56,5 +56,29 @@ public class CapabilityRegistry {
                     "Draft weekly review insights from context.",
                     objectMapper);
         }
+
+        @Bean
+        Capability describeTaskCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.DESCRIBE_TASK,
+                    "Draft a task description from a title and notes.",
+                    objectMapper);
+        }
+
+        @Bean
+        Capability autocompleteTaskCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.AUTOCOMPLETE_TASK,
+                    "Suggest task description completions.",
+                    objectMapper);
+        }
+
+        @Bean
+        Capability translateTaskCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.TRANSLATE_TASK,
+                    "Translate task text into a requested language.",
+                    objectMapper);
+        }
     }
 }
