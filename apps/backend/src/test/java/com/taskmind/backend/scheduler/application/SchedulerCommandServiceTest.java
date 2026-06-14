@@ -21,6 +21,7 @@ import com.taskmind.backend.task.domain.repository.TaskRepository;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,17 +85,21 @@ class SchedulerCommandServiceTest {
         var task = task(user.userId(), "schedule me", TaskStatus.IN_PROGRESS, 30, 1, NOW);
         tasks.save(task);
         var service = new SchedulerCommandService(new InMemoryPreferences(), blocks, tasks, new AutoScheduler());
-        var command =
-                new GenerateScheduleCommand(
-                        OffsetDateTime.parse("2026-06-08T08:00:00Z"),
-                        OffsetDateTime.parse("2026-06-09T18:00:00Z"));
+        OffsetDateTime windowStart =
+                OffsetDateTime.now(ZoneOffset.UTC)
+                        .plusDays(1)
+                        .withHour(8)
+                        .withMinute(0)
+                        .withSecond(0)
+                        .withNano(0);
+        var command = new GenerateScheduleCommand(windowStart, windowStart.plusDays(1).withHour(18));
 
         var generated = service.generate(user, command);
         var generatedAgain = service.generate(user, command);
 
         assertEquals(1, generated.size());
         assertEquals(task.id(), generated.get(0).taskId());
-        assertEquals(OffsetDateTime.parse("2026-06-08T09:00:00Z"), generated.get(0).startsAt());
+        assertEquals(windowStart.withHour(9), generated.get(0).startsAt());
         assertTrue(generatedAgain.isEmpty());
         assertEquals(1, blocks.findByUserIdBetween(user.userId(), command.from(), command.to()).size());
     }

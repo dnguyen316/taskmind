@@ -19,6 +19,74 @@ paths:
         '200':
           description: Core API is healthy
 
+  /v1/nova/chat:
+    post:
+      summary: Send an authenticated chat turn to Nova through Core
+      operationId: createNovaChatTurn
+      tags: [Nova]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovaChatRequest'
+      responses:
+        '200':
+          description: Provider-neutral Nova chat response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NovaChatResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          $ref: '#/components/responses/NovaFacadeError'
+
+  /v1/nova/capabilities:
+    get:
+      summary: List enabled Nova capabilities through Core
+      operationId: listNovaCapabilities
+      tags: [Nova]
+      responses:
+        '200':
+          description: Enabled provider-neutral Nova capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NovaCapabilitiesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          $ref: '#/components/responses/NovaFacadeError'
+
+  /v1/nova/runs/{runId}:
+    get:
+      summary: Get a Nova run audit summary through Core
+      operationId: getNovaRun
+      tags: [Nova]
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Provider-neutral Nova run summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NovaRunSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NovaFacadeError'
+        '502':
+          $ref: '#/components/responses/NovaFacadeError'
+
   /v1/auth/signup/email:
     post:
       summary: Create a pending email user and dispatch an OTP
@@ -842,6 +910,13 @@ components:
             type: object
             additionalProperties: true
 
+    NovaFacadeError:
+      description: Stable Core AI facade error that does not expose provider internals
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
   examples:
     SchedulingPreferencesExample:
       summary: Focus-friendly scheduling preferences
@@ -993,6 +1068,108 @@ components:
         payload: {type: object, additionalProperties: true}
         occurredAt: {type: string, format: date-time}
 
+    NovaChatRequest:
+      type: object
+      required: [message]
+      properties:
+        sessionId:
+          type: string
+          nullable: true
+        message:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          nullable: true
+        locale:
+          type: string
+          nullable: true
+        correlationId:
+          type: string
+          nullable: true
+
+    NovaChatResponse:
+      type: object
+      required: [sessionId, message, runId, actions]
+      properties:
+        sessionId:
+          type: string
+        message:
+          type: string
+        runId:
+          type: string
+          format: uuid
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NovaChatAction'
+
+    NovaChatAction:
+      type: object
+      required: [type, payload]
+      properties:
+        type:
+          type: string
+        payload:
+          nullable: true
+
+    NovaCapabilitiesResponse:
+      type: object
+      required: [capabilities]
+      properties:
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/NovaCapabilityDescriptor'
+
+    NovaCapabilityDescriptor:
+      type: object
+      required: [id, description, inputSchema, outputSchema]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        inputSchema:
+          nullable: true
+        outputSchema:
+          nullable: true
+
+    NovaRunSummary:
+      type: object
+      required: [runId, status, providerId, capabilityId, createdAt]
+      properties:
+        runId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/NovaRunStatus'
+        providerId:
+          type: string
+        capabilityId:
+          type: string
+        modelId:
+          type: string
+          nullable: true
+        correlationId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    NovaRunStatus:
+      type: string
+      enum: [PENDING, RUNNING, SUCCEEDED, FAILED, CANCELLED]
+
     SignupEmailRequest:
       type: object
       required: [email, password, displayName]
@@ -1052,6 +1229,9 @@ components:
         instance:
           type: string
           format: uri
+        code:
+          type: string
+          description: Stable TaskMind error code when returned by facade handlers.
 
     Project:
       type: object

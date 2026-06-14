@@ -1,5 +1,21 @@
 # Backend Feature Changelog
 
+## 2026-06-12 (M07 Core Nova Facade)
+
+### Added
+
+- Added the Core-side Nova facade for authenticated `/v1/nova/chat`, `/v1/nova/capabilities`, and `/v1/nova/runs/{runId}` endpoints backed by the shared `taskmind-ai-contracts` DTOs.
+- Added environment-backed Core Nova client configuration and server-to-server `X-Service-Token` forwarding for calls to Nova internal endpoints without moving prompts or provider logic into Core.
+- Updated the Core OpenAPI contract and shared AI capability-list DTOs for the new facade shapes.
+- Added focused Core coverage for facade authentication, deterministic stubbed Nova responses, service-token forwarding, and Nova error mapping.
+- Stabilized scheduler duplicate-generation coverage so the full verification gate remains date-independent after June 2026.
+
+### Verification Notes
+
+- Advanced primary milestone: M07 Nova AI, Core facade slice.
+- No frontend UI implementation or browser E2E was required for this backend-only slice.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-12 (M07 Nova Service Foundation)
 
 ### Added
