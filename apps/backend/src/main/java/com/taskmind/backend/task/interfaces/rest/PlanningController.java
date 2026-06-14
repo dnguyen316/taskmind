@@ -90,26 +90,21 @@ public class PlanningController {
 
     @PostMapping("/ai/goals/{goalId}/breakdown")
     public GoalBreakdownResponse breakdownGoal(
-            @PathVariable UUID goalId, @Valid @RequestBody GoalBreakdownRequest request) {
-        GoalMilestone milestone =
-                new GoalMilestone(
-                        "Milestone 1",
-                        request.deadline(),
-                        List.of("Define deliverables", "Plan weekly execution"));
-
-        GoalDraftTask task =
-                new GoalDraftTask(
-                        "Immediate next action",
-                        "TODO",
-                        request.deadline() != null ? request.deadline().minusDays(6) : null,
-                        "Kick off work from goal breakdown",
-                        List.of());
-
+            AuthenticatedUser requester,
+            @PathVariable UUID goalId,
+            @Valid @RequestBody GoalBreakdownRequest request) {
+        com.taskmind.backend.ai.application.GoalBreakdownResult result =
+                aiFacadeApplicationService.goalBreakdown(
+                        requester.userId(), goalId, request.deadline(), request.weeklyAvailabilityMinutes());
         return new GoalBreakdownResponse(
-                goalId,
-                List.of(milestone),
-                List.of(task),
-                List.of("Review generated dependencies before saving."));
+                result.goalId(),
+                result.milestones().stream()
+                        .map(milestone -> new GoalMilestone(milestone.title(), milestone.targetDate(), milestone.notes()))
+                        .toList(),
+                result.tasks().stream()
+                        .map(task -> new GoalDraftTask(task.title(), task.status(), task.dueAt(), task.rationale(), task.dependencies()))
+                        .toList(),
+                result.riskNotes());
     }
 
     @PostMapping("/planner/daily/generate")
@@ -182,16 +177,16 @@ public class PlanningController {
 
     @PostMapping("/review/weekly/generate")
     public WeeklyReviewResponse generateWeeklyReview(
-            @Valid @RequestBody WeeklyReviewRequest request) {
+            AuthenticatedUser requester, @Valid @RequestBody WeeklyReviewRequest request) {
+        UUID reviewUserId = requester.isPrivileged() ? request.userId() : requester.userId();
+        com.taskmind.backend.ai.application.WeeklyReviewResult result =
+                aiFacadeApplicationService.weeklyReview(reviewUserId);
         return new WeeklyReviewResponse(
-                request.userId(),
-                "You completed core execution work and maintained steady throughput.",
-                List.of("Two tasks slipped due to under-estimated duration."),
-                List.of(
-                        "Reduce daily planned load by 15% for buffer.",
-                        "Front-load one high-impact task before noon.",
-                        "Review blockers at end-of-day and reschedule proactively."),
-                List.of("Priority: stabilize planner feedback loop"));
+                result.userId(),
+                result.summary(),
+                result.slippageInsights(),
+                result.recommendations(),
+                result.nextWeekPriorities());
     }
 
     public record CaptureRequest(@NotBlank String text) {}

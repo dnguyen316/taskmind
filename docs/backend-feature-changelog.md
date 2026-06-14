@@ -317,3 +317,5 @@ This changelog tracks backend feature progress against the core implementation p
 
 - Improves scalability readiness by avoiding unbounded list responses.
 - Enables safer lifecycle handling aligned with “no silent destructive edits” by archiving instead of hard deleting.
+- Completed remaining M08 Core/Nova AI flows by adding typed facade methods and REST endpoints for goal breakdown, weekly review, project brief, scheduler duration estimates, scheduler rationale phrases, and dashboard insights with deterministic local fallbacks.
+- Replaced M08 placeholder Nova capability behavior for capture, goal breakdown, weekly review, project brief, describe/autocomplete/translate, duration estimate, rationale phrase, and dashboard insights with typed deterministic mock outputs.

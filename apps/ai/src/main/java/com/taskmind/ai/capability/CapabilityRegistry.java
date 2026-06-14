@@ -49,11 +49,29 @@ public class CapabilityRegistry {
                     objectMapper);
         }
 
+
+        @Bean
+        Capability goalBreakdownCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.GOAL_BREAKDOWN,
+                    "Break a goal into milestones and draft tasks.",
+                    objectMapper);
+        }
+
         @Bean
         Capability weeklyReviewCapability(ObjectMapper objectMapper) {
             return new PlaceholderCapability(
                     AiCapabilityId.WEEKLY_REVIEW,
                     "Draft weekly review insights from context.",
+                    objectMapper);
+        }
+
+
+        @Bean
+        Capability projectBriefCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.PROJECT_BRIEF,
+                    "Generate a concise project brief from project state.",
                     objectMapper);
         }
 
@@ -78,6 +96,30 @@ public class CapabilityRegistry {
             return new PlaceholderCapability(
                     AiCapabilityId.TRANSLATE_TASK,
                     "Translate task text into a requested language.",
+                    objectMapper);
+        }
+
+        @Bean
+        Capability durationEstimateCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.DURATION_ESTIMATE,
+                    "Estimate task duration with rationale.",
+                    objectMapper);
+        }
+
+        @Bean
+        Capability rationalePhraseCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.RATIONALE_PHRASE,
+                    "Generate a short schedule rationale phrase.",
+                    objectMapper);
+        }
+
+        @Bean
+        Capability dashboardInsightsCapability(ObjectMapper objectMapper) {
+            return new PlaceholderCapability(
+                    AiCapabilityId.DASHBOARD_INSIGHTS,
+                    "Generate dashboard insights from user context.",
                     objectMapper);
         }
     }
