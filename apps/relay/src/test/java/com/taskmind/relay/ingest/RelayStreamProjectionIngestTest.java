@@ -9,6 +9,7 @@ import com.taskmind.events.DomainEvent;
 import com.taskmind.events.DomainEventMapper;
 import com.taskmind.events.EventTypes;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,46 @@ class RelayStreamProjectionIngestTest {
         assertEquals(1, eventCount);
         assertEquals(1, taskCount);
         assertEquals(1, metricCount);
+    }
+
+    @Test
+    void aiFunnelEventsUpdateDailyFunnelProjection() {
+        UUID userId = UUID.randomUUID();
+        ObjectMapper objectMapper = new ObjectMapper();
+        DomainEvent captureEvent =
+                new DomainEvent(
+                        UUID.randomUUID(),
+                        1,
+                        EventTypes.AI_CAPTURE_SUBMITTED,
+                        Instant.now(),
+                        userId,
+                        new DomainEvent.Scope("default", userId, null),
+                        new DomainEvent.EntityRef("ai", UUID.randomUUID()),
+                        objectMapper.createObjectNode().put("length", 18),
+                        objectMapper.createObjectNode());
+        DomainEvent acceptedEvent =
+                new DomainEvent(
+                        UUID.randomUUID(),
+                        1,
+                        EventTypes.AI_SUGGESTION_ACCEPTED,
+                        captureEvent.occurredAt(),
+                        userId,
+                        new DomainEvent.Scope("default", userId, null),
+                        new DomainEvent.EntityRef("ai", UUID.randomUUID()),
+                        objectMapper.createObjectNode().put("suggestionType", "task"),
+                        objectMapper.createObjectNode());
+
+        assertTrue(ingest.ingest(new DomainEventMapper().toJson(captureEvent)));
+        assertTrue(ingest.ingest(new DomainEventMapper().toJson(acceptedEvent)));
+
+        Map<String, Object> row =
+                jdbcTemplate.queryForMap(
+                        "select captures_submitted, suggestions_accepted, suggestions_rejected, events_ingested from analytics.ai_funnel_daily_metrics where user_id=?",
+                        userId);
+        assertEquals(1, ((Number) row.get("CAPTURES_SUBMITTED")).intValue());
+        assertEquals(1, ((Number) row.get("SUGGESTIONS_ACCEPTED")).intValue());
+        assertEquals(0, ((Number) row.get("SUGGESTIONS_REJECTED")).intValue());
+        assertEquals(2, ((Number) row.get("EVENTS_INGESTED")).intValue());
     }
 
     @Test

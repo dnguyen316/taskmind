@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -33,8 +34,16 @@ class PlanningControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void captureFallsBackToDeterministicDraftsWhenNovaUnavailable() throws Exception {
+        Integer beforeCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.capture_submitted'",
+                        Integer.class);
+
         mockMvc.perform(post("/v1/ai/capture")
                 .with(jwt(REQUESTER_ID))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -46,6 +55,17 @@ class PlanningControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.drafts[0].title").value("Draft launch memo"))
             .andExpect(jsonPath("$.drafts[1].source").value("AI_CAPTURE"));
+
+        Integer afterCount =
+                jdbcTemplate.queryForObject(
+                        "select count(*) from outbox_events where event_type='ai.capture_submitted'",
+                        Integer.class);
+        String payload =
+                jdbcTemplate.queryForObject(
+                        "select payload from outbox_events where event_type='ai.capture_submitted' order by created_at desc limit 1",
+                        String.class);
+        org.assertj.core.api.Assertions.assertThat(afterCount).isEqualTo(beforeCount + 1);
+        org.assertj.core.api.Assertions.assertThat(payload).contains("ai.capture_submitted").contains("length");
     }
 
     @Test

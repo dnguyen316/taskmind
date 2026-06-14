@@ -1,3 +1,11 @@
+## 2026-06-14 (AI outbox funnel events)
+
+### Changed
+
+- Replaced the no-op Core AI event publisher with an outbox-backed publisher for `ai.capture_submitted`, `ai.suggestion_accepted`, and `ai.suggestion_rejected`.
+- Added Relay AI funnel projection handling for daily capture, accepted suggestion, and rejected suggestion counts.
+- Added backend and Relay tests covering capture outbox writes and AI funnel projection ingestion.
+
 # Backend Feature Changelog
 
 ## 2026-06-14 (M08 Core AI Facade Utilities)
