@@ -1,3 +1,15 @@
+## 2026-06-14 (Local Frontend CORS)
+
+### Changed
+
+- Added a Core CORS configuration source for `/v1/**` and `/api/**` so allowed browser origins can be configured without opening production by default.
+- Enabled the local profile to allow the Vite frontend origin `http://localhost:5173`, with `TASKMIND_CORS_ALLOWED_ORIGINS` available for local override/cross-device testing.
+- Added focused security coverage for local frontend preflight requests.
+
+### Verification Notes
+
+- Primary milestone: local development support for Core/frontend integration.
+- Core OpenAPI was not changed because no request or response schema changed.
 # Backend Feature Changelog
 
 ## 2026-06-14 (M08 Capture Acceptance Path)
