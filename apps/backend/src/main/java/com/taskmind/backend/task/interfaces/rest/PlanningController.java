@@ -159,17 +159,25 @@ public class PlanningController {
 
     @PostMapping("/planner/reschedule/proposals")
     public RescheduleProposalsResponse generateRescheduleProposals(
-            @Valid @RequestBody RescheduleProposalsRequest request) {
+            AuthenticatedUser requester, @Valid @RequestBody RescheduleProposalsRequest request) {
         List<RescheduleProposal> proposals =
                 request.taskIds().stream()
                         .map(
-                                taskId ->
-                                        new RescheduleProposal(
-                                                taskId,
-                                                "move",
-                                                "Move by one day to reduce deadline collision.",
-                                                List.of(
-                                                        "Check downstream dependency order after applying.")))
+                                taskId -> {
+                                    Task task =
+                                            taskApplicationService
+                                                    .findById(requester, taskId)
+                                                    .orElseThrow(
+                                                            () ->
+                                                                    new IllegalArgumentException(
+                                                                            "Task not found or access denied"));
+                                    return new RescheduleProposal(
+                                            task.id(),
+                                            "move",
+                                            "Move by one day to reduce deadline collision.",
+                                            List.of(
+                                                    "Check downstream dependency order after applying."));
+                                })
                         .toList();
 
         return new RescheduleProposalsResponse(proposals, request.confirmationTokenRequired());
@@ -178,9 +186,8 @@ public class PlanningController {
     @PostMapping("/review/weekly/generate")
     public WeeklyReviewResponse generateWeeklyReview(
             AuthenticatedUser requester, @Valid @RequestBody WeeklyReviewRequest request) {
-        UUID reviewUserId = requester.isPrivileged() ? request.userId() : requester.userId();
         com.taskmind.backend.ai.application.WeeklyReviewResult result =
-                aiFacadeApplicationService.weeklyReview(reviewUserId);
+                aiFacadeApplicationService.weeklyReview(requester.userId());
         return new WeeklyReviewResponse(
                 result.userId(),
                 result.summary(),
@@ -251,7 +258,7 @@ public class PlanningController {
     public record RescheduleProposalsResponse(
             List<RescheduleProposal> proposals, boolean confirmationTokenRequired) {}
 
-    public record WeeklyReviewRequest(@NotNull UUID userId) {}
+    public record WeeklyReviewRequest() {}
 
     public record WeeklyReviewResponse(
             UUID userId,
