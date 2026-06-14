@@ -12,6 +12,17 @@
 
 - Advanced primary milestone: M08 AI features, Core facade utility slice.
 - No frontend UI implementation or browser E2E was completed in this backend-focused pass.
+## 2026-06-14 (Agent Workflow Token Optimization)
+
+### Added
+
+- Added compact AI lifecycle templates, an agent memory index, and local Codex skills for backend, frontend, and static QA workflows so Codex Cloud sessions can start from focused context instead of reloading broad build-kit documentation.
+- Extended the session workflow with read-only QA rules, skill discovery guidance, and memory-first token-saving inspection.
+- Added a token-retrospective cadence that turns token reports into workflow, memory, or skill improvements when provider counts are available.
+
+### Verification Notes
+
+- Documentation and agent-workflow-only change; no product runtime behavior, Core OpenAPI contract, frontend UI, or browser E2E was affected.
 - Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-12 (M07 Core Nova Facade)
