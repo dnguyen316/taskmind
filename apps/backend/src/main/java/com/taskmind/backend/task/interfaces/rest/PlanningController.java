@@ -3,7 +3,10 @@ package com.taskmind.backend.task.interfaces.rest;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.ai.application.AiFacadeApplicationService;
 import com.taskmind.backend.task.application.TaskApplicationService;
+import com.taskmind.backend.task.application.TaskLinkApplicationService;
 import com.taskmind.backend.task.domain.model.Task;
+import com.taskmind.backend.task.domain.model.TaskLink;
+import com.taskmind.backend.task.domain.model.TaskLinkType;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.CapturedTaskDraft;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.GoalDraftTask;
@@ -34,12 +37,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlanningController {
 
     private final TaskApplicationService taskApplicationService;
+    private final TaskLinkApplicationService taskLinkApplicationService;
     private final AiFacadeApplicationService aiFacadeApplicationService;
 
     public PlanningController(
             TaskApplicationService taskApplicationService,
+            TaskLinkApplicationService taskLinkApplicationService,
             AiFacadeApplicationService aiFacadeApplicationService) {
         this.taskApplicationService = taskApplicationService;
+        this.taskLinkApplicationService = taskLinkApplicationService;
         this.aiFacadeApplicationService = aiFacadeApplicationService;
     }
 
@@ -120,10 +126,11 @@ public class PlanningController {
                                 task ->
                                         task.status() != TaskStatus.DONE
                                                 && task.status() != TaskStatus.ARCHIVED)
+                        .filter(task -> task.status() == TaskStatus.TODO || task.status() == TaskStatus.IN_PROGRESS)
                         .filter(
                                 task ->
                                         request.includeBlockedTasks()
-                                                || task.status() != TaskStatus.TODO)
+                                                || !isBlockedByIncompleteDependency(requester, task))
                         .sorted(
                                 Comparator.comparingInt(Task::priority)
                                         .thenComparing(
@@ -155,6 +162,17 @@ public class PlanningController {
         }
 
         return new DailyPlanResponse(selected, overflow, request.availableMinutes() - budget);
+    }
+
+    private boolean isBlockedByIncompleteDependency(AuthenticatedUser requester, Task task) {
+        return taskLinkApplicationService.list(requester, task.id()).stream()
+                .filter(link -> link.linkType() == TaskLinkType.BLOCKS)
+                .filter(link -> task.id().equals(link.targetTaskId()))
+                .map(TaskLink::sourceTaskId)
+                .map(dependencyId -> taskApplicationService.findById(requester, dependencyId))
+                .flatMap(Optional::stream)
+                .anyMatch(dependency -> dependency.status() != TaskStatus.DONE
+                        && dependency.status() != TaskStatus.ARCHIVED);
     }
 
     @PostMapping("/planner/reschedule/proposals")
