@@ -1,3 +1,6 @@
+## 2026-06-14
+- Fixed project creation so non-privileged users can create projects without supplying `ownerUserId`; Core now derives ownership from the authenticated requester while preserving privileged owner assignment.
+
 ## 2026-06-14 (Local Frontend CORS)
 
 ### Changed

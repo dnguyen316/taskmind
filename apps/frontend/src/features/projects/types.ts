@@ -5,7 +5,7 @@ export interface Project {
   name: string
   key: string
   description: string | null
-  ownerUserId: string
+  ownerUserId?: string
   createdAt: string
   updatedAt: string
   archivedAt: string | null
@@ -22,7 +22,7 @@ export interface CreateProjectPayload {
   name: string
   key: string
   description: string | null
-  ownerUserId: string
+  ownerUserId?: string
 }
 
 export interface UpdateProjectPayload {

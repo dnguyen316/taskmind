@@ -1,3 +1,6 @@
+## 2026-06-14
+- Refactored the Projects dashboard into the shared app shell, removed the user-facing owner-id field from project creation, and aligned project creation/list styling with TaskMind surface-card layout patterns.
+
 # Frontend Feature Changelog
 
 ## 2026-06-14 (M08 Capture Acceptance Path)
