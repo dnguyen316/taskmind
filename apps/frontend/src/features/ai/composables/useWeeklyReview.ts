@@ -5,12 +5,10 @@ import type { WeeklyReviewResponse } from './types'
 export function useWeeklyReview() {
   const loading = ref(false)
   const result = ref<WeeklyReviewResponse | null>(null)
-  async function generate(userId: string) {
+  async function generate() {
     loading.value = true
     try {
-      const response = await apiClient.post<WeeklyReviewResponse>('/v1/review/weekly/generate', {
-        userId,
-      })
+      const response = await apiClient.post<WeeklyReviewResponse>('/v1/review/weekly/generate', {})
       result.value = response.data
       return response.data
     } finally {

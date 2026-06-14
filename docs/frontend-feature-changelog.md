@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-14 (M08 Weekly Review Current User Request)
+
+### Changed
+
+- Removed the weekly review user UUID field so the panel generates reviews for the authenticated session context.
+- Updated the weekly review composable to post an empty request body to Core `/v1/review/weekly/generate` while preserving the typed response `userId` returned by the backend.
+
+### Frontend-visible change recorded
+
+- Users can generate a weekly review without manually entering a user UUID; Core remains the only frontend API target for this flow.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused UI contract adjustment.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-14 (M08 Capture Acceptance Path)
 
 ### Added
