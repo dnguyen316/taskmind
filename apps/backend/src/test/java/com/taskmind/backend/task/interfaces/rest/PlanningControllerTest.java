@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,9 +24,14 @@ class PlanningControllerTest {
     private static final String REQUESTER_ID = "77777777-7777-7777-7777-777777777777";
     private static final String OTHER_USER_ID = "88888888-8888-8888-8888-888888888888";
     private static final String PRIVILEGED_TARGET_ID = "99999999-8888-8888-8888-888888888888";
+    private static final String TODO_PLANNER_USER_ID = "70707070-7070-7070-7070-707070707070";
+    private static final String BLOCKED_PLANNER_USER_ID = "71717171-7171-7171-7171-717171717171";
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void captureFallsBackToDeterministicDraftsWhenNovaUnavailable() throws Exception {
@@ -98,6 +104,61 @@ class PlanningControllerTest {
     }
 
     @Test
+    void dailyPlannerIncludesTodoTasksWhenBlockedTasksExcluded() throws Exception {
+        createTask(TODO_PLANNER_USER_ID, "Default TODO planner task", "TODO");
+
+        mockMvc.perform(post("/v1/planner/daily/generate")
+                .with(jwt(TODO_PLANNER_USER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "70707070-7070-7070-7070-707070707070",
+                      "availableMinutes": 60,
+                      "includeBlockedTasks": false
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plan[0].title").value("Default TODO planner task"))
+            .andExpect(jsonPath("$.plan[0].status").value("TODO"));
+    }
+
+    @Test
+    void dailyPlannerExcludesBlockedTasksByDefaultAndIncludesThemWhenRequested() throws Exception {
+        String projectId = createProject(BLOCKED_PLANNER_USER_ID);
+        String dependencyId = createTask(BLOCKED_PLANNER_USER_ID, "Blocking dependency", "IN_PROGRESS", projectId);
+        String blockedTaskId = createTask(BLOCKED_PLANNER_USER_ID, "Blocked target task", "TODO", projectId);
+        createTaskLink(BLOCKED_PLANNER_USER_ID, dependencyId, blockedTaskId, "BLOCKS");
+
+        mockMvc.perform(post("/v1/planner/daily/generate")
+                .with(jwt(BLOCKED_PLANNER_USER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "71717171-7171-7171-7171-717171717171",
+                      "availableMinutes": 120,
+                      "includeBlockedTasks": false
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plan.length()").value(1))
+            .andExpect(jsonPath("$.plan[0].title").value("Blocking dependency"));
+
+        mockMvc.perform(post("/v1/planner/daily/generate")
+                .with(jwt(BLOCKED_PLANNER_USER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "71717171-7171-7171-7171-717171717171",
+                      "availableMinutes": 120,
+                      "includeBlockedTasks": true
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plan.length()").value(2))
+            .andExpect(jsonPath("$.plan[0].title").value("Blocked target task"));
+    }
+
+    @Test
     void weeklyReviewUsesAuthenticatedPrincipal() throws Exception {
         mockMvc.perform(post("/v1/review/weekly/generate")
                 .with(jwt(REQUESTER_ID))
@@ -122,20 +183,75 @@ class PlanningControllerTest {
             .andExpect(jsonPath("$.userId").value(REQUESTER_ID));
     }
 
-    private void createTask(String userId, String title) throws Exception {
-        mockMvc.perform(post("/v1/tasks")
+    private String createTask(String userId, String title) throws Exception {
+        return createTask(userId, title, "IN_PROGRESS");
+    }
+
+    private String createTask(String userId, String title, String status) throws Exception {
+        return createTask(userId, title, status, null);
+    }
+
+    private String createTask(String userId, String title, String status, String projectId) throws Exception {
+        String projectField = projectId == null ? "" : "\n                      \"projectId\": \"" + projectId + "\",";
+        var response = mockMvc.perform(post("/v1/tasks")
                 .with(jwt(userId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                      "userId": "%s",
+                      "userId": "%s",%s
                       "title": "%s",
-                      "status": "IN_PROGRESS",
+                      "status": "%s",
                       "priority": 2,
                       "durationMinutes": 30,
                       "source": "MANUAL"
                     }
-                    """.formatted(userId, title)))
+                    """.formatted(userId, projectField, title, status)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private String createProject(String ownerUserId) throws Exception {
+        var response = mockMvc.perform(post("/v1/projects")
+                .with(jwt(ownerUserId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "name": "Planning dependency project",
+                      "key": "%s",
+                      "ownerUserId": "%s"
+                    }
+                    """.formatted(java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), ownerUserId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String projectId = objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+        addProjectMember(ownerUserId, projectId, ownerUserId, "OWNER");
+        return projectId;
+    }
+
+    private void addProjectMember(String actorUserId, String projectId, String userId, String role) throws Exception {
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(actorUserId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "%s",
+                      "role": "%s"
+                    }
+                    """.formatted(userId, role)))
+            .andExpect(status().isCreated());
+    }
+
+    private void createTaskLink(String userId, String sourceTaskId, String targetTaskId, String linkType) throws Exception {
+        mockMvc.perform(post("/v1/tasks/{taskId}/links", sourceTaskId)
+                .with(jwt(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "targetTaskId": "%s",
+                      "linkType": "%s"
+                    }
+                    """.formatted(targetTaskId, linkType)))
             .andExpect(status().isCreated());
     }
 }
