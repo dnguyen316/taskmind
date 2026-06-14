@@ -101,7 +101,7 @@ flowchart TD
 ## Notable feature mechanics
 
 - **Tasks editor** — Tiptap-based block editor with custom image/video node views, media resize, and AI **description autocomplete** inline suggestions.
-- **AI** — capture, goal breakdown, weekly review, project brief, translate, and **Nova Chat** through Core facades. Nova chat streams via Core at `/v1/nova/chat/stream`.
+- **AI** — capture, goal breakdown, weekly review for the authenticated user, project brief, translate, and **Nova Chat** through Core facades. Nova chat streams via Core at `/v1/nova/chat/stream`.
 - **Notifications** — notification bell plus SSE stream from Core at `/v1/notifications/stream`.
 - **Scheduler** — calendar/month layouts and block "why" rationale popovers.
 - **Spec breakdown** — spec workspace, source panel, tree nodes, hierarchy merge, and attachments.
