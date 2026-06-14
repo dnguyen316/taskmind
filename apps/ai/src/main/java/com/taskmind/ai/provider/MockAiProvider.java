@@ -96,14 +96,25 @@ public class MockAiProvider implements AiProvider {
             }
             case "weekly-review" -> {
                 output.put("userId", text(input, "userId", "00000000-0000-0000-0000-000000000000"));
-                output.put("summary", "You made steady progress and should protect planning buffer next week.");
-                output.putArray("slippageInsights").add("Estimate variance is the main review signal.");
-                output.putArray("recommendations").add("Limit daily commitments to available focus time.");
-                output.putArray("nextWeekPriorities").add("Prioritize the most blocked active project.");
+                output.put(
+                        "summary",
+                        "You made steady progress and should protect planning buffer next week.");
+                output.putArray("slippageInsights")
+                        .add("Estimate variance is the main review signal.");
+                output.putArray("recommendations")
+                        .add("Limit daily commitments to available focus time.");
+                output.putArray("nextWeekPriorities")
+                        .add("Prioritize the most blocked active project.");
             }
             case "project-brief" -> {
-                output.put("projectId", text(input, "projectId", "00000000-0000-0000-0000-000000000000"));
-                output.put("summary", "Project " + text(input, "name", "work") + " is ready for focused execution.");
+                output.put(
+                        "projectId",
+                        text(input, "projectId", "00000000-0000-0000-0000-000000000000"));
+                output.put(
+                        "summary",
+                        "Project "
+                                + text(input, "name", "work")
+                                + " is ready for focused execution.");
                 output.putArray("currentFocus").add("Clarify deliverables");
                 output.putArray("risks").add("Scope assumptions need review.");
                 output.putArray("suggestedNextSteps").add("Create the next three tasks.");
@@ -117,11 +128,17 @@ public class MockAiProvider implements AiProvider {
                             .add(text(input, "text", "Add details") + " with acceptance criteria.")
                             .add("Identify blockers and owner.");
             case "translate-task" -> {
-                output.put("translatedText", "[" + text(input, "targetLanguage", "target") + "] " + text(input, "text", ""));
+                output.put(
+                        "translatedText",
+                        "["
+                                + text(input, "targetLanguage", "target")
+                                + "] "
+                                + text(input, "text", ""));
                 output.put("targetLanguage", text(input, "targetLanguage", "target"));
             }
             case "duration-estimate" -> {
-                int minutes = Math.max(15, Math.min(240, text(input, "title", "").length() * 3 + 30));
+                int minutes =
+                        Math.max(15, Math.min(240, text(input, "title", "").length() * 3 + 30));
                 output.put("durationMinutes", minutes);
                 output.put("rationale", "Estimated from deterministic task complexity signals.");
                 output.put("confidence", 0.74d);
