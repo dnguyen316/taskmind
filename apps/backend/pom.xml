@@ -53,6 +53,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.taskmind</groupId>
+            <artifactId>taskmind-ai-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

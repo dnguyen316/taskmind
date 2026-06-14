@@ -24,7 +24,7 @@ Core exposes the only **public** API; the frontend talks only to Core. Relay and
 | Notifications | `/v1/notifications/**`, preferences, `GET /v1/notifications/stream` (SSE) | In-app + SSE. |
 | Spec breakdown | `/v1/spec-breakdown/**`, `/v1/projects/{projectId}/spec-templates`, `/v1/spec-templates/{id}` | Async jobs + templates. |
 | AI BFF | `/v1/ai/capture`, `/v1/ai/goals/{id}/breakdown`, `/v1/ai/tasks/describe`, `/v1/ai/tasks/describe/autocomplete`, `/v1/ai/tasks/translate`, `/v1/planner/**`, `/v1/review/weekly/generate` | Facades to Nova. |
-| Nova chat | `POST /v1/nova/chat`, `POST /v1/nova/chat/stream` (SSE) | Chat facade. |
+| Nova | `POST /v1/nova/chat`, `GET /v1/nova/capabilities`, `GET /v1/nova/runs/{runId}` | Authenticated Core facade over provider-neutral Nova contracts. |
 
 Rate limiting: `/v1/**` may return `429 Too Many Requests`.
 
@@ -38,9 +38,10 @@ Rate limiting: `/v1/**` may return `429 Too Many Requests`.
 | Relay | `GET /internal/context/users/{id}/weekly-review` | Nova. |
 | Relay | `GET /internal/context/users/{id}/dashboard-insights` | Nova. |
 | Relay | `GET /internal/context/projects/{id}/health` | Nova. |
-| Nova | `POST /internal/v1/agent/run` | Core (`NovaAiClient`). |
-| Nova | `POST /internal/v1/chat`, `POST /internal/v1/chat/stream` | Core. |
-| Nova | `GET /internal/v1/runs/{runId}` | Core audit lookup. |
+| Nova | `POST /internal/ai/chat` | Core (`NovaClient`) chat facade. |
+| Nova | `POST /internal/ai/capabilities/{capabilityId}:run` | Core/user-facing AI capability facades. |
+| Nova | `GET /internal/ai/capabilities` | Core capability discovery facade. |
+| Nova | `GET /internal/ai/runs/{runId}` | Core audit lookup facade. |
 
 All `/internal/**` routes require the `X-Service-Token` header matching the target service's `taskmind.<svc>.service-token` (or the shared `TASKMIND_*_SERVICE_TOKEN`).
 
