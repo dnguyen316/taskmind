@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
-import {
-  BellOutlined,
-  SearchOutlined,
-} from '@ant-design/icons-vue'
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { BellOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { useTasks } from '../composables/useTasks'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
 import type { Task } from '../types'
 
 const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
+const router = useRouter()
+const searchQuery = ref('')
 
 const startOfToday = () => {
   const today = new Date()
@@ -83,20 +82,81 @@ const mockOnlyDashboardPreview: DashboardPreview = {
   ],
   weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   projectStatus: [
-    { name: 'Atlas — Web App v2', status: 'On track', progress: 68, color: 'var(--tm-accent-blue)' },
+    {
+      name: 'Atlas — Web App v2',
+      status: 'On track',
+      progress: 68,
+      color: 'var(--tm-accent-blue)',
+    },
     { name: 'Ion — Mobile App', status: 'At risk', progress: 34, color: 'var(--tm-accent-purple)' },
-    { name: 'Nova — AI Routing Engine', status: 'On track', progress: 82, color: 'var(--tm-accent-teal)' },
-    { name: 'Echo — Customer Insights', status: 'Planning', progress: 12, color: 'var(--tm-accent-orange)' },
-    { name: 'Orbit — Onboarding Flow', status: 'On track', progress: 54, color: 'var(--tm-accent-green)' },
-    { name: 'Pulse — Performance Sprint', status: 'On track', progress: 71, color: 'var(--tm-accent-pink)' },
+    {
+      name: 'Nova — AI Routing Engine',
+      status: 'On track',
+      progress: 82,
+      color: 'var(--tm-accent-teal)',
+    },
+    {
+      name: 'Echo — Customer Insights',
+      status: 'Planning',
+      progress: 12,
+      color: 'var(--tm-accent-orange)',
+    },
+    {
+      name: 'Orbit — Onboarding Flow',
+      status: 'On track',
+      progress: 54,
+      color: 'var(--tm-accent-green)',
+    },
+    {
+      name: 'Pulse — Performance Sprint',
+      status: 'On track',
+      progress: 71,
+      color: 'var(--tm-accent-pink)',
+    },
   ],
   recentActivity: [
-    { initials: 'MP', name: 'Maya Patel', action: 'moved TSK-1027 to Review', time: '12m ago', color: 'var(--tm-accent-indigo)' },
-    { initials: 'JL', name: 'Jordan Lee', action: 'commented on Atlas blocker thread', time: '32m ago', color: 'var(--tm-accent-teal)' },
-    { initials: 'SR', name: 'Sam Rivera', action: 'added risk note to TSK-1029', time: '1h ago', color: 'var(--tm-accent-orange)' },
-    { initials: 'TP', name: 'Theo Park', action: 'created sprint follow-up tasks', time: '2h ago', color: 'var(--tm-accent-blue-strong)' },
-    { initials: 'KT', name: 'Kai Tanaka', action: 'updated delivery forecast', time: '3h ago', color: 'var(--tm-accent-pink)' },
-    { initials: 'NA', name: 'Nova AI', action: 'summarized blockers for Atlas', time: '4h ago', color: 'var(--tm-accent-navy)' },
+    {
+      initials: 'MP',
+      name: 'Maya Patel',
+      action: 'moved TSK-1027 to Review',
+      time: '12m ago',
+      color: 'var(--tm-accent-indigo)',
+    },
+    {
+      initials: 'JL',
+      name: 'Jordan Lee',
+      action: 'commented on Atlas blocker thread',
+      time: '32m ago',
+      color: 'var(--tm-accent-teal)',
+    },
+    {
+      initials: 'SR',
+      name: 'Sam Rivera',
+      action: 'added risk note to TSK-1029',
+      time: '1h ago',
+      color: 'var(--tm-accent-orange)',
+    },
+    {
+      initials: 'TP',
+      name: 'Theo Park',
+      action: 'created sprint follow-up tasks',
+      time: '2h ago',
+      color: 'var(--tm-accent-blue-strong)',
+    },
+    {
+      initials: 'KT',
+      name: 'Kai Tanaka',
+      action: 'updated delivery forecast',
+      time: '3h ago',
+      color: 'var(--tm-accent-pink)',
+    },
+    {
+      initials: 'NA',
+      name: 'Nova AI',
+      action: 'summarized blockers for Atlas',
+      time: '4h ago',
+      color: 'var(--tm-accent-navy)',
+    },
   ],
 }
 
@@ -119,13 +179,24 @@ const analyticsPreviewInsights = computed<AnalyticsPreviewInsight[]>(() => {
     },
     {
       title: 'Nova insight placeholder',
-      description: 'User-facing AI dashboard insight generation is implemented in M08, then replaced by real dashboard widgets in M12.',
+      description:
+        'User-facing AI dashboard insight generation is implemented in M08, then replaced by real dashboard widgets in M12.',
       action: 'Coming in M08/M12',
     },
   ]
 })
 
 const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
+
+function submitDashboardSearch(value = searchQuery.value) {
+  const query = value.trim()
+
+  if (!query) {
+    return
+  }
+
+  void router.push({ name: 'activity-search', query: { q: query } })
+}
 
 onMounted(async () => {
   await fetchProjects()
@@ -141,18 +212,36 @@ onMounted(async () => {
         <p>Live task/project basics now; analytics widgets come in M12.</p>
       </div>
       <div class="topbar-actions">
-        <a-input size="large" placeholder="Search tasks, projects, people...">
-          <template #prefix><SearchOutlined /></template>
-        </a-input>
-        <a-button shape="circle"><BellOutlined /></a-button>
-        <RouterLink to="/tasks"><a-button type="primary" size="large">+ New task</a-button></RouterLink>
+        <div class="dashboard-search">
+          <a-input-search
+            v-model:value="searchQuery"
+            size="large"
+            placeholder="Search activity, tasks, projects..."
+            enter-button
+            allow-clear
+            @search="submitDashboardSearch"
+          >
+            <template #prefix><SearchOutlined /></template>
+          </a-input-search>
+          <p>Press Enter to search Relay activity for matching task and project events.</p>
+        </div>
+        <a-button shape="circle" disabled title="Notifications coming in a later milestone"
+          ><BellOutlined
+        /></a-button>
+        <RouterLink to="/tasks"
+          ><a-button type="primary" size="large">+ New task</a-button></RouterLink
+        >
       </div>
     </header>
 
     <section class="brief-card tm-card-surface">
-      <h2>Good morning <span>REAL TASK METRICS</span><span class="muted-pill">Dashboard analytics coming in M12</span></h2>
+      <h2>
+        Good morning <span>REAL TASK METRICS</span
+        ><span class="muted-pill">Dashboard analytics coming in M12</span>
+      </h2>
       <p>
-        You have <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong> and
+        You have
+        <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong> and
         <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong> from the live task API.
       </p>
       <div class="chip-row">
@@ -168,10 +257,26 @@ onMounted(async () => {
     </section>
 
     <section class="kpi-grid" aria-label="Live task metrics">
-      <article class="kpi-card tm-card-surface"><h3>Active Tasks</h3><strong>{{ realTaskMetrics.active }}</strong><p>Live non-completed tasks</p></article>
-      <article class="kpi-card tm-card-surface"><h3>Due Next 7 Days</h3><strong>{{ realTaskMetrics.dueThisWeek }}</strong><p>Live due dates</p></article>
-      <article class="kpi-card tm-card-surface"><h3>Overdue</h3><strong>{{ realTaskMetrics.overdue }}</strong><p>{{ realTaskMetrics.overdue ? 'Needs attention' : 'All clear' }}</p></article>
-      <article class="kpi-card tm-card-surface"><h3>Completed</h3><strong>{{ realTaskMetrics.completed }}</strong><p>Live completed tasks</p></article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Active Tasks</h3>
+        <strong>{{ realTaskMetrics.active }}</strong>
+        <p>Live non-completed tasks</p>
+      </article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Due Next 7 Days</h3>
+        <strong>{{ realTaskMetrics.dueThisWeek }}</strong>
+        <p>Live due dates</p>
+      </article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Overdue</h3>
+        <strong>{{ realTaskMetrics.overdue }}</strong>
+        <p>{{ realTaskMetrics.overdue ? 'Needs attention' : 'All clear' }}</p>
+      </article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Completed</h3>
+        <strong>{{ realTaskMetrics.completed }}</strong>
+        <p>Live completed tasks</p>
+      </article>
     </section>
 
     <section class="bottom-grid">
@@ -181,30 +286,57 @@ onMounted(async () => {
           <a-list class="tm-list-surface" :data-source="myTasks">
             <template #renderItem="{ item }: { item: Task }">
               <a-list-item>
-                <a-list-item-meta :title="item.title" :description="`${item.projectId ?? 'PRJ'} · ${item.id}`" />
-                <span class="due">{{ item.dueAt ? formatDateTime(item.dueAt) : 'No due date' }}</span>
+                <a-list-item-meta
+                  :title="item.title"
+                  :description="`${item.projectId ?? 'PRJ'} · ${item.id}`"
+                />
+                <span class="due">{{
+                  item.dueAt ? formatDateTime(item.dueAt) : 'No due date'
+                }}</span>
               </a-list-item>
             </template>
           </a-list>
         </a-card>
 
-        <a-card class="workload-card placeholder-card tm-card-surface" title="Team Workload — This Week">
+        <a-card
+          class="workload-card placeholder-card tm-card-surface"
+          title="Team Workload — This Week"
+        >
           <template #extra>
             <a-tag color="default">Mock preview · Coming in M12</a-tag>
           </template>
           <div class="legend"><span>To Do</span><span>In Progress</span><span>Done</span></div>
           <div class="weeklines">
-            <div v-for="day in mockOnlyDashboardPreview.weekdays" :key="day" class="weekline"><i></i><label>{{ day }}</label></div>
+            <div v-for="day in mockOnlyDashboardPreview.weekdays" :key="day" class="weekline">
+              <i></i><label>{{ day }}</label>
+            </div>
           </div>
         </a-card>
 
         <a-card class="status-card placeholder-card tm-card-surface" title="Project Status">
           <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
-          <div class="project-row" v-for="project in mockOnlyDashboardPreview.projectStatus" :key="project.name">
+          <div
+            class="project-row"
+            v-for="project in mockOnlyDashboardPreview.projectStatus"
+            :key="project.name"
+          >
             <p>{{ project.name }}</p>
             <div class="project-progress">
-              <a-tag :color="project.status === 'At risk' ? 'orange' : project.status === 'Planning' ? 'default' : 'green'">{{ project.status }}</a-tag>
-              <a-progress :percent="project.progress" :show-info="false" :stroke-color="project.color" />
+              <a-tag
+                :color="
+                  project.status === 'At risk'
+                    ? 'orange'
+                    : project.status === 'Planning'
+                      ? 'default'
+                      : 'green'
+                "
+                >{{ project.status }}</a-tag
+              >
+              <a-progress
+                :percent="project.progress"
+                :show-info="false"
+                :stroke-color="project.color"
+              />
               <span>{{ project.progress }}%</span>
             </div>
           </div>
@@ -215,15 +347,28 @@ onMounted(async () => {
         <a-card class="insights-card placeholder-card tm-card-surface" title="AI Insights">
           <template #extra><a-tag color="blue">Coming in M08/M12</a-tag></template>
           <ul>
-            <li v-for="insight in analyticsPreviewInsights" :key="insight.title"><h4>{{ insight.title }}</h4><p>{{ insight.description }}</p><span class="placeholder-link">{{ insight.action }}</span></li>
+            <li v-for="insight in analyticsPreviewInsights" :key="insight.title">
+              <h4>{{ insight.title }}</h4>
+              <p>{{ insight.description }}</p>
+              <span class="placeholder-link">{{ insight.action }}</span>
+            </li>
           </ul>
         </a-card>
 
         <a-card class="activity-card placeholder-card tm-card-surface" title="Recent Activity">
           <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
-          <div v-for="item in mockOnlyDashboardPreview.recentActivity" :key="item.name + item.time" class="activity-item">
-            <div class="activity-avatar" :style="{ backgroundColor: item.color }">{{ item.initials }}</div>
-            <div><strong>{{ item.name }}</strong> {{ item.action }}<p>{{ item.time }}</p></div>
+          <div
+            v-for="item in mockOnlyDashboardPreview.recentActivity"
+            :key="item.name + item.time"
+            class="activity-item"
+          >
+            <div class="activity-avatar" :style="{ backgroundColor: item.color }">
+              {{ item.initials }}
+            </div>
+            <div>
+              <strong>{{ item.name }}</strong> {{ item.action }}
+              <p>{{ item.time }}</p>
+            </div>
           </div>
         </a-card>
       </div>
@@ -381,7 +526,12 @@ onMounted(async () => {
 .weekline i {
   display: block;
   height: 5px;
-  background: linear-gradient(90deg, var(--tm-text-soft), var(--tm-accent-blue), var(--tm-accent-green));
+  background: linear-gradient(
+    90deg,
+    var(--tm-text-soft),
+    var(--tm-accent-blue),
+    var(--tm-accent-green)
+  );
   border-radius: 999px;
 }
 

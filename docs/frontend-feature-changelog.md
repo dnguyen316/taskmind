@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-15 (Dashboard Search Affordance)
+
+### Changed
+
+- Wired the dashboard search field to submit non-empty queries to the authenticated Activity search route with a `q` query parameter, and taught Activity search to hydrate from that URL query.
+- Added helper copy explaining that dashboard search uses Relay activity search, and disabled the placeholder notification button so it is no longer an active control without behavior.
+
+### Frontend-visible change recorded
+
+- Authenticated users can type a dashboard search term, press Enter or the search button, and navigate to Activity search with that query in the URL.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused dashboard affordance fix. Manual verification should submit a non-empty dashboard search and confirm navigation to `/activity?q=<term>`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (Authenticated Shell Mobile Navigation)
 
 ### Changed
