@@ -98,7 +98,7 @@ export function useTasks() {
     errorMessage.value = ''
 
     try {
-      return await getTaskById(taskId, { userId: requireCurrentUserId() })
+      return await getTaskById(taskId)
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load task.'
       return null
