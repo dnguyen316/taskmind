@@ -249,7 +249,7 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
 <style scoped>
 .surface-card {
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--tm-shadow-sm);
 }
 
 :deep(.ant-card-head-title) {
@@ -258,11 +258,11 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
 
 :deep(.ant-form-item-label > label) {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--tm-text);
 }
 
 .field-error {
-  color: #d4380d;
+  color: var(--tm-accent-orange);
   font-size: 12px;
 }
 
