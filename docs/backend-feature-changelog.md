@@ -1,4 +1,19 @@
+# Backend Feature Changelog
+
+## 2026-06-15 (M03 Task Detail OpenAPI Contract)
+
+### Changed
+
+- Synchronized the Core OpenAPI contract with the existing authenticated `GET /v1/tasks/{id}` task detail endpoint.
+
+### Verification Notes
+
+- Advanced primary milestone: M03 task detail frontend/Core integration.
+- Runtime backend code was not changed because the endpoint already existed in `TaskController`; this pass documented the contract for frontend consumption.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-14
+
 - Fixed project creation so non-privileged users can create projects without supplying `ownerUserId`; Core now derives ownership from the authenticated requester while preserving privileged owner assignment.
 
 ## 2026-06-14 (Local Frontend CORS)
@@ -13,6 +28,7 @@
 
 - Primary milestone: local development support for Core/frontend integration.
 - Core OpenAPI was not changed because no request or response schema changed.
+
 # Backend Feature Changelog
 
 ## 2026-06-14 (M08 Capture Acceptance Path)
@@ -66,6 +82,7 @@
 
 - Advanced primary milestone: M08 AI features, Core facade utility slice.
 - No frontend UI implementation or browser E2E was completed in this backend-focused pass.
+
 ## 2026-06-14 (Agent Workflow Token Optimization)
 
 ### Added

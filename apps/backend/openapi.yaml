@@ -541,6 +541,21 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
   /v1/tasks/{id}:
+    get:
+      summary: Get a task by ID
+      operationId: getTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskIdPath'
+      responses:
+        '200':
+          description: Task detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
     patch:
       summary: Update mutable task fields
       operationId: updateTask

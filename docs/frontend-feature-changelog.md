@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-15 (M03 Task Detail Direct Lookup)
+
+### Changed
+
+- Replaced task detail loading via broad list search with a direct Core `GET /v1/tasks/{id}` request adapted through the existing task response mapper.
+- Simplified the task detail composable lookup call so it no longer passes list pagination or user scoping parameters for detail retrieval.
+
+### Frontend-visible change recorded
+
+- Task detail pages now load the requested task directly from Core instead of fetching a larger task list and searching client-side.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused API lookup change. Manual verification should open an authenticated task detail route and confirm the page loads via `GET /v1/tasks/{id}`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (M03 Token Refresh Session Sync)
 
 ### Changed
