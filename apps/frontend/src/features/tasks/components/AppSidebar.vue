@@ -15,7 +15,8 @@ import {
 
 import { useAuthStore } from '../../../stores/auth'
 
-defineProps<{ taskCount?: number }>()
+defineProps<{ taskCount?: number; mobile?: boolean }>()
+const emit = defineEmits<{ navigate: [] }>()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -34,6 +35,7 @@ const userEmail = computed(() => currentUser.value?.email ?? 'Signed in')
 
 async function signOut() {
   await authStore.logout()
+  emit('navigate')
   await router.push({ name: 'login' })
 }
 
@@ -52,34 +54,62 @@ function initials(value: string) {
 </script>
 
 <template>
-  <aside class="sidebar tm-shell-sidebar">
+  <aside class="sidebar tm-shell-sidebar" :class="{ 'sidebar-mobile': mobile }">
     <div class="brand">Taskmind <span>AI</span></div>
     <nav class="menu-group">
-      <RouterLink to="/dashboard" class="menu-item" :class="{ active: isDashboard }"
+      <RouterLink
+        to="/dashboard"
+        class="menu-item"
+        :class="{ active: isDashboard }"
+        @click="emit('navigate')"
         ><CheckSquareOutlined />Dashboard</RouterLink
       >
-      <RouterLink to="/tasks" class="menu-item" :class="{ active: isTasks }"
+      <RouterLink
+        to="/tasks"
+        class="menu-item"
+        :class="{ active: isTasks }"
+        @click="emit('navigate')"
         ><CheckSquareOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink
       >
-      <RouterLink to="/projects" class="menu-item" :class="{ active: isProjects }"
+      <RouterLink
+        to="/projects"
+        class="menu-item"
+        :class="{ active: isProjects }"
+        @click="emit('navigate')"
         ><FolderOutlined />Projects</RouterLink
       >
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }"
+      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }" @click="emit('navigate')"
         ><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink
       >
-      <RouterLink to="/calendar" class="menu-item" :class="{ active: isCalendar }"
+      <RouterLink
+        to="/calendar"
+        class="menu-item"
+        :class="{ active: isCalendar }"
+        @click="emit('navigate')"
         ><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink
       >
-      <RouterLink to="/inbox" class="menu-item" :class="{ active: isInbox }"
+      <RouterLink
+        to="/inbox"
+        class="menu-item"
+        :class="{ active: isInbox }"
+        @click="emit('navigate')"
         ><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink
       >
-      <RouterLink to="/reports" class="menu-item" :class="{ active: isReports }"
+      <RouterLink
+        to="/reports"
+        class="menu-item"
+        :class="{ active: isReports }"
+        @click="emit('navigate')"
         ><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink
       >
-      <RouterLink to="/activity" class="menu-item" :class="{ active: isActivity }"
+      <RouterLink
+        to="/activity"
+        class="menu-item"
+        :class="{ active: isActivity }"
+        @click="emit('navigate')"
         ><AuditOutlined />Activity</RouterLink
       >
     </nav>
@@ -89,7 +119,12 @@ function initials(value: string) {
         <strong>{{ authStore.currentUserDisplayName }}</strong>
         <p>{{ userEmail }}</p>
       </div>
-      <a-button class="logout-button" type="text" title="Log out" @click="signOut"
+      <a-button
+        class="logout-button"
+        type="text"
+        title="Log out"
+        aria-label="Log out"
+        @click="signOut"
         ><LogoutOutlined
       /></a-button>
     </div>
@@ -101,7 +136,13 @@ function initials(value: string) {
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
+  min-height: 100vh;
   border-right: 1px solid var(--tm-border);
+}
+
+.sidebar-mobile {
+  min-height: 100%;
+  border-right: 0;
 }
 
 .brand {
