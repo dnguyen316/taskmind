@@ -22,9 +22,36 @@ export function useTasks() {
   const filters = reactive<TaskFilters>({
     status: undefined,
     overdueOnly: false,
+    searchText: '',
+    projectId: undefined,
+    sortBy: undefined,
   })
 
-  const visibleTasks = computed(() => [...tasks.value].sort(compareByRecency))
+  const visibleTasks = computed(() => {
+    const filteredTasks = tasks.value.filter((task) => {
+      if (filters.projectId && task.projectId !== filters.projectId) {
+        return false
+      }
+
+      const searchText = filters.searchText.trim().toLowerCase()
+
+      if (!searchText) {
+        return true
+      }
+
+      return [task.id, task.title, task.description ?? ''].some((value) =>
+        value.toLowerCase().includes(searchText),
+      )
+    })
+
+    const sortBy = filters.sortBy
+
+    if (!sortBy) {
+      return filteredTasks
+    }
+
+    return [...filteredTasks].sort((taskA, taskB) => compareTasks(taskA, taskB, sortBy))
+  })
 
   async function fetchTasks() {
     loading.value = true
@@ -148,24 +175,26 @@ export function useTasks() {
   }
 }
 
-function compareByRecency(taskA: Task, taskB: Task) {
-  const taskATime = getRecencyTimestamp(taskA)
-  const taskBTime = getRecencyTimestamp(taskB)
+function compareTasks(taskA: Task, taskB: Task, sortBy: NonNullable<TaskFilters['sortBy']>) {
+  if (sortBy === 'priority') {
+    return taskB.priority - taskA.priority
+  }
 
-  return taskBTime - taskATime
+  if (sortBy === 'dueAt') {
+    return compareNullableDates(taskA.dueAt, taskB.dueAt)
+  }
+
+  return compareNullableDates(
+    taskA.updatedAt ?? taskA.createdAt,
+    taskB.updatedAt ?? taskB.createdAt,
+  )
 }
 
-function getRecencyTimestamp(task: Task) {
-  const primaryDate = toTimestamp(task.updatedAt)
-  const fallbackDate = toTimestamp(task.createdAt)
+function compareNullableDates(dateA: string | null, dateB: string | null) {
+  const timestampA = toTimestamp(dateA)
+  const timestampB = toTimestamp(dateB)
+  const safeTimestampA = Number.isFinite(timestampA) ? timestampA : 0
+  const safeTimestampB = Number.isFinite(timestampB) ? timestampB : 0
 
-  if (Number.isFinite(primaryDate)) {
-    return primaryDate
-  }
-
-  if (Number.isFinite(fallbackDate)) {
-    return fallbackDate
-  }
-
-  return 0
+  return safeTimestampB - safeTimestampA
 }

@@ -49,9 +49,14 @@ export interface ActivitySearchDocument {
   occurredAt: string
 }
 
+export type TaskSortBy = 'updatedAt' | 'dueAt' | 'priority'
+
 export interface TaskFilters {
   status?: TaskStatus
   overdueOnly: boolean
+  searchText: string
+  projectId?: string
+  sortBy?: TaskSortBy
 }
 
 export interface CreateTaskPayload {
