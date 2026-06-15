@@ -187,10 +187,14 @@ export const useAuthStore = defineStore('auth', {
       this.initialized = true
     },
 
-    markAuthenticated() {
+    applyStoredSession() {
       this.session = getStoredAuthSession()
       this.currentUser = this.session ? this.currentUser : null
       this.initialized = true
+    },
+
+    markAuthenticated() {
+      this.applyStoredSession()
     },
 
     markUnauthenticated() {
