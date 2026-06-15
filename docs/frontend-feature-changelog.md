@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-15 (M03 Active Project Task Creation)
+
+### Changed
+
+- Wired the tasks page active project into the task creation form as the default project selection.
+- Updated the task creation form to apply a newly loaded default project after projects hydrate and to block submission until at least one project exists.
+
+### Frontend-visible change recorded
+
+- Creating a task from the Tasks page now preselects the active project once projects finish loading, and users without projects see helper copy with a link to create their first project.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused task creation UX change.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (M03 Task Detail Direct Lookup)
 
 ### Changed

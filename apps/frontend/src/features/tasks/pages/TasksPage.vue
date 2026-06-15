@@ -9,11 +9,13 @@ import type { TaskStatus } from '../types'
 
 const {
   loading,
+  saving,
   errorMessage,
   pendingStatusTaskIds,
   visibleTasks,
   filters,
   projects,
+  activeProjectId,
   fetchTasks,
   fetchProjects,
   submitTask,
@@ -61,7 +63,8 @@ onMounted(async () => {
       <a-col :xs="24" :xl="8">
         <TaskCreateForm
           :project-options="projects"
-          :saving="loading"
+          :default-project-id="activeProjectId"
+          :saving="saving"
           :on-submit-task="handleCreateTask"
         />
       </a-col>

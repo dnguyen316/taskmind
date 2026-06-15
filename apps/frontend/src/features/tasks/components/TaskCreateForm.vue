@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
 import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
@@ -24,7 +24,11 @@ const props = withDefaults(defineProps<TaskCreateFormProps>(), {
 
 const schema = yup.object({
   projectId: yup.string().trim().required('Project selection is required'),
-  title: yup.string().trim().required('Title is required').max(200, 'Title must be at most 200 characters'),
+  title: yup
+    .string()
+    .trim()
+    .required('Title is required')
+    .max(200, 'Title must be at most 200 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
   priority: yup.number().integer().min(1).max(4).required(),
   durationMinutes: yup.number().integer().min(1).max(1440).required('Duration is required'),
@@ -37,7 +41,29 @@ const initialValues = computed<CreateTaskFormValues>(() => ({
   projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
 }))
 
-async function handleValidSubmit(values: Record<string, unknown>, { resetForm }: SubmissionContext<Record<string, unknown>>) {
+const hasProjectOptions = computed(() => props.projectOptions.length > 0)
+const taskForm = ref<InstanceType<typeof VeeForm> | null>(null)
+
+watch(
+  () => [props.defaultProjectId, props.projectOptions.length] as const,
+  ([defaultProjectId]) => {
+    if (!defaultProjectId || !hasProjectOptions.value) {
+      return
+    }
+
+    taskForm.value?.setFieldValue('projectId', defaultProjectId)
+  },
+  { immediate: true },
+)
+
+async function handleValidSubmit(
+  values: Record<string, unknown>,
+  { resetForm }: SubmissionContext<Record<string, unknown>>,
+) {
+  if (!hasProjectOptions.value) {
+    return
+  }
+
   const formValues = toCreateTaskFormValues(values)
   const payload: SubmitTaskPayload = {
     projectId: formValues.projectId,
@@ -83,17 +109,40 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
 }
 </script>
 
-
 <template>
   <a-card title="Create task" class="surface-card" :bordered="false">
-    <VeeForm :validation-schema="schema" :initial-values="initialValues" @submit="handleValidSubmit" v-slot="{ submitForm }">
+    <VeeForm
+      ref="taskForm"
+      :validation-schema="schema"
+      :initial-values="initialValues"
+      @submit="handleValidSubmit"
+      v-slot="{ submitForm }"
+    >
       <a-form layout="vertical" @submit.prevent="submitForm">
+        <a-alert v-if="!hasProjectOptions" type="info" show-icon class="empty-projects-alert">
+          <template #message>Create a project before adding tasks</template>
+          <template #description>
+            Tasks need a project so TaskMind can keep ownership, planning, and schedule context
+            aligned.
+            <RouterLink to="/projects">Create your first project</RouterLink>.
+          </template>
+        </a-alert>
+
         <a-row :gutter="12">
           <a-col :xs="24" :md="12">
             <a-form-item label="Project" required>
               <Field name="projectId" v-slot="{ value, handleChange }">
-                <a-select :value="value" placeholder="Select a project" @update:value="handleChange">
-                  <a-select-option v-for="project in projectOptions" :key="project.id" :value="project.id">
+                <a-select
+                  :value="value"
+                  placeholder="Select a project"
+                  :disabled="!hasProjectOptions"
+                  @update:value="handleChange"
+                >
+                  <a-select-option
+                    v-for="project in projectOptions"
+                    :key="project.id"
+                    :value="project.id"
+                  >
                     {{ project.name }}
                   </a-select-option>
                 </a-select>
@@ -136,7 +185,14 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
           <a-col :xs="24" :md="8">
             <a-form-item label="Priority (1 highest)">
               <Field name="priority" v-slot="{ value, handleChange }">
-                <a-input-number :value="value" :min="1" :max="4" :step="1" style="width: 100%" @update:value="handleChange" />
+                <a-input-number
+                  :value="value"
+                  :min="1"
+                  :max="4"
+                  :step="1"
+                  style="width: 100%"
+                  @update:value="handleChange"
+                />
               </Field>
               <ErrorMessage class="field-error" name="priority" />
             </a-form-item>
@@ -145,7 +201,13 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
           <a-col :xs="24" :md="8">
             <a-form-item label="Duration (minutes)">
               <Field name="durationMinutes" v-slot="{ value, handleChange }">
-                <a-input-number :value="value" :min="1" :step="5" style="width: 100%" @update:value="handleChange" />
+                <a-input-number
+                  :value="value"
+                  :min="1"
+                  :step="5"
+                  style="width: 100%"
+                  @update:value="handleChange"
+                />
               </Field>
               <ErrorMessage class="field-error" name="durationMinutes" />
             </a-form-item>
@@ -169,7 +231,14 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
           </a-col>
         </a-row>
 
-        <a-button type="primary" html-type="submit" size="large" block :loading="saving">
+        <a-button
+          type="primary"
+          html-type="submit"
+          size="large"
+          block
+          :loading="saving"
+          :disabled="!hasProjectOptions"
+        >
           Create task
         </a-button>
       </a-form>
@@ -195,5 +264,9 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
 .field-error {
   color: #d4380d;
   font-size: 12px;
+}
+
+.empty-projects-alert {
+  margin-bottom: 16px;
 }
 </style>
