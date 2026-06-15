@@ -10,6 +10,7 @@ export function useTasks() {
   const loading = ref(false)
   const saving = ref(false)
   const errorMessage = ref('')
+  const pendingStatusTaskIds = ref<string[]>([])
   const tasks = ref<Task[]>([])
   const projectsStore = useProjectsStore()
   const { requireCurrentUserId } = useCurrentUserId()
@@ -84,12 +85,17 @@ export function useTasks() {
 
   async function changeStatus(taskId: string, status: TaskStatus) {
     errorMessage.value = ''
+    pendingStatusTaskIds.value = [...pendingStatusTaskIds.value, taskId]
 
     try {
       await updateTaskStatus(taskId, status)
       await fetchTasks()
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to update status.'
+    } finally {
+      pendingStatusTaskIds.value = pendingStatusTaskIds.value.filter(
+        (pendingTaskId) => pendingTaskId !== taskId,
+      )
     }
   }
 
@@ -128,6 +134,7 @@ export function useTasks() {
     loading,
     saving,
     errorMessage,
+    pendingStatusTaskIds,
     filters,
     visibleTasks,
     projects,
