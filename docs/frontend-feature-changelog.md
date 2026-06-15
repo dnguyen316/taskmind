@@ -1,5 +1,24 @@
 # Frontend Feature Changelog
 
+## 2026-06-15 (Authenticated Shell Mobile Navigation)
+
+### Changed
+
+- Added a responsive authenticated-shell top bar below 1200px with the TaskMind brand, current workspace page title, and an accessible menu button.
+- Rendered the existing app sidebar inside an Ant Design Vue drawer for mobile navigation while preserving the desktop sidebar.
+- Added sidebar navigation events so the mobile drawer closes after route navigation and logout remains available from the drawer.
+
+### Frontend-visible change recorded
+
+- Authenticated users on tablet and mobile widths can open the workspace navigation from the top bar, navigate to any shell route, and log out without relying on the hidden desktop sidebar.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused shell responsiveness change. Manual verification should resize below 1200px, open the navigation drawer, tab to the menu and logout controls, and confirm route navigation closes the drawer.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (M03 Active Project Task Creation)
 
 ### Changed
@@ -59,6 +78,25 @@
 - Refactored the Projects dashboard into the shared app shell, removed the user-facing owner-id field from project creation, and aligned project creation/list styling with TaskMind surface-card layout patterns.
 
 # Frontend Feature Changelog
+
+## 2026-06-15 (Authenticated Shell Mobile Navigation)
+
+### Changed
+
+- Added a responsive authenticated-shell top bar below 1200px with the TaskMind brand, current workspace page title, and an accessible menu button.
+- Rendered the existing app sidebar inside an Ant Design Vue drawer for mobile navigation while preserving the desktop sidebar.
+- Added sidebar navigation events so the mobile drawer closes after route navigation and logout remains available from the drawer.
+
+### Frontend-visible change recorded
+
+- Authenticated users on tablet and mobile widths can open the workspace navigation from the top bar, navigate to any shell route, and log out without relying on the hidden desktop sidebar.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused shell responsiveness change. Manual verification should resize below 1200px, open the navigation drawer, tab to the menu and logout controls, and confirm route navigation closes the drawer.
+- Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-14 (M03 Silent Auth Initialization)
 

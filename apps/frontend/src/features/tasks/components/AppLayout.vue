@@ -1,12 +1,73 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { MenuOutlined } from '@ant-design/icons-vue'
+
 import AppSidebar from './AppSidebar.vue'
 
 defineProps<{ taskCount?: number }>()
+
+const route = useRoute()
+const mobileMenuOpen = ref(false)
+
+const currentPageTitle = computed(() => {
+  if (route.path.startsWith('/dashboard')) return 'Dashboard'
+  if (route.path.startsWith('/tasks/')) return 'Task detail'
+  if (route.path.startsWith('/tasks')) return 'Tasks'
+  if (route.path.startsWith('/projects/')) return 'Project detail'
+  if (route.path.startsWith('/projects')) return 'Projects'
+  if (route.path.startsWith('/team')) return 'Team'
+  if (route.path.startsWith('/calendar')) return 'Calendar'
+  if (route.path.startsWith('/inbox')) return 'Inbox'
+  if (route.path.startsWith('/reports')) return 'Reports'
+  if (route.path.startsWith('/activity')) return 'Activity'
+
+  return ''
+})
+
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+}
+
+watch(
+  () => route.fullPath,
+  () => closeMobileMenu(),
+)
 </script>
 
 <template>
   <main class="dashboard-layout tm-app-shell">
+    <header class="mobile-topbar" aria-label="Authenticated workspace navigation">
+      <div class="mobile-brand-group">
+        <div class="mobile-brand">Taskmind <span>AI</span></div>
+        <p v-if="currentPageTitle" class="mobile-page-title">{{ currentPageTitle }}</p>
+      </div>
+      <a-button
+        class="mobile-menu-button"
+        type="text"
+        aria-label="Open workspace navigation menu"
+        :aria-expanded="mobileMenuOpen"
+        aria-controls="mobile-navigation-drawer"
+        @click="mobileMenuOpen = true"
+      >
+        <MenuOutlined />
+      </a-button>
+    </header>
+
     <AppSidebar :task-count="taskCount" />
+
+    <a-drawer
+      id="mobile-navigation-drawer"
+      v-model:open="mobileMenuOpen"
+      class="mobile-navigation-drawer"
+      placement="left"
+      :closable="false"
+      :width="300"
+      title="Workspace navigation"
+    >
+      <AppSidebar :task-count="taskCount" mobile @navigate="closeMobileMenu" />
+    </a-drawer>
+
     <section class="content">
       <slot />
     </section>
@@ -17,6 +78,10 @@ defineProps<{ taskCount?: number }>()
 .dashboard-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
+}
+
+.mobile-topbar {
+  display: none;
 }
 
 .content {
@@ -30,8 +95,68 @@ defineProps<{ taskCount?: number }>()
     grid-template-columns: 1fr;
   }
 
-  :deep(.sidebar) {
+  .mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    padding: 12px 20px;
+    background: var(--tm-surface);
+    border-bottom: 1px solid var(--tm-border);
+  }
+
+  .mobile-brand-group {
+    min-width: 0;
+  }
+
+  .mobile-brand {
+    color: var(--tm-text);
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .mobile-brand span {
+    margin-left: 6px;
+    color: var(--tm-accent-blue);
+    font-size: 11px;
+  }
+
+  .mobile-page-title {
+    margin: 2px 0 0;
+    overflow: hidden;
+    color: var(--tm-text-muted);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-menu-button {
+    display: inline-grid;
+    width: 40px;
+    height: 40px;
+    color: var(--tm-text);
+    place-items: center;
+  }
+
+  .content {
+    padding: 20px;
+  }
+
+  :deep(.sidebar:not(.sidebar-mobile)) {
     display: none;
   }
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 16px;
+  }
+}
+
+:global(.mobile-navigation-drawer .ant-drawer-body) {
+  padding: 0;
 }
 </style>
