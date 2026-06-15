@@ -3,7 +3,12 @@ import { computed } from 'vue'
 import { formatDateTime, isTaskOverdue, toTimestamp } from '../utils/taskDates'
 import type { Task, TaskStatus } from '../types'
 
-const props = defineProps<{ tasks: Task[]; pendingStatusTaskIds?: string[] }>()
+const props = defineProps<{
+  tasks: Task[]
+  pendingStatusTaskIds?: string[]
+  loading?: boolean
+  errorMessage?: string
+}>()
 const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
 
 interface TaskTableColumn {
@@ -65,8 +70,18 @@ function dueLabel(task: Task) {
     :columns="columns"
     :data-source="dataSource"
     :pagination="{ pageSize: 12 }"
+    :loading="props.loading"
     size="middle"
   >
+    <template #emptyText>
+      <a-empty
+        :description="
+          props.errorMessage
+            ? 'Failed to load tasks. Resolve the error above, then refresh.'
+            : 'No tasks found for the current filters.'
+        "
+      />
+    </template>
     <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
       <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
       <template v-else-if="column.key === 'title'">

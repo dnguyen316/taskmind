@@ -46,7 +46,7 @@ onMounted(async () => {
 
     <a-row :gutter="16" align="top">
       <a-col :xs="24" :xl="16">
-        <TaskFilters :filters="filters" @refresh="fetchTasks" />
+        <TaskFilters :filters="filters" :projects="projects" @refresh="fetchTasks" />
         <a-alert
           v-if="errorMessage"
           type="error"
@@ -57,6 +57,8 @@ onMounted(async () => {
         <TaskList
           :tasks="visibleTasks"
           :pending-status-task-ids="pendingStatusTaskIds"
+          :loading="loading"
+          :error-message="errorMessage"
           @change-status="handleChangeStatus"
         />
       </a-col>
