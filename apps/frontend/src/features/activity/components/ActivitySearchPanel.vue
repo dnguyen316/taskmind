@@ -1,15 +1,31 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { SearchOutlined } from '@ant-design/icons-vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
+const route = useRoute()
 const { query, size, loading, errorMessage, results, hasResults, runSearch, clearSearch } =
   useActivitySearch()
 
+function applyRouteQuery() {
+  const routeQuery = route.query.q
+  query.value = Array.isArray(routeQuery) ? (routeQuery[0] ?? '') : (routeQuery ?? '')
+}
+
 onMounted(() => {
+  applyRouteQuery()
   void runSearch()
 })
+
+watch(
+  () => route.query.q,
+  () => {
+    applyRouteQuery()
+    void runSearch()
+  },
+)
 
 function submitSearch() {
   void runSearch()
