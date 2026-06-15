@@ -212,14 +212,14 @@ watch(
   padding: 40px 20px;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 50% 0, #eeecff 0, #f8f9fc 40%, #f5f7fa 100%);
+  background: var(--tm-bg-gradient);
   position: relative;
 }
 .back-link {
   position: absolute;
   left: 34px;
   top: 30px;
-  color: #697187;
+  color: var(--tm-text-muted);
   text-decoration: none;
   font-size: 13px;
   font-weight: 600;
@@ -227,10 +227,10 @@ watch(
 .auth-card {
   width: min(450px, 100%);
   padding: 42px;
-  background: #fff;
-  border: 1px solid #e4e6ee;
+  background: var(--tm-card-bg);
+  border: 1px solid var(--tm-border);
   border-radius: 20px;
-  box-shadow: 0 25px 60px rgba(35, 35, 88, 0.1);
+  box-shadow: var(--tm-shadow-lg);
 }
 .brand {
   width: max-content;
@@ -238,7 +238,7 @@ watch(
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #17213a;
+  color: var(--tm-text);
   text-decoration: none;
   font-size: 19px;
   font-weight: 800;
@@ -248,16 +248,16 @@ watch(
   height: 31px;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--tm-accent-contrast);
   border-radius: 9px;
-  background: linear-gradient(145deg, #6657e8, #4635c8);
+  background: linear-gradient(145deg, var(--tm-primary), var(--tm-primary-hover));
 }
 .heading {
   text-align: center;
   margin: 30px 0;
 }
 .heading small {
-  color: #6254d7;
+  color: var(--tm-primary);
   font-size: 9px;
   letter-spacing: 0.15em;
   font-weight: 800;
@@ -268,7 +268,7 @@ watch(
   margin: 10px 0;
 }
 .heading p {
-  color: #7c8497;
+  color: var(--tm-text-muted);
   font-size: 13px;
   line-height: 1.6;
   margin: 0;
@@ -280,7 +280,7 @@ form {
 label {
   display: grid;
   gap: 7px;
-  color: #3b4357;
+  color: var(--tm-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -291,19 +291,19 @@ label {
   height: 46px;
   border-radius: 9px;
   margin-top: 4px;
-  background: linear-gradient(135deg, #6657e8, #4d3fcf);
+  background: linear-gradient(135deg, var(--tm-primary), var(--tm-primary-hover));
 }
 .secondary-action {
   background: transparent !important;
 }
 .switch-copy {
   text-align: center;
-  color: #858c9d;
+  color: var(--tm-text-muted);
   font-size: 12px;
   margin: 24px 0 0;
 }
 .switch-copy a {
-  color: #5c4ed3;
+  color: var(--tm-primary);
   text-decoration: none;
   font-weight: 700;
   margin-left: 4px;
@@ -311,7 +311,7 @@ label {
 .auth-note {
   position: absolute;
   bottom: 25px;
-  color: #939aaa;
+  color: var(--tm-text-soft);
   font-size: 11px;
 }
 @media (max-width: 560px) {
@@ -345,7 +345,7 @@ label {
 }
 .auth-card {
   border-color: var(--tm-border);
-  background: var(--tm-surface);
+  background: var(--tm-card-bg);
   box-shadow: var(--tm-shadow-lg);
 }
 .brand,

@@ -123,7 +123,11 @@ async function createProject(payload: CreateProjectPayload) {
   align-items: center;
   padding: 26px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(20, 184, 166, 0.1));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tm-primary) 12%, transparent),
+    color-mix(in srgb, var(--tm-accent-teal) 10%, transparent)
+  );
 }
 
 .eyebrow {
@@ -153,7 +157,7 @@ async function createProject(payload: CreateProjectPayload) {
   padding: 14px 18px;
   border: 1px solid var(--tm-border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--tm-card-bg) 72%, transparent);
 }
 
 .projects-grid {
