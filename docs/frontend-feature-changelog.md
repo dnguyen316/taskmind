@@ -1,3 +1,23 @@
+# Frontend Feature Changelog
+
+## 2026-06-15 (M03 Token Refresh Session Sync)
+
+### Changed
+
+- Added a lightweight token-refresh auth-session event so the shared API client can notify the auth layer without importing Pinia directly.
+- Re-applied the stored auth session after successful refresh-token rotation so Pinia updates the access token expiry while preserving the loaded current user.
+
+### Frontend-visible change recorded
+
+- When a protected API call receives `401`, the client refreshes with the stored refresh token, retries the failed request, and keeps the in-memory auth session expiry aligned with local token storage after the retry succeeds.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused auth-session state change. Manual verification should seed an expired access token and valid refresh token, confirm the protected request retries successfully, and confirm `authStore.session.expiresAt` updates without clearing `currentUser`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-14
 
 - Refactored the Projects dashboard into the shared app shell, removed the user-facing owner-id field from project creation, and aligned project creation/list styling with TaskMind surface-card layout patterns.

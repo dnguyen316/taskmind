@@ -3,7 +3,7 @@ import type { ComponentPublicInstance } from 'vue'
 import Antd from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
-import { onSessionExpired } from './lib/authSession'
+import { onSessionExpired, onTokensRefreshed } from './lib/authSession'
 import { pinia } from './stores/pinia'
 import { useAuthStore } from './stores/auth'
 import 'ant-design-vue/dist/reset.css'
@@ -11,7 +11,11 @@ import './style.css'
 
 const app = createApp(App)
 
-app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | null, info: string) => {
+app.config.errorHandler = (
+  error: unknown,
+  instance: ComponentPublicInstance | null,
+  info: string,
+) => {
   console.error('Global Vue error handler:', {
     error,
     info,
@@ -22,6 +26,10 @@ app.config.errorHandler = (error: unknown, instance: ComponentPublicInstance | n
 app.use(pinia)
 
 useAuthStore(pinia).initializeSession()
+
+onTokensRefreshed(() => {
+  useAuthStore(pinia).applyStoredSession()
+})
 
 onSessionExpired(() => {
   const currentRoute = router.currentRoute.value

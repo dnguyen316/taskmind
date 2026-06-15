@@ -6,17 +6,17 @@ The frontend is a **separate npm project**. It is not part of the Maven reactor.
 
 ## Stack
 
-| Concern | Choice |
-|---------|--------|
-| Framework / build | Vue 3.5 + Vite 5 + TypeScript 5.8 (`vue-tsc`) |
-| UI kit | Ant Design Vue 4 + `@ant-design/icons-vue` |
-| State | Pinia 3 |
-| Routing | vue-router 4 |
-| HTTP | axios, through one shared client |
-| Rich text | Tiptap 3, starting from StarterKit, plus custom image/video/autocomplete nodes |
-| Forms | vee-validate + yup |
-| Dates | dayjs |
-| Export | jspdf + jspdf-autotable for reports |
+| Concern           | Choice                                                                         |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Framework / build | Vue 3.5 + Vite 5 + TypeScript 5.8 (`vue-tsc`)                                  |
+| UI kit            | Ant Design Vue 4 + `@ant-design/icons-vue`                                     |
+| State             | Pinia 3                                                                        |
+| Routing           | vue-router 4                                                                   |
+| HTTP              | axios, through one shared client                                               |
+| Rich text         | Tiptap 3, starting from StarterKit, plus custom image/video/autocomplete nodes |
+| Forms             | vee-validate + yup                                                             |
+| Dates             | dayjs                                                                          |
+| Export            | jspdf + jspdf-autotable for reports                                            |
 
 Frontend "lint" is `npm run typecheck` (`vue-tsc --noEmit`) plus `npm run build`. There is no ESLint or unit-test runner specified in the build kit. Use **strict TypeScript**: do not introduce new `any` types; narrow values at API boundaries.
 
@@ -62,27 +62,28 @@ Reference feature slices:
 
 All HTTP goes through one axios client. Never instantiate axios elsewhere. Feature APIs call typed helpers that use the shared `apiClient`.
 
-| File | Role |
-|------|------|
-| `apiClient.ts` | Shared axios instance. Injects bearer tokens. For `401` on a protected route, performs a single-flight refresh via `/v1/auth/token/refresh`, retries once, then emits session-expired behavior. Public auth endpoints are exempt. Base URL comes from `VITE_API_BASE_URL` and defaults to `http://localhost:8080`. |
-| `apiError.ts` | Normalizes failed responses to a typed `ApiError`. |
-| `authToken.ts` | Access/refresh token storage. |
-| `authSession.ts` | `onSessionExpired` / `notifySessionExpired` plumbing. |
-| `e2eAuth.ts` | Super-admin bypass helper for local E2E. |
-| `taskDataEvents.ts` | Lightweight in-app event bus for task-data refreshes. |
+| File                | Role                                                                                                                                                                                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiClient.ts`      | Shared axios instance. Injects bearer tokens. For `401` on a protected route, performs a single-flight refresh via `/v1/auth/token/refresh`, retries once, then emits session-expired behavior. Public auth endpoints are exempt. Base URL comes from `VITE_API_BASE_URL` and defaults to `http://localhost:8080`. |
+| `apiError.ts`       | Normalizes failed responses to a typed `ApiError`.                                                                                                                                                                                                                                                                 |
+| `authToken.ts`      | Access/refresh token storage.                                                                                                                                                                                                                                                                                      |
+| `authSession.ts`    | `onSessionExpired` / `notifySessionExpired` and token-refresh notification plumbing.                                                                                                                                                                                                                               |
+| `e2eAuth.ts`        | Super-admin bypass helper for local E2E.                                                                                                                                                                                                                                                                           |
+| `taskDataEvents.ts` | Lightweight in-app event bus for task-data refreshes.                                                                                                                                                                                                                                                              |
 
 ```mermaid
 flowchart TD
   Call["feature api/*.ts"] --> AC["apiClient (axios)"]
   AC -->|inject Bearer| Core["Core :8080"]
   Core -->|401 protected| RF["single-flight refresh /v1/auth/token/refresh"]
-  RF -->|ok| AC
+  RF -->|ok| TS["notifyTokensRefreshed() -> auth store applies stored session"]
+  TS --> AC
   RF -->|fail| SE["notifySessionExpired() -> /login?redirect=..."]
 ```
 
 ## Auth & routing
 
-- `stores/auth.ts` holds the session and current user, and owns init/login/logout state.
+- `stores/auth.ts` holds the session and current user, owns init/login/logout state, and re-applies stored token metadata after refresh without clearing `currentUser`.
 - `router/index.ts` guards routes via `meta.requiresAuth` and `meta.public`.
 - `ensureInitialized()` runs before each navigation so guards can make decisions from the current session state.
 - Public routes include the landing/home route, `/login`, `/signup`, and `/forgot-password`.
@@ -91,12 +92,12 @@ flowchart TD
 
 ## Stores (Pinia)
 
-| Store | Holds |
-|-------|-------|
-| `auth.ts` | Session, current user, init/login/logout. |
-| `projects.ts` | Project list/cache shared across features. |
-| `assignees.ts` | User/assignee lookup cache. |
-| `pinia.ts` | Shared Pinia instance for use by guards outside components. |
+| Store          | Holds                                                       |
+| -------------- | ----------------------------------------------------------- |
+| `auth.ts`      | Session, current user, init/login/logout.                   |
+| `projects.ts`  | Project list/cache shared across features.                  |
+| `assignees.ts` | User/assignee lookup cache.                                 |
+| `pinia.ts`     | Shared Pinia instance for use by guards outside components. |
 
 ## Notable feature mechanics
 
