@@ -1,3 +1,37 @@
+## 2026-06-16 (Dashboard Shell Visual Polish)
+
+### Changed
+
+- Removed the dashboard search helper text so the desktop topbar stays compact.
+- Updated sidebar navigation styling to remove link underlines, use distinct Dashboard and Tasks icons, strengthen active colors, and make typography feel more modern.
+- Rounded the signed-in user avatar into a fixed circle and refreshed the floating AI assistant with a compact purple launcher and modern chat panel styling.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/components/AppSidebar.vue src/features/tasks/pages/DashboardPage.vue src/components/AiAssistantWidget.vue src/style.css ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Targeted frontend verification: `cd apps/frontend && npm run build`.
+- Full gate verification: `make vibe-verify` rerun and failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates` while frontend checks passed.
+- Browser E2E outcome: not run in this container; manual verification should compare Dashboard with the provided screenshot at desktop width, open/close the AI widget, and confirm the mobile drawer still works.
+- Applicable skills: none. Delegated agents: none.
+
+## 2026-06-16 (Dashboard SaaS Shell Slots)
+
+### Changed
+
+- Added named authenticated-shell slots for page title, subtitle, desktop header actions, and default content.
+- Reworked the desktop authenticated shell into a compact SaaS grid with a fixed sidebar column, sticky desktop page topbar, and scrollable main content while keeping the existing mobile topbar and drawer behavior.
+- Moved the dashboard title, subtitle, search affordance, disabled notification shortcut, and new-task action into the new shell header slots.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/components/AppLayout.vue src/features/tasks/pages/DashboardPage.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Targeted frontend verification: `cd apps/frontend && npm run build`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused shell layout update. Manual verification should open Dashboard on desktop and mobile widths, confirm header slot content appears in the desktop topbar, and confirm the mobile drawer still opens and closes.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (AI Workspace Hero Copy)
 
 ### Changed
@@ -24,7 +58,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused project-list safety change. Manual verification should open Projects, click Archive project, cancel once, then confirm and verify inline success/error feedback.
 - Applicable skills: none. Delegated agents: none.
 
@@ -77,7 +111,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused widget polish. Manual verification should open an authenticated route, open Nova, confirm the empty state and close control, send a message, and confirm user/Nova bubbles render.
 - Applicable skills: none. Delegated agents: none.
 
@@ -109,7 +143,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused dashboard affordance fix. Manual verification should submit a non-empty dashboard search and confirm navigation to `/activity?q=<term>`.
 - Applicable skills: none. Delegated agents: none.
 
@@ -128,7 +162,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused shell responsiveness change. Manual verification should resize below 1200px, open the navigation drawer, tab to the menu and logout controls, and confirm route navigation closes the drawer.
 - Applicable skills: none. Delegated agents: none.
 
@@ -146,7 +180,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused task creation UX change.
 - Applicable skills: none. Delegated agents: none.
 
@@ -164,7 +198,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused API lookup change. Manual verification should open an authenticated task detail route and confirm the page loads via `GET /v1/tasks/{id}`.
 - Applicable skills: none. Delegated agents: none.
 
@@ -182,7 +216,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused auth-session state change. Manual verification should seed an expired access token and valid refresh token, confirm the protected request retries successfully, and confirm `authStore.session.expiresAt` updates without clearing `currentUser`.
 - Applicable skills: none. Delegated agents: none.
 
@@ -207,7 +241,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused shell responsiveness change. Manual verification should resize below 1200px, open the navigation drawer, tab to the menu and logout controls, and confirm route navigation closes the drawer.
 - Applicable skills: none. Delegated agents: none.
 
@@ -242,7 +276,7 @@
 ### Verification notes
 
 - Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
-- Full gate verification: `make vibe-verify`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck and build passed.
 - Browser E2E outcome: not run in this container; no browser automation was requested for this focused UI contract adjustment.
 - Applicable skills: none. Delegated agents: none.
 

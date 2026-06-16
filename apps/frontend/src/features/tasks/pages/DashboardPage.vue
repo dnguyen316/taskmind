@@ -90,33 +90,28 @@ onMounted(async () => {
 
 <template>
   <AppLayout :task-count="realTaskMetrics.active">
-    <header class="topbar">
-      <div>
-        <h1>Dashboard</h1>
-        <p>Live task/project basics now; analytics widgets come in M12.</p>
-      </div>
-      <div class="topbar-actions">
-        <div class="dashboard-search">
-          <a-input-search
-            v-model:value="searchQuery"
-            size="large"
-            placeholder="Search activity, tasks, projects..."
-            enter-button
-            allow-clear
-            @search="submitDashboardSearch"
-          >
-            <template #prefix><SearchOutlined /></template>
-          </a-input-search>
-          <p>Press Enter to search Relay activity for matching task and project events.</p>
-        </div>
-        <a-button shape="circle" disabled title="Notifications coming in a later milestone"
-          ><BellOutlined
-        /></a-button>
-        <RouterLink to="/tasks"
-          ><a-button type="primary" size="large">+ New task</a-button></RouterLink
+    <template #title>Dashboard</template>
+    <template #subtitle>Live task/project basics now; analytics widgets come in M12.</template>
+    <template #headerActions>
+      <div class="dashboard-search">
+        <a-input-search
+          v-model:value="searchQuery"
+          size="large"
+          placeholder="Search activity, tasks, projects..."
+          enter-button
+          allow-clear
+          @search="submitDashboardSearch"
         >
+          <template #prefix><SearchOutlined /></template>
+        </a-input-search>
       </div>
-    </header>
+      <a-button shape="circle" disabled title="Notifications coming in a later milestone"
+        ><BellOutlined
+      /></a-button>
+      <RouterLink to="/tasks"
+        ><a-button type="primary" size="large">+ New task</a-button></RouterLink
+      >
+    </template>
 
     <section class="brief-card tm-card-surface">
       <h2>
@@ -204,30 +199,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.topbar {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.topbar h1 {
-  margin: 0;
-  color: var(--tm-text);
-}
-
-.topbar p {
-  margin: 2px 0 0;
-  color: var(--tm-muted);
-}
-
-.topbar-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.topbar-actions .ant-input-affix-wrapper {
+.dashboard-search .ant-input-affix-wrapper {
   width: 360px;
   color: var(--tm-text);
   background: var(--tm-card-bg);
@@ -348,18 +320,6 @@ onMounted(async () => {
   .kpi-grid,
   .roadmap-grid {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 860px) {
-  .topbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topbar-actions .ant-input-affix-wrapper {
-    width: 100%;
-    min-width: 0;
   }
 }
 </style>
