@@ -300,6 +300,33 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+
+  /v1/planner/daily/generate:
+    post:
+      summary: Generate a daily task plan
+      description: Generates a daily plan for the requested user. Non-privileged callers may only plan for their authenticated userId; ADMIN and MANAGER callers may plan for another user. Cross-user non-privileged requests return 403 Forbidden.
+      operationId: generateDailyPlan
+      tags: [AI, Planner]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DailyPlanRequest'
+      responses:
+        '200':
+          description: Daily plan ordered by priority, due risk, and dependency readiness
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyPlanResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Non-privileged caller requested a plan for another user
+
   /v1/projects/{projectId}/ai-brief:
     post:
       summary: Generate a project AI brief
@@ -2072,6 +2099,44 @@ components:
         riskNotes:
           type: array
           items: {type: string}
+
+
+    DailyPlanRequest:
+      type: object
+      required: [userId, availableMinutes]
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: User to plan for. Must match the authenticated user unless the caller has ADMIN or MANAGER role.
+        availableMinutes: {type: integer, minimum: 1, maximum: 1440}
+        includeBlockedTasks:
+          type: boolean
+          default: false
+
+    PlannedTask:
+      type: object
+      required: [taskId, title, status, durationMinutes, rationale]
+      properties:
+        taskId: {type: string, format: uuid}
+        title: {type: string}
+        status: {type: string}
+        durationMinutes: {type: integer}
+        rationale: {type: string}
+
+    DailyPlanResponse:
+      type: object
+      required: [plan, overflow, allocatedMinutes]
+      properties:
+        plan:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedTask'
+        overflow:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedTask'
+        allocatedMinutes: {type: integer}
 
     AiWeeklyReviewRequest:
       type: object

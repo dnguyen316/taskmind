@@ -23,7 +23,7 @@ Core exposes the only **public** API; the frontend talks only to Core. Relay and
 | Integrations | `/v1/integrations/**` | Jira/GitHub OAuth callbacks, import, publish, wiki. |
 | Notifications | `/v1/notifications/**`, preferences, `GET /v1/notifications/stream` (SSE) | In-app + SSE. |
 | Spec breakdown | `/v1/spec-breakdown/**`, `/v1/projects/{projectId}/spec-templates`, `/v1/spec-templates/{id}` | Async jobs + templates. |
-| AI BFF | `/v1/ai/capture`, `/v1/ai/capture/accept`, `/v1/ai/capture/reject`, `/v1/ai/goals/{id}/breakdown`, `/v1/ai/tasks/describe`, `/v1/ai/tasks/describe/autocomplete`, `/v1/ai/tasks/translate`, `/v1/planner/**`, `/v1/review/weekly/generate` | Facades to Nova and Core-owned AI decision capture. |
+| AI BFF | `/v1/ai/capture`, `/v1/ai/capture/accept`, `/v1/ai/capture/reject`, `/v1/ai/goals/{id}/breakdown`, `/v1/ai/tasks/describe`, `/v1/ai/tasks/describe/autocomplete`, `/v1/ai/tasks/translate`, `/v1/planner/**`, `/v1/review/weekly/generate` | Facades to Nova and Core-owned AI decision capture. `POST /v1/planner/daily/generate` accepts an explicit `userId`; non-privileged callers must use their authenticated user id, while ADMIN/MANAGER may plan cross-user. |
 | Nova | `POST /v1/nova/chat`, `GET /v1/nova/capabilities`, `GET /v1/nova/runs/{runId}` | Authenticated Core facade over provider-neutral Nova contracts. |
 
 Rate limiting: `/v1/**` may return `429 Too Many Requests`.

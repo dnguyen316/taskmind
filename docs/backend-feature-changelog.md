@@ -1,3 +1,17 @@
+## 2026-06-16 (Daily Planner Cross-User Authorization)
+
+### Changed
+
+- Daily planner requests keep the explicit `userId` contract, but non-privileged callers now receive `403 Forbidden` when requesting a plan for any user other than the authenticated principal.
+- ADMIN and MANAGER callers may continue to generate daily plans for another user.
+- Documented the daily planner endpoint and authorization behavior in the Core OpenAPI contract.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=PlanningControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Full gate: `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (M08 Nova Chat Streaming Facade)
 
 ### Added

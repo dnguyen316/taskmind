@@ -1,8 +1,8 @@
 package com.taskmind.backend.task.interfaces.rest;
 
-import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.ai.application.AiDomainEventPublisher;
 import com.taskmind.backend.ai.application.AiFacadeApplicationService;
+import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.task.application.CreateTaskCommand;
 import com.taskmind.backend.task.application.TaskApplicationService;
 import com.taskmind.backend.task.application.TaskLinkApplicationService;
@@ -16,11 +16,12 @@ import com.taskmind.backend.task.interfaces.rest.PlanningController.GoalDraftTas
 import com.taskmind.backend.task.interfaces.rest.PlanningController.GoalMilestone;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.PlannedTask;
 import com.taskmind.backend.task.interfaces.rest.PlanningController.RescheduleProposal;
+import com.taskmind.events.EventTypes;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -28,16 +29,17 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.taskmind.events.EventTypes;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1")
@@ -178,6 +180,12 @@ public class PlanningController {
     @PostMapping("/planner/daily/generate")
     public DailyPlanResponse generateDailyPlan(
             AuthenticatedUser requester, @Valid @RequestBody DailyPlanRequest request) {
+        if (!requester.isPrivileged() && !requester.userId().equals(request.userId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Only privileged users can generate daily plans for another user");
+        }
+
         List<Task> tasks =
                 taskApplicationService.list(
                         requester, Optional.of(request.userId()), Optional.empty(), false, 0, 200);

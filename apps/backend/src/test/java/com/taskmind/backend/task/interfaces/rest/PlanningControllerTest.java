@@ -199,7 +199,7 @@ class PlanningControllerTest {
     }
 
     @Test
-    void arbitraryRoleHeaderCannotElevateDailyPlannerAccess() throws Exception {
+    void nonPrivilegedDailyPlannerRejectsCrossUserRequest() throws Exception {
         createTask(OTHER_USER_ID, "Other user's task");
 
         mockMvc.perform(post("/v1/planner/daily/generate")
@@ -214,9 +214,7 @@ class PlanningControllerTest {
                       "includeBlockedTasks": true
                     }
                     """))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.plan.length()").value(0))
-            .andExpect(jsonPath("$.overflow.length()").value(0));
+            .andExpect(status().isForbidden());
     }
 
     @Test
