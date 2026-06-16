@@ -27,6 +27,8 @@ class ProjectMembershipControllerTest {
     private static final String ADMIN_ID = "33333333-3333-3333-3333-333333333333";
     private static final String MEMBER_ID = "22222222-2222-2222-2222-222222222222";
     private static final String NON_MEMBER_ID = "44444444-4444-4444-4444-444444444444";
+    private static final String PRIVILEGED_ADMIN_ID = "77777777-7777-7777-7777-777777777777";
+    private static final String PRIVILEGED_MANAGER_ID = "88888888-8888-8888-8888-888888888888";
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,6 +79,77 @@ class ProjectMembershipControllerTest {
         addMemberAsOwner(projectId, MEMBER_ID, "MEMBER");
 
         mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(NON_MEMBER_ID)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void privilegedAdminCanListAddAndRemoveMembersWithoutProjectMembership() throws Exception {
+        var projectId = createProject();
+        var addedUserId = "99999999-9999-9999-9999-999999999999";
+
+        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(PRIVILEGED_ADMIN_ID, "ADMIN")))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(PRIVILEGED_ADMIN_ID, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId": "%s", "role": "MEMBER"}
+                    """.formatted(addedUserId)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.projectId").value(projectId))
+            .andExpect(jsonPath("$.userId").value(addedUserId))
+            .andExpect(jsonPath("$.role").value("MEMBER"));
+
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, addedUserId)
+                .with(jwt(PRIVILEGED_ADMIN_ID, "ADMIN")))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void privilegedManagerCanListAddAndRemoveMembersWithoutProjectMembership() throws Exception {
+        var projectId = createProject();
+        var addedUserId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(PRIVILEGED_MANAGER_ID, "MANAGER")))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(PRIVILEGED_MANAGER_ID, "MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId": "%s", "role": "MEMBER"}
+                    """.formatted(addedUserId)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.projectId").value(projectId))
+            .andExpect(jsonPath("$.userId").value(addedUserId))
+            .andExpect(jsonPath("$.role").value("MEMBER"));
+
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, addedUserId)
+                .with(jwt(PRIVILEGED_MANAGER_ID, "MANAGER")))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void forbiddenListAddAndRemoveByNonPrivilegedNonMember() throws Exception {
+        var projectId = createProject();
+
+        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(NON_MEMBER_ID)))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                .with(jwt(NON_MEMBER_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "role": "MEMBER"}
+                    """))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, MEMBER_ID)
                 .with(jwt(NON_MEMBER_ID)))
             .andExpect(status().isForbidden());
     }

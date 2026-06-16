@@ -66,12 +66,18 @@ public class ProjectMembershipApplicationService {
     }
 
     private void assertCanManageMembers(AuthenticatedUser actor, UUID projectId) {
+        if (actor.isPrivileged()) {
+            return;
+        }
         if (!isOwner(actor.userId(), projectId) && !isAdmin(actor.userId(), projectId)) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to manage project members");
         }
     }
 
     private void assertCanListMembers(AuthenticatedUser actor, UUID projectId) {
+        if (actor.isPrivileged()) {
+            return;
+        }
         if (!isMember(projectId, actor.userId())) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to list project members");
         }
