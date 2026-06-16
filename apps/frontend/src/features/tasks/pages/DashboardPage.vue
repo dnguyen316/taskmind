@@ -114,15 +114,23 @@ onMounted(async () => {
     </template>
 
     <section class="brief-card tm-card-surface">
-      <h2>
-        Good morning <span>REAL TASK METRICS</span
-        ><span class="muted-pill">Dashboard analytics coming in M12</span>
-      </h2>
-      <p>
-        You have
-        <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong> and
-        <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong> from the live task API.
-      </p>
+      <div class="brief-header">
+        <div class="brief-avatar" aria-hidden="true">AI</div>
+        <div class="brief-copy">
+          <div class="brief-title-row">
+            <h2>Good morning</h2>
+            <span class="brief-chip primary">REAL TASK METRICS</span>
+            <span class="brief-chip muted">Dashboard analytics coming in M12</span>
+          </div>
+          <p>
+            You have
+            <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong>
+            and
+            <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong>
+            from the live task API.
+          </p>
+        </div>
+      </div>
       <div class="live-actions">
         <RouterLink to="/tasks"><a-button type="primary">Review live tasks</a-button></RouterLink>
         <RouterLink to="/projects"><a-button>Open projects</a-button></RouterLink>
@@ -211,21 +219,56 @@ onMounted(async () => {
   border-color: var(--tm-primary-soft-border);
 }
 
+.brief-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.brief-avatar {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--tm-accent-indigo);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--tm-primary-soft);
+  border: 1px solid var(--tm-primary-soft-border);
+  border-radius: 14px;
+}
+
+.brief-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brief-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .brief-card h2 {
   margin: 0;
   color: var(--tm-text);
 }
 
-.brief-card span {
-  margin-left: 8px;
+.brief-chip {
   padding: 4px 8px;
-  color: var(--tm-accent-indigo);
   font-size: 12px;
-  background: var(--tm-primary-soft);
   border-radius: 999px;
 }
 
-.brief-card .muted-pill {
+.brief-chip.primary {
+  color: var(--tm-accent-indigo);
+  background: var(--tm-primary-soft);
+}
+
+.brief-chip.muted {
   color: var(--tm-muted);
   background: var(--tm-surface-subtle);
 }
