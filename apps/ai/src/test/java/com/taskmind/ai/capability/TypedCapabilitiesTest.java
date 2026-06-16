@@ -104,6 +104,30 @@ class TypedCapabilitiesTest {
                         new DashboardInsightsCapability(mapper),
                         mapper.createObjectNode()
                                 .put("userId", "00000000-0000-0000-0000-000000000004"),
-                        List.of("userId", "summary", "insights", "recommendations")));
+                        List.of("userId", "summary", "insights", "recommendations")),
+                Arguments.of(
+                        new SpecOutlineCapability(mapper),
+                        mapper.createObjectNode().put("specText", "Launch reminders"),
+                        List.of("epics", "stories", "warnings")),
+                Arguments.of(
+                        new SpecEnrichCapability(mapper),
+                        mapper.createObjectNode().put("specText", "Launch reminders"),
+                        List.of("items", "risks", "labels")),
+                Arguments.of(
+                        new SpecBreakdownCapability(mapper),
+                        mapper.createObjectNode().put("specText", "Launch reminders"),
+                        List.of("tree", "metadata", "warnings")),
+                Arguments.of(
+                        new SpecBreakdownSectionCapability(mapper),
+                        mapper.createObjectNode().put("sectionText", "Reminder preferences"),
+                        List.of("sectionTitle", "items", "warnings")),
+                Arguments.of(
+                        new SpecBreakdownMergeCapability(mapper),
+                        mapper.createObjectNode().put("draftTree", "[]"),
+                        List.of("mergedTree", "conflicts", "warnings")),
+                Arguments.of(
+                        new SpecSuggestLinksCapability(mapper),
+                        mapper.createObjectNode().put("specText", "Launch reminders"),
+                        List.of("links", "dependencies", "warnings")));
     }
 }

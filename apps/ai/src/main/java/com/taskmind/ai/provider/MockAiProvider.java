@@ -149,6 +149,70 @@ public class MockAiProvider implements AiProvider {
                             "Scheduled to protect focus for "
                                     + text(input, "title", "this task")
                                     + ".");
+
+            case "spec-outline" -> {
+                String title = firstMeaningfulLine(text(input, "specText", "Spec workspace"));
+                var epics = output.putArray("epics");
+                ObjectNode epic = epics.addObject();
+                epic.put("title", "Epic: " + title);
+                epic.put("issueType", "EPIC");
+                var stories = output.putArray("stories");
+                ObjectNode story = stories.addObject();
+                story.put("title", "Story: deliver " + title);
+                story.put("parentTitle", epic.get("title").asText());
+                story.put("issueType", "STORY");
+                output.putArray("warnings");
+            }
+            case "spec-enrich" -> {
+                var items = output.putArray("items");
+                ObjectNode item = items.addObject();
+                item.put("title", firstMeaningfulLine(text(input, "specText", "Spec item")));
+                item.putArray("acceptanceCriteria").add("User can review the generated draft before materialization.");
+                item.put("estimatePoints", 3);
+                output.putArray("risks").add("Validate assumptions with the product owner.");
+                output.putArray("labels").add("ai-generated").add("spec-breakdown");
+            }
+            case "spec-breakdown" -> {
+                String title = firstMeaningfulLine(text(input, "specText", "Spec workspace"));
+                var tree = output.putArray("tree");
+                ObjectNode epic = tree.addObject();
+                epic.put("level", "EPIC");
+                epic.put("title", "Epic: " + title);
+                var stories = epic.putArray("children");
+                ObjectNode story = stories.addObject();
+                story.put("level", "STORY");
+                story.put("title", "Story: implement " + title);
+                var subtasks = story.putArray("children");
+                ObjectNode subtask = subtasks.addObject();
+                subtask.put("level", "SUBTASK");
+                subtask.put("title", "Subtask: verify " + title);
+                output.putObject("metadata").put("template", text(input, "templateKey", "default"));
+                output.putArray("warnings");
+            }
+            case "spec-breakdown-section" -> {
+                String section = firstMeaningfulLine(text(input, "sectionText", "Selected section"));
+                output.put("sectionTitle", section);
+                var items = output.putArray("items");
+                ObjectNode item = items.addObject();
+                item.put("level", "STORY");
+                item.put("title", "Story: " + section);
+                item.putArray("acceptanceCriteria").add("Section behavior is captured as reviewable work.");
+                output.putArray("warnings");
+            }
+            case "spec-merge" -> {
+                output.set("mergedTree", input.path("draftTree").deepCopy());
+                output.putArray("conflicts");
+                output.putArray("warnings").add("Merged deterministically; review before materializing tasks.");
+            }
+            case "spec-suggest-links" -> {
+                var links = output.putArray("links");
+                ObjectNode link = links.addObject();
+                link.put("type", "doc");
+                link.put("title", "Reference for " + firstMeaningfulLine(text(input, "specText", "spec")));
+                link.put("confidence", 0.71d);
+                output.putArray("dependencies").add("Confirm upstream API availability.");
+                output.putArray("warnings");
+            }
             case "dashboard-insights" -> {
                 output.put("userId", text(input, "userId", "00000000-0000-0000-0000-000000000000"));
                 output.put("summary", "Focus on overdue and high-priority work first.");
@@ -164,6 +228,15 @@ public class MockAiProvider implements AiProvider {
             }
         }
         return output;
+    }
+
+    private String firstMeaningfulLine(String text) {
+        for (String line : text.split("\\R")) {
+            if (!line.isBlank()) {
+                return line.trim();
+            }
+        }
+        return "Spec workspace";
     }
 
     private String text(JsonNode input, String field, String fallback) {

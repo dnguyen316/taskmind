@@ -1,5 +1,19 @@
 # Backend Feature Changelog
 
+## 2026-06-16 (M09 Nova Spec Capabilities)
+
+### Added
+
+- Added typed Nova capability registrations for `spec-outline`, `spec-enrich`, `spec-breakdown`, `spec-breakdown-section`, `spec-merge`, and `spec-suggest-links` to begin the M09 spec breakdown pipeline.
+- Extended the deterministic mock provider with reviewable Epic → Story → Subtask, enrichment, section, merge, and link-suggestion outputs for targeted Nova tests.
+- Added focused typed-capability coverage for M09 required inputs and output shape metadata.
+
+### Verification Notes
+
+- Advanced primary milestone: M09 spec breakdown pipeline, Nova capability foundation slice.
+- Core OpenAPI was not changed because this pass added internal Nova capability behavior only; Core `/v1/spec-breakdown/**` facades remain follow-up work.
+- Applicable skills: `taskmind-backend-feature`. Delegated agents: none.
+
 ## 2026-06-15 (M03 Task Detail OpenAPI Contract)
 
 ### Changed

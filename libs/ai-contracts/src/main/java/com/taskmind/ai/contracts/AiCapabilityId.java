@@ -18,6 +18,12 @@ public record AiCapabilityId(String value) {
     public static final AiCapabilityId DURATION_ESTIMATE = new AiCapabilityId("duration-estimate");
     public static final AiCapabilityId RATIONALE_PHRASE = new AiCapabilityId("rationale-phrase");
     public static final AiCapabilityId DASHBOARD_INSIGHTS = new AiCapabilityId("dashboard-insights");
+    public static final AiCapabilityId SPEC_OUTLINE = new AiCapabilityId("spec-outline");
+    public static final AiCapabilityId SPEC_ENRICH = new AiCapabilityId("spec-enrich");
+    public static final AiCapabilityId SPEC_BREAKDOWN = new AiCapabilityId("spec-breakdown");
+    public static final AiCapabilityId SPEC_BREAKDOWN_SECTION = new AiCapabilityId("spec-breakdown-section");
+    public static final AiCapabilityId SPEC_MERGE = new AiCapabilityId("spec-merge");
+    public static final AiCapabilityId SPEC_SUGGEST_LINKS = new AiCapabilityId("spec-suggest-links");
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public AiCapabilityId {
