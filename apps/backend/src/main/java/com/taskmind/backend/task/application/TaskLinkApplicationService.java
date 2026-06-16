@@ -1,6 +1,7 @@
 package com.taskmind.backend.task.application;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
+import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.task.domain.model.*;
 import com.taskmind.backend.task.domain.repository.*;
 import java.time.Instant;
@@ -12,16 +13,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskLinkApplicationService {
     private final TaskRepository tasks;
     private final TaskLinkRepository links;
+    private final ProjectMembershipApplicationService memberships;
 
-    public TaskLinkApplicationService(TaskRepository t, TaskLinkRepository l) {
+    public TaskLinkApplicationService(
+            TaskRepository t, TaskLinkRepository l, ProjectMembershipApplicationService m) {
         tasks = t;
         links = l;
+        memberships = m;
     }
 
     @Transactional
     public TaskLink create(AuthenticatedUser u, UUID source, UUID target, TaskLinkType type) {
-        Task s = authorized(u, source);
-        Task t = authorized(u, target);
+        Task s = authorizedToMutateLink(u, source);
+        Task t = authorizedToMutateLink(u, target);
         if (s.projectId() == null || !s.projectId().equals(t.projectId()))
             throw new IllegalArgumentException("Linked tasks must belong to the same project");
         return links.save(
@@ -30,21 +34,38 @@ public class TaskLinkApplicationService {
     }
 
     public List<TaskLink> list(AuthenticatedUser u, UUID id) {
-        authorized(u, id);
+        authorizedToRead(u, id);
         return links.findForTask(id);
     }
 
     @Transactional
     public void delete(AuthenticatedUser u, UUID id) {
         TaskLink l = links.findById(id).orElseThrow();
-        authorized(u, l.sourceTaskId());
+        authorizedToMutateLink(u, l.sourceTaskId());
         links.deleteById(id);
     }
 
-    private Task authorized(AuthenticatedUser u, UUID id) {
+    private Task authorizedToRead(AuthenticatedUser u, UUID id) {
         Task t = tasks.findById(id).orElseThrow();
-        if (!u.isPrivileged() && !u.userId().equals(t.userId()))
-            throw new IllegalArgumentException("Access denied");
+        if (!canRead(u, t)) throw new IllegalArgumentException("Access denied");
         return t;
+    }
+
+    private Task authorizedToMutateLink(AuthenticatedUser u, UUID id) {
+        Task t = tasks.findById(id).orElseThrow();
+        if (!canMutateLink(u, t)) throw new IllegalArgumentException("Access denied");
+        return t;
+    }
+
+    private boolean canRead(AuthenticatedUser u, Task t) {
+        return u.isPrivileged()
+                || u.userId().equals(t.userId())
+                || (t.projectId() != null && memberships.isMember(t.projectId(), u.userId()));
+    }
+
+    private boolean canMutateLink(AuthenticatedUser u, Task t) {
+        return u.isPrivileged()
+                || u.userId().equals(t.userId())
+                || (t.projectId() != null && memberships.isMember(t.projectId(), u.userId()));
     }
 }
