@@ -44,6 +44,37 @@ paths:
         '502':
           $ref: '#/components/responses/NovaFacadeError'
 
+  /v1/nova/chat/stream:
+    post:
+      summary: Stream an authenticated chat turn to Nova through Core
+      operationId: streamNovaChatTurn
+      tags: [Nova]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovaChatRequest'
+      responses:
+        '200':
+          description: Server-sent Nova assistant chunks. Each `data:` event is a NovaChatStreamChunk JSON object.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                chunk:
+                  value: |
+                    data: {"sessionId":"session-1","content":"Hello","done":false}
+
+                    data: {"sessionId":"session-1","content":"","done":true}
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          $ref: '#/components/responses/NovaFacadeError'
+
   /v1/nova/capabilities:
     get:
       summary: List enabled Nova capabilities through Core
@@ -1348,6 +1379,19 @@ components:
         correlationId:
           type: string
           nullable: true
+
+    NovaChatStreamChunk:
+      type: object
+      required: [sessionId, content, done]
+      properties:
+        sessionId:
+          type: string
+        content:
+          type: string
+          description: Assistant text delta for this stream event.
+        done:
+          type: boolean
+          description: True when the stream is complete.
 
     NovaChatResponse:
       type: object

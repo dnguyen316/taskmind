@@ -1,3 +1,17 @@
+## 2026-06-16 (M08 Nova Chat Streaming Facade)
+
+### Added
+
+- Added Core `POST /v1/nova/chat/stream` as an authenticated `text/event-stream` facade for Nova chat turns.
+- Extended the Core Nova client with a deterministic SSE fallback backed by the existing non-streaming Nova chat response for local Nova deployments that do not expose streaming.
+- Documented the streaming endpoint and `NovaChatStreamChunk` event payload in the Core OpenAPI contract.
+- Added MockMvc coverage for authenticated SSE access and Nova failure problem-details mapping.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=NovaFacadeControllerTest,RestNovaClientTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 # Backend Feature Changelog
 
 ## 2026-06-15 (M03 Task Detail OpenAPI Contract)

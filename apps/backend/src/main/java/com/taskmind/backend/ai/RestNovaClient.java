@@ -9,6 +9,8 @@ import com.taskmind.ai.contracts.capability.CapabilityRequest;
 import com.taskmind.ai.contracts.capability.CapabilityResponse;
 import com.taskmind.ai.contracts.chat.ChatRequest;
 import com.taskmind.ai.contracts.chat.ChatResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,13 @@ public class RestNovaClient implements NovaClient {
     }
 
     @Override
+    public void chatStream(ChatRequest request, OutputStream outputStream) throws IOException {
+        ChatResponse response = chat(request);
+        writeSse(outputStream, new ChatStreamChunk(response.sessionId(), response.message(), false));
+        writeSse(outputStream, new ChatStreamChunk(response.sessionId(), "", true));
+    }
+
+    @Override
     public CapabilityResponse executeCapability(String capabilityId, CapabilityRequest request) {
         return exchange(
                 () ->
@@ -81,6 +90,13 @@ public class RestNovaClient implements NovaClient {
                                 .header(SERVICE_TOKEN_HEADER, properties.serviceToken())
                                 .retrieve()
                                 .body(AiRunSummary.class));
+    }
+
+    private void writeSse(OutputStream outputStream, ChatStreamChunk chunk) throws IOException {
+        outputStream.write("data: ".getBytes(StandardCharsets.UTF_8));
+        objectMapper.writeValue(outputStream, chunk);
+        outputStream.write("\n\n".getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
     }
 
     private <T> T exchange(NovaExchange<T> exchange) {
@@ -132,6 +148,8 @@ public class RestNovaClient implements NovaClient {
         }
         return null;
     }
+
+    private record ChatStreamChunk(String sessionId, String content, boolean done) {}
 
     @FunctionalInterface
     private interface NovaExchange<T> {
