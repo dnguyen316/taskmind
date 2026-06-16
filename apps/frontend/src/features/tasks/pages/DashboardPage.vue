@@ -40,151 +40,35 @@ const realTaskMetrics = computed(() => {
   }
 })
 
-interface DashboardQuickAction {
-  label: string
-  milestone: string
-}
-
-interface DashboardProjectStatus {
-  name: string
-  status: 'On track' | 'At risk' | 'Planning'
-  progress: number
-  color: string
-}
-
-interface DashboardRecentActivity {
-  initials: string
-  name: string
-  action: string
-  time: string
-  color: string
-}
-
-interface DashboardPreview {
-  quickActions: DashboardQuickAction[]
-  weekdays: string[]
-  projectStatus: DashboardProjectStatus[]
-  recentActivity: DashboardRecentActivity[]
-}
-
-interface AnalyticsPreviewInsight {
+interface DashboardRoadmapCard {
   title: string
+  milestone: string
   description: string
-  action: string
 }
 
-const mockOnlyDashboardPreview: DashboardPreview = {
-  quickActions: [
-    { label: 'Show blockers', milestone: 'M12' },
-    { label: 'Rebalance workload', milestone: 'M12' },
-    { label: 'Plan this week', milestone: 'M04' },
-    { label: 'Ask Nova anything', milestone: 'M08' },
-  ],
-  weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  projectStatus: [
-    {
-      name: 'Atlas — Web App v2',
-      status: 'On track',
-      progress: 68,
-      color: 'var(--tm-accent-blue)',
-    },
-    { name: 'Ion — Mobile App', status: 'At risk', progress: 34, color: 'var(--tm-accent-purple)' },
-    {
-      name: 'Nova — AI Routing Engine',
-      status: 'On track',
-      progress: 82,
-      color: 'var(--tm-accent-teal)',
-    },
-    {
-      name: 'Echo — Customer Insights',
-      status: 'Planning',
-      progress: 12,
-      color: 'var(--tm-accent-orange)',
-    },
-    {
-      name: 'Orbit — Onboarding Flow',
-      status: 'On track',
-      progress: 54,
-      color: 'var(--tm-accent-green)',
-    },
-    {
-      name: 'Pulse — Performance Sprint',
-      status: 'On track',
-      progress: 71,
-      color: 'var(--tm-accent-pink)',
-    },
-  ],
-  recentActivity: [
-    {
-      initials: 'MP',
-      name: 'Maya Patel',
-      action: 'moved TSK-1027 to Review',
-      time: '12m ago',
-      color: 'var(--tm-accent-indigo)',
-    },
-    {
-      initials: 'JL',
-      name: 'Jordan Lee',
-      action: 'commented on Atlas blocker thread',
-      time: '32m ago',
-      color: 'var(--tm-accent-teal)',
-    },
-    {
-      initials: 'SR',
-      name: 'Sam Rivera',
-      action: 'added risk note to TSK-1029',
-      time: '1h ago',
-      color: 'var(--tm-accent-orange)',
-    },
-    {
-      initials: 'TP',
-      name: 'Theo Park',
-      action: 'created sprint follow-up tasks',
-      time: '2h ago',
-      color: 'var(--tm-accent-blue-strong)',
-    },
-    {
-      initials: 'KT',
-      name: 'Kai Tanaka',
-      action: 'updated delivery forecast',
-      time: '3h ago',
-      color: 'var(--tm-accent-pink)',
-    },
-    {
-      initials: 'NA',
-      name: 'Nova AI',
-      action: 'summarized blockers for Atlas',
-      time: '4h ago',
-      color: 'var(--tm-accent-navy)',
-    },
-  ],
-}
-
-const analyticsPreviewInsights = computed<AnalyticsPreviewInsight[]>(() => {
-  const overdueTasks = visibleTasks.value.filter((task: Task) => isTaskOverdue(task))
-  const doneThisSprint = realTaskMetrics.value.completed
-
-  return [
-    {
-      title: overdueTasks.length ? 'Risk preview from current tasks' : 'Sprint flow preview',
-      description: overdueTasks.length
-        ? `${overdueTasks.length} overdue task(s) are visible locally. M12 will replace this placeholder with Relay-backed risk analytics.`
-        : 'No overdue items detected in the current task list. M12 will replace this placeholder with real trend analytics.',
-      action: 'Coming in M12',
-    },
-    {
-      title: 'Workload analytics placeholder',
-      description: `Team workload balancing needs the M12 analytics read model. Current completed task count is ${doneThisSprint}.`,
-      action: 'Coming in M12',
-    },
-    {
-      title: 'Nova insight placeholder',
-      description:
-        'User-facing AI dashboard insight generation is implemented in M08, then replaced by real dashboard widgets in M12.',
-      action: 'Coming in M08/M12',
-    },
-  ]
-})
+const upcomingDashboardFeatures: DashboardRoadmapCard[] = [
+  {
+    title: 'Team workload',
+    milestone: 'M12',
+    description:
+      'Capacity and balancing charts will appear here when dashboard analytics are live.',
+  },
+  {
+    title: 'Project health',
+    milestone: 'M12',
+    description: 'Project status cards will use Relay-backed analytics instead of sample progress.',
+  },
+  {
+    title: 'AI insights',
+    milestone: 'M08/M12',
+    description: 'Nova summaries and dashboard insight widgets are coming soon.',
+  },
+  {
+    title: 'Notifications',
+    milestone: 'M11',
+    description: 'Notification shortcuts are disabled until alert delivery is implemented.',
+  },
+]
 
 const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
 
@@ -244,15 +128,9 @@ onMounted(async () => {
         <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong> and
         <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong> from the live task API.
       </p>
-      <div class="chip-row">
-        <a-button
-          v-for="action in mockOnlyDashboardPreview.quickActions"
-          :key="action.label"
-          class="chip"
-          disabled
-        >
-          {{ action.label }} <span>Coming in {{ action.milestone }}</span>
-        </a-button>
+      <div class="live-actions">
+        <RouterLink to="/tasks"><a-button type="primary">Review live tasks</a-button></RouterLink>
+        <RouterLink to="/projects"><a-button>Open projects</a-button></RouterLink>
       </div>
     </section>
 
@@ -279,8 +157,8 @@ onMounted(async () => {
       </article>
     </section>
 
-    <section class="bottom-grid">
-      <div class="left-column">
+    <section class="live-dashboard-grid">
+      <div class="live-column">
         <a-card class="tasks-card tm-card-surface" :loading="loading" title="My Tasks">
           <template #extra><RouterLink to="/tasks">View all</RouterLink></template>
           <a-list class="tm-list-surface" :data-source="myTasks">
@@ -297,82 +175,31 @@ onMounted(async () => {
             </template>
           </a-list>
         </a-card>
-
-        <a-card
-          class="workload-card placeholder-card tm-card-surface"
-          title="Team Workload — This Week"
-        >
-          <template #extra>
-            <a-tag color="default">Mock preview · Coming in M12</a-tag>
-          </template>
-          <div class="legend"><span>To Do</span><span>In Progress</span><span>Done</span></div>
-          <div class="weeklines">
-            <div v-for="day in mockOnlyDashboardPreview.weekdays" :key="day" class="weekline">
-              <i></i><label>{{ day }}</label>
-            </div>
-          </div>
-        </a-card>
-
-        <a-card class="status-card placeholder-card tm-card-surface" title="Project Status">
-          <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
-          <div
-            class="project-row"
-            v-for="project in mockOnlyDashboardPreview.projectStatus"
-            :key="project.name"
-          >
-            <p>{{ project.name }}</p>
-            <div class="project-progress">
-              <a-tag
-                :color="
-                  project.status === 'At risk'
-                    ? 'orange'
-                    : project.status === 'Planning'
-                      ? 'default'
-                      : 'green'
-                "
-                >{{ project.status }}</a-tag
-              >
-              <a-progress
-                :percent="project.progress"
-                :show-info="false"
-                :stroke-color="project.color"
-              />
-              <span>{{ project.progress }}%</span>
-            </div>
-          </div>
-        </a-card>
-      </div>
-
-      <div class="right-column">
-        <a-card class="insights-card placeholder-card tm-card-surface" title="AI Insights">
-          <template #extra><a-tag color="blue">Coming in M08/M12</a-tag></template>
-          <ul>
-            <li v-for="insight in analyticsPreviewInsights" :key="insight.title">
-              <h4>{{ insight.title }}</h4>
-              <p>{{ insight.description }}</p>
-              <span class="placeholder-link">{{ insight.action }}</span>
-            </li>
-          </ul>
-        </a-card>
-
-        <a-card class="activity-card placeholder-card tm-card-surface" title="Recent Activity">
-          <template #extra><a-tag color="default">Mock preview · Coming in M12</a-tag></template>
-          <div
-            v-for="item in mockOnlyDashboardPreview.recentActivity"
-            :key="item.name + item.time"
-            class="activity-item"
-          >
-            <div class="activity-avatar" :style="{ backgroundColor: item.color }">
-              {{ item.initials }}
-            </div>
-            <div>
-              <strong>{{ item.name }}</strong> {{ item.action }}
-              <p>{{ item.time }}</p>
-            </div>
-          </div>
-        </a-card>
       </div>
     </section>
+
+    <a-collapse class="upcoming-collapse" ghost>
+      <a-collapse-panel key="upcoming-dashboard-features" header="Upcoming features">
+        <p class="upcoming-intro">
+          These dashboard areas are intentionally disabled until their backend data is live. No
+          sample people, projects, or activity are shown in primary dashboard areas.
+        </p>
+        <div class="roadmap-grid">
+          <article
+            v-for="feature in upcomingDashboardFeatures"
+            :key="feature.title"
+            class="roadmap-card tm-card-surface"
+            aria-disabled="true"
+          >
+            <div>
+              <h3>{{ feature.title }}</h3>
+              <p>{{ feature.description }}</p>
+            </div>
+            <a-tag color="default">Coming soon · {{ feature.milestone }}</a-tag>
+          </article>
+        </div>
+      </a-collapse-panel>
+    </a-collapse>
   </AppLayout>
 </template>
 
@@ -436,22 +263,10 @@ onMounted(async () => {
   color: var(--tm-text-muted);
 }
 
-.chip-row {
+.live-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-}
-
-.chip {
-  color: var(--tm-text);
-  background: var(--tm-surface-subtle);
-  border-color: var(--tm-border);
-  border-radius: 999px;
-}
-
-.chip span {
-  margin-left: 4px;
-  color: var(--tm-muted);
 }
 
 .kpi-grid {
@@ -476,162 +291,62 @@ onMounted(async () => {
   font-size: 44px;
 }
 
-.placeholder-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.placeholder-card::before {
-  position: absolute;
-  top: 12px;
-  right: -34px;
-  padding: 2px 34px;
-  color: var(--tm-text-soft);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  content: 'Placeholder';
-  background: var(--tm-surface-subtle);
-  border: 1px solid var(--tm-border);
-  transform: rotate(35deg);
-}
-
-.bottom-grid {
+.live-dashboard-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
   gap: 12px;
   align-items: start;
 }
 
-.left-column,
-.right-column {
+.live-column {
   display: grid;
   gap: 12px;
 }
 
-.legend {
-  display: flex;
-  gap: 10px;
-  color: var(--tm-muted);
+.due {
+  color: var(--tm-text-muted);
   font-size: 12px;
 }
 
-.weeklines {
+.upcoming-collapse {
+  border: 1px solid var(--tm-border);
+  border-radius: 18px;
+}
+
+.upcoming-intro {
+  margin: 0 0 14px;
+  color: var(--tm-text-muted);
+}
+
+.roadmap-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  padding-top: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.weekline i {
-  display: block;
-  height: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--tm-text-soft),
-    var(--tm-accent-blue),
-    var(--tm-accent-green)
-  );
-  border-radius: 999px;
-}
-
-.weekline label {
-  display: block;
-  margin-top: 8px;
-  color: var(--tm-muted);
-  font-size: 12px;
-  text-align: center;
-}
-
-.project-row {
+.roadmap-card {
   display: flex;
+  flex-direction: column;
   gap: 14px;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--tm-border-soft);
+  min-height: 150px;
+  padding: 16px;
+  opacity: 0.72;
+  filter: grayscale(0.2);
 }
 
-.project-row:last-child,
-.activity-item:last-child {
-  border-bottom: none;
+.roadmap-card h3 {
+  margin: 0 0 8px;
+  color: var(--tm-text);
 }
 
-.project-row p {
+.roadmap-card p {
   margin: 0;
-  color: var(--tm-text);
-}
-
-.project-progress {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  min-width: 320px;
-}
-
-.project-progress .ant-progress {
-  width: 120px;
-}
-
-.project-progress span,
-.due,
-.placeholder-link {
   color: var(--tm-text-muted);
-  font-size: 12px;
-}
-
-.placeholder-link {
-  font-weight: 600;
-}
-
-.insights-card ul {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.insights-card li + li {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--tm-border-soft);
-}
-
-.insights-card h4 {
-  margin: 0 0 4px;
-  color: var(--tm-text);
-}
-
-.insights-card p {
-  margin: 0 0 6px;
-  color: var(--tm-text-muted);
-}
-
-.activity-item {
-  display: flex;
-  gap: 10px;
-  padding: 9px 0;
-  color: var(--tm-text);
-  border-bottom: 1px solid var(--tm-border-soft);
-}
-
-.activity-avatar {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  color: var(--tm-accent-contrast);
-  font-size: 11px;
-  border-radius: 50%;
-  place-items: center;
-}
-
-.activity-item p {
-  margin: 3px 0 0;
-  color: var(--tm-muted);
-  font-size: 12px;
 }
 
 @media (max-width: 1200px) {
   .kpi-grid,
-  .bottom-grid {
+  .roadmap-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -642,14 +357,9 @@ onMounted(async () => {
     align-items: stretch;
   }
 
-  .topbar-actions .ant-input-affix-wrapper,
-  .project-progress {
+  .topbar-actions .ant-input-affix-wrapper {
     width: 100%;
     min-width: 0;
-  }
-
-  .weeklines {
-    grid-template-columns: 1fr;
   }
 }
 </style>
