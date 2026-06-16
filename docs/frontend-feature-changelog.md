@@ -1,5 +1,23 @@
 # Frontend Feature Changelog
 
+## 2026-06-16 (Nova Assistant Widget Polish)
+
+### Changed
+
+- Removed duplicate route visibility checks from the Nova assistant widget so app-level routing owns where it appears.
+- Added an accessible floating button label, visible panel close action, empty-state copy, surfaced chat errors, and separate user/Nova message bubbles.
+
+### Frontend-visible change recorded
+
+- Authenticated routes show a more accessible Nova assistant widget with clearer message layout and inline failure feedback, while unauthenticated routes continue to hide it from App-level routing.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused widget polish. Manual verification should open an authenticated route, open Nova, confirm the empty state and close control, send a message, and confirm user/Nova bubbles render.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (M12 Dashboard Trust Polish)
 
 ### Changed
