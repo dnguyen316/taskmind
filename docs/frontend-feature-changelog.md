@@ -13,6 +13,26 @@
 
 # Frontend Feature Changelog
 
+## 2026-06-16 (Sidebar Navigation Availability Labels)
+
+### Changed
+
+- Replaced milestone-coded sidebar badges with short user-facing availability labels for workspace navigation.
+- Added native tooltip copy for planned or preview workspace routes so users see availability context without developer milestone IDs in primary navigation.
+
+### Frontend-visible change recorded
+
+- Workspace sidebar entries now show concise labels such as Soon, Preview, and Beta instead of internal milestone references.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/components/AppSidebar.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Targeted frontend verification: `cd apps/frontend && npm run build`.
+- Full gate verification: `make vibe-verify` failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates`; frontend typecheck passed.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused navigation copy update. Manual verification should hover or focus workspace navigation items and confirm concise availability labels fit in desktop and mobile sidebar layouts.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (Nova Assistant Widget Polish)
 
 ### Changed
