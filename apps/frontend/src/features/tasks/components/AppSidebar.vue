@@ -81,29 +81,37 @@ function initials(value: string) {
     </nav>
     <p class="group-title">Workspace</p>
     <nav class="menu-group">
-      <RouterLink to="/team" class="menu-item" :class="{ active: isTeam }" @click="emit('navigate')"
-        ><TeamOutlined />Team <span class="coming-soon">Coming M12</span></RouterLink
+      <RouterLink
+        to="/team"
+        class="menu-item"
+        :class="{ active: isTeam }"
+        @click="emit('navigate')"
+        title="Team directory is planned and currently shows availability details"
+        ><TeamOutlined />Team <span class="nav-badge">Soon</span></RouterLink
       >
       <RouterLink
         to="/calendar"
         class="menu-item"
         :class="{ active: isCalendar }"
         @click="emit('navigate')"
-        ><CalendarOutlined />Calendar <span class="coming-soon">Coming M04</span></RouterLink
+        title="Calendar scheduling is available as an early preview"
+        ><CalendarOutlined />Calendar <span class="nav-badge">Preview</span></RouterLink
       >
       <RouterLink
         to="/inbox"
         class="menu-item"
         :class="{ active: isInbox }"
         @click="emit('navigate')"
-        ><InboxOutlined />Inbox <span class="coming-soon">Coming M08</span></RouterLink
+        title="Inbox capture AI tools are available as a beta"
+        ><InboxOutlined />Inbox <span class="nav-badge">Beta</span></RouterLink
       >
       <RouterLink
         to="/reports"
         class="menu-item"
         :class="{ active: isReports }"
         @click="emit('navigate')"
-        ><BarChartOutlined />Reports <span class="coming-soon">Coming M12</span></RouterLink
+        title="Reports are planned and currently show availability details"
+        ><BarChartOutlined />Reports <span class="nav-badge">Soon</span></RouterLink
       >
       <RouterLink
         to="/activity"
@@ -180,7 +188,7 @@ function initials(value: string) {
 }
 
 .menu-item em,
-.coming-soon {
+.nav-badge {
   margin-left: auto;
   padding: 0 8px;
   color: var(--tm-text-muted);
@@ -191,7 +199,7 @@ function initials(value: string) {
   border-radius: 999px;
 }
 
-.coming-soon {
+.nav-badge {
   padding: 1px 7px;
   font-size: 11px;
 }
