@@ -1,6 +1,7 @@
 package com.taskmind.backend.task.interfaces.rest;
 
 import static com.taskmind.backend.security.TestJwtSupport.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -397,6 +398,89 @@ class TaskControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":999,\"title\":\"stale\"}"))
             .andExpect(status().isConflict());
+    }
+
+    @Test
+    void projectMembersCanCreateListAndDeleteTaskLinksButUnrelatedUsersCannot() throws Exception {
+        var ownerId = "12121212-1212-1212-1212-121212121212";
+        var taskOwnerId = "23232323-2323-2323-2323-232323232323";
+        var memberId = "34343434-3434-3434-3434-343434343434";
+        var unrelatedId = "45454545-4545-4545-4545-454545454545";
+
+        var projectResponse = mockMvc.perform(post("/v1/projects").with(jwt(ownerId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "name": "Task link collaboration project",
+                      "key": "LNK",
+                      "ownerUserId": "%s"
+                    }
+                    """.formatted(ownerId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        var projectId = objectMapper.readTree(projectResponse.getResponse().getContentAsString()).get("id").asText();
+
+        addProjectMember(projectId, ownerId, taskOwnerId);
+        addProjectMember(projectId, ownerId, memberId);
+
+        var sourceTaskId = createProjectTask(projectId, taskOwnerId, "Link source");
+        var targetTaskId = createProjectTask(projectId, taskOwnerId, "Link target");
+
+        mockMvc.perform(post("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(unrelatedId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"targetTaskId":"%s","linkType":"BLOCKS"}
+                    """.formatted(targetTaskId)))
+            .andExpect(status().isForbidden());
+
+        var linkResponse = mockMvc.perform(post("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(memberId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"targetTaskId":"%s","linkType":"BLOCKS"}
+                    """.formatted(targetTaskId)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.sourceTaskId").value(sourceTaskId))
+            .andExpect(jsonPath("$.targetTaskId").value(targetTaskId))
+            .andExpect(jsonPath("$.linkType").value("BLOCKS"))
+            .andReturn();
+        var linkId = objectMapper.readTree(linkResponse.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(memberId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(linkId));
+
+        mockMvc.perform(get("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(unrelatedId)))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/v1/task-links/{id}", linkId).with(jwt(memberId)))
+            .andExpect(status().isNoContent());
+    }
+
+    private void addProjectMember(String projectId, String ownerId, String memberId) throws Exception {
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId).with(jwt(ownerId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId":"%s","role":"MEMBER"}
+                    """.formatted(memberId)))
+            .andExpect(status().isCreated());
+    }
+
+    private String createProjectTask(String projectId, String userId, String title) throws Exception {
+        var response = mockMvc.perform(post("/v1/tasks").with(jwt(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "%s",
+                      "projectId": "%s",
+                      "title": "%s",
+                      "status": "TODO",
+                      "priority": 2,
+                      "source": "MANUAL"
+                    }
+                    """.formatted(userId, projectId, title)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
     }
 
 }
