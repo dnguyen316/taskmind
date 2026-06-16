@@ -1,3 +1,18 @@
+## 2026-06-16 (AI Workspace Hero Copy)
+
+### Changed
+
+- Replaced the internal milestone tag on the AI capture page with a user-facing workspace availability label.
+- Rewrote the page hero to describe the currently rendered AI capture, goal breakdown, and weekly review capabilities.
+- Moved forward-looking AI workspace copy into a collapsed secondary upcoming-features area.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/ai/pages/InboxCapturePage.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused copy update. Manual verification should open the AI workspace and confirm the hero, tag, and collapsed upcoming section read without milestone-coded primary copy.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (Project Archive Safety)
 
 ### Changed
