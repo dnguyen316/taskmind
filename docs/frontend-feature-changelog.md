@@ -1,5 +1,19 @@
 # Frontend Feature Changelog
 
+## 2026-06-15 (M12 Dashboard Trust Polish)
+
+### Changed
+
+- Reworked the dashboard so primary cards show only live task metrics, live task rows, and working Core/SPA links.
+- Moved unavailable analytics, AI insight, notification, workload, and project health areas into a compact collapsed “Upcoming features” roadmap with disabled/coming-soon copy.
+- Removed realistic fake people, task activity, and project names from primary dashboard UI areas to avoid mock data being mistaken for live data.
+
+### Verification notes
+
+- Target checks for this UI polish: `cd apps/frontend && npm run format -- src/features/tasks/pages/DashboardPage.vue`; `cd apps/frontend && npm run typecheck`; `cd apps/frontend && npm run build`; `make vibe-verify`.
+- Browser E2E proof remains skipped in this container unless a browser-capable local service stack is available.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-15 (Dashboard Search Affordance)
 
 ### Changed
