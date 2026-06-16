@@ -14,6 +14,7 @@ const {
   projects,
   loading,
   saving,
+  archivingProjectIds,
   errorMessage,
   successMessage,
   activeProjectsCount,
@@ -27,6 +28,15 @@ const successSignal = ref(0)
 const activeProjects = computed<Project[]>(() =>
   projects.value.filter((project) => !project.archivedAt),
 )
+const archiveButtonsDisabled = computed(() => saving.value)
+
+function isArchivingProject(projectId: string) {
+  return Boolean(archivingProjectIds.value[projectId])
+}
+
+async function confirmArchiveProject(projectId: string) {
+  await archiveProjectById(projectId)
+}
 
 onMounted(() => {
   void fetchProjects({ force: true })
@@ -55,9 +65,6 @@ async function createProject(payload: CreateProjectPayload) {
       </div>
     </section>
 
-    <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
-    <a-alert v-if="successMessage" type="success" show-icon :message="successMessage" />
-
     <div class="projects-grid">
       <ProjectCreateForm
         :saving="saving"
@@ -70,6 +77,10 @@ async function createProject(payload: CreateProjectPayload) {
         <template #title>
           <span class="card-title"><FolderOpenOutlined /> Active projects</span>
         </template>
+        <div v-if="errorMessage || successMessage" class="project-list-feedback">
+          <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
+          <a-alert v-else type="success" show-icon :message="successMessage" />
+        </div>
         <a-spin :spinning="loading">
           <a-empty v-if="activeProjects.length === 0" description="No active projects yet.">
             <template #image><PlusCircleOutlined class="empty-icon" /></template>
@@ -84,9 +95,23 @@ async function createProject(payload: CreateProjectPayload) {
                   >
                     View details
                   </a-button>
-                  <a-button danger type="link" @click="archiveProjectById(item.id)">
-                    Archive
-                  </a-button>
+                  <a-popconfirm
+                    title="Archive this project?"
+                    ok-text="Archive"
+                    cancel-text="Cancel"
+                    ok-type="danger"
+                    :disabled="archiveButtonsDisabled"
+                    @confirm="confirmArchiveProject(item.id)"
+                  >
+                    <a-button
+                      danger
+                      size="small"
+                      :loading="isArchivingProject(item.id)"
+                      :disabled="archiveButtonsDisabled && !isArchivingProject(item.id)"
+                    >
+                      Archive project
+                    </a-button>
+                  </a-popconfirm>
                 </template>
                 <a-list-item-meta :description="item.description || 'No description provided.'">
                   <template #title>
@@ -168,6 +193,10 @@ async function createProject(payload: CreateProjectPayload) {
 
 .project-list-card {
   border-radius: 22px;
+}
+
+.project-list-feedback {
+  margin-bottom: 16px;
 }
 
 .card-title {
