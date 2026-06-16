@@ -1,3 +1,16 @@
+## 2026-06-16 (M08 Nova Chat Streaming UI)
+
+### Added
+
+- Updated the Nova chat composable to call Core-only `POST /v1/nova/chat/stream` with `Accept: text/event-stream`.
+- Assistant responses now append incoming SSE chunks incrementally while preserving the returned Nova `sessionId` across subsequent chat turns.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: skipped/not proven in this container because no browser automation was requested for this slice; use the super-admin bypass once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 # Frontend Feature Changelog
 
 ## 2026-06-16 (Nova Assistant Widget Polish)

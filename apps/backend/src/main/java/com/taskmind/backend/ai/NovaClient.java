@@ -6,10 +6,14 @@ import com.taskmind.ai.contracts.capability.CapabilityRequest;
 import com.taskmind.ai.contracts.capability.CapabilityResponse;
 import com.taskmind.ai.contracts.chat.ChatRequest;
 import com.taskmind.ai.contracts.chat.ChatResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.UUID;
 
 public interface NovaClient {
     ChatResponse chat(ChatRequest request);
+
+    void chatStream(ChatRequest request, OutputStream outputStream) throws IOException;
 
     CapabilityResponse executeCapability(String capabilityId, CapabilityRequest request);
 
