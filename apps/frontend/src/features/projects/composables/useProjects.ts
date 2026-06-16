@@ -2,7 +2,12 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAssigneesStore } from '../../../stores/assignees'
 import { useProjectsStore } from '../../../stores/projects'
-import type { AddProjectMemberPayload, CreateProjectPayload, ProjectMembership, UpdateProjectPayload } from '../types'
+import type {
+  AddProjectMemberPayload,
+  CreateProjectPayload,
+  ProjectMembership,
+  UpdateProjectPayload,
+} from '../types'
 
 export function useProjects() {
   const projectsStore = useProjectsStore()
@@ -13,17 +18,31 @@ export function useProjects() {
     filters,
     loading,
     saving,
+    archivingByProjectId,
     messages,
     activeProjectsCount,
     archivedProjectsCount,
   } = storeToRefs(projectsStore)
 
   const currentProjectId = computed(() => selectedProject.value?.id ?? '')
-  const members = computed<ProjectMembership[]>(() => (currentProjectId.value ? assigneesStore.membersForProject(currentProjectId.value) : []))
-  const loadingMembers = computed(() => (currentProjectId.value ? Boolean(assigneesStore.loadingByProjectId[currentProjectId.value]) : false))
-  const savingMembers = computed(() => (currentProjectId.value ? Boolean(assigneesStore.savingByProjectId[currentProjectId.value]) : false))
-  const loadingAny = computed(() => loading.value.list || loading.value.detail || loadingMembers.value)
+  const members = computed<ProjectMembership[]>(() =>
+    currentProjectId.value ? assigneesStore.membersForProject(currentProjectId.value) : [],
+  )
+  const loadingMembers = computed(() =>
+    currentProjectId.value
+      ? Boolean(assigneesStore.loadingByProjectId[currentProjectId.value])
+      : false,
+  )
+  const savingMembers = computed(() =>
+    currentProjectId.value
+      ? Boolean(assigneesStore.savingByProjectId[currentProjectId.value])
+      : false,
+  )
+  const loadingAny = computed(
+    () => loading.value.list || loading.value.detail || loadingMembers.value,
+  )
   const savingAny = computed(() => saving.value.project || savingMembers.value)
+  const archivingProjectIds = computed(() => archivingByProjectId.value)
   const errorMessage = computed(() => messages.value.error || assigneesStore.messages.error)
   const successMessage = computed(() => messages.value.success || assigneesStore.messages.success)
 
@@ -66,6 +85,7 @@ export function useProjects() {
     filters,
     loading: loadingAny,
     saving: savingAny,
+    archivingProjectIds,
     errorMessage,
     successMessage,
     activeProjectsCount,

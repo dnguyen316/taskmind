@@ -1,3 +1,18 @@
+## 2026-06-16 (Project Archive Safety)
+
+### Changed
+
+- Added a confirmation step before archiving projects from the project dashboard list.
+- Tracked per-project archive pending state so active archive buttons disable consistently while a create/save/archive operation is running.
+- Moved project feedback into the active project list card so archive success and failure messages appear next to the affected list.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused project-list safety change. Manual verification should open Projects, click Archive project, cancel once, then confirm and verify inline success/error feedback.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (M08 Nova Chat Streaming UI)
 
 ### Added
