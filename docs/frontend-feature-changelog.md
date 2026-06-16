@@ -1,3 +1,20 @@
+## 2026-06-16 (Dashboard Shell Visual Polish)
+
+### Changed
+
+- Removed the dashboard search helper text so the desktop topbar stays compact.
+- Updated sidebar navigation styling to remove link underlines, use distinct Dashboard and Tasks icons, strengthen active colors, and make typography feel more modern.
+- Rounded the signed-in user avatar into a fixed circle and refreshed the floating AI assistant with a compact purple launcher and modern chat panel styling.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/components/AppSidebar.vue src/features/tasks/pages/DashboardPage.vue src/components/AiAssistantWidget.vue src/style.css ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Targeted frontend verification: `cd apps/frontend && npm run build`.
+- Full gate verification: `make vibe-verify` rerun and failed in existing backend `SchedulerControllerTest.schedulerGenerateOwnsPlanningBehaviorAndPersistsWithoutDuplicates` while frontend checks passed.
+- Browser E2E outcome: not run in this container; manual verification should compare Dashboard with the provided screenshot at desktop width, open/close the AI widget, and confirm the mobile drawer still works.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (Dashboard SaaS Shell Slots)
 
 ### Changed

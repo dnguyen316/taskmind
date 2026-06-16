@@ -3,14 +3,15 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
+  AppstoreOutlined,
   AuditOutlined,
   BarChartOutlined,
   CalendarOutlined,
-  CheckSquareOutlined,
   FolderOutlined,
   InboxOutlined,
   LogoutOutlined,
   TeamOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 
 import { useAuthStore } from '../../../stores/auth'
@@ -62,14 +63,14 @@ function initials(value: string) {
         class="menu-item"
         :class="{ active: isDashboard }"
         @click="emit('navigate')"
-        ><CheckSquareOutlined />Dashboard</RouterLink
+        ><AppstoreOutlined />Dashboard</RouterLink
       >
       <RouterLink
         to="/tasks"
         class="menu-item"
         :class="{ active: isTasks }"
         @click="emit('navigate')"
-        ><CheckSquareOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink
+        ><UnorderedListOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink
       >
       <RouterLink
         to="/projects"
@@ -146,6 +147,7 @@ function initials(value: string) {
   padding: 24px 16px;
   min-height: 100vh;
   border-right: 1px solid var(--tm-border);
+  box-shadow: 10px 0 30px rgba(15, 23, 42, 0.035);
 }
 
 .sidebar-mobile {
@@ -154,10 +156,11 @@ function initials(value: string) {
 }
 
 .brand {
-  margin-bottom: 20px;
-  font-size: 28px;
-  font-weight: 700;
+  margin-bottom: 22px;
   color: var(--tm-text);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
 }
 
 .brand span {
@@ -178,13 +181,33 @@ function initials(value: string) {
   align-items: center;
   padding: 10px 12px;
   color: var(--tm-text-muted);
+  font-size: 14px;
+  font-weight: 520;
+  letter-spacing: -0.01em;
+  text-decoration: none;
   border-radius: calc(var(--tm-radius) - 4px);
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  color: var(--tm-primary);
+  text-decoration: none;
+  background: var(--tm-hover);
 }
 
 .menu-item.active {
-  color: var(--tm-accent-blue-strong);
-  font-weight: 600;
-  background: var(--tm-primary-soft);
+  color: var(--tm-primary);
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.14), rgba(14, 165, 233, 0.12));
+}
+
+.menu-item :deep(.anticon) {
+  color: currentColor;
+  font-size: 16px;
 }
 
 .menu-item em,
@@ -207,7 +230,8 @@ function initials(value: string) {
 .group-title {
   margin: 6px 0;
   color: var(--tm-text-soft);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -223,12 +247,14 @@ function initials(value: string) {
 
 .avatar {
   display: grid;
-  width: 32px;
-  height: 32px;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
   color: var(--tm-accent-contrast);
   font-size: 12px;
-  background: var(--tm-accent-navy);
-  border-radius: 50%;
+  font-weight: 800;
+  background: var(--tm-ai-grad);
+  border-radius: 999px;
   place-items: center;
 }
 

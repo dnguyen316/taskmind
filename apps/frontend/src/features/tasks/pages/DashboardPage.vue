@@ -104,7 +104,6 @@ onMounted(async () => {
         >
           <template #prefix><SearchOutlined /></template>
         </a-input-search>
-        <p>Press Enter to search Relay activity for matching task and project events.</p>
       </div>
       <a-button shape="circle" disabled title="Notifications coming in a later milestone"
         ><BellOutlined
@@ -322,13 +321,5 @@ onMounted(async () => {
   .roadmap-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.dashboard-search p {
-  max-width: 360px;
-  margin: 4px 0 0;
-  color: var(--tm-text-muted);
-  font-size: 12px;
-  line-height: 1.35;
 }
 </style>
