@@ -11,18 +11,27 @@ import AppLayout from '../../tasks/components/AppLayout.vue'
     <section class="placeholder-page">
       <a-card class="hero-card">
         <div class="icon"><InboxOutlined /></div>
-        <a-tag color="blue">Coming in M08</a-tag>
-        <h1>Inbox Capture</h1>
+        <a-tag color="blue">AI workspace</a-tag>
+        <h1>Turn ideas into action</h1>
         <p>
-          M08 adds the build-kit AI capture flow: drop an unstructured idea here, send it through
-          the Core AI facade to Nova, and turn the result into typed tasks or project plans with
-          deterministic fallbacks.
+          Capture messy notes with AI, break goals into practical next steps, and generate a weekly
+          review that helps you decide what to focus on next.
         </p>
       </a-card>
 
       <CapturePanel />
       <GoalBreakdownPanel />
       <WeeklyReviewPanel />
+
+      <a-collapse class="upcoming-collapse" ghost>
+        <a-collapse-panel key="upcoming-ai-features" header="Upcoming AI features">
+          <p class="upcoming-intro">
+            More planning, review, and assistant workflows will land here as they become ready. The
+            primary workspace above only highlights AI tools that are currently rendered on this
+            page.
+          </p>
+        </a-collapse-panel>
+      </a-collapse>
     </section>
   </AppLayout>
 </template>
@@ -54,17 +63,11 @@ p {
   color: #475569;
   max-width: 760px;
 }
-.planned-list {
-  display: grid;
-  gap: 12px;
-  padding-left: 0;
-  list-style: none;
-  margin: 0;
-  color: #334155;
+.upcoming-collapse {
+  border-radius: 12px;
+  background: #f8fafc;
 }
-.planned-list li {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
+.upcoming-intro {
+  margin: 0;
 }
 </style>
