@@ -1426,6 +1426,83 @@ paths:
               schema: { $ref: '#/components/schemas/IntegrationPublishResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
 
+  /v1/notifications:
+    get:
+      summary: List current-user notifications
+      operationId: listNotifications
+      tags: [Notifications]
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 0, default: 0}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, default: 20}}
+      responses:
+        '200':
+          description: Current user's notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Notification'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/notifications/unread-count:
+    get:
+      summary: Count unread current-user notifications
+      operationId: getNotificationUnreadCount
+      tags: [Notifications]
+      responses:
+        '200': {description: Unread count, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationUnreadCount'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/notifications/{notificationId}/read:
+    patch:
+      summary: Mark one current-user notification read
+      operationId: markNotificationRead
+      tags: [Notifications]
+      parameters:
+        - {name: notificationId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Updated notification, content: {application/json: {schema: {$ref: '#/components/schemas/Notification'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Notification not found for current user}
+  /v1/notifications/read-all:
+    patch:
+      summary: Mark all current-user notifications read
+      operationId: markAllNotificationsRead
+      tags: [Notifications]
+      responses:
+        '200': {description: Updated count, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationMarkAllRead'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/notifications/preferences:
+    get:
+      summary: Get current-user notification preferences
+      operationId: getNotificationPreferences
+      tags: [Notifications]
+      responses:
+        '200': {description: Preferences, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationPreference'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    put:
+      summary: Update current-user notification preferences
+      operationId: updateNotificationPreferences
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateNotificationPreferencesRequest'}
+      responses:
+        '200': {description: Updated preferences, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationPreference'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/notifications/stream:
+    get:
+      summary: Subscribe to current-user notification SSE events
+      operationId: streamNotifications
+      tags: [Notifications]
+      responses:
+        '200':
+          description: Server-sent `ready` and `notification` events for the authenticated user.
+          content:
+            text/event-stream:
+              schema: {type: string}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1612,6 +1689,58 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+
+    NotificationType:
+      type: string
+      enum: [TASK_ASSIGNED, TASK_DUE_SOON, TASK_REMINDER, TASK_COMMENT, DIGEST]
+    Notification:
+      type: object
+      required: [id, recipientUserId, type, title, read, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        version: {type: integer, format: int64, nullable: true}
+        recipientUserId: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/NotificationType'}
+        title: {type: string}
+        body: {type: string, nullable: true}
+        taskId: {type: string, format: uuid, nullable: true}
+        actionUrl: {type: string, nullable: true}
+        read: {type: boolean}
+        readAt: {type: string, format: date-time, nullable: true}
+        createdAt: {type: string, format: date-time}
+    NotificationUnreadCount:
+      type: object
+      required: [unreadCount]
+      properties:
+        unreadCount: {type: integer, format: int64}
+    NotificationMarkAllRead:
+      type: object
+      required: [updatedCount, unreadCount]
+      properties:
+        updatedCount: {type: integer}
+        unreadCount: {type: integer, format: int64}
+    NotificationPreference:
+      type: object
+      required: [userId, inAppEnabled, emailDigestEnabled, slackEnabled, createdAt, updatedAt]
+      properties:
+        userId: {type: string, format: uuid}
+        version: {type: integer, format: int64, nullable: true}
+        inAppEnabled: {type: boolean}
+        emailDigestEnabled: {type: boolean}
+        slackEnabled: {type: boolean}
+        slackWebhookUrl: {type: string, nullable: true}
+        slackChannel: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    UpdateNotificationPreferencesRequest:
+      type: object
+      required: [inAppEnabled, emailDigestEnabled, slackEnabled]
+      properties:
+        inAppEnabled: {type: boolean}
+        emailDigestEnabled: {type: boolean}
+        slackEnabled: {type: boolean}
+        slackWebhookUrl: {type: string, nullable: true}
+        slackChannel: {type: string, nullable: true}
     IntegrationProvider:
       type: string
       enum: [JIRA, GITHUB, WIKI]
