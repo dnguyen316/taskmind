@@ -1,3 +1,23 @@
+## 2026-06-17 (M09 Core Spec Breakdown Facade Slice)
+
+### Added
+
+- Added the Core `specbreakdown` module with draft, async job status/command, review, materialization, template, and draft attachment REST surfaces.
+- Added Flyway-owned Core tables for spec breakdown drafts, jobs, templates, attachments, and Jira/Scrum task metadata columns.
+- Wired Core spec jobs through the existing Nova capability facade and emit spec breakdown completion/failure outbox events while using existing task creation events for materialized work.
+- Synchronized `apps/backend/openapi.yaml` with the new public Core spec-breakdown request/response shapes.
+
+### Remaining gaps
+
+- The worker is a synchronous facade slice rather than a durable scheduled queue with retry/concurrency enforcement.
+- Draft attachments and templates expose the endpoint contracts but need repository-backed persistence/storage integration beyond in-memory controller state.
+- Materialization records task hierarchy via existing task creation, but task-level Jira/Scrum field persistence needs a follow-up mapper from draft metadata into the new task columns.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (Daily Planner Cross-User Authorization)
 
 ### Changed

@@ -16,7 +16,9 @@ class OutboxAiDomainEventPublisher implements AiDomainEventPublisher {
             Set.of(
                     EventTypes.AI_CAPTURE_SUBMITTED,
                     EventTypes.AI_SUGGESTION_ACCEPTED,
-                    EventTypes.AI_SUGGESTION_REJECTED);
+                    EventTypes.AI_SUGGESTION_REJECTED,
+                    EventTypes.AI_SPEC_BREAKDOWN_COMPLETED,
+                    EventTypes.AI_SPEC_BREAKDOWN_FAILED);
 
     private final OutboxEventWriter outboxEventWriter;
     private final ObjectMapper objectMapper;
