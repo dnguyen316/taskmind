@@ -278,6 +278,26 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+
+  /v1/planner/reschedule/proposals:
+    post:
+      tags: [Planning]
+      summary: Generate task reschedule proposals
+      operationId: generateRescheduleProposals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlannerRescheduleProposalsRequest'
+      responses:
+        '200':
+          description: Reschedule proposals for the requested tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlannerRescheduleProposalsResponse'
+
   /v1/review/weekly/generate:
     post:
       summary: Generate a weekly review narrative
@@ -2137,6 +2157,37 @@ components:
           items:
             $ref: '#/components/schemas/PlannedTask'
         allocatedMinutes: {type: integer}
+
+
+    PlannerRescheduleProposalsRequest:
+      type: object
+      required: [taskIds, confirmationTokenRequired]
+      properties:
+        taskIds:
+          type: array
+          items: {type: string, format: uuid}
+        confirmationTokenRequired: {type: boolean}
+
+    PlannerRescheduleProposal:
+      type: object
+      required: [taskId, action, explanation, conflictWarnings]
+      properties:
+        taskId: {type: string, format: uuid}
+        action: {type: string}
+        explanation: {type: string}
+        conflictWarnings:
+          type: array
+          items: {type: string}
+
+    PlannerRescheduleProposalsResponse:
+      type: object
+      required: [proposals, confirmationTokenRequired]
+      properties:
+        proposals:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannerRescheduleProposal'
+        confirmationTokenRequired: {type: boolean}
 
     AiWeeklyReviewRequest:
       type: object
