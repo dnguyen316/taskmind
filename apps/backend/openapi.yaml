@@ -19,6 +19,59 @@ paths:
         '200':
           description: Core API is healthy
 
+  /v1/dashboard:
+    get:
+      summary: Get authenticated dashboard aggregation from Core
+      operationId: getDashboard
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Dashboard KPIs, tasks, and activity snippets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Relay context API unavailable
+
+  /v1/reports:
+    get:
+      summary: Get authenticated reports and throughput rollups
+      operationId: getReports
+      tags: [Reports]
+      parameters:
+        - in: query
+          name: range
+          schema: {type: string, enum: [week, month, quarter], default: week}
+      responses:
+        '200':
+          description: Report KPIs, trends, segments, and workloads
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/team/directory:
+    get:
+      summary: Get privileged team directory aggregation
+      operationId: getTeamDirectory
+      tags: [Team]
+      responses:
+        '200':
+          description: Team member directory and workload totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamDirectoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /v1/nova/chat:
     post:
       summary: Send an authenticated chat turn to Nova through Core
@@ -2846,3 +2899,88 @@ components:
             projectId: {type: string, format: uuid}
             createdAt: {type: string, format: date-time}
             updatedAt: {type: string, format: date-time}
+
+
+    DashboardResponse:
+      type: object
+      required: [kpis, myTasks, activity]
+      properties:
+        kpis: {$ref: '#/components/schemas/KpiMetrics'}
+        myTasks:
+          type: array
+          items: {$ref: '#/components/schemas/MyTaskItem'}
+        activity:
+          type: array
+          items: {$ref: '#/components/schemas/ActivitySnippet'}
+    KpiMetrics:
+      type: object
+      properties:
+        openTasks: {type: integer}
+        completedTasks: {type: integer}
+        eventsIngested: {type: integer}
+        completionRate: {type: number, format: double}
+    MyTaskItem:
+      type: object
+      properties:
+        taskId: {type: string, format: uuid}
+        projectId: {type: string, format: uuid, nullable: true}
+        title: {type: string}
+        status: {type: string}
+        updatedAt: {type: string, format: date-time}
+    ActivitySnippet:
+      type: object
+      properties:
+        date: {type: string, format: date}
+        tasksCreated: {type: integer}
+        tasksCompleted: {type: integer}
+        eventsIngested: {type: integer}
+    ReportsResponse:
+      type: object
+      properties:
+        range: {type: string, enum: [WEEK, MONTH, QUARTER]}
+        kpis: {$ref: '#/components/schemas/ReportsKpis'}
+        trends: {type: array, items: {$ref: '#/components/schemas/ReportsTrend'}}
+        statusSegments: {type: array, items: {$ref: '#/components/schemas/ReportsStatusSegment'}}
+        prioritySegments: {type: array, items: {$ref: '#/components/schemas/ReportsPrioritySegment'}}
+        projectThroughput: {type: array, items: {$ref: '#/components/schemas/ReportsProjectThroughput'}}
+        assigneeWorkload: {type: array, items: {$ref: '#/components/schemas/ReportsAssigneeWorkload'}}
+        teamWorkload: {$ref: '#/components/schemas/ReportsTeamWorkload'}
+    ReportsKpis:
+      type: object
+      properties:
+        tasksCreated: {type: integer}
+        tasksCompleted: {type: integer}
+        projectsCreated: {type: integer}
+        eventsIngested: {type: integer}
+        completionRate: {type: number, format: double}
+    ReportsTrend:
+      type: object
+      properties:
+        date: {type: string, format: date}
+        tasksCreated: {type: integer}
+        tasksCompleted: {type: integer}
+        eventsIngested: {type: integer}
+    ReportsStatusSegment:
+      type: object
+      properties: {status: {type: string}, count: {type: integer}}
+    ReportsPrioritySegment:
+      type: object
+      properties: {priority: {type: string}, count: {type: integer}}
+    ReportsProjectThroughput:
+      type: object
+      properties: {projectId: {type: string, format: uuid}, name: {type: string}, tasksCreated: {type: integer}, tasksCompleted: {type: integer}}
+    ReportsAssigneeWorkload:
+      type: object
+      properties: {userId: {type: string, format: uuid}, openTasks: {type: integer}}
+    ReportsTeamWorkload:
+      type: object
+      properties: {members: {type: integer}, openTasks: {type: integer}}
+    TeamDirectoryResponse:
+      type: object
+      properties:
+        members: {type: array, items: {$ref: '#/components/schemas/TeamMemberResponse'}}
+        totalMembers: {type: integer}
+        totalOpenTasks: {type: integer}
+    TeamMemberResponse:
+      type: object
+      properties: {userId: {type: string, format: uuid}, displayName: {type: string}, email: {type: string}, openTasks: {type: integer}}
