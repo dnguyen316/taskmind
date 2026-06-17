@@ -454,3 +454,15 @@ This changelog tracks backend feature progress against the core implementation p
 - Replaced M08 placeholder Nova capability behavior for capture, goal breakdown, weekly review, project brief, describe/autocomplete/translate, duration estimate, rationale phrase, and dashboard insights with typed deterministic mock outputs.
 
 - **M11 Notifications:** Added Core notification DDD module with in-app records, per-user preferences, SSE delivery hub, reminder and digest jobs, Slack/email provider ports with deterministic local adapters, delivery attempt tracking, reminder state, ShedLock support, and OpenAPI notification contracts.
+
+## 2026-06-17 (M13 Rate Limiting)
+
+### Added
+
+- Added Core rate-limit module with configurable anonymous/IP, authenticated/user, auth-flow, and AI-heavy endpoint buckets.
+- Integrated rate limiting after bearer authentication so public Core API traffic is limited by user identity when available and internal service-only paths are skipped.
+- Added focused tests for disabled mode, anonymous and authenticated limits, 429 response headers, and Redis fallback behavior.
+
+### Notes
+
+- Rate limiting can be disabled through `taskmind.ratelimit.enabled` for local debugging and test profiles.
