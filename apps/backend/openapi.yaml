@@ -1281,6 +1281,151 @@ paths:
       responses:
         '201': {description: Template, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownTemplate'}}}}
 
+
+  /v1/integrations/{provider}/connections:
+    post:
+      summary: Connect an external integration account
+      operationId: connectIntegration
+      tags: [Integrations]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/IntegrationProvider' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationConnectRequest' }
+      responses:
+        '201':
+          description: Connected account metadata without secrets
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationConnectionResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/integrations/connections:
+    get:
+      summary: List integration connections owned by the caller
+      operationId: listIntegrationConnections
+      tags: [Integrations]
+      responses:
+        '200':
+          description: Connection metadata; encrypted tokens are never returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/IntegrationConnectionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/integrations/projects/{projectId}/links:
+    get:
+      summary: List external project links for a TaskMind project
+      operationId: listIntegrationProjectLinks
+      tags: [Integrations]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Project links
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/IntegrationProjectLinkResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      summary: Link a TaskMind project to an external project/repository/wiki space
+      operationId: createIntegrationProjectLink
+      tags: [Integrations]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationProjectLinkRequest' }
+      responses:
+        '201':
+          description: Created project link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationProjectLinkResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/integrations/project-links/{projectLinkId}/imports:
+    post:
+      summary: Import bounded external issues into TaskMind tasks
+      operationId: importIntegrationIssues
+      tags: [Integrations]
+      parameters:
+        - name: projectLinkId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationImportRequest' }
+      responses:
+        '200':
+          description: Completed import run
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationImportRunResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /v1/tasks/{taskId}/integrations/jira/publish:
+    post:
+      summary: Publish a TaskMind task hierarchy root to Jira idempotently
+      operationId: publishTaskToJira
+      tags: [Integrations]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationPublishRequest' }
+      responses:
+        '200':
+          description: Jira publish record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationPublishResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /v1/tasks/{taskId}/integrations/wiki/publish:
+    post:
+      summary: Publish a TaskMind task summary to a linked wiki space
+      operationId: publishTaskToWiki
+      tags: [Integrations]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationPublishRequest' }
+      responses:
+        '200':
+          description: Wiki publish record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationPublishResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1467,6 +1612,80 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+    IntegrationProvider:
+      type: string
+      enum: [JIRA, GITHUB, WIKI]
+    IntegrationConnectRequest:
+      type: object
+      required: [accountName, accessToken]
+      properties:
+        accountName: { type: string, maxLength: 255 }
+        baseUrl: { type: string, maxLength: 500 }
+        accountExternalId: { type: string, maxLength: 255 }
+        accessToken: { type: string, writeOnly: true }
+        refreshToken: { type: string, writeOnly: true }
+        scopes: { type: string }
+    IntegrationConnectionResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/IntegrationProvider' }
+        accountName: { type: string }
+        baseUrl: { type: string }
+        accountExternalId: { type: string }
+        ownerUserId: { type: string, format: uuid }
+        scopes: { type: string }
+        status: { type: string }
+    IntegrationProjectLinkRequest:
+      type: object
+      required: [connectionId, externalProjectId]
+      properties:
+        connectionId: { type: string, format: uuid }
+        externalProjectId: { type: string }
+        externalProjectKey: { type: string }
+        externalProjectName: { type: string }
+        metadataJson: { type: string }
+    IntegrationProjectLinkResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/IntegrationProvider' }
+        externalProjectId: { type: string }
+        externalProjectKey: { type: string }
+        externalProjectName: { type: string }
+        metadataJson: { type: string }
+    IntegrationImportRequest:
+      type: object
+      properties:
+        limit: { type: integer, minimum: 1, maximum: 500 }
+    IntegrationImportRunResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectLinkId: { type: string, format: uuid }
+        provider: { $ref: '#/components/schemas/IntegrationProvider' }
+        status: { type: string }
+        importedCount: { type: integer }
+        skippedCount: { type: integer }
+    IntegrationPublishRequest:
+      type: object
+      required: [projectLinkId]
+      properties:
+        projectLinkId: { type: string, format: uuid }
+    IntegrationPublishResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        taskId: { type: string, format: uuid }
+        projectLinkId: { type: string, format: uuid }
+        provider: { type: string }
+        externalId: { type: string }
+        externalKey: { type: string }
+        externalUrl: { type: string }
+        status: { type: string }
     MediaKind:
       type: string
       enum: [IMAGE, DOCUMENT, AUDIO, VIDEO, OTHER]

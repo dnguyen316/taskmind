@@ -54,7 +54,7 @@ public class ProjectMembershipApplicationService {
     }
 
     public void validateMembership(UUID projectId, UUID userId) {
-        if (projectId != null && !isMember(projectId, userId)) {
+        if (projectId != null && !isMember(projectId, userId) && !isOwner(userId, projectId)) {
             throw new IllegalArgumentException("User is not a member of the project");
         }
     }

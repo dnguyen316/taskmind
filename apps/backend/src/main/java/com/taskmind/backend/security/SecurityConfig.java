@@ -43,7 +43,9 @@ public class SecurityConfig implements WebMvcConfigurer {
         "/v1/auth/oauth/**",
         "/v1/auth/password/**",
         "/v1/auth/token/refresh",
-        "/v1/auth/logout"
+        "/v1/auth/logout",
+        "/v1/integrations/jira/oauth/callback",
+        "/v1/integrations/github/oauth/callback"
     };
 
     @Bean
