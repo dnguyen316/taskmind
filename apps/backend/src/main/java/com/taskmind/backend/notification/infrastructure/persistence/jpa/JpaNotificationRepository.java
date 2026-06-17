@@ -1,0 +1,137 @@
+package com.taskmind.backend.notification.infrastructure.persistence.jpa;
+
+import com.taskmind.backend.notification.domain.model.*;
+import com.taskmind.backend.notification.domain.repository.NotificationRepository;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class JpaNotificationRepository implements NotificationRepository {
+    private final JdbcTemplate jdbc;
+
+    public JpaNotificationRepository(JdbcTemplate j) {
+        jdbc = j;
+    }
+
+    public Notification save(Notification n) {
+        if (findById(n.id()).isPresent())
+            jdbc.update(
+                    "update notifications set read_at=?, version=version+1 where id=?",
+                    n.readAt() == null ? null : Timestamp.from(n.readAt()),
+                    n.id());
+        else
+            jdbc.update(
+                    "insert into notifications(id,recipient_user_id,type,title,body,task_id,action_url,read_at,created_at,version) values (?,?,?,?,?,?,?,?,?,0)",
+                    n.id(),
+                    n.recipientUserId(),
+                    n.type().name(),
+                    n.title(),
+                    n.body(),
+                    n.taskId(),
+                    n.actionUrl(),
+                    n.readAt() == null ? null : Timestamp.from(n.readAt()),
+                    Timestamp.from(n.createdAt()));
+        return findById(n.id()).orElseThrow();
+    }
+
+    public Optional<Notification> findById(UUID id) {
+        List<Notification> l = jdbc.query("select * from notifications where id=?", this::map, id);
+        return l.stream().findFirst();
+    }
+
+    public List<Notification> findByRecipient(UUID u, int p, int s) {
+        return jdbc.query(
+                "select * from notifications where recipient_user_id=? order by created_at desc limit ? offset ?",
+                this::map,
+                u,
+                s,
+                p * s);
+    }
+
+    public long unreadCount(UUID u) {
+        Long c =
+                jdbc.queryForObject(
+                        "select count(*) from notifications where recipient_user_id=? and read_at is null",
+                        Long.class,
+                        u);
+        return c == null ? 0 : c;
+    }
+
+    public int markAllRead(UUID u, Instant now) {
+        return jdbc.update(
+                "update notifications set read_at=?, version=version+1 where recipient_user_id=? and read_at is null",
+                Timestamp.from(now),
+                u);
+    }
+
+    public List<Notification> unreadOlderThan(UUID u, Instant b) {
+        return jdbc.query(
+                "select * from notifications where recipient_user_id=? and read_at is null and created_at <= ? order by created_at",
+                this::map,
+                u,
+                Timestamp.from(b));
+    }
+
+    public void recordDelivery(DeliveryAttempt a) {
+        jdbc.update(
+                "insert into notification_delivery_attempts(id,notification_id,user_id,channel,status,error_message,attempted_at) values (?,?,?,?,?,?,?)",
+                a.id(),
+                a.notificationId(),
+                a.userId(),
+                a.channel().name(),
+                a.status().name(),
+                a.errorMessage(),
+                Timestamp.from(a.attemptedAt()));
+    }
+
+    public boolean reminderExists(UUID t, UUID u) {
+        Boolean b =
+                jdbc.queryForObject(
+                        "select count(*)>0 from notification_reminder_state where task_id=? and user_id=?",
+                        Boolean.class,
+                        t,
+                        u);
+        return Boolean.TRUE.equals(b);
+    }
+
+    public void recordReminder(ReminderState s) {
+        jdbc.update(
+                "merge into notification_reminder_state(task_id,user_id,reminded_at) key(task_id,user_id) values (?,?,?)",
+                s.taskId(),
+                s.userId(),
+                Timestamp.from(s.remindedAt()));
+    }
+
+    public List<ReminderCandidate> dueReminderCandidates(Instant now, int limit) {
+        return jdbc.query(
+                "select id,user_id,assignee_id,title,due_at from tasks where due_at is not null and due_at <= ? and status <> 'DONE' and deleted_at is null limit ?",
+                (rs, i) ->
+                        new ReminderCandidate(
+                                (UUID) rs.getObject("id"),
+                                (UUID) rs.getObject("user_id"),
+                                (UUID) rs.getObject("assignee_id"),
+                                rs.getString("title"),
+                                rs.getTimestamp("due_at").toInstant()),
+                Timestamp.from(now),
+                limit);
+    }
+
+    private Notification map(java.sql.ResultSet rs, int i) throws java.sql.SQLException {
+        Timestamp r = rs.getTimestamp("read_at");
+        return new Notification(
+                (UUID) rs.getObject("id"),
+                rs.getLong("version"),
+                (UUID) rs.getObject("recipient_user_id"),
+                NotificationType.valueOf(rs.getString("type")),
+                rs.getString("title"),
+                rs.getString("body"),
+                (UUID) rs.getObject("task_id"),
+                rs.getString("action_url"),
+                r != null,
+                r == null ? null : r.toInstant(),
+                rs.getTimestamp("created_at").toInstant());
+    }
+}
