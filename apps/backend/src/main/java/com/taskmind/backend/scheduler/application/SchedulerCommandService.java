@@ -87,13 +87,7 @@ public class SchedulerCommandService {
         List<ScheduledBlock> occupiedBlocks =
                 blocks.findByUserIdBetween(requester.userId(), from, to);
         Set<UUID> alreadyScheduledTaskIds =
-                occupiedBlocks.stream()
-                        .filter(
-                                block ->
-                                        block.status() == ScheduledBlockStatus.SCHEDULED
-                                                || block.status() == ScheduledBlockStatus.COMPLETED)
-                        .map(ScheduledBlock::taskId)
-                        .collect(Collectors.toSet());
+                occupiedBlocks.stream().map(ScheduledBlock::taskId).collect(Collectors.toSet());
         List<Task> schedulableTasks =
                 schedulableTasks(requester).stream()
                         .filter(task -> !alreadyScheduledTaskIds.contains(task.id()))

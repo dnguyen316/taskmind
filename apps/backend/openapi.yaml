@@ -1183,6 +1183,104 @@ paths:
         '404':
           description: Attachment not found
 
+
+  /v1/spec-breakdown/drafts:
+    post:
+      summary: Create a Core-owned spec breakdown draft
+      operationId: createSpecBreakdownDraft
+      tags: [SpecBreakdown]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateSpecBreakdownDraftRequest'}
+      responses:
+        '201':
+          description: Draft created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SpecBreakdownDraft'}
+  /v1/spec-breakdown/drafts/{id}:
+    get:
+      summary: Get a spec breakdown draft
+      operationId: getSpecBreakdownDraft
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Draft, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownDraft'}}}}
+  /v1/spec-breakdown/drafts/{id}/jobs:
+    post:
+      summary: Start an asynchronous spec breakdown job
+      operationId: startSpecBreakdownJob
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StartSpecBreakdownJobRequest'}
+      responses:
+        '202': {description: Job accepted, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownJob'}}}}
+  /v1/spec-breakdown/jobs/{id}:
+    get:
+      summary: Get spec breakdown job status
+      operationId: getSpecBreakdownJob
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Job, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownJob'}}}}
+  /v1/spec-breakdown/jobs/{id}/{command}:
+    post:
+      summary: Pause, resume, or cancel a spec breakdown job
+      operationId: commandSpecBreakdownJob
+      tags: [SpecBreakdown]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: command, in: path, required: true, schema: {type: string, enum: [pause, resume, cancel]}}
+      responses:
+        '200': {description: Updated job, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownJob'}}}}
+  /v1/spec-breakdown/drafts/{id}/review:
+    post:
+      summary: Accept or reject generated spec work and optionally update the candidate tree
+      operationId: reviewSpecBreakdownDraft
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReviewSpecBreakdownRequest'}
+      responses:
+        '200': {description: Reviewed draft, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownDraft'}}}}
+  /v1/spec-breakdown/drafts/{id}/materialize:
+    post:
+      summary: Materialize accepted Epic/Story/Subtask candidates into Core tasks
+      operationId: materializeSpecBreakdownDraft
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Created tasks, content: {application/json: {schema: {type: object, properties: {taskIds: {type: array, items: {type: string, format: uuid}}}}}}}
+  /v1/projects/{projectId}/spec-templates:
+    get:
+      summary: List project-scoped spec templates
+      operationId: listSpecTemplates
+      tags: [SpecBreakdown]
+      parameters: [{name: projectId, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Templates, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/SpecBreakdownTemplate'}}}}}
+    post:
+      summary: Create a project-scoped spec template
+      operationId: createSpecTemplate
+      tags: [SpecBreakdown]
+      parameters: [{name: projectId, in: path, required: true, schema: {type: string, format: uuid}}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SpecBreakdownTemplateRequest'}
+      responses:
+        '201': {description: Template, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownTemplate'}}}}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2333,3 +2431,70 @@ components:
     ScheduledBlockStatus:
       type: string
       enum: [SCHEDULED, COMPLETED, MISSED, CANCELLED]
+
+    CreateSpecBreakdownDraftRequest:
+      type: object
+      required: [projectId, title, rawSpec]
+      properties:
+        projectId: {type: string, format: uuid}
+        templateId: {type: string, format: uuid, nullable: true}
+        title: {type: string}
+        rawSpec: {type: string}
+        richContent: {type: string, nullable: true}
+        candidateTree: {type: string, nullable: true}
+        fixVersion: {type: string, nullable: true}
+        affectedVersion: {type: string, nullable: true}
+        sprint: {type: string, nullable: true}
+        issueType: {type: string, nullable: true}
+        publishKey: {type: string, nullable: true}
+    SpecBreakdownDraft:
+      allOf:
+        - {$ref: '#/components/schemas/CreateSpecBreakdownDraftRequest'}
+        - type: object
+          required: [id, ownerUserId, status, createdAt, updatedAt]
+          properties:
+            id: {type: string, format: uuid}
+            ownerUserId: {type: string, format: uuid}
+            status: {type: string, enum: [DRAFT, PROCESSING, READY_FOR_REVIEW, MATERIALIZED, REJECTED, FAILED]}
+            version: {type: integer, format: int64, nullable: true}
+            materializedAt: {type: string, format: date-time, nullable: true}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
+    StartSpecBreakdownJobRequest:
+      type: object
+      required: [aiJobType]
+      properties:
+        aiJobType: {type: string, enum: [OUTLINE, ENRICH, BREAKDOWN, SECTION, MERGE]}
+    ReviewSpecBreakdownRequest:
+      type: object
+      required: [accepted]
+      properties:
+        accepted: {type: boolean}
+        candidateTree: {type: string, nullable: true}
+    SpecBreakdownJob:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        draftId: {type: string, format: uuid}
+        userId: {type: string, format: uuid}
+        aiJobType: {type: string, enum: [OUTLINE, ENRICH, BREAKDOWN, SECTION, MERGE]}
+        status: {type: string, enum: [QUEUED, RUNNING, PAUSED, SUCCEEDED, FAILED, CANCELED]}
+        checkpoint: {type: string, nullable: true}
+        novaRunId: {type: string, format: uuid, nullable: true}
+        errorMessage: {type: string, nullable: true}
+    SpecBreakdownTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        description: {type: string, nullable: true}
+        fields: {type: string}
+    SpecBreakdownTemplate:
+      allOf:
+        - {$ref: '#/components/schemas/SpecBreakdownTemplateRequest'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            projectId: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
