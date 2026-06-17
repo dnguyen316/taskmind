@@ -1,11 +1,13 @@
 package com.taskmind.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.ratelimit.RateLimitFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +17,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -52,8 +55,12 @@ public class SecurityConfig implements WebMvcConfigurer {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtClaimAuthenticationConverter jwtConverter,
-            ObjectMapper objectMapper)
+            ObjectMapper objectMapper,
+            ObjectProvider<RateLimitFilter> rateLimitFilter)
             throws Exception {
+        rateLimitFilter.ifAvailable(
+                filter -> http.addFilterAfter(filter, BearerTokenAuthenticationFilter.class));
+
         return http.cors(cors -> {})
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
