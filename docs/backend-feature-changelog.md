@@ -511,3 +511,12 @@ This changelog tracks backend feature progress against the core implementation p
 - Added WebMvc coverage for template create, project list, update, delete, and not-found responses.
 - Added repository persistence coverage for saving, reading, updating, listing, and deleting spec-breakdown templates.
 - Documented update and delete template endpoints in the Core OpenAPI spec.
+
+## 2026-06-18 (M13 Observability)
+
+### Added
+
+- Added request correlation filters, MDC helpers, request logging properties, and problem-detail correlation enrichment helpers across Core, Relay, and Nova.
+- Configured Core outbound Relay and Nova RestClient beans to propagate the active `X-Correlation-Id` header.
+- Added per-service Logback configuration with readable local/test console output and JSON console output under the `prod` profile.
+- Added focused servlet filter tests covering generated and inbound correlation IDs, response header emission, and MDC cleanup.
