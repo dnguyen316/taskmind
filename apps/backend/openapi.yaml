@@ -1333,6 +1333,30 @@ paths:
             schema: {$ref: '#/components/schemas/SpecBreakdownTemplateRequest'}
       responses:
         '201': {description: Template, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownTemplate'}}}}
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /v1/spec-templates/{id}:
+    put:
+      summary: Update a project-scoped spec template
+      operationId: updateSpecTemplate
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SpecBreakdownTemplateRequest'}
+      responses:
+        '200': {description: Template, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownTemplate'}}}}
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { description: Template not found }
+    delete:
+      summary: Delete a project-scoped spec template
+      operationId: deleteSpecTemplate
+      tags: [SpecBreakdown]
+      parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '204': { description: Template deleted }
+        '404': { description: Template not found }
 
 
   /v1/integrations/{provider}/connections:
