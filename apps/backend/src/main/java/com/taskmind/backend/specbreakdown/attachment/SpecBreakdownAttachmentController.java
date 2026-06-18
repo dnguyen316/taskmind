@@ -3,10 +3,7 @@ package com.taskmind.backend.specbreakdown.attachment;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.specbreakdown.application.SpecBreakdownAttachmentApplicationService;
 import com.taskmind.backend.specbreakdown.domain.model.SpecBreakdownAttachment;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/v1/spec-breakdown/drafts/{draftId}/attachments")
 public class SpecBreakdownAttachmentController {
@@ -31,7 +33,9 @@ public class SpecBreakdownAttachmentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Attachment> upload(
-            AuthenticatedUser requester, @PathVariable UUID draftId, @RequestParam("file") MultipartFile file) {
+            AuthenticatedUser requester,
+            @PathVariable UUID draftId,
+            @RequestParam("file") MultipartFile file) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(
@@ -61,7 +65,9 @@ public class SpecBreakdownAttachmentController {
 
     @DeleteMapping("/{attachmentId}")
     public ResponseEntity<Void> delete(
-            AuthenticatedUser requester, @PathVariable UUID draftId, @PathVariable UUID attachmentId) {
+            AuthenticatedUser requester,
+            @PathVariable UUID draftId,
+            @PathVariable UUID attachmentId) {
         try {
             service.delete(requester, draftId, attachmentId);
             return ResponseEntity.noContent().build();
