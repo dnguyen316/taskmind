@@ -3,10 +3,10 @@ package com.taskmind.backend.specbreakdown.template;
 import com.taskmind.backend.specbreakdown.application.SpecBreakdownTemplateApplicationService;
 import com.taskmind.backend.specbreakdown.application.SpecBreakdownTemplateApplicationService.TemplateCommand;
 import com.taskmind.backend.specbreakdown.domain.model.SpecBreakdownTemplate;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
-import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 public class SpecBreakdownTemplateController {
@@ -28,7 +31,8 @@ public class SpecBreakdownTemplateController {
     @PostMapping("/v1/projects/{projectId}/spec-templates")
     public ResponseEntity<SpecBreakdownTemplate> create(
             @PathVariable UUID projectId, @Valid @RequestBody TemplateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(projectId, request.toCommand()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.create(projectId, request.toCommand()));
     }
 
     @GetMapping("/v1/projects/{projectId}/spec-templates")
@@ -46,7 +50,9 @@ public class SpecBreakdownTemplateController {
 
     @DeleteMapping("/v1/spec-templates/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     public record TemplateRequest(@NotBlank String name, String description, String fields) {
