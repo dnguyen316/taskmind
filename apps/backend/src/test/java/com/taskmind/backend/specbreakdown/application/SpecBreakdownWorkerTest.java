@@ -106,6 +106,38 @@ class SpecBreakdownWorkerTest {
     }
 
     @Test
+    void workerContinuesAfterTerminallyHandlingQueuedPausedJob() {
+        SpecBreakdownProcessingJob first = service.startJob(user(), DRAFT_ID, SpecBreakdownJobType.ENRICH);
+        SpecBreakdownProcessingJob second = service.startJob(user(), DRAFT_ID, SpecBreakdownJobType.BREAKDOWN);
+        markQueuedPaused(first);
+
+        worker.processQueuedJobs();
+
+        SpecBreakdownProcessingJob paused = jobs.findById(first.id()).orElseThrow();
+        SpecBreakdownProcessingJob succeeded = jobs.findById(second.id()).orElseThrow();
+        assertThat(paused.status()).isEqualTo(SpecBreakdownJobStatus.PAUSED);
+        assertThat(paused.paused()).isTrue();
+        assertThat(succeeded.status()).isEqualTo(SpecBreakdownJobStatus.SUCCEEDED);
+        assertThat(nova.calls).isOne();
+    }
+
+    @Test
+    void workerContinuesAfterTerminallyHandlingQueuedCanceledJob() {
+        SpecBreakdownProcessingJob first = service.startJob(user(), DRAFT_ID, SpecBreakdownJobType.MERGE);
+        SpecBreakdownProcessingJob second = service.startJob(user(), DRAFT_ID, SpecBreakdownJobType.BREAKDOWN);
+        markQueuedCanceled(first);
+
+        worker.processQueuedJobs();
+
+        SpecBreakdownProcessingJob canceled = jobs.findById(first.id()).orElseThrow();
+        SpecBreakdownProcessingJob succeeded = jobs.findById(second.id()).orElseThrow();
+        assertThat(canceled.status()).isEqualTo(SpecBreakdownJobStatus.CANCELED);
+        assertThat(canceled.requestedCancel()).isTrue();
+        assertThat(succeeded.status()).isEqualTo(SpecBreakdownJobStatus.SUCCEEDED);
+        assertThat(nova.calls).isOne();
+    }
+
+    @Test
     void cancelCommandDuringProcessingStopsBeforeDraftReady() {
         SpecBreakdownProcessingJob job = service.startJob(user(), DRAFT_ID, SpecBreakdownJobType.SECTION);
         nova.beforeReturn = () -> service.commandJob(user(), job.id(), "cancel");
@@ -160,6 +192,44 @@ class SpecBreakdownWorkerTest {
 
     private AuthenticatedUser user() {
         return new AuthenticatedUser(USER_ID, Set.of("USER"));
+    }
+
+    private void markQueuedPaused(SpecBreakdownProcessingJob job) {
+        jobs.save(
+                new SpecBreakdownProcessingJob(
+                        job.id(),
+                        job.version(),
+                        job.draftId(),
+                        job.userId(),
+                        job.aiJobType(),
+                        SpecBreakdownJobStatus.QUEUED,
+                        job.checkpoint(),
+                        job.novaRunId(),
+                        job.errorMessage(),
+                        false,
+                        true,
+                        job.createdAt(),
+                        Instant.now(),
+                        job.completedAt()));
+    }
+
+    private void markQueuedCanceled(SpecBreakdownProcessingJob job) {
+        jobs.save(
+                new SpecBreakdownProcessingJob(
+                        job.id(),
+                        job.version(),
+                        job.draftId(),
+                        job.userId(),
+                        job.aiJobType(),
+                        SpecBreakdownJobStatus.QUEUED,
+                        job.checkpoint(),
+                        job.novaRunId(),
+                        job.errorMessage(),
+                        true,
+                        false,
+                        job.createdAt(),
+                        Instant.now(),
+                        job.completedAt()));
     }
 
     static class DraftRepo implements SpecBreakdownDraftRepository {

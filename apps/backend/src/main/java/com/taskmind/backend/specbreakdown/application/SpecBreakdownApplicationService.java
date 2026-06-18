@@ -136,11 +136,15 @@ public class SpecBreakdownApplicationService {
     }
 
     public boolean processOneQueuedJob() {
-        SpecBreakdownProcessingJob running = runInTransaction(this::claimNextQueuedJob);
-        if (running == null) {
+        ClaimedQueuedJob claimed = runInTransaction(this::claimNextQueuedJob);
+        if (!claimed.queuedJobFound()) {
             return false;
         }
+        if (claimed.jobToRun() == null) {
+            return true;
+        }
 
+        SpecBreakdownProcessingJob running = claimed.jobToRun();
         SpecBreakdownDraft d = drafts.findById(running.draftId()).orElseThrow();
         try {
             ObjectNode input = mapper.createObjectNode();
@@ -168,11 +172,11 @@ public class SpecBreakdownApplicationService {
         return true;
     }
 
-    private SpecBreakdownProcessingJob claimNextQueuedJob() {
+    private ClaimedQueuedJob claimNextQueuedJob() {
         Optional<SpecBreakdownProcessingJob> next =
                 jobs.findFirstByStatusOrderByCreatedAt(SpecBreakdownJobStatus.QUEUED);
         if (next.isEmpty()) {
-            return null;
+            return ClaimedQueuedJob.none();
         }
         SpecBreakdownProcessingJob job = next.get();
         if (job.requestedCancel()) {
@@ -192,7 +196,7 @@ public class SpecBreakdownApplicationService {
                             job.createdAt(),
                             Instant.now(),
                             Instant.now()));
-            return null;
+            return ClaimedQueuedJob.terminallyHandled();
         }
         if (job.paused()) {
             jobs.save(
@@ -211,7 +215,7 @@ public class SpecBreakdownApplicationService {
                             job.createdAt(),
                             Instant.now(),
                             job.completedAt()));
-            return null;
+            return ClaimedQueuedJob.terminallyHandled();
         }
         SpecBreakdownDraft draft = drafts.findById(job.draftId()).orElseThrow();
         drafts.save(
@@ -234,22 +238,37 @@ public class SpecBreakdownApplicationService {
                         draft.materializedAt(),
                         draft.createdAt(),
                         Instant.now()));
-        return jobs.save(
-                new SpecBreakdownProcessingJob(
-                        job.id(),
-                        job.version(),
-                        job.draftId(),
-                        job.userId(),
-                        job.aiJobType(),
-                        SpecBreakdownJobStatus.RUNNING,
-                        job.checkpoint(),
-                        null,
-                        null,
-                        false,
-                        false,
-                        job.createdAt(),
-                        Instant.now(),
-                        null));
+        return ClaimedQueuedJob.running(
+                jobs.save(
+                        new SpecBreakdownProcessingJob(
+                                job.id(),
+                                job.version(),
+                                job.draftId(),
+                                job.userId(),
+                                job.aiJobType(),
+                                SpecBreakdownJobStatus.RUNNING,
+                                job.checkpoint(),
+                                null,
+                                null,
+                                false,
+                                false,
+                                job.createdAt(),
+                                Instant.now(),
+                                null)));
+    }
+
+    private record ClaimedQueuedJob(boolean queuedJobFound, SpecBreakdownProcessingJob jobToRun) {
+        static ClaimedQueuedJob none() {
+            return new ClaimedQueuedJob(false, null);
+        }
+
+        static ClaimedQueuedJob terminallyHandled() {
+            return new ClaimedQueuedJob(true, null);
+        }
+
+        static ClaimedQueuedJob running(SpecBreakdownProcessingJob job) {
+            return new ClaimedQueuedJob(true, job);
+        }
     }
 
     private void completeSucceededJob(
