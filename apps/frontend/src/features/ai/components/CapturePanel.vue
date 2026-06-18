@@ -175,7 +175,22 @@ async function reject(draft: CapturedTaskDraft, index: number) {
       </a-button>
     </a-space>
 
-    <a-list v-if="result" :data-source="result.drafts" bordered class="capture-drafts">
+    <a-alert
+      v-if="result?.clarificationQuestion"
+      class="capture-feedback"
+      type="info"
+      show-icon
+      :message="result.clarificationQuestion"
+      description="Add more detail to the capture text area above, then run drafting again to generate better task drafts."
+    />
+
+    <a-empty
+      v-if="result && result.drafts.length === 0"
+      class="capture-feedback"
+      description="No draft tasks were generated. Add more detail to the capture text area above and run drafting again."
+    />
+
+    <a-list v-else-if="result" :data-source="result.drafts" bordered class="capture-drafts">
       <template #renderItem="{ item, index }">
         <a-list-item>
           <a-list-item-meta>
@@ -298,6 +313,7 @@ async function reject(draft: CapturedTaskDraft, index: number) {
 </template>
 
 <style scoped>
+.capture-feedback,
 .capture-drafts {
   margin-top: 16px;
 }
