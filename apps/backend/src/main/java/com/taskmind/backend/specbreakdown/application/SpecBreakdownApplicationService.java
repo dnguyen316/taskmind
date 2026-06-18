@@ -30,8 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Transactional(readOnly = true)
@@ -45,6 +48,25 @@ public class SpecBreakdownApplicationService {
     private final ObjectMapper mapper;
     private final TaskApplicationService tasks;
     private final AiDomainEventPublisher events;
+    private final TransactionTemplate transactions;
+
+    @Autowired
+    public SpecBreakdownApplicationService(
+            SpecBreakdownDraftRepository drafts,
+            SpecBreakdownJobRepository jobs,
+            NovaClient nova,
+            ObjectMapper mapper,
+            TaskApplicationService tasks,
+            AiDomainEventPublisher events,
+        PlatformTransactionManager transactionManager) {
+        this.drafts = drafts;
+        this.jobs = jobs;
+        this.nova = nova;
+        this.mapper = mapper;
+        this.tasks = tasks;
+        this.events = events;
+        this.transactions = transactionManager == null ? null : new TransactionTemplate(transactionManager);
+    }
 
     public SpecBreakdownApplicationService(
             SpecBreakdownDraftRepository drafts,
@@ -53,12 +75,7 @@ public class SpecBreakdownApplicationService {
             ObjectMapper mapper,
             TaskApplicationService tasks,
             AiDomainEventPublisher events) {
-        this.drafts = drafts;
-        this.jobs = jobs;
-        this.nova = nova;
-        this.mapper = mapper;
-        this.tasks = tasks;
-        this.events = events;
+        this(drafts, jobs, nova, mapper, tasks, events, null);
     }
 
     @Transactional
@@ -95,26 +112,81 @@ public class SpecBreakdownApplicationService {
     public SpecBreakdownProcessingJob startJob(AuthenticatedUser u, UUID draftId, SpecBreakdownJobType type) {
         SpecBreakdownDraft d = require(u, draftId);
         Instant now = Instant.now();
-        SpecBreakdownProcessingJob queued = jobs.save(new SpecBreakdownProcessingJob(UUID.randomUUID(), null, d.id(), u.userId(), type, SpecBreakdownJobStatus.QUEUED, "{}", null, null, false, false, now, now, null));
-        return runJob(d, queued);
+        return jobs.save(new SpecBreakdownProcessingJob(UUID.randomUUID(), null, d.id(), u.userId(), type, SpecBreakdownJobStatus.QUEUED, "{}", null, null, false, false, now, now, null));
     }
 
-    @Transactional
-    public SpecBreakdownProcessingJob runJob(SpecBreakdownDraft d, SpecBreakdownProcessingJob job) {
-        SpecBreakdownProcessingJob running = jobs.save(new SpecBreakdownProcessingJob(job.id(), job.version(), job.draftId(), job.userId(), job.aiJobType(), SpecBreakdownJobStatus.RUNNING, job.checkpoint(), null, null, false, false, job.createdAt(), Instant.now(), null));
+    public boolean processOneQueuedJob() {
+        SpecBreakdownProcessingJob running = runInTransaction(this::claimNextQueuedJob);
+        if (running == null) {
+            return false;
+        }
+
+        SpecBreakdownDraft d = drafts.findById(running.draftId()).orElseThrow();
         try {
             ObjectNode input = mapper.createObjectNode();
             input.put("draftId", d.id().toString());
             input.put("rawSpec", d.rawSpec());
             input.set("candidateTree", mapper.readTree(d.candidateTree()));
-            CapabilityResponse response = nova.executeCapability(capability(job.aiJobType()), new CapabilityRequest(new AiCapabilityId(capability(job.aiJobType())), job.userId(), d.projectId().toString(), input, job.id().toString(), job.id().toString()));
+            CapabilityResponse response = nova.executeCapability(capability(running.aiJobType()), new CapabilityRequest(new AiCapabilityId(capability(running.aiJobType())), running.userId(), d.projectId().toString(), input, running.id().toString(), running.id().toString()));
             String output = response.output() == null ? d.candidateTree() : mapper.writeValueAsString(response.output());
-            drafts.save(new SpecBreakdownDraft(d.id(), d.version(), d.projectId(), d.ownerUserId(), d.templateId(), d.title(), d.rawSpec(), d.richContent(), output, SpecBreakdownStatus.READY_FOR_REVIEW, d.fixVersion(), d.affectedVersion(), d.sprint(), d.issueType(), d.publishKey(), d.materializedAt(), d.createdAt(), Instant.now()));
-            events.publish(job.userId(), EventTypes.AI_SPEC_BREAKDOWN_COMPLETED, Map.of("draftId", d.id().toString(), "jobId", job.id().toString(), "jobType", job.aiJobType().name()));
-            return jobs.save(new SpecBreakdownProcessingJob(running.id(), running.version(), running.draftId(), running.userId(), running.aiJobType(), SpecBreakdownJobStatus.SUCCEEDED, output, response.runId(), null, false, false, running.createdAt(), Instant.now(), Instant.now()));
+            runInTransaction(() -> completeSucceededJob(d, running, output, response.runId()));
         } catch (Exception e) {
-            events.publish(job.userId(), EventTypes.AI_SPEC_BREAKDOWN_FAILED, Map.of("draftId", d.id().toString(), "jobId", job.id().toString(), "message", e.getMessage() == null ? "failed" : e.getMessage()));
-            return jobs.save(new SpecBreakdownProcessingJob(running.id(), running.version(), running.draftId(), running.userId(), running.aiJobType(), SpecBreakdownJobStatus.FAILED, running.checkpoint(), null, e.getMessage(), false, false, running.createdAt(), Instant.now(), Instant.now()));
+            runInTransaction(() -> completeFailedJob(d, running, e));
+        }
+        return true;
+    }
+
+    private SpecBreakdownProcessingJob claimNextQueuedJob() {
+        Optional<SpecBreakdownProcessingJob> next = jobs.findFirstByStatusOrderByCreatedAt(SpecBreakdownJobStatus.QUEUED);
+        if (next.isEmpty()) {
+            return null;
+        }
+        SpecBreakdownProcessingJob job = next.get();
+        if (job.requestedCancel()) {
+            jobs.save(new SpecBreakdownProcessingJob(job.id(), job.version(), job.draftId(), job.userId(), job.aiJobType(), SpecBreakdownJobStatus.CANCELED, job.checkpoint(), job.novaRunId(), job.errorMessage(), true, false, job.createdAt(), Instant.now(), Instant.now()));
+            return null;
+        }
+        if (job.paused()) {
+            jobs.save(new SpecBreakdownProcessingJob(job.id(), job.version(), job.draftId(), job.userId(), job.aiJobType(), SpecBreakdownJobStatus.PAUSED, job.checkpoint(), job.novaRunId(), job.errorMessage(), false, true, job.createdAt(), Instant.now(), job.completedAt()));
+            return null;
+        }
+        SpecBreakdownDraft draft = drafts.findById(job.draftId()).orElseThrow();
+        drafts.save(new SpecBreakdownDraft(draft.id(), draft.version(), draft.projectId(), draft.ownerUserId(), draft.templateId(), draft.title(), draft.rawSpec(), draft.richContent(), draft.candidateTree(), SpecBreakdownStatus.PROCESSING, draft.fixVersion(), draft.affectedVersion(), draft.sprint(), draft.issueType(), draft.publishKey(), draft.materializedAt(), draft.createdAt(), Instant.now()));
+        return jobs.save(new SpecBreakdownProcessingJob(job.id(), job.version(), job.draftId(), job.userId(), job.aiJobType(), SpecBreakdownJobStatus.RUNNING, job.checkpoint(), null, null, false, false, job.createdAt(), Instant.now(), null));
+    }
+
+    private void completeSucceededJob(SpecBreakdownDraft d, SpecBreakdownProcessingJob running, String output, UUID runId) {
+        SpecBreakdownProcessingJob latest = jobs.findById(running.id()).orElse(running);
+        if (latest.requestedCancel()) {
+            jobs.save(new SpecBreakdownProcessingJob(latest.id(), latest.version(), latest.draftId(), latest.userId(), latest.aiJobType(), SpecBreakdownJobStatus.CANCELED, output, runId, latest.errorMessage(), true, false, latest.createdAt(), Instant.now(), Instant.now()));
+            return;
+        }
+        if (latest.paused()) {
+            jobs.save(new SpecBreakdownProcessingJob(latest.id(), latest.version(), latest.draftId(), latest.userId(), latest.aiJobType(), SpecBreakdownJobStatus.PAUSED, output, runId, latest.errorMessage(), false, true, latest.createdAt(), Instant.now(), latest.completedAt()));
+            return;
+        }
+        drafts.save(new SpecBreakdownDraft(d.id(), d.version(), d.projectId(), d.ownerUserId(), d.templateId(), d.title(), d.rawSpec(), d.richContent(), output, SpecBreakdownStatus.READY_FOR_REVIEW, d.fixVersion(), d.affectedVersion(), d.sprint(), d.issueType(), d.publishKey(), d.materializedAt(), d.createdAt(), Instant.now()));
+        events.publish(running.userId(), EventTypes.AI_SPEC_BREAKDOWN_COMPLETED, Map.of("draftId", d.id().toString(), "jobId", running.id().toString(), "jobType", running.aiJobType().name()));
+        jobs.save(new SpecBreakdownProcessingJob(latest.id(), latest.version(), latest.draftId(), latest.userId(), latest.aiJobType(), SpecBreakdownJobStatus.SUCCEEDED, output, runId, null, false, false, latest.createdAt(), Instant.now(), Instant.now()));
+    }
+
+    private void completeFailedJob(SpecBreakdownDraft d, SpecBreakdownProcessingJob running, Exception e) {
+        String message = e.getMessage() == null ? "failed" : e.getMessage();
+        events.publish(running.userId(), EventTypes.AI_SPEC_BREAKDOWN_FAILED, Map.of("draftId", d.id().toString(), "jobId", running.id().toString(), "message", message));
+        drafts.save(new SpecBreakdownDraft(d.id(), d.version(), d.projectId(), d.ownerUserId(), d.templateId(), d.title(), d.rawSpec(), d.richContent(), d.candidateTree(), SpecBreakdownStatus.FAILED, d.fixVersion(), d.affectedVersion(), d.sprint(), d.issueType(), d.publishKey(), d.materializedAt(), d.createdAt(), Instant.now()));
+        SpecBreakdownProcessingJob latest = jobs.findById(running.id()).orElse(running);
+        jobs.save(new SpecBreakdownProcessingJob(latest.id(), latest.version(), latest.draftId(), latest.userId(), latest.aiJobType(), latest.requestedCancel() ? SpecBreakdownJobStatus.CANCELED : SpecBreakdownJobStatus.FAILED, latest.checkpoint(), null, message, latest.requestedCancel(), latest.paused(), latest.createdAt(), Instant.now(), Instant.now()));
+    }
+
+    private <T> T runInTransaction(java.util.function.Supplier<T> action) {
+        return transactions == null ? action.get() : transactions.execute(status -> action.get());
+    }
+
+    private void runInTransaction(Runnable action) {
+        if (transactions == null) {
+            action.run();
+        } else {
+            transactions.executeWithoutResult(status -> action.run());
         }
     }
 

@@ -59,13 +59,14 @@ class SpecBreakdownControllerTest {
     }
 
     @Test
-    void startsJobAndReturnsAcceptedStatusEnvelope() throws Exception {
+    void startsJobAndReturnsQueuedAcceptedStatusEnvelope() throws Exception {
         mockMvc.perform(post("/v1/spec-breakdown/drafts/{id}/jobs", DRAFT_ID)
                         .with(jwt(USER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"aiJobType\":\"OUTLINE\"}"))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.aiJobType").value("OUTLINE"));
+                .andExpect(jsonPath("$.aiJobType").value("OUTLINE"))
+                .andExpect(jsonPath("$.status").value("QUEUED"));
     }
 
     @Test
@@ -165,7 +166,7 @@ class SpecBreakdownControllerTest {
 
                 @Override
                 public SpecBreakdownProcessingJob startJob(AuthenticatedUser u, UUID draftId, SpecBreakdownJobType type) {
-                    return new SpecBreakdownProcessingJob(JOB_ID, 0L, draftId, u.userId(), type, SpecBreakdownJobStatus.SUCCEEDED, "{}", null, null, false, false, Instant.now(), Instant.now(), Instant.now());
+                    return new SpecBreakdownProcessingJob(JOB_ID, 0L, draftId, u.userId(), type, SpecBreakdownJobStatus.QUEUED, "{}", null, null, false, false, Instant.now(), Instant.now(), null);
                 }
 
                 @Override
@@ -221,6 +222,10 @@ class SpecBreakdownControllerTest {
 
         public List<SpecBreakdownProcessingJob> findByDraftId(UUID draftId) {
             return List.of();
+        }
+
+        public Optional<SpecBreakdownProcessingJob> findFirstByStatusOrderByCreatedAt(SpecBreakdownJobStatus status) {
+            return Optional.empty();
         }
     }
 
