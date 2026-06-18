@@ -81,8 +81,13 @@ Relay, plus Core's activity-search read API, target OpenSearch:
 | Relay | 0.5 vCPU / 1 GB | 1-2 | no |
 | Nova | 1 vCPU / 2 GB | 1-2 | no |
 
-- A per-service `Dockerfile` exists under `apps/*/Dockerfile`; push images to three ECR
-  repositories.
+- A per-service `Dockerfile` exists under `apps/*/Dockerfile`; build from the repository
+  root so the Spring Boot images can resolve the Maven reactor and the frontend can inject
+  `VITE_API_BASE_URL` at build time. Use `make image-build` for all deployable images or
+  target a single app with `make image-build-backend`, `make image-build-relay`,
+  `make image-build-ai`, or `make image-build-frontend`. Override `IMAGE_REGISTRY`,
+  `IMAGE_TAG`, and `VITE_API_BASE_URL` as needed before pushing to ECR or a web edge
+  runtime registry.
 - Startup order: RDS, Redis, and OpenSearch healthy -> Core (Flyway and
   `/actuator/health`) -> Relay -> Nova.
 - **SSE** (`/v1/nova/chat/stream`, `/v1/notifications/stream`): set the ALB idle timeout
@@ -108,10 +113,11 @@ Relay, plus Core's activity-search read API, target OpenSearch:
 
 ```text
 1. vibe-verify (scripts/vibe-verify.sh)
-2. mvn package + docker build (backend, relay, ai)
-3. push to ECR (3 repos)
+2. `make image-build IMAGE_REGISTRY=<registry> IMAGE_TAG=<sha> VITE_API_BASE_URL=<core-url>`
+3. push backend, relay, ai, and frontend images to the target registry
 4. ecs deploy per service (staging -> manual approval -> prod)
-5. FE: npm build -> S3 sync -> CloudFront invalidation
+5. frontend image smoke test: curl `/healthz` and `/` before promotion; S3/CloudFront remains
+   an optional static-hosting deployment variant
 ```
 
 IaC suggestion using Terraform/OpenTofu modules: `network/`, `data/`, `compute/`,

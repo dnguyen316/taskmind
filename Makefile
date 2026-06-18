@@ -12,6 +12,9 @@ BACKEND_PORT ?= 8080
 RELAY_PORT ?= 8081
 AI_PORT ?= 8082
 FRONTEND_PORT ?= 5173
+IMAGE_REGISTRY ?= taskmind
+IMAGE_TAG ?= local
+VITE_API_BASE_URL ?= /api
 
 .DEFAULT_GOAL := help
 
@@ -19,6 +22,7 @@ FRONTEND_PORT ?= 5173
 	run-backend run-relay run-ai run-frontend \
 	start start-backend start-relay start-ai start-frontend stop status logs clean-dev \
 	env-example infra-up infra-down frontend-typecheck frontend-build frontend-format \
+	image-build image-build-backend image-build-relay image-build-ai image-build-frontend \
 	vibe-token-record vibe-token-report
 
 help: ## Show available Makefile targets.
@@ -56,6 +60,20 @@ frontend-build: ## Build the Vue frontend.
 
 frontend-format: ## Format the Vue frontend.
 	cd "$(FRONTEND_DIR)" && $(NPM) run format:all
+
+image-build: image-build-backend image-build-relay image-build-ai image-build-frontend ## Build all production application images.
+
+image-build-backend: ## Build the Core API production image.
+	docker build -f apps/backend/Dockerfile -t $(IMAGE_REGISTRY)/taskmind-backend:$(IMAGE_TAG) .
+
+image-build-relay: ## Build the Relay production image.
+	docker build -f apps/relay/Dockerfile -t $(IMAGE_REGISTRY)/taskmind-relay:$(IMAGE_TAG) .
+
+image-build-ai: ## Build the Nova AI production image.
+	docker build -f apps/ai/Dockerfile -t $(IMAGE_REGISTRY)/taskmind-ai:$(IMAGE_TAG) .
+
+image-build-frontend: ## Build the Vue SPA production image.
+	docker build -f apps/frontend/Dockerfile --build-arg VITE_API_BASE_URL="$(VITE_API_BASE_URL)" -t $(IMAGE_REGISTRY)/taskmind-frontend:$(IMAGE_TAG) .
 
 run-backend: ## Run Core API in the foreground on BACKEND_PORT (default 8080).
 	SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(BACKEND_PORT)" $(MVN) -pl apps/backend spring-boot:run
