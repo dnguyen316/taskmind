@@ -113,6 +113,66 @@ class TaskAttachmentControllerTest {
                 .andExpect(header().longValue("Content-Length", content.length));
     }
 
+
+    @Test
+    void rejectsUploadWithMissingFilename() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        MockMultipartFile file = new MockMultipartFile("file", "", "text/plain", "content".getBytes());
+
+        mockMvc.perform(
+                        multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                .file(file)
+                                .param("mediaKind", "DOCUMENT")
+                                .with(jwt(userId)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsUploadWithMissingMediaKind() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        MockMultipartFile file =
+                new MockMultipartFile("file", "note.txt", "text/plain", "content".getBytes());
+
+        mockMvc.perform(
+                        multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                .file(file)
+                                .with(jwt(userId)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsUploadWithInvalidMediaKind() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        MockMultipartFile file =
+                new MockMultipartFile("file", "note.txt", "text/plain", "content".getBytes());
+
+        mockMvc.perform(
+                        multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                .file(file)
+                                .param("mediaKind", "NOT_A_KIND")
+                                .with(jwt(userId)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsOversizeUploadAsPayloadTooLarge() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        byte[] content = new byte[1_048_577];
+        MockMultipartFile file =
+                new MockMultipartFile("file", "large.bin", "application/octet-stream", content);
+
+        mockMvc.perform(
+                        multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                .file(file)
+                                .param("mediaKind", "DOCUMENT")
+                                .with(jwt(userId)))
+                .andExpect(status().isPayloadTooLarge());
+    }
+
     @Test
     void rejectsAttachmentAccessByNonOwner() throws Exception {
         String ownerId = UUID.randomUUID().toString();

@@ -1,7 +1,8 @@
 package com.taskmind.backend.attachment.interfaces.rest;
 
+import com.taskmind.backend.attachment.application.AttachmentAccessDeniedException;
+import com.taskmind.backend.attachment.application.AttachmentValidationException;
 import com.taskmind.backend.attachment.application.TaskAttachmentApplicationService;
-import com.taskmind.backend.attachment.domain.model.MediaKind;
 import com.taskmind.backend.attachment.domain.model.TaskAttachment;
 import com.taskmind.backend.attachment.interfaces.rest.dto.TaskAttachmentResponse;
 import com.taskmind.backend.auth.AuthenticatedUser;
@@ -38,7 +39,7 @@ public class TaskAttachmentController {
             AuthenticatedUser requester,
             @PathVariable UUID taskId,
             @RequestParam("file") MultipartFile file,
-            @RequestParam MediaKind mediaKind) {
+            @RequestParam(required = false) String mediaKind) {
         try {
             TaskAttachment attachment =
                     service.upload(
@@ -50,7 +51,13 @@ public class TaskAttachmentController {
                             mediaKind,
                             file.getInputStream());
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(attachment));
-        } catch (IllegalArgumentException e) {
+        } catch (AttachmentValidationException e) {
+            HttpStatus status =
+                    e.isSizeLimitViolation()
+                            ? HttpStatus.PAYLOAD_TOO_LARGE
+                            : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status, e.getMessage(), e);
+        } catch (AttachmentAccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload", e);
@@ -61,7 +68,7 @@ public class TaskAttachmentController {
     public List<TaskAttachmentResponse> list(AuthenticatedUser requester, @PathVariable UUID taskId) {
         try {
             return service.list(requester, taskId).stream().map(this::toResponse).toList();
-        } catch (IllegalArgumentException e) {
+        } catch (AttachmentAccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
     }
@@ -105,6 +112,8 @@ public class TaskAttachmentController {
                                     .build()
                                     .toString())
                     .body(download.resource());
+        } catch (AttachmentAccessDeniedException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }
@@ -118,6 +127,8 @@ public class TaskAttachmentController {
         try {
             service.delete(requester, taskId, attachmentId);
             return ResponseEntity.noContent().build();
+        } catch (AttachmentAccessDeniedException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }
