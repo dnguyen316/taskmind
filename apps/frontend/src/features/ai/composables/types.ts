@@ -1,6 +1,8 @@
+import type { TaskStatus } from '../../tasks/types'
+
 export interface CapturedTaskDraft {
   title: string
-  status: string
+  status: TaskStatus
   priority: number
   durationMinutes: number
   source: string

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useProjects } from '../../projects/composables/useProjects'
+import { TASK_STATUS_OPTIONS } from '../../tasks/constants/taskConstants'
 import { useCapture } from '../composables/useCapture'
 import type { CapturedTaskDraft } from '../composables/types'
 
@@ -69,10 +70,34 @@ function reviewState(draft: CapturedTaskDraft, index: number) {
   return draftStates[key]
 }
 
+function isSupportedDraftStatus(status: string) {
+  return (TASK_STATUS_OPTIONS as readonly string[]).includes(status)
+}
+
+function unsupportedDraftStatusMessage(draft: CapturedTaskDraft) {
+  if (isSupportedDraftStatus(draft.status)) {
+    return ''
+  }
+
+  return `The generated draft has an unsupported status (${draft.status}). Regenerate the draft before accepting or rejecting it.`
+}
+
 function acceptDisabled(draft: CapturedTaskDraft, index: number) {
   const state = reviewState(draft, index)
 
-  return state.accepting || state.rejecting || !draft.title.trim() || !state.projectId.trim()
+  return (
+    state.accepting ||
+    state.rejecting ||
+    !draft.title.trim() ||
+    !state.projectId.trim() ||
+    !isSupportedDraftStatus(draft.status)
+  )
+}
+
+function rejectDisabled(draft: CapturedTaskDraft, index: number) {
+  const state = reviewState(draft, index)
+
+  return state.accepting || state.rejecting || !isSupportedDraftStatus(draft.status)
 }
 
 function optionalField(value: string) {
@@ -87,6 +112,11 @@ async function accept(draft: CapturedTaskDraft, index: number) {
   const state = reviewState(draft, index)
   state.error = ''
   state.status = ''
+
+  if (!isSupportedDraftStatus(draft.status)) {
+    state.error = unsupportedDraftStatusMessage(draft)
+    return
+  }
 
   if (acceptDisabled(draft, index)) {
     state.error = hasProjectOptions.value
@@ -117,6 +147,12 @@ async function reject(draft: CapturedTaskDraft, index: number) {
   const state = reviewState(draft, index)
   state.error = ''
   state.status = ''
+
+  if (!isSupportedDraftStatus(draft.status)) {
+    state.error = unsupportedDraftStatusMessage(draft)
+    return
+  }
+
   state.rejecting = true
 
   try {
@@ -214,6 +250,12 @@ async function reject(draft: CapturedTaskDraft, index: number) {
                 </a-row>
 
                 <a-alert
+                  v-if="unsupportedDraftStatusMessage(item)"
+                  type="error"
+                  show-icon
+                  :message="unsupportedDraftStatusMessage(item)"
+                />
+                <a-alert
                   v-if="reviewState(item, index).error"
                   type="error"
                   show-icon
@@ -240,7 +282,7 @@ async function reject(draft: CapturedTaskDraft, index: number) {
                     size="small"
                     danger
                     :loading="reviewState(item, index).rejecting"
-                    :disabled="reviewState(item, index).accepting"
+                    :disabled="rejectDisabled(item, index)"
                     @click="reject(item, index)"
                   >
                     Reject
