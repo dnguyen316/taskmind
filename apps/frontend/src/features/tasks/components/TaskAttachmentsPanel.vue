@@ -19,6 +19,9 @@ const props = defineProps<{
   taskId: string
 }>()
 
+const MAX_TASK_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
+const MAX_TASK_ATTACHMENT_SIZE_LABEL = formatBytes(MAX_TASK_ATTACHMENT_SIZE_BYTES)
+
 const MEDIA_KIND_OPTIONS: Array<{ label: string; value: MediaKind }> = [
   { label: 'Image', value: 'IMAGE' },
   { label: 'Document', value: 'DOCUMENT' },
@@ -92,6 +95,15 @@ async function uploadSelectedFile() {
 
   if (filesToUpload.length === 0) {
     errorMessage.value = 'Choose one or more files before uploading.'
+    return
+  }
+
+  const oversizedFiles = filesToUpload.filter((file) => file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES)
+
+  if (oversizedFiles.length > 0) {
+    const oversizedFileNames = oversizedFiles.map((file) => file.name).join(', ')
+    errorMessage.value = `Attachment${oversizedFiles.length === 1 ? '' : 's'} exceed the ${MAX_TASK_ATTACHMENT_SIZE_LABEL} limit: ${oversizedFileNames}.`
+    successMessage.value = ''
     return
   }
 
@@ -251,6 +263,9 @@ function toTimestamp(value: string) {
           <InboxOutlined />
           <span>{{ selectedFileLabel }}</span>
           <input id="task-attachment-file-input" type="file" multiple @change="handleFileChange" />
+          <span class="file-picker-helper"
+            >Maximum file size: {{ MAX_TASK_ATTACHMENT_SIZE_LABEL }}</span
+          >
         </label>
 
         <a-select
@@ -342,7 +357,7 @@ function toTimestamp(value: string) {
 .file-picker {
   display: inline-flex;
   flex: 1 1 260px;
-  gap: 10px;
+  gap: 6px 10px;
   align-items: center;
   min-width: 220px;
   padding: 8px 12px;
@@ -356,10 +371,17 @@ function toTimestamp(value: string) {
   display: none;
 }
 
-.file-picker span {
+.file-picker span:not(.file-picker-helper) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.file-picker-helper {
+  flex-basis: 100%;
+  padding-left: 26px;
+  font-size: 0.78rem;
+  color: var(--tm-text-muted);
 }
 
 .media-kind-select {
