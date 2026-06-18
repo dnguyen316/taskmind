@@ -1,6 +1,7 @@
 package com.taskmind.backend.specbreakdown.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.ai.contracts.AiRunStatus;
@@ -24,8 +25,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,6 +116,46 @@ class SpecBreakdownWorkerTest {
         assertThat(updated.status()).isEqualTo(SpecBreakdownJobStatus.CANCELED);
         assertThat(updated.checkpoint()).contains("Generated epic");
         assertThat(drafts.draft.status()).isEqualTo(SpecBreakdownStatus.PROCESSING);
+    }
+
+    @Test
+    void resumeCommandRejectsTerminalJobs() {
+        for (SpecBreakdownJobStatus terminalStatus : List.of(
+                SpecBreakdownJobStatus.SUCCEEDED,
+                SpecBreakdownJobStatus.FAILED,
+                SpecBreakdownJobStatus.CANCELED)) {
+            SpecBreakdownProcessingJob job = saveJobWithStatus(terminalStatus);
+
+            assertThatThrownBy(() -> service.commandJob(user(), job.id(), "resume"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Spec breakdown job can only be resumed from PAUSED");
+
+            assertThat(jobs.findById(job.id()).orElseThrow().status()).isEqualTo(terminalStatus);
+        }
+    }
+
+    private SpecBreakdownProcessingJob saveJobWithStatus(SpecBreakdownJobStatus status) {
+        Instant now = Instant.now();
+        return jobs.save(
+                new SpecBreakdownProcessingJob(
+                        UUID.randomUUID(),
+                        null,
+                        DRAFT_ID,
+                        USER_ID,
+                        SpecBreakdownJobType.BREAKDOWN,
+                        status,
+                        "{}",
+                        null,
+                        null,
+                        false,
+                        false,
+                        now,
+                        now,
+                        status == SpecBreakdownJobStatus.SUCCEEDED
+                                        || status == SpecBreakdownJobStatus.FAILED
+                                        || status == SpecBreakdownJobStatus.CANCELED
+                                ? now
+                                : null));
     }
 
     private AuthenticatedUser user() {

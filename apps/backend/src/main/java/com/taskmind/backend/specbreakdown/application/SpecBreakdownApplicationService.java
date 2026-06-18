@@ -414,13 +414,7 @@ public class SpecBreakdownApplicationService {
     @Transactional
     public SpecBreakdownProcessingJob commandJob(AuthenticatedUser u, UUID id, String command) {
         SpecBreakdownProcessingJob j = getJob(u, id).orElseThrow();
-        SpecBreakdownJobStatus s =
-                switch (command) {
-                    case "pause" -> SpecBreakdownJobStatus.PAUSED;
-                    case "resume" -> SpecBreakdownJobStatus.QUEUED;
-                    case "cancel" -> SpecBreakdownJobStatus.CANCELED;
-                    default -> throw new IllegalArgumentException("Unsupported command");
-                };
+        SpecBreakdownJobStatus s = statusForCommand(j.status(), command);
         return jobs.save(
                 new SpecBreakdownProcessingJob(
                         j.id(),
@@ -437,6 +431,37 @@ public class SpecBreakdownApplicationService {
                         j.createdAt(),
                         Instant.now(),
                         s == SpecBreakdownJobStatus.CANCELED ? Instant.now() : j.completedAt()));
+    }
+
+    private SpecBreakdownJobStatus statusForCommand(
+            SpecBreakdownJobStatus currentStatus, String command) {
+        return switch (command) {
+            case "pause" -> {
+                if (currentStatus != SpecBreakdownJobStatus.QUEUED
+                        && currentStatus != SpecBreakdownJobStatus.RUNNING) {
+                    throw new IllegalArgumentException(
+                            "Spec breakdown job can only be paused from QUEUED or RUNNING");
+                }
+                yield SpecBreakdownJobStatus.PAUSED;
+            }
+            case "resume" -> {
+                if (currentStatus != SpecBreakdownJobStatus.PAUSED) {
+                    throw new IllegalArgumentException(
+                            "Spec breakdown job can only be resumed from PAUSED");
+                }
+                yield SpecBreakdownJobStatus.QUEUED;
+            }
+            case "cancel" -> {
+                if (currentStatus == SpecBreakdownJobStatus.SUCCEEDED
+                        || currentStatus == SpecBreakdownJobStatus.FAILED
+                        || currentStatus == SpecBreakdownJobStatus.CANCELED) {
+                    throw new IllegalArgumentException(
+                            "Spec breakdown job can only be canceled while non-terminal");
+                }
+                yield SpecBreakdownJobStatus.CANCELED;
+            }
+            default -> throw new IllegalArgumentException("Unsupported command");
+        };
     }
 
     @Transactional
