@@ -3,6 +3,7 @@ package com.taskmind.backend.attachment.interfaces.rest;
 import com.taskmind.backend.attachment.application.TaskAttachmentApplicationService;
 import com.taskmind.backend.attachment.domain.model.MediaKind;
 import com.taskmind.backend.attachment.domain.model.TaskAttachment;
+import com.taskmind.backend.attachment.interfaces.rest.dto.TaskAttachmentResponse;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import java.io.IOException;
 import java.util.List;
@@ -33,7 +34,7 @@ public class TaskAttachmentController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<TaskAttachment> upload(
+    public ResponseEntity<TaskAttachmentResponse> upload(
             AuthenticatedUser requester,
             @PathVariable UUID taskId,
             @RequestParam("file") MultipartFile file,
@@ -48,7 +49,7 @@ public class TaskAttachmentController {
                             file.getSize(),
                             mediaKind,
                             file.getInputStream());
-            return ResponseEntity.status(HttpStatus.CREATED).body(attachment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(attachment));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         } catch (IOException e) {
@@ -57,12 +58,29 @@ public class TaskAttachmentController {
     }
 
     @GetMapping
-    public List<TaskAttachment> list(AuthenticatedUser requester, @PathVariable UUID taskId) {
+    public List<TaskAttachmentResponse> list(AuthenticatedUser requester, @PathVariable UUID taskId) {
         try {
-            return service.list(requester, taskId);
+            return service.list(requester, taskId).stream().map(this::toResponse).toList();
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
+    }
+
+
+    private TaskAttachmentResponse toResponse(TaskAttachment attachment) {
+        TaskAttachmentResponse response = new TaskAttachmentResponse();
+        response.id = attachment.id();
+        response.version = attachment.version();
+        response.taskId = attachment.taskId();
+        response.ownerUserId = attachment.ownerUserId();
+        response.fileName = attachment.fileName();
+        response.contentType = attachment.contentType();
+        response.sizeBytes = attachment.sizeBytes();
+        response.mediaKind = attachment.mediaKind();
+        response.deletedAt = attachment.deletedAt();
+        response.createdAt = attachment.createdAt();
+        response.updatedAt = attachment.updatedAt();
+        return response;
     }
 
     @GetMapping("/{attachmentId}/download")

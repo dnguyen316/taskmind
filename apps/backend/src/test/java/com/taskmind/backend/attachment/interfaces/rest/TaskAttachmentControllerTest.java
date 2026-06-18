@@ -47,13 +47,15 @@ class TaskAttachmentControllerTest {
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.fileName").value("note.txt"))
                         .andExpect(jsonPath("$.mediaKind").value("DOCUMENT"))
+                        .andExpect(jsonPath("$.objectKey").doesNotExist())
                         .andReturn();
         String attachmentId =
                 objectMapper.readTree(upload.getResponse().getContentAsString()).get("id").asText();
 
         mockMvc.perform(get("/v1/tasks/{taskId}/attachments", taskId).with(jwt(userId)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(attachmentId));
+                .andExpect(jsonPath("$[0].id").value(attachmentId))
+                .andExpect(jsonPath("$[0].objectKey").doesNotExist());
 
         mockMvc.perform(
                         get(

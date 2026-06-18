@@ -1,6 +1,7 @@
 package com.taskmind.backend.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -63,6 +64,22 @@ class OpenApiContractTest {
         Set<String> schemas = openApiSchemaKeys();
         assertTrue(schemas.contains("TaskAttachment"));
         assertTrue(schemas.contains("ActivitySearchDocument"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void taskAttachmentSchemaDoesNotExposeObjectStorageKey() throws Exception {
+        Map<String, Object> openapi = openApiYaml();
+        Map<String, Object> components = (Map<String, Object>) openapi.get("components");
+        Map<String, Object> schemas = (Map<String, Object>) components.get("schemas");
+        Map<String, Object> taskAttachment = (Map<String, Object>) schemas.get("TaskAttachment");
+        Iterable<Object> required = (Iterable<Object>) taskAttachment.get("required");
+        Map<String, Object> properties = (Map<String, Object>) taskAttachment.get("properties");
+
+        assertFalse(properties.containsKey("objectKey"));
+        for (Object requiredProperty : required) {
+            assertFalse("objectKey".equals(requiredProperty));
+        }
     }
 
     @SuppressWarnings("unchecked")
