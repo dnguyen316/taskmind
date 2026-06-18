@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/v1/nova")
@@ -36,12 +35,12 @@ public class NovaFacadeController {
     }
 
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    ResponseEntity<StreamingResponseBody> chatStream(@Valid @RequestBody ChatRequest request)
-            throws IOException {
+    ResponseEntity<byte[]> chatStream(@Valid @RequestBody ChatRequest request) throws IOException {
         ByteArrayOutputStream bufferedStream = new ByteArrayOutputStream();
         novaClient.chatStream(request, bufferedStream);
-        StreamingResponseBody body = outputStream -> bufferedStream.writeTo(outputStream);
-        return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(body);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_EVENT_STREAM)
+                .body(bufferedStream.toByteArray());
     }
 
     @GetMapping("/capabilities")

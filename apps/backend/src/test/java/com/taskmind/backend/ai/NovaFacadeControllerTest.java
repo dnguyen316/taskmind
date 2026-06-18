@@ -6,7 +6,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -36,7 +35,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 @WebMvcTest(controllers = NovaFacadeController.class)
 @Import({
@@ -100,24 +98,19 @@ class NovaFacadeControllerTest {
                 .when(novaClient)
                 .chatStream(any(ChatRequest.class), any(java.io.OutputStream.class));
 
-        MvcResult result =
-                mockMvc.perform(
-                                post("/v1/nova/chat/stream")
-                                        .with(jwt(USER_ID))
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .accept(MediaType.TEXT_EVENT_STREAM)
-                                        .content(
-                                                """
-                                                {
-                                                  "message": "Plan my day",
-                                                  "timezone": "UTC",
-                                                  "locale": "en-US"
-                                                }
-                                                """))
-                        .andExpect(status().isOk())
-                        .andReturn();
-
-        mockMvc.perform(asyncDispatch(result))
+        mockMvc.perform(
+                        post("/v1/nova/chat/stream")
+                                .with(jwt(USER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.TEXT_EVENT_STREAM)
+                                .content(
+                                        """
+                                        {
+                                          "message": "Plan my day",
+                                          "timezone": "UTC",
+                                          "locale": "en-US"
+                                        }
+                                        """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("session-1")))

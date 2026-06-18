@@ -22,3 +22,8 @@ __pycache__/
 .vibe/*.jsonl
 .vibe/*.json
 .vibe/*.csv
+
+# Maven build outputs
+target/
+*/target/
+*/*/target/
