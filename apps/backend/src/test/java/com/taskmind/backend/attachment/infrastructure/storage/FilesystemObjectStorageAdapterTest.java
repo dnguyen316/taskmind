@@ -1,10 +1,12 @@
 package com.taskmind.backend.attachment.infrastructure.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
+import org.springframework.util.StreamUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -17,7 +19,9 @@ class FilesystemObjectStorageAdapterTest {
         byte[] bytes = "hello".getBytes();
         adapter.put(
                 "tasks/t1/file.txt", new ByteArrayInputStream(bytes), bytes.length, "text/plain");
-        assertArrayEquals(bytes, adapter.get("tasks/t1/file.txt").bytes());
+        var object = adapter.get("tasks/t1/file.txt");
+        assertArrayEquals(bytes, StreamUtils.copyToByteArray(object.resource().getInputStream()));
+        assertEquals(bytes.length, object.sizeBytes());
         adapter.delete("tasks/t1/file.txt");
         assertThrows(
                 java.nio.file.NoSuchFileException.class, () -> adapter.get("tasks/t1/file.txt"));

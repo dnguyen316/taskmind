@@ -2,6 +2,7 @@ package com.taskmind.backend.attachment.domain.repository;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.springframework.core.io.Resource;
 
 public interface ObjectStoragePort {
     void put(String key, InputStream content, long sizeBytes, String contentType)
@@ -11,5 +12,5 @@ public interface ObjectStoragePort {
 
     void delete(String key) throws IOException;
 
-    record StoredObject(byte[] bytes, String contentType, long sizeBytes) {}
+    record StoredObject(Resource resource, String contentType, long sizeBytes) {}
 }

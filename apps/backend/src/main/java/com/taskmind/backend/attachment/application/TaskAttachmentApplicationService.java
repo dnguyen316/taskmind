@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +85,7 @@ public class TaskAttachmentApplicationService {
         TaskAttachment attachment = requireAttachment(taskId, attachmentId);
         try {
             ObjectStoragePort.StoredObject object = storage.get(attachment.objectKey());
-            return new Download(attachment, object.bytes(), object.contentType());
+            return new Download(attachment, object.resource(), object.contentType(), object.sizeBytes());
         } catch (IOException e) {
             throw new IllegalStateException("Could not read attachment object", e);
         }
@@ -145,5 +146,6 @@ public class TaskAttachmentApplicationService {
         return fileName.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
-    public record Download(TaskAttachment attachment, byte[] bytes, String contentType) {}
+    public record Download(
+            TaskAttachment attachment, Resource resource, String contentType, long sizeBytes) {}
 }

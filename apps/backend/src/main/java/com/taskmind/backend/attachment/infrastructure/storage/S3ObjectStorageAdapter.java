@@ -5,7 +5,8 @@ import com.taskmind.backend.attachment.domain.repository.ObjectStoragePort;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import software.amazon.awssdk.core.ResponseBytes;
+import org.springframework.core.io.InputStreamResource;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -35,12 +36,13 @@ public class S3ObjectStorageAdapter implements ObjectStoragePort {
 
     @Override
     public StoredObject get(String key) throws IOException {
-        ResponseBytes<GetObjectResponse> response =
-                client.getObjectAsBytes(builder -> builder.bucket(bucket).key(key).build());
+        ResponseInputStream<GetObjectResponse> response =
+                client.getObject(builder -> builder.bucket(bucket).key(key).build());
+        GetObjectResponse metadata = response.response();
         return new StoredObject(
-                response.asByteArray(),
-                response.response().contentType(),
-                response.response().contentLength());
+                new InputStreamResource(response),
+                metadata.contentType(),
+                metadata.contentLength());
     }
 
     @Override
