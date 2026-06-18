@@ -466,3 +466,12 @@ This changelog tracks backend feature progress against the core implementation p
 ### Notes
 
 - Rate limiting can be disabled through `taskmind.ratelimit.enabled` for local debugging and test profiles.
+
+## 2026-06-18 (Spec Breakdown Templates)
+
+### Changed
+
+- Replaced the Core spec-breakdown template controller's in-memory map with a DDD-aligned domain model, application service, repository port, and JPA adapter backed by `spec_breakdown_templates`.
+- Added WebMvc coverage for template create, project list, update, delete, and not-found responses.
+- Added repository persistence coverage for saving, reading, updating, listing, and deleting spec-breakdown templates.
+- Documented update and delete template endpoints in the Core OpenAPI spec.
