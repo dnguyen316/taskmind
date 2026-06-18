@@ -1,0 +1,204 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub deployment environment to use.
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+env:
+  DEPLOY_ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  verify:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Run normal quality gate
+        run: scripts/vibe-verify.sh
+
+  deploy:
+    name: Package and deploy
+    runs-on: ubuntu-latest
+    needs: verify
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      CORE_ECR_REPOSITORY: ${{ vars.CORE_ECR_REPOSITORY }}
+      RELAY_ECR_REPOSITORY: ${{ vars.RELAY_ECR_REPOSITORY }}
+      NOVA_ECR_REPOSITORY: ${{ vars.NOVA_ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      CORE_ECS_SERVICE: ${{ vars.CORE_ECS_SERVICE }}
+      RELAY_ECS_SERVICE: ${{ vars.RELAY_ECS_SERVICE }}
+      NOVA_ECS_SERVICE: ${{ vars.NOVA_ECS_SERVICE }}
+      CORE_TASK_DEFINITION: ${{ vars.CORE_TASK_DEFINITION }}
+      RELAY_TASK_DEFINITION: ${{ vars.RELAY_TASK_DEFINITION }}
+      NOVA_TASK_DEFINITION: ${{ vars.NOVA_TASK_DEFINITION }}
+      CORE_CONTAINER_NAME: ${{ vars.CORE_CONTAINER_NAME }}
+      RELAY_CONTAINER_NAME: ${{ vars.RELAY_CONTAINER_NAME }}
+      NOVA_CONTAINER_NAME: ${{ vars.NOVA_CONTAINER_NAME }}
+      FRONTEND_S3_BUCKET: ${{ vars.FRONTEND_S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Core image
+        env:
+          IMAGE_URI: ${{ steps.ecr-login.outputs.registry }}/${{ vars.CORE_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        run: |
+          mvn -pl apps/backend -am -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName="$IMAGE_URI"
+          docker push "$IMAGE_URI"
+          echo "CORE_IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Build and push Relay image
+        env:
+          IMAGE_URI: ${{ steps.ecr-login.outputs.registry }}/${{ vars.RELAY_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        run: |
+          mvn -pl apps/relay -am -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName="$IMAGE_URI"
+          docker push "$IMAGE_URI"
+          echo "RELAY_IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Build and push Nova image
+        env:
+          IMAGE_URI: ${{ steps.ecr-login.outputs.registry }}/${{ vars.NOVA_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        run: |
+          mvn -pl apps/ai -am -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName="$IMAGE_URI"
+          docker push "$IMAGE_URI"
+          echo "NOVA_IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: apps/frontend
+        run: npm run build
+
+      - name: Publish frontend to S3
+        run: aws s3 sync apps/frontend/dist "s3://$FRONTEND_S3_BUCKET" --delete
+
+      - name: Invalidate CloudFront distribution
+        run: >-
+          aws cloudfront create-invalidation
+          --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID"
+          --paths '/*'
+
+      - name: Download current ECS task definitions
+        run: |
+          aws ecs describe-task-definition --task-definition "$CORE_TASK_DEFINITION" --query taskDefinition > core-task-definition.json
+          aws ecs describe-task-definition --task-definition "$RELAY_TASK_DEFINITION" --query taskDefinition > relay-task-definition.json
+          aws ecs describe-task-definition --task-definition "$NOVA_TASK_DEFINITION" --query taskDefinition > nova-task-definition.json
+
+      - name: Render Core task definition
+        id: render-core
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: core-task-definition.json
+          container-name: ${{ vars.CORE_CONTAINER_NAME }}
+          image: ${{ env.CORE_IMAGE_URI }}
+
+      - name: Render Relay task definition
+        id: render-relay
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: relay-task-definition.json
+          container-name: ${{ vars.RELAY_CONTAINER_NAME }}
+          image: ${{ env.RELAY_IMAGE_URI }}
+
+      - name: Render Nova task definition
+        id: render-nova
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: nova-task-definition.json
+          container-name: ${{ vars.NOVA_CONTAINER_NAME }}
+          image: ${{ env.NOVA_IMAGE_URI }}
+
+      - name: Deploy Core ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-core.outputs.task-definition }}
+          service: ${{ vars.CORE_ECS_SERVICE }}
+          cluster: ${{ vars.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deploy Relay ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-relay.outputs.task-definition }}
+          service: ${{ vars.RELAY_ECS_SERVICE }}
+          cluster: ${{ vars.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deploy Nova ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-nova.outputs.task-definition }}
+          service: ${{ vars.NOVA_ECS_SERVICE }}
+          cluster: ${{ vars.ECS_CLUSTER }}
+          wait-for-service-stability: true
