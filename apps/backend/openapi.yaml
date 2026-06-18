@@ -1183,8 +1183,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskAttachment'
+        '400':
+          description: Invalid attachment filename, media kind, or size
         '403':
           description: Task not found or access denied
+        '413':
+          description: Attachment size exceeds configured limit
     get:
       summary: List task attachments
       operationId: listTaskAttachments

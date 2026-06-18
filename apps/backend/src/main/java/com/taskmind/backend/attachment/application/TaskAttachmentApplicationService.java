@@ -43,10 +43,10 @@ public class TaskAttachmentApplicationService {
             String fileName,
             String contentType,
             long sizeBytes,
-            MediaKind mediaKind,
+            String mediaKind,
             InputStream content) {
         Task task = requireTask(requester, taskId);
-        validate(fileName, sizeBytes, mediaKind);
+        MediaKind parsedMediaKind = validate(fileName, sizeBytes, mediaKind);
         UUID id = UUID.randomUUID();
         String key = "tasks/%s/attachments/%s/%s".formatted(taskId, id, sanitize(fileName));
         String normalizedContentType =
@@ -69,7 +69,7 @@ public class TaskAttachmentApplicationService {
                         fileName,
                         normalizedContentType,
                         sizeBytes,
-                        mediaKind,
+                        parsedMediaKind,
                         null,
                         now,
                         now));
@@ -120,7 +120,10 @@ public class TaskAttachmentApplicationService {
 
     private Task requireTask(AuthenticatedUser requester, UUID taskId) {
         return tasks.findById(requester, taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found or access denied"));
+                .orElseThrow(
+                        () ->
+                                new AttachmentAccessDeniedException(
+                                        "Task not found or access denied"));
     }
 
     private TaskAttachment requireAttachment(UUID taskId, UUID attachmentId) {
@@ -134,12 +137,22 @@ public class TaskAttachmentApplicationService {
         return attachment;
     }
 
-    private void validate(String fileName, long sizeBytes, MediaKind mediaKind) {
+    private MediaKind validate(String fileName, long sizeBytes, String mediaKind) {
         if (fileName == null || fileName.isBlank())
-            throw new IllegalArgumentException("File name is required");
-        if (mediaKind == null) throw new IllegalArgumentException("Media kind is required");
-        if (sizeBytes <= 0 || sizeBytes > properties.getMaxSizeBytes())
-            throw new IllegalArgumentException("Attachment size exceeds configured limit");
+            throw new AttachmentValidationException("File name is required");
+        if (mediaKind == null || mediaKind.isBlank())
+            throw new AttachmentValidationException("Media kind is required");
+        MediaKind parsedMediaKind;
+        try {
+            parsedMediaKind = MediaKind.valueOf(mediaKind);
+        } catch (IllegalArgumentException e) {
+            throw new AttachmentValidationException("Media kind is invalid");
+        }
+        if (sizeBytes <= 0)
+            throw new AttachmentValidationException("Attachment size must be greater than zero");
+        if (sizeBytes > properties.getMaxSizeBytes())
+            throw new AttachmentValidationException("Attachment size exceeds configured limit", true);
+        return parsedMediaKind;
     }
 
     private String sanitize(String fileName) {
