@@ -35,6 +35,7 @@ class OpenApiContractTest {
                     "/v1/nova/chat/stream",
                     "/v1/nova/capabilities",
                     "/v1/nova/runs/{runId}",
+                    "/v1/spec-breakdown",
                     "/v1/scheduler",
                     "/v1/scheduler/ai/duration-estimate",
                     "/v1/scheduler/ai/rationale-phrase");
@@ -64,6 +65,8 @@ class OpenApiContractTest {
         Set<String> schemas = openApiSchemaKeys();
         assertTrue(schemas.contains("TaskAttachment"));
         assertTrue(schemas.contains("ActivitySearchDocument"));
+        assertTrue(pathKeys.contains("/v1/spec-breakdown/drafts/{draftId}/attachments"));
+        assertTrue(schemas.contains("SpecBreakdownAttachment"));
     }
 
     @Test
