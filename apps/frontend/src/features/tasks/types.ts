@@ -25,7 +25,6 @@ export interface TaskAttachment {
   version: number | null
   taskId: string
   ownerUserId: string
-  objectKey: string
   fileName: string
   contentType: string
   sizeBytes: number

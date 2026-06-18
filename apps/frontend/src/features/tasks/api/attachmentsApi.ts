@@ -74,7 +74,6 @@ function adaptTaskAttachmentResponse(data: unknown): TaskAttachment {
     version: readNullableNumber(data, 'version'),
     taskId: readRequiredString(data, 'taskId', 'task attachment'),
     ownerUserId: readRequiredString(data, 'ownerUserId', 'task attachment'),
-    objectKey: readRequiredString(data, 'objectKey', 'task attachment'),
     fileName: readRequiredString(data, 'fileName', 'task attachment'),
     contentType: readRequiredString(data, 'contentType', 'task attachment'),
     sizeBytes: readRequiredNumber(data, 'sizeBytes', 'task attachment'),

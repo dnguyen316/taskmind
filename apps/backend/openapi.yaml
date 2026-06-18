@@ -1874,13 +1874,12 @@ components:
 
     TaskAttachment:
       type: object
-      required: [id, taskId, ownerUserId, objectKey, fileName, contentType, sizeBytes, mediaKind, createdAt, updatedAt]
+      required: [id, taskId, ownerUserId, fileName, contentType, sizeBytes, mediaKind, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
         version: {type: integer, format: int64, nullable: true}
         taskId: {type: string, format: uuid}
         ownerUserId: {type: string, format: uuid}
-        objectKey: {type: string}
         fileName: {type: string}
         contentType: {type: string}
         sizeBytes: {type: integer, format: int64}
