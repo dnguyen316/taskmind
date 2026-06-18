@@ -8,7 +8,7 @@ import com.taskmind.backend.auth.AuthenticatedUser;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -84,7 +84,7 @@ public class TaskAttachmentController {
     }
 
     @GetMapping("/{attachmentId}/download")
-    public ResponseEntity<ByteArrayResource> download(
+    public ResponseEntity<Resource> download(
             AuthenticatedUser requester,
             @PathVariable UUID taskId,
             @PathVariable UUID attachmentId) {
@@ -97,14 +97,14 @@ public class TaskAttachmentController {
                                     download.contentType() == null
                                             ? "application/octet-stream"
                                             : download.contentType()))
-                    .contentLength(download.bytes().length)
+                    .contentLength(download.sizeBytes())
                     .header(
                             HttpHeaders.CONTENT_DISPOSITION,
                             ContentDisposition.attachment()
                                     .filename(download.attachment().fileName())
                                     .build()
                                     .toString())
-                    .body(new ByteArrayResource(download.bytes()));
+                    .body(download.resource());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }

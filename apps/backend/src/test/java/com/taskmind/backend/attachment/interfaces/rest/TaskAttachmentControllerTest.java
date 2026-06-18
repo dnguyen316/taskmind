@@ -84,6 +84,36 @@ class TaskAttachmentControllerTest {
     }
 
     @Test
+    void downloadContentLengthMatchesAttachmentMetadata() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        byte[] content = "streamed content length".getBytes();
+        MockMultipartFile file =
+                new MockMultipartFile("file", "length.txt", "text/plain", content);
+
+        var upload =
+                mockMvc.perform(
+                                multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                        .file(file)
+                                        .param("mediaKind", "DOCUMENT")
+                                        .with(jwt(userId)))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.sizeBytes").value(content.length))
+                        .andReturn();
+        String attachmentId =
+                objectMapper.readTree(upload.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(
+                        get(
+                                        "/v1/tasks/{taskId}/attachments/{attachmentId}/download",
+                                        taskId,
+                                        attachmentId)
+                                .with(jwt(userId)))
+                .andExpect(status().isOk())
+                .andExpect(header().longValue("Content-Length", content.length));
+    }
+
+    @Test
     void rejectsAttachmentAccessByNonOwner() throws Exception {
         String ownerId = UUID.randomUUID().toString();
         String taskId = createTask(ownerId);
