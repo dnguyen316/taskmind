@@ -1,3 +1,16 @@
+## 2026-06-18 (M09 Spec Breakdown Async Worker)
+
+### Changed
+
+- Refactored Core spec breakdown job creation so `POST /v1/spec-breakdown/drafts/{id}/jobs` persists a `QUEUED` job and returns `202 Accepted` without invoking Nova in the request path.
+- Added a scheduled spec breakdown worker that claims queued jobs, marks them `RUNNING`, invokes Nova outside the queueing transaction, records output checkpoints, and completes jobs as `SUCCEEDED`, `FAILED`, `PAUSED`, or `CANCELED`.
+- Updated the OpenAPI job response description and schema examples to document the queued asynchronous workflow and command flags.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownWorkerTest,SpecBreakdownControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-18 (M09 Spec Breakdown Attachment Persistence)
 
 ### Changed
