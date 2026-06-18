@@ -1,3 +1,15 @@
+## 2026-06-18 (M09 Spec Breakdown Attachment Persistence)
+
+### Changed
+
+- Replaced the in-memory spec breakdown draft attachment controller state with a DDD application service, repository port, Flyway-backed JPA metadata persistence, and shared object-storage port usage.
+- Spec breakdown draft attachments now enforce authenticated draft access before upload, list, and delete, hide storage keys from API responses, scope lists to the requested draft, and soft-delete metadata after best-effort object cleanup.
+- Added OpenAPI coverage for the public Core `/v1/spec-breakdown/drafts/{draftId}/attachments` upload/list/delete endpoints.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownAttachmentControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
 ## 2026-06-18 (M06 Attachment Download Streaming)
 
 ### Changed

@@ -1313,6 +1313,49 @@ paths:
       parameters: [{name: id, in: path, required: true, schema: {type: string, format: uuid}}]
       responses:
         '200': {description: Created tasks, content: {application/json: {schema: {type: object, properties: {taskIds: {type: array, items: {type: string, format: uuid}}}}}}}
+
+  /v1/spec-breakdown/drafts/{draftId}/attachments:
+    post:
+      summary: Upload a spec breakdown draft attachment
+      operationId: uploadSpecBreakdownAttachment
+      tags: [SpecBreakdown]
+      parameters:
+        - {name: draftId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201': {description: Attachment uploaded, content: {application/json: {schema: {$ref: '#/components/schemas/SpecBreakdownAttachment'}}}}
+        '403': {description: Draft not found or access denied}
+    get:
+      summary: List active spec breakdown draft attachments
+      operationId: listSpecBreakdownAttachments
+      tags: [SpecBreakdown]
+      parameters:
+        - {name: draftId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Active draft attachments, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/SpecBreakdownAttachment'}}}}}
+        '403': {description: Draft not found or access denied}
+  /v1/spec-breakdown/drafts/{draftId}/attachments/{attachmentId}:
+    delete:
+      summary: Delete a spec breakdown draft attachment
+      operationId: deleteSpecBreakdownAttachment
+      tags: [SpecBreakdown]
+      parameters:
+        - {name: draftId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/AttachmentIdPath'
+      responses:
+        '204': {description: Attachment deleted}
+        '404': {description: Attachment not found}
+
   /v1/projects/{projectId}/spec-templates:
     get:
       summary: List project-scoped spec templates
@@ -2895,6 +2938,19 @@ components:
       properties:
         accepted: {type: boolean}
         candidateTree: {type: string, nullable: true}
+
+    SpecBreakdownAttachment:
+      type: object
+      required: [id, draftId, fileName, contentType, sizeBytes, createdByUserId, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        draftId: {type: string, format: uuid}
+        fileName: {type: string}
+        contentType: {type: string}
+        sizeBytes: {type: integer, format: int64}
+        createdByUserId: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
+        deletedAt: {type: string, format: date-time, nullable: true}
     SpecBreakdownJob:
       type: object
       properties:
