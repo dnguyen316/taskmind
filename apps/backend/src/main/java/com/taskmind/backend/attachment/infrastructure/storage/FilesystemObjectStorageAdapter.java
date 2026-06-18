@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import org.springframework.core.io.InputStreamResource;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class FilesystemObjectStorageAdapter implements ObjectStoragePort {
@@ -28,9 +29,10 @@ public class FilesystemObjectStorageAdapter implements ObjectStoragePort {
     @Override
     public StoredObject get(String key) throws IOException {
         Path path = pathFor(key);
-        byte[] bytes = Files.readAllBytes(path);
         return new StoredObject(
-                bytes, contentTypes.getOrDefault(key, "application/octet-stream"), bytes.length);
+                new InputStreamResource(Files.newInputStream(path)),
+                contentTypes.getOrDefault(key, "application/octet-stream"),
+                Files.size(path));
     }
 
     @Override

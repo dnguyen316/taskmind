@@ -1,3 +1,14 @@
+## 2026-06-18 (M06 Attachment Download Streaming)
+
+### Changed
+
+- Refactored Core task attachment downloads to stream object storage reads through Spring `Resource` responses instead of materializing full objects as byte arrays, while preserving metadata-backed `Content-Length` headers.
+
+### Verification Notes
+
+- Advanced primary milestone: M06 Search & Storage on AWS.
+- No Codex skill or delegated sub-agent was used.
+
 ## 2026-06-17 (M09 Core Spec Breakdown Facade Slice)
 
 ### Added
