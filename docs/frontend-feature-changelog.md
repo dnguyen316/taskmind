@@ -1,3 +1,20 @@
+# Frontend Feature Changelog
+
+## 2026-06-18 (Task Attachment Multi-Upload)
+
+### Changed
+
+- Updated the task attachment panel to allow selecting multiple files at once, show the first selected filename with an additional-file count, and upload the selected files through the existing Core attachment API.
+- Attachment uploads now append all successful metadata responses to the panel and report partial failures when only some selected files upload successfully.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/components/TaskAttachmentsPanel.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused attachment-panel update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-16 (Dashboard Shell Visual Polish)
 
 ### Changed
