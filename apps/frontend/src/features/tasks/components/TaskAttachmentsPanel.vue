@@ -28,7 +28,7 @@ const MEDIA_KIND_OPTIONS: Array<{ label: string; value: MediaKind }> = [
 ]
 
 const attachments = ref<TaskAttachment[]>([])
-const selectedFile = ref<File | null>(null)
+const selectedFiles = ref<File[]>([])
 const mediaKind = ref<MediaKind>('DOCUMENT')
 const loading = ref(false)
 const uploading = ref(false)
@@ -37,7 +37,20 @@ const downloadingId = ref<string | null>(null)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const canUpload = computed(() => Boolean(props.taskId && selectedFile.value && mediaKind.value))
+const canUpload = computed(() =>
+  Boolean(props.taskId && selectedFiles.value.length > 0 && mediaKind.value),
+)
+const selectedFileLabel = computed(() => {
+  const [firstFile, ...remainingFiles] = selectedFiles.value
+
+  if (!firstFile) {
+    return 'Choose files'
+  }
+
+  return remainingFiles.length > 0
+    ? `${firstFile.name} +${remainingFiles.length} more`
+    : firstFile.name
+})
 const sortedAttachments = computed(() =>
   [...attachments.value].sort(
     (left, right) => toTimestamp(right.createdAt) - toTimestamp(left.createdAt),
@@ -51,7 +64,7 @@ onMounted(() => {
 watch(
   () => props.taskId,
   () => {
-    selectedFile.value = null
+    selectedFiles.value = []
     void refreshAttachments()
   },
 )
@@ -75,8 +88,10 @@ async function refreshAttachments() {
 }
 
 async function uploadSelectedFile() {
-  if (!selectedFile.value) {
-    errorMessage.value = 'Choose a file before uploading.'
+  const filesToUpload = [...selectedFiles.value]
+
+  if (filesToUpload.length === 0) {
+    errorMessage.value = 'Choose one or more files before uploading.'
     return
   }
 
@@ -85,21 +100,50 @@ async function uploadSelectedFile() {
   successMessage.value = ''
 
   try {
-    const uploaded = await uploadTaskAttachment(props.taskId, {
-      file: selectedFile.value,
-      mediaKind: mediaKind.value,
-    })
+    const uploadResults = await Promise.allSettled(
+      filesToUpload.map((file) =>
+        uploadTaskAttachment(props.taskId, {
+          file,
+          mediaKind: mediaKind.value,
+        }),
+      ),
+    )
+    const uploadedAttachments = uploadResults
+      .filter(
+        (result): result is PromiseFulfilledResult<TaskAttachment> => result.status === 'fulfilled',
+      )
+      .map((result) => result.value)
+    const failedCount = uploadResults.length - uploadedAttachments.length
 
-    attachments.value = [
-      uploaded,
-      ...attachments.value.filter((attachment) => attachment.id !== uploaded.id),
-    ]
-    selectedFile.value = null
-    resetFileInput()
-    successMessage.value = 'Attachment uploaded.'
-  } catch (error: unknown) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to upload attachment.'
+    if (uploadedAttachments.length > 0) {
+      const uploadedIds = new Set(uploadedAttachments.map((attachment) => attachment.id))
+      attachments.value = [
+        ...uploadedAttachments,
+        ...attachments.value.filter((attachment) => !uploadedIds.has(attachment.id)),
+      ]
+    }
+
+    if (failedCount > 0 && uploadedAttachments.length > 0) {
+      errorMessage.value = `${uploadedAttachments.length} attachment${
+        uploadedAttachments.length === 1 ? '' : 's'
+      } uploaded, but ${failedCount} failed.`
+    } else if (failedCount > 0) {
+      const firstFailure = uploadResults.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
+      )
+      errorMessage.value =
+        firstFailure?.reason instanceof Error
+          ? firstFailure.reason.message
+          : 'Failed to upload attachments.'
+    } else {
+      successMessage.value =
+        uploadedAttachments.length === 1
+          ? 'Attachment uploaded.'
+          : `${uploadedAttachments.length} attachments uploaded.`
+    }
   } finally {
+    selectedFiles.value = []
+    resetFileInput()
     uploading.value = false
   }
 }
@@ -144,7 +188,7 @@ async function removeAttachment(attachment: TaskAttachment) {
 
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
-  selectedFile.value = input.files?.[0] ?? null
+  selectedFiles.value = input.files ? Array.from(input.files) : []
 }
 
 function resetFileInput() {
@@ -205,8 +249,8 @@ function toTimestamp(value: string) {
       <div class="upload-row">
         <label class="file-picker" for="task-attachment-file-input">
           <InboxOutlined />
-          <span>{{ selectedFile?.name ?? 'Choose file' }}</span>
-          <input id="task-attachment-file-input" type="file" @change="handleFileChange" />
+          <span>{{ selectedFileLabel }}</span>
+          <input id="task-attachment-file-input" type="file" multiple @change="handleFileChange" />
         </label>
 
         <a-select
