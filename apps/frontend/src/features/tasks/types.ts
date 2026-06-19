@@ -3,6 +3,7 @@ export type EnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 
 export interface Task {
   id: string
+  version: number | null
   projectId: string
   userId: string
   title: string
@@ -71,6 +72,7 @@ export interface CreateTaskPayload {
 }
 
 export interface UpdateTaskPayload {
+  version?: number | null
   projectId: string
   title: string
   description: string | null

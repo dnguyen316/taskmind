@@ -2296,6 +2296,7 @@ components:
       type: object
       required:
         - id
+        - version
         - userId
         - title
         - status
@@ -2307,6 +2308,10 @@ components:
         id:
           type: string
           format: uuid
+        version:
+          type: integer
+          format: int64
+          nullable: true
         userId:
           type: string
           format: uuid
@@ -2335,6 +2340,10 @@ components:
           nullable: true
         releaseVersion:
           type: string
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
           nullable: true
         title:
           type: string

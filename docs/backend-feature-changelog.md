@@ -23,6 +23,7 @@
 
 - Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownAttachmentControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
 - Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-18 (M06 Attachment Download Streaming)
 
 ### Changed
@@ -539,3 +540,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added focused provider client tests for successful Jira import/publish, GitHub import, wiki publish, provider auth failure, rate limiting, and 5xx retry-safe mapping.
+
+## 2026-06-19 (Task REST Optimistic Lock Contract)
+
+### Changed
+
+- Task REST reads and mutation responses now use an explicit `TaskResponse` DTO instead of serializing the domain `Task` record directly.
+- Core task response payloads now expose the optimistic-lock `version` so clients can submit stale-update guards on subsequent detail edits.
+- Updated the Core OpenAPI `Task` schema to document the `version` field.
+
+### Tests
+
+- Expanded `TaskControllerTest#rejectsStaleTaskUpdateWithConflict` to assert create, detail read, and list task responses include numeric versions before verifying stale updates return `409 Conflict`.

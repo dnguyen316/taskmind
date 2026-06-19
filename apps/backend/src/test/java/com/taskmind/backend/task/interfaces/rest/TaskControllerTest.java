@@ -390,8 +390,19 @@ class TaskControllerTest {
                     {"userId":"11111111-1111-1111-1111-111111111111","title":"Versioned","status":"TODO","priority":2,"source":"MANUAL"}
                     """))
             .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.version").isNumber())
             .andReturn();
         var id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/v1/tasks/{id}", id)
+                .with(jwt("11111111-1111-1111-1111-111111111111")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.version").isNumber());
+
+        mockMvc.perform(get("/v1/tasks")
+                .with(jwt("11111111-1111-1111-1111-111111111111")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].version").isNumber());
 
         mockMvc.perform(patch("/v1/tasks/{id}", id)
                 .with(jwt("11111111-1111-1111-1111-111111111111"))

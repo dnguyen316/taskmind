@@ -17,6 +17,7 @@ const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useT
 
 interface TaskDetailFormState {
   id: string
+  version: number | null
   projectId: string
   title: string
   description: string
@@ -29,6 +30,7 @@ interface TaskDetailFormState {
 
 const formState = reactive<TaskDetailFormState>({
   id: '',
+  version: null,
   projectId: '',
   title: '',
   description: '',
@@ -86,6 +88,7 @@ async function loadTask() {
 
 function hydrateForm(task: Task) {
   formState.id = task.id
+  formState.version = task.version ?? null
   formState.projectId = task.projectId ?? ''
   formState.title = task.title ?? ''
   formState.description = task.description ?? ''
@@ -107,6 +110,7 @@ async function saveTask() {
 
   try {
     const updated = await updateTaskDetails(formState.id, {
+      version: formState.version,
       projectId: formState.projectId.trim(),
       title: formState.title.trim(),
       description: formState.description.trim() || null,
