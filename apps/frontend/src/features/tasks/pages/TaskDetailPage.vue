@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
+import TaskDescriptionEditor from '../components/TaskDescriptionEditor.vue'
 import { useTasks } from '../composables/useTasks'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
 import {
@@ -272,11 +273,7 @@ function toDatetimeLocal(value: string | null) {
               </a-row>
 
               <a-form-item label="Description">
-                <a-textarea
-                  v-model:value="formState.description"
-                  :rows="3"
-                  placeholder="Optional context"
-                />
+                <TaskDescriptionEditor v-model="formState.description" />
               </a-form-item>
 
               <a-row :gutter="12">
