@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppLayout from '../components/AppLayout.vue'
 import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import { useTasks } from '../composables/useTasks'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
@@ -147,128 +148,129 @@ function toDatetimeLocal(value: string | null) {
 </script>
 
 <template>
-  <main class="task-detail-page">
-    <a-card title="Task detail" class="surface-card">
-      <a-space direction="vertical" style="width: 100%" size="middle">
-        <a-space>
-          <a-button @click="router.push('/tasks')">Back to tasks</a-button>
-          <span class="task-id" v-if="formState.id">ID: {{ formState.id }}</span>
+  <AppLayout>
+    <div class="task-detail-page">
+      <a-card title="Task detail" class="surface-card">
+        <a-space direction="vertical" style="width: 100%" size="middle">
+          <a-space>
+            <a-button @click="router.push('/tasks')">Back to tasks</a-button>
+            <span class="task-id" v-if="formState.id">ID: {{ formState.id }}</span>
+          </a-space>
+
+          <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
+          <a-alert v-else-if="successMessage" type="success" show-icon :message="successMessage" />
+
+          <a-spin v-if="loading" tip="Loading task..." />
+
+          <a-empty
+            v-else-if="isEmptyState"
+            description="No task found for this ID. It may have been removed or belongs to another user."
+          />
+
+          <template v-else>
+            <a-form layout="vertical" @submit.prevent="saveTask">
+              <a-row :gutter="12">
+                <a-col :xs="24" :md="12">
+                  <a-form-item label="Title" required>
+                    <a-input v-model:value="formState.title" placeholder="Task title" />
+                  </a-form-item>
+                </a-col>
+
+                <a-col :xs="24" :md="12">
+                  <a-form-item label="Status">
+                    <a-select v-model:value="formState.status">
+                      <a-select-option
+                        v-for="status in TASK_STATUS_OPTIONS"
+                        :key="status"
+                        :value="status"
+                      >
+                        {{ status }}
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-form-item label="Description">
+                <a-textarea
+                  v-model:value="formState.description"
+                  :rows="3"
+                  placeholder="Optional context"
+                />
+              </a-form-item>
+
+              <a-row :gutter="12">
+                <a-col :xs="24" :md="6">
+                  <a-form-item label="Priority (1 highest)">
+                    <a-input-number
+                      v-model:value="formState.priority"
+                      :min="1"
+                      :max="4"
+                      :step="1"
+                      style="width: 100%"
+                    />
+                  </a-form-item>
+                </a-col>
+
+                <a-col :xs="24" :md="6">
+                  <a-form-item label="Due at">
+                    <a-input v-model:value="formState.dueAt" type="datetime-local" />
+                  </a-form-item>
+                </a-col>
+
+                <a-col :xs="24" :md="6">
+                  <a-form-item label="Duration (minutes)">
+                    <a-input-number
+                      v-model:value="formState.durationMinutes"
+                      :min="1"
+                      :step="5"
+                      style="width: 100%"
+                    />
+                  </a-form-item>
+                </a-col>
+
+                <a-col :xs="24" :md="6">
+                  <a-form-item label="Energy level">
+                    <a-select
+                      v-model:value="formState.energyLevel"
+                      allow-clear
+                      placeholder="Select energy level"
+                    >
+                      <a-select-option
+                        v-for="energy in ENERGY_LEVEL_OPTIONS"
+                        :key="energy"
+                        :value="energy"
+                      >
+                        {{ energy }}
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-button
+                type="primary"
+                html-type="submit"
+                :loading="saving"
+                :disabled="loading || isEmptyState"
+              >
+                Save changes
+              </a-button>
+            </a-form>
+
+            <TaskAttachmentsPanel v-if="formState.id" :task-id="formState.id" />
+          </template>
         </a-space>
-
-        <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
-        <a-alert v-else-if="successMessage" type="success" show-icon :message="successMessage" />
-
-        <a-spin v-if="loading" tip="Loading task..." />
-
-        <a-empty
-          v-else-if="isEmptyState"
-          description="No task found for this ID. It may have been removed or belongs to another user."
-        />
-
-        <template v-else>
-          <a-form layout="vertical" @submit.prevent="saveTask">
-            <a-row :gutter="12">
-              <a-col :xs="24" :md="12">
-                <a-form-item label="Title" required>
-                  <a-input v-model:value="formState.title" placeholder="Task title" />
-                </a-form-item>
-              </a-col>
-
-              <a-col :xs="24" :md="12">
-                <a-form-item label="Status">
-                  <a-select v-model:value="formState.status">
-                    <a-select-option
-                      v-for="status in TASK_STATUS_OPTIONS"
-                      :key="status"
-                      :value="status"
-                    >
-                      {{ status }}
-                    </a-select-option>
-                  </a-select>
-                </a-form-item>
-              </a-col>
-            </a-row>
-
-            <a-form-item label="Description">
-              <a-textarea
-                v-model:value="formState.description"
-                :rows="3"
-                placeholder="Optional context"
-              />
-            </a-form-item>
-
-            <a-row :gutter="12">
-              <a-col :xs="24" :md="6">
-                <a-form-item label="Priority (1 highest)">
-                  <a-input-number
-                    v-model:value="formState.priority"
-                    :min="1"
-                    :max="4"
-                    :step="1"
-                    style="width: 100%"
-                  />
-                </a-form-item>
-              </a-col>
-
-              <a-col :xs="24" :md="6">
-                <a-form-item label="Due at">
-                  <a-input v-model:value="formState.dueAt" type="datetime-local" />
-                </a-form-item>
-              </a-col>
-
-              <a-col :xs="24" :md="6">
-                <a-form-item label="Duration (minutes)">
-                  <a-input-number
-                    v-model:value="formState.durationMinutes"
-                    :min="1"
-                    :step="5"
-                    style="width: 100%"
-                  />
-                </a-form-item>
-              </a-col>
-
-              <a-col :xs="24" :md="6">
-                <a-form-item label="Energy level">
-                  <a-select
-                    v-model:value="formState.energyLevel"
-                    allow-clear
-                    placeholder="Select energy level"
-                  >
-                    <a-select-option
-                      v-for="energy in ENERGY_LEVEL_OPTIONS"
-                      :key="energy"
-                      :value="energy"
-                    >
-                      {{ energy }}
-                    </a-select-option>
-                  </a-select>
-                </a-form-item>
-              </a-col>
-            </a-row>
-
-            <a-button
-              type="primary"
-              html-type="submit"
-              :loading="saving"
-              :disabled="loading || isEmptyState"
-            >
-              Save changes
-            </a-button>
-          </a-form>
-
-          <TaskAttachmentsPanel v-if="formState.id" :task-id="formState.id" />
-        </template>
-      </a-space>
-    </a-card>
-  </main>
+      </a-card>
+    </div>
+  </AppLayout>
 </template>
 
 <style scoped>
 .task-detail-page {
-  min-height: 100vh;
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 20px 40px;
 }
 
 .surface-card {

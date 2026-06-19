@@ -70,7 +70,8 @@ function initials(value: string) {
         class="menu-item"
         :class="{ active: isTasks }"
         @click="emit('navigate')"
-        ><UnorderedListOutlined />Tasks <em>{{ taskCount ?? 0 }}</em></RouterLink
+        ><UnorderedListOutlined />Tasks
+        <em v-if="taskCount !== undefined">{{ taskCount }}</em></RouterLink
       >
       <RouterLink
         to="/projects"
