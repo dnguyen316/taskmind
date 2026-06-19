@@ -195,12 +195,17 @@ watch(
           }}</a-button>
         </template>
       </form>
-      <p class="switch-copy" v-if="!isVerifyingSignup">
-        {{ isSignup ? 'Already have an account?' : 'New to TaskMind?' }}
-        <RouterLink :to="isSignup ? '/login' : '/signup'">{{
-          isSignup ? 'Sign in' : 'Start free'
-        }}</RouterLink>
-      </p>
+      <div class="auth-links" v-if="!isVerifyingSignup">
+        <p class="switch-copy">
+          {{ isSignup ? 'Already have an account?' : 'New to TaskMind?' }}
+          <RouterLink :to="isSignup ? '/login' : '/signup'">{{
+            isSignup ? 'Sign in' : 'Start free'
+          }}</RouterLink>
+        </p>
+        <RouterLink v-if="!isSignup" class="forgot-link" to="/forgot-password">
+          Forgot password?
+        </RouterLink>
+      </div>
     </section>
     <p class="auth-note"><LockOutlined /> Your work stays private and secure.</p>
   </main>
@@ -296,12 +301,19 @@ label {
 .secondary-action {
   background: transparent !important;
 }
+.auth-links {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  margin-top: 24px;
+}
 .switch-copy {
   text-align: center;
   color: var(--tm-text-muted);
   font-size: 12px;
-  margin: 24px 0 0;
+  margin: 0;
 }
+.forgot-link,
 .switch-copy a {
   color: var(--tm-primary);
   text-decoration: none;
@@ -353,6 +365,7 @@ label {
   color: var(--tm-text);
 }
 .heading small,
+.forgot-link,
 .switch-copy a {
   color: var(--tm-primary);
 }
