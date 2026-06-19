@@ -1,0 +1,2 @@
+ALTER TABLE integration_publish_records
+  ADD CONSTRAINT uk_integration_publish_records_task_project_link UNIQUE(task_id, project_link_id);
