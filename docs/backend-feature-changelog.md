@@ -1,3 +1,16 @@
+## 2026-06-19 (M10 Integration Import Idempotency)
+
+### Changed
+
+- Made repeated Jira/GitHub issue imports idempotent by detecting existing external issue links before task creation and reporting duplicates through `skippedCount`.
+- Added external link identity uniqueness constraints for provider/resource external id and key to guard against duplicate imports at the database layer.
+- Expanded integration controller coverage for first import, repeated import, partial duplicate import, and accurate import/skip counts.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=IntegrationControllerTest test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (M11 Notification Delivery Completion)
 
 ### Changed
