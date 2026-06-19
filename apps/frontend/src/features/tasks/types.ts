@@ -66,7 +66,7 @@ export interface CreateTaskPayload {
   title: string
   description: string | null
   priority: number
-  durationMinutes: number
+  durationMinutes: number | null
   dueAt: string | null
   status: TaskStatus
 }
@@ -88,7 +88,7 @@ export interface CreateTaskFormValues {
   title: string
   description: string
   priority: number
-  durationMinutes: number
+  durationMinutes: number | null | ''
   dueAt: string
   status: TaskStatus
 }
