@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.backend.integration.infrastructure.jira.JiraCloudClient;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,6 +26,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class IntegrationControllerTest {
+    private static final AtomicReference<List<JiraCloudClient.ExternalIssue>> JIRA_ISSUES = new AtomicReference<>(defaultJiraIssues("TM"));
+
     @TestConfiguration
     static class ProviderClientStubs {
         @Bean
@@ -32,9 +36,7 @@ class IntegrationControllerTest {
             return new JiraCloudClient(org.springframework.web.client.RestClient.builder()) {
                 @Override
                 public java.util.List<ExternalIssue> importIssues(String baseUrl, String accessToken, String externalProjectKey, int limit) {
-                    return java.util.List.of(
-                            new ExternalIssue("10001", "TM-1", "Imported 1", "Body 1"),
-                            new ExternalIssue("10002", "TM-2", "Imported 2", "Body 2"));
+                    return JIRA_ISSUES.get().stream().limit(limit).toList();
                 }
 
                 @Override
@@ -49,6 +51,7 @@ class IntegrationControllerTest {
     @Autowired MockMvc mockMvc; @Autowired ObjectMapper mapper;
 
     @Test void connectListLinkImportAndPublishWithoutReturningSecrets() throws Exception {
+        JIRA_ISSUES.set(defaultJiraIssues("TM-FLOW"));
         String projectId = createProject(USER);
         String connectionId = connect("JIRA", USER)
                 .andExpect(status().isCreated())
@@ -67,10 +70,44 @@ class IntegrationControllerTest {
                 .andReturn().getResponse().getContentAsString();
         linkId = mapper.readTree(linkId).get("id").asText();
         mockMvc.perform(post("/v1/integrations/project-links/{id}/imports", linkId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"limit\":2}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED")).andExpect(jsonPath("$.importedCount").value(2));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED")).andExpect(jsonPath("$.importedCount").value(2)).andExpect(jsonPath("$.skippedCount").value(0));
         String taskId = createTask(USER, projectId);
         mockMvc.perform(post("/v1/tasks/{taskId}/integrations/jira/publish", taskId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"projectLinkId\":\"" + linkId + "\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED")).andExpect(jsonPath("$.externalKey", startsWith("TM-")));
+    }
+
+    @Test void repeatedJiraImportSkipsPreviouslyImportedIssues() throws Exception {
+        String prefix = "TM-REPEAT-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+        JIRA_ISSUES.set(defaultJiraIssues(prefix));
+        String linkId = createJiraProjectLink(USER, prefix);
+
+        mockMvc.perform(post("/v1/integrations/project-links/{id}/imports", linkId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"limit\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(2))
+                .andExpect(jsonPath("$.skippedCount").value(0));
+        mockMvc.perform(post("/v1/integrations/project-links/{id}/imports", linkId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"limit\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(0))
+                .andExpect(jsonPath("$.skippedCount").value(2));
+    }
+
+    @Test void partialDuplicateJiraImportReportsImportedAndSkippedCounts() throws Exception {
+        String prefix = "TM-PARTIAL-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+        JIRA_ISSUES.set(defaultJiraIssues(prefix));
+        String linkId = createJiraProjectLink(USER, prefix);
+
+        mockMvc.perform(post("/v1/integrations/project-links/{id}/imports", linkId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"limit\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(2))
+                .andExpect(jsonPath("$.skippedCount").value(0));
+
+        JIRA_ISSUES.set(List.of(
+                new JiraCloudClient.ExternalIssue(prefix + "-id-2", prefix + "-2", "Imported 2 again", "Body 2"),
+                new JiraCloudClient.ExternalIssue(prefix + "-id-3", prefix + "-3", "Imported 3", "Body 3")));
+        mockMvc.perform(post("/v1/integrations/project-links/{id}/imports", linkId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"limit\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(1))
+                .andExpect(jsonPath("$.skippedCount").value(1));
     }
 
     @Test void rejectsUnauthorizedProjectScopeAndValidationFailures() throws Exception {
@@ -80,6 +117,9 @@ class IntegrationControllerTest {
         mockMvc.perform(post("/v1/integrations/GITHUB/connections").with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("{\"accountName\":\"bad\"}"))
                 .andExpect(status().isBadRequest());
     }
+
+    private String createJiraProjectLink(String user, String key) throws Exception { String projectId = createProject(user); String connectionId = mapper.readTree(connect("JIRA", user).andReturn().getResponse().getContentAsString()).get("id").asText(); org.springframework.test.web.servlet.MvcResult res = mockMvc.perform(post("/v1/integrations/projects/{projectId}/links", projectId).with(jwt(user)).contentType(MediaType.APPLICATION_JSON).content("{\"connectionId\":\"" + connectionId + "\",\"externalProjectId\":\"" + key + "-project\",\"externalProjectKey\":\"" + key + "\",\"externalProjectName\":\"TaskMind\"}" )).andExpect(status().isCreated()).andReturn(); return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText(); }
+    private static List<JiraCloudClient.ExternalIssue> defaultJiraIssues(String prefix) { return List.of(new JiraCloudClient.ExternalIssue(prefix + "-id-1", prefix + "-1", "Imported 1", "Body 1"), new JiraCloudClient.ExternalIssue(prefix + "-id-2", prefix + "-2", "Imported 2", "Body 2")); }
 
     private org.springframework.test.web.servlet.ResultActions connect(String provider, String user) throws Exception { return mockMvc.perform(post("/v1/integrations/{provider}/connections", provider).with(jwt(user)).contentType(MediaType.APPLICATION_JSON).content("""
             {"accountName":"acct","baseUrl":"https://example.test","accountExternalId":"acct-1","accessToken":"secret-access","refreshToken":"secret-refresh","scopes":"read write"}
