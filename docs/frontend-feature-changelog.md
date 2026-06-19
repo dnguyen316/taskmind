@@ -1,5 +1,18 @@
 # Frontend Feature Changelog
 
+## 2026-06-19 (Task Detail Description Editor)
+
+### Changed
+
+- Replaced the task detail description textarea with a Notion-style, auto-growing plain-text editor surface that preserves the existing `description` payload contract.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/tasks/pages/TaskDetailPage.vue src/features/tasks/components/TaskDescriptionEditor.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused task-detail editor update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (Dedicated Password Recovery UI)
 
 ### Changed
