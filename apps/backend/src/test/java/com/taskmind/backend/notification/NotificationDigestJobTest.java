@@ -3,6 +3,7 @@ package com.taskmind.backend.notification;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.taskmind.backend.common.EmailSender;
+import com.taskmind.backend.notification.application.NotificationDeliveryCoordinator;
 import com.taskmind.backend.notification.application.NotificationDigestJob;
 import com.taskmind.backend.notification.domain.model.DeliveryAttempt;
 import com.taskmind.backend.notification.domain.model.Notification;
@@ -30,7 +31,7 @@ class NotificationDigestJobTest {
             new FakeNotificationPreferenceRepository();
     private final FakeEmailSender email = new FakeEmailSender();
     private final NotificationDigestJob job =
-            new NotificationDigestJob(jdbc, notifications, preferences, email);
+            new NotificationDigestJob(jdbc, notifications, preferences, email, new NotificationDeliveryCoordinator(notifications, java.time.Duration.ZERO));
 
     @Test
     void queriesUsersWithUnreadNotificationsOlderThanCutoff() {
@@ -208,9 +209,17 @@ class NotificationDigestJobTest {
             return unread;
         }
 
+        private final List<DeliveryAttempt> attempts = new java.util.ArrayList<>();
+
         @Override
         public void recordDelivery(DeliveryAttempt attempt) {
-            throw new UnsupportedOperationException();
+            attempts.add(attempt);
+        }
+
+        public Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, com.taskmind.backend.notification.domain.model.NotificationChannel channel) {
+            return attempts.stream()
+                    .filter(a -> a.notificationId().equals(notificationId) && a.channel() == channel)
+                    .reduce((first, second) -> second);
         }
 
         @Override

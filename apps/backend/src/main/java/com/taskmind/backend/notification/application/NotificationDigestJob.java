@@ -17,16 +17,19 @@ public class NotificationDigestJob {
     private final NotificationRepository notifications;
     private final NotificationPreferenceRepository preferences;
     private final EmailSender email;
+    private final NotificationDeliveryCoordinator delivery;
 
     public NotificationDigestJob(
             JdbcTemplate j,
             NotificationRepository n,
             NotificationPreferenceRepository p,
-            EmailSender e) {
+            EmailSender e,
+            NotificationDeliveryCoordinator d) {
         jdbc = j;
         notifications = n;
         preferences = p;
         email = e;
+        delivery = d;
     }
 
     @Scheduled(cron = "${taskmind.notifications.digest.cron:0 0 * * * *}")
@@ -44,8 +47,34 @@ public class NotificationDigestJob {
                             .findByUserId(u)
                             .orElse(NotificationPreference.defaults(u, Instant.now()));
             if (!pref.emailDigestEnabled()) continue;
-            List<Notification> unread = notifications.unreadOlderThan(u, before);
-            if (!unread.isEmpty()) email.sendDigest(pref, unread);
+            List<Notification> unread =
+                    notifications.unreadOlderThan(u, before).stream()
+                            .filter(
+                                    notification ->
+                                            delivery.shouldAttempt(
+                                                    notification,
+                                                    NotificationChannel.EMAIL_DIGEST,
+                                                    Instant.now()))
+                            .toList();
+            if (!unread.isEmpty()) {
+                try {
+                    email.sendDigest(pref, unread);
+                    Instant sentAt = Instant.now();
+                    unread.forEach(
+                            notification ->
+                                    delivery.recordSuccess(
+                                            notification, NotificationChannel.EMAIL_DIGEST, sentAt));
+                } catch (RuntimeException ex) {
+                    Instant failedAt = Instant.now();
+                    unread.forEach(
+                            notification ->
+                                    delivery.recordFailure(
+                                            notification,
+                                            NotificationChannel.EMAIL_DIGEST,
+                                            ex,
+                                            failedAt));
+                }
+            }
         }
     }
 }

@@ -17,7 +17,7 @@ class NotificationApplicationServiceTest {
         InMemoryPrefs prefs = new InMemoryPrefs();
         NotificationApplicationService app = new NotificationApplicationService(repo, prefs);
         NotificationService svc =
-                new NotificationService(repo, prefs, new NotificationSseHub(), (n, p) -> {});
+                new NotificationService(repo, prefs, new NotificationSseHub(), (n, p) -> {}, new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
         UUID u1 = UUID.randomUUID(), u2 = UUID.randomUUID();
         Notification n1 =
                 svc.notify(
@@ -99,6 +99,12 @@ class NotificationApplicationServiceTest {
 
         public void recordDelivery(DeliveryAttempt a) {
             attempts.add(a);
+        }
+
+        public Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, NotificationChannel channel) {
+            return attempts.stream()
+                    .filter(a -> a.notificationId().equals(notificationId) && a.channel() == channel)
+                    .reduce((first, second) -> second);
         }
 
         public boolean reminderExists(UUID t, UUID u) {

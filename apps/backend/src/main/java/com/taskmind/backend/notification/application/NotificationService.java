@@ -14,16 +14,19 @@ public class NotificationService {
     private final NotificationPreferenceRepository preferences;
     private final NotificationSseHub hub;
     private final SlackNotifier slack;
+    private final NotificationDeliveryCoordinator delivery;
 
     public NotificationService(
             NotificationRepository n,
             NotificationPreferenceRepository p,
             NotificationSseHub h,
-            SlackNotifier s) {
+            SlackNotifier s,
+            NotificationDeliveryCoordinator d) {
         notifications = n;
         preferences = p;
         hub = h;
         slack = s;
+        delivery = d;
     }
 
     @Transactional
@@ -61,27 +64,14 @@ public class NotificationService {
             hub.publish(saved);
         }
         if (pref.slackEnabled() && saved != null) {
-            try {
-                slack.send(saved, pref);
-                notifications.recordDelivery(
-                        new DeliveryAttempt(
-                                UUID.randomUUID(),
-                                saved.id(),
-                                userId,
-                                NotificationChannel.SLACK,
-                                DeliveryStatus.SENT,
-                                null,
-                                Instant.now()));
-            } catch (RuntimeException ex) {
-                notifications.recordDelivery(
-                        new DeliveryAttempt(
-                                UUID.randomUUID(),
-                                saved.id(),
-                                userId,
-                                NotificationChannel.SLACK,
-                                DeliveryStatus.FAILED,
-                                ex.getMessage(),
-                                Instant.now()));
+            Instant attemptedAt = Instant.now();
+            if (delivery.shouldAttempt(saved, NotificationChannel.SLACK, attemptedAt)) {
+                try {
+                    slack.send(saved, pref);
+                    delivery.recordSuccess(saved, NotificationChannel.SLACK, Instant.now());
+                } catch (RuntimeException ex) {
+                    delivery.recordFailure(saved, NotificationChannel.SLACK, ex, Instant.now());
+                }
             }
         }
         return saved;
