@@ -1520,6 +1520,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/IntegrationImportRunResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/IntegrationProviderError' }
+        '502': { $ref: '#/components/responses/IntegrationProviderError' }
   /v1/tasks/{taskId}/integrations/jira/publish:
     post:
       summary: Publish a TaskMind task hierarchy root to Jira idempotently
@@ -1542,6 +1544,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/IntegrationPublishResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/IntegrationProviderError' }
+        '502': { $ref: '#/components/responses/IntegrationProviderError' }
   /v1/tasks/{taskId}/integrations/wiki/publish:
     post:
       summary: Publish a TaskMind task summary to a linked wiki space
@@ -1564,6 +1568,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/IntegrationPublishResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/IntegrationProviderError' }
+        '502': { $ref: '#/components/responses/IntegrationProviderError' }
 
   /v1/notifications:
     get:
@@ -1710,6 +1716,13 @@ components:
 
     NovaFacadeError:
       description: Stable Core AI facade error that does not expose provider internals
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    IntegrationProviderError:
+      description: External integration provider failure. Problem properties include `code`, `providerStatus`, and `retrySafe`.
       content:
         application/problem+json:
           schema:

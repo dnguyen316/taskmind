@@ -6,11 +6,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.integration.infrastructure.jira.JiraCloudClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +24,26 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class IntegrationControllerTest {
+    @TestConfiguration
+    static class ProviderClientStubs {
+        @Bean
+        @Primary
+        JiraCloudClient jiraCloudClient() {
+            return new JiraCloudClient(org.springframework.web.client.RestClient.builder()) {
+                @Override
+                public java.util.List<ExternalIssue> importIssues(String baseUrl, String accessToken, String externalProjectKey, int limit) {
+                    return java.util.List.of(
+                            new ExternalIssue("10001", "TM-1", "Imported 1", "Body 1"),
+                            new ExternalIssue("10002", "TM-2", "Imported 2", "Body 2"));
+                }
+
+                @Override
+                public PublishedIssue publish(String baseUrl, String accessToken, String projectKey, String title, String type) {
+                    return new PublishedIssue("10003", "TM-3", "https://example.test/browse/TM-3");
+                }
+            };
+        }
+    }
     private static final String USER = "11111111-1111-1111-1111-111111111111";
     private static final String OTHER = "22222222-2222-2222-2222-222222222222";
     @Autowired MockMvc mockMvc; @Autowired ObjectMapper mapper;

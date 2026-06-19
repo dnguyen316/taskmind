@@ -51,7 +51,7 @@ src/features/integrations/api/integrationsApi.ts
   (`/v1/integrations/{jira,github}/oauth/callback`) — add them to the security allow-list.
 - Encrypt access/refresh tokens at rest with `TokenCipher`
   (`TASKMIND_INTEGRATIONS_TOKEN_KEY`).
-- Import is bounded (`TASKMIND_INTEGRATIONS_IMPORT_LIMIT`, default 500).
+- Import is bounded (`TASKMIND_INTEGRATIONS_IMPORT_LIMIT`, default 500). Jira, GitHub, and wiki transports use the linked connection base URL plus the decrypted bearer access token; provider failures are surfaced as stable problem details with `code`, `providerStatus`, and `retrySafe`.
 - Publish maps TaskMind hierarchy to Jira Epic→Story→Subtask, idempotent on external key
   (reuse the mapping defined in M09 / `docs/architecture/jira-scrum-publish.md`).
 - `external_links` track the TaskMind↔external relationship for re-sync.
