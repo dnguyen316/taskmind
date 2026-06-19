@@ -1,3 +1,14 @@
+## 2026-06-19 (Activity Search Suggestions)
+
+### Added
+
+- Added authenticated Core `/v1/activity/search/suggest` suggestions backed by the activity search repository and documented the response contract in OpenAPI.
+- Implemented OpenSearch suggestion lookup with the same userId filter as activity search across title, event type, status, and payload text fields.
+
+### Tests
+
+- Added controller coverage for disabled/authenticated suggestion behavior and repository coverage for the generated OpenSearch query and de-duplicated suggestion results.
+
 ## 2026-06-19 (M10 Integration Import Idempotency)
 
 ### Changed

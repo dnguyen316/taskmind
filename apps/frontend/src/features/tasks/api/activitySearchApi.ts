@@ -6,6 +6,22 @@ export interface SearchActivityOptions {
   size?: number
 }
 
+export interface SuggestActivitySearchOptions {
+  query: string
+  size?: number
+}
+
+export async function suggestActivitySearch({ query, size = 10 }: SuggestActivitySearchOptions) {
+  const response = await apiClient.get<unknown>('/v1/activity/search/suggest', {
+    params: {
+      q: query.trim(),
+      size,
+    },
+  })
+
+  return adaptStringListResponse(response.data, 'activity search suggestions')
+}
+
 export async function searchActivity({ query = '', size = 20 }: SearchActivityOptions = {}) {
   const response = await apiClient.get<unknown>('/v1/activity/search', {
     params: {
@@ -23,6 +39,14 @@ function adaptActivitySearchDocumentListResponse(data: unknown): ActivitySearchD
   }
 
   return data.map(adaptActivitySearchDocumentResponse)
+}
+
+function adaptStringListResponse(data: unknown, resourceName: string): string[] {
+  if (!Array.isArray(data) || data.some((value) => typeof value !== 'string')) {
+    throw new Error(`Invalid ${resourceName} response.`)
+  }
+
+  return data
 }
 
 function adaptActivitySearchDocumentResponse(data: unknown): ActivitySearchDocument {

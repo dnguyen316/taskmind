@@ -7,4 +7,6 @@ public interface ActivitySearchRepository {
     boolean enabled();
 
     List<ActivitySearchDocument> search(UUID userId, String query, int size);
+
+    List<String> suggest(UUID userId, String query, int size);
 }

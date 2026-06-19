@@ -32,4 +32,16 @@ public class ActivitySearchController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         }
     }
+
+    @GetMapping("/suggest")
+    public List<String> suggest(
+            AuthenticatedUser requester,
+            @RequestParam(name = "q", defaultValue = "") String query,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        try {
+            return service.suggest(requester, query, size);
+        } catch (ActivitySearchDisabledException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+        }
+    }
 }

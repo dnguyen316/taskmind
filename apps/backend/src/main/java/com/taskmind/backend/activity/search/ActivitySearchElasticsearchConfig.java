@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -62,6 +64,7 @@ public class ActivitySearchElasticsearchConfig {
                         .putArray("fields")
                         .add("title^2")
                         .add("eventType")
+                        .add("status")
                         .add("payloadText");
             }
             root.putObject("sort").putObject("occurredAt").put("order", "desc");
@@ -91,6 +94,64 @@ public class ActivitySearchElasticsearchConfig {
                                 Instant.parse(source.path("occurredAt").asText())));
             }
             return documents;
+        }
+
+        @Override
+        public List<String> suggest(UUID userId, String query, int size) {
+            if (query == null || query.isBlank()) {
+                return List.of();
+            }
+
+            String trimmedQuery = query.trim();
+            ObjectNode root = objectMapper.createObjectNode();
+            root.put("size", Math.min(size * 3, 100));
+            ObjectNode bool = root.putObject("query").putObject("bool");
+            bool.putArray("filter").addObject().putObject("term").put("userId", userId.toString());
+            bool.putArray("must")
+                    .addObject()
+                    .putObject("multi_match")
+                    .put("query", trimmedQuery)
+                    .put("type", "bool_prefix")
+                    .putArray("fields")
+                    .add("title^3")
+                    .add("eventType")
+                    .add("status")
+                    .add("payloadText");
+            root.putArray("_source").add("title").add("eventType").add("status").add("payloadText");
+
+            JsonNode response =
+                    client.post()
+                            .uri("/{index}/_search", indexName)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(root)
+                            .retrieve()
+                            .body(JsonNode.class);
+
+            Set<String> suggestions = new LinkedHashSet<>();
+            if (response == null) {
+                return List.of();
+            }
+            for (JsonNode hit : response.path("hits").path("hits")) {
+                JsonNode source = hit.path("_source");
+                addSuggestion(suggestions, source.path("title").asText(null), trimmedQuery, size);
+                addSuggestion(suggestions, source.path("eventType").asText(null), trimmedQuery, size);
+                addSuggestion(suggestions, source.path("status").asText(null), trimmedQuery, size);
+                if (suggestions.size() >= size) {
+                    break;
+                }
+            }
+            return List.copyOf(suggestions);
+        }
+
+        private void addSuggestion(
+                Set<String> suggestions, String candidate, String query, int maxSuggestions) {
+            if (candidate == null || candidate.isBlank() || suggestions.size() >= maxSuggestions) {
+                return;
+            }
+            String normalizedCandidate = candidate.trim();
+            if (normalizedCandidate.toLowerCase().contains(query.toLowerCase())) {
+                suggestions.add(normalizedCandidate);
+            }
         }
 
         private UUID uuid(JsonNode node, String field) {

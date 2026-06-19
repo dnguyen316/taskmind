@@ -1,3 +1,16 @@
+## 2026-06-19 (Activity Search Autocomplete)
+
+### Added
+
+- Added a typed Core autocomplete helper for `/v1/activity/search/suggest` and wired the activity search composable to debounce non-blank, at-least-two-character queries.
+- Replaced the activity search input with an Ant Design Vue autocomplete that preserves clear and submit behavior while running the existing search when a suggestion is selected.
+
+### Verification notes
+
+- Exact verification commands for this slice: `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this slice.
+- Applicable skills: none. Delegated agents: none.
+
 # Frontend Feature Changelog
 
 ## 2026-06-19 (Task Detail Description Editor)

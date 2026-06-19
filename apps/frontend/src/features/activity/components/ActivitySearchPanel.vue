@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { SearchOutlined } from '@ant-design/icons-vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
 const route = useRoute()
-const { query, size, loading, errorMessage, results, hasResults, runSearch, clearSearch } =
-  useActivitySearch()
+const {
+  query,
+  size,
+  loading,
+  errorMessage,
+  results,
+  suggestions,
+  suggestionsLoading,
+  suggestionsErrorMessage,
+  hasResults,
+  runSearch,
+  clearSearch,
+} = useActivitySearch()
 
 function applyRouteQuery() {
   const routeQuery = route.query.q
@@ -27,7 +38,16 @@ watch(
   },
 )
 
+const suggestionOptions = computed(() =>
+  suggestions.value.map((suggestion) => ({ value: suggestion, label: suggestion })),
+)
+
 function submitSearch() {
+  void runSearch()
+}
+
+function selectSuggestion(value: string) {
+  query.value = value
   void runSearch()
 }
 
@@ -66,11 +86,18 @@ function payloadPreview(document: ActivitySearchDocument) {
     <a-space direction="vertical" size="middle" style="width: 100%">
       <a-form layout="inline" class="activity-search-form" @submit.prevent="submitSearch">
         <a-form-item label="Query">
-          <a-input
+          <a-auto-complete
             v-model:value="query"
+            :options="suggestionOptions"
             placeholder="Search activity, tasks, status changes..."
             allow-clear
-          />
+            @select="selectSuggestion"
+          >
+            <template #notFoundContent>
+              <a-spin v-if="suggestionsLoading" size="small" />
+              <span v-else-if="suggestionsErrorMessage">{{ suggestionsErrorMessage }}</span>
+            </template>
+          </a-auto-complete>
         </a-form-item>
         <a-form-item label="Size">
           <a-input-number v-model:value="size" :min="1" :max="100" :step="5" />

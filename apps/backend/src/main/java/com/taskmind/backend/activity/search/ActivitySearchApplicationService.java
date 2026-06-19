@@ -17,6 +17,16 @@ public class ActivitySearchApplicationService {
             AuthenticatedUser requester, String query, int size) {
         return repository
                 .orElseGet(DisabledActivitySearchRepository::new)
-                .search(requester.userId(), query, Math.min(Math.max(size, 1), 100));
+                .search(requester.userId(), query, normalizeSize(size));
+    }
+
+    public List<String> suggest(AuthenticatedUser requester, String query, int size) {
+        return repository
+                .orElseGet(DisabledActivitySearchRepository::new)
+                .suggest(requester.userId(), query, normalizeSize(size));
+    }
+
+    private int normalizeSize(int size) {
+        return Math.min(Math.max(size, 1), 100);
     }
 }
