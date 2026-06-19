@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { BarChartOutlined } from '@ant-design/icons-vue'
+import { BarChartOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import AppLayout from '../../tasks/components/AppLayout.vue'
+import ThroughputChart from '../components/ThroughputChart.vue'
+import WorkloadChart from '../components/WorkloadChart.vue'
+import { exportReportsPdf } from '../api/reportsApi'
 import { useReports } from '../composables/useReports'
 import type { ReportsRange } from '../types'
 
@@ -17,6 +20,7 @@ const kpis = computed(() => report.value?.kpis)
 const completionRate = computed(() => Math.round((kpis.value?.completionRate ?? 0) * 100))
 const statusRows = computed(() => report.value?.statusSegments ?? [])
 const projectRows = computed(() => report.value?.projectThroughput ?? [])
+const trendRows = computed(() => report.value?.trends ?? [])
 const workloadRows = computed(() => report.value?.assigneeWorkload ?? [])
 
 const statusColumns = [
@@ -37,6 +41,10 @@ const workloadColumns = [
   { title: 'Assignee', dataIndex: 'userId', key: 'userId' },
   { title: 'Open tasks', dataIndex: 'openTasks', key: 'openTasks', align: 'right' as const },
 ]
+
+function exportPdf() {
+  if (report.value) exportReportsPdf(report.value)
+}
 
 function changeRange(nextRange: ReportsRange) {
   void fetchReport(nextRange).catch(() => undefined)
@@ -60,7 +68,12 @@ onMounted(() => {
             available for the selected range.
           </p>
         </div>
-        <a-segmented :value="range" :options="rangeOptions" @change="changeRange" />
+        <div class="hero-actions">
+          <a-segmented :value="range" :options="rangeOptions" @change="changeRange" />
+          <a-button :disabled="!report" @click="exportPdf"
+            ><template #icon><DownloadOutlined /></template>Export PDF</a-button
+          >
+        </div>
       </a-card>
 
       <a-alert
@@ -82,6 +95,15 @@ onMounted(() => {
           <a-card
             ><a-statistic title="Completion rate" :value="completionRate" suffix="%"
           /></a-card>
+        </div>
+
+        <div class="chart-grid">
+          <a-card title="Throughput trend">
+            <ThroughputChart :trends="trendRows" />
+          </a-card>
+          <a-card title="Workload balance">
+            <WorkloadChart :rows="workloadRows" />
+          </a-card>
         </div>
 
         <div class="report-grid">
@@ -161,7 +183,14 @@ code {
   border: 1px solid var(--tm-border-soft);
   border-radius: 6px;
 }
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
 .kpi-grid,
+.chart-grid,
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -171,7 +200,11 @@ code {
   .hero-card :deep(.ant-card-body) {
     flex-direction: column;
   }
+  .hero-actions {
+    justify-content: flex-start;
+  }
   .kpi-grid,
+  .chart-grid,
   .report-grid {
     grid-template-columns: 1fr;
   }

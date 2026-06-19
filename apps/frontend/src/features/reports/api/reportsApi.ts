@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { apiClient } from '../../../lib/apiClient'
 import type {
   ReportsAssigneeThroughput,
@@ -180,4 +182,35 @@ function readRequiredNumber(data: Record<string, unknown>, key: string, resource
   if (typeof value !== 'number' || !Number.isFinite(value))
     throw new Error(`Invalid ${resourceName} response: missing ${key}.`)
   return value
+}
+
+export function exportReportsPdf(report: ReportsResponse) {
+  const doc = new jsPDF()
+  doc.setFontSize(18)
+  doc.text(`TaskMind ${report.range.toLowerCase()} report`, 14, 18)
+  doc.setFontSize(10)
+  doc.text(`Completion rate: ${Math.round(report.kpis.completionRate * 100)}%`, 14, 26)
+
+  autoTable(doc, {
+    startY: 34,
+    head: [['KPI', 'Value']],
+    body: [
+      ['Tasks created', report.kpis.tasksCreated],
+      ['Tasks completed', report.kpis.tasksCompleted],
+      ['Projects created', report.kpis.projectsCreated],
+      ['Events ingested', report.kpis.eventsIngested],
+    ],
+  })
+
+  autoTable(doc, {
+    head: [['Project', 'Created', 'Completed']],
+    body: report.projectThroughput.map((row) => [row.name, row.tasksCreated, row.tasksCompleted]),
+  })
+
+  autoTable(doc, {
+    head: [['Assignee', 'Open tasks']],
+    body: report.assigneeWorkload.map((row) => [row.userId, row.openTasks]),
+  })
+
+  doc.save(`taskmind-${report.range.toLowerCase()}-report.pdf`)
 }

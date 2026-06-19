@@ -1,5 +1,19 @@
 # Frontend Feature Changelog
 
+## 2026-06-19 (M12 Dashboard and Reports Completion)
+
+### Changed
+
+- Wired the Dashboard page to Core `GET /v1/dashboard` with typed response adaptation, loading/error states, live KPI cards, my-task rows, and activity snippets from the cached dashboard aggregation.
+- Added Reports throughput/workload chart components and an Export PDF action backed by jsPDF + jspdf-autotable so M12 reports can be rendered and exported from live Core report data.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/reports/components/ThroughputChart.vue src/features/reports/components/WorkloadChart.vue src/features/reports/api/reportsApi.ts src/features/reports/pages/ReportsPage.vue src/features/dashboard/types.ts src/features/dashboard/api/dashboardApi.ts src/features/dashboard/composables/useDashboard.ts src/features/tasks/pages/DashboardPage.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused M12 frontend completion update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-18 (Team and Reports Core Integration)
 
 ### Changed

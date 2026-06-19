@@ -2,75 +2,24 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { BellOutlined, SearchOutlined } from '@ant-design/icons-vue'
-import { useTasks } from '../composables/useTasks'
+import { useDashboard } from '../../dashboard/composables/useDashboard'
 import AppLayout from '../components/AppLayout.vue'
-import { formatDateTime, isTaskOverdue } from '../utils/taskDates'
-import type { Task } from '../types'
+import { formatDateTime } from '../utils/taskDates'
+import type { DashboardTaskItem } from '../../dashboard/types'
 
-const { loading, visibleTasks, fetchTasks, fetchProjects } = useTasks()
+const { dashboard, loading, errorMessage, fetchDashboard } = useDashboard()
 const router = useRouter()
 const searchQuery = ref('')
 
-const startOfToday = () => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return today
-}
-
-const endOfNextSevenDays = () => {
-  const end = startOfToday()
-  end.setDate(end.getDate() + 7)
-  end.setHours(23, 59, 59, 999)
-  return end
-}
-
-const realTaskMetrics = computed(() => {
-  const today = startOfToday()
-  const nextSevenDays = endOfNextSevenDays()
-
-  return {
-    active: visibleTasks.value.filter((task: Task) => task.status !== 'DONE').length,
-    dueThisWeek: visibleTasks.value.filter((task: Task) => {
-      if (!task.dueAt) return false
-      const dueAt = new Date(task.dueAt)
-      return dueAt >= today && dueAt <= nextSevenDays
-    }).length,
-    overdue: visibleTasks.value.filter((task: Task) => isTaskOverdue(task)).length,
-    completed: visibleTasks.value.filter((task: Task) => task.status === 'DONE').length,
-  }
-})
-
-interface DashboardRoadmapCard {
-  title: string
-  milestone: string
-  description: string
-}
-
-const upcomingDashboardFeatures: DashboardRoadmapCard[] = [
-  {
-    title: 'Team workload',
-    milestone: 'M12',
-    description:
-      'Capacity and balancing charts will appear here when dashboard analytics are live.',
-  },
-  {
-    title: 'Project health',
-    milestone: 'M12',
-    description: 'Project status cards will use Relay-backed analytics instead of sample progress.',
-  },
-  {
-    title: 'AI insights',
-    milestone: 'M08/M12',
-    description: 'Nova summaries and dashboard insight widgets are coming soon.',
-  },
-  {
-    title: 'Notifications',
-    milestone: 'M11',
-    description: 'Notification shortcuts are disabled until alert delivery is implemented.',
-  },
-]
-
-const myTasks = computed<Task[]>(() => visibleTasks.value.slice(0, 6))
+const dashboardKpis = computed(() => dashboard.value?.kpis)
+const realTaskMetrics = computed(() => ({
+  active: dashboardKpis.value?.openTasks ?? 0,
+  completed: dashboardKpis.value?.completedTasks ?? 0,
+  events: dashboardKpis.value?.eventsIngested ?? 0,
+  completionRate: Math.round((dashboardKpis.value?.completionRate ?? 0) * 100),
+}))
+const myTasks = computed<DashboardTaskItem[]>(() => dashboard.value?.myTasks.slice(0, 6) ?? [])
+const activity = computed(() => dashboard.value?.activity ?? [])
 
 function submitDashboardSearch(value = searchQuery.value) {
   const query = value.trim()
@@ -83,15 +32,14 @@ function submitDashboardSearch(value = searchQuery.value) {
 }
 
 onMounted(async () => {
-  await fetchProjects()
-  await fetchTasks()
+  await fetchDashboard().catch(() => undefined)
 })
 </script>
 
 <template>
   <AppLayout :task-count="realTaskMetrics.active">
     <template #title>Dashboard</template>
-    <template #subtitle>Live task/project basics now; analytics widgets come in M12.</template>
+    <template #subtitle>Live Core dashboard aggregation from analytics read models.</template>
     <template #headerActions>
       <div class="dashboard-search">
         <a-input-search
@@ -119,15 +67,15 @@ onMounted(async () => {
         <div class="brief-copy">
           <div class="brief-title-row">
             <h2>Good morning</h2>
-            <span class="brief-chip primary">REAL TASK METRICS</span>
-            <span class="brief-chip muted">Dashboard analytics coming in M12</span>
+            <span class="brief-chip primary">LIVE CORE DASHBOARD</span>
+            <span class="brief-chip muted">Cached aggregation</span>
           </div>
           <p>
             You have
-            <strong>{{ realTaskMetrics.dueThisWeek }} task(s) due in the next 7 days</strong>
-            and
-            <strong>{{ realTaskMetrics.overdue }} overdue blocker(s)</strong>
-            from the live task API.
+            <strong>{{ realTaskMetrics.active }} open task(s)</strong>,
+            <strong>{{ realTaskMetrics.completed }} completed task(s)</strong>, and
+            <strong>{{ realTaskMetrics.events }} analytics event(s)</strong> in the dashboard
+            rollup.
           </p>
         </div>
       </div>
@@ -139,41 +87,41 @@ onMounted(async () => {
 
     <section class="kpi-grid" aria-label="Live task metrics">
       <article class="kpi-card tm-card-surface">
-        <h3>Active Tasks</h3>
+        <h3>Open Tasks</h3>
         <strong>{{ realTaskMetrics.active }}</strong>
-        <p>Live non-completed tasks</p>
-      </article>
-      <article class="kpi-card tm-card-surface">
-        <h3>Due Next 7 Days</h3>
-        <strong>{{ realTaskMetrics.dueThisWeek }}</strong>
-        <p>Live due dates</p>
-      </article>
-      <article class="kpi-card tm-card-surface">
-        <h3>Overdue</h3>
-        <strong>{{ realTaskMetrics.overdue }}</strong>
-        <p>{{ realTaskMetrics.overdue ? 'Needs attention' : 'All clear' }}</p>
+        <p>Core dashboard aggregation</p>
       </article>
       <article class="kpi-card tm-card-surface">
         <h3>Completed</h3>
         <strong>{{ realTaskMetrics.completed }}</strong>
-        <p>Live completed tasks</p>
+        <p>Finished tasks in scope</p>
+      </article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Events</h3>
+        <strong>{{ realTaskMetrics.events }}</strong>
+        <p>Analytics events ingested</p>
+      </article>
+      <article class="kpi-card tm-card-surface">
+        <h3>Completion Rate</h3>
+        <strong>{{ realTaskMetrics.completionRate }}%</strong>
+        <p>Completed / total tasks</p>
       </article>
     </section>
+
+    <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
 
     <section class="live-dashboard-grid">
       <div class="live-column">
         <a-card class="tasks-card tm-card-surface" :loading="loading" title="My Tasks">
           <template #extra><RouterLink to="/tasks">View all</RouterLink></template>
           <a-list class="tm-list-surface" :data-source="myTasks">
-            <template #renderItem="{ item }: { item: Task }">
+            <template #renderItem="{ item }: { item: DashboardTaskItem }">
               <a-list-item>
                 <a-list-item-meta
                   :title="item.title"
-                  :description="`${item.projectId ?? 'PRJ'} · ${item.id}`"
+                  :description="`${item.projectId ?? 'No project'} · ${item.taskId}`"
                 />
-                <span class="due">{{
-                  item.dueAt ? formatDateTime(item.dueAt) : 'No due date'
-                }}</span>
+                <span class="due">{{ formatDateTime(item.updatedAt) }}</span>
               </a-list-item>
             </template>
           </a-list>
@@ -181,28 +129,18 @@ onMounted(async () => {
       </div>
     </section>
 
-    <a-collapse class="upcoming-collapse" ghost>
-      <a-collapse-panel key="upcoming-dashboard-features" header="Upcoming features">
-        <p class="upcoming-intro">
-          These dashboard areas are intentionally disabled until their backend data is live. No
-          sample people, projects, or activity are shown in primary dashboard areas.
-        </p>
-        <div class="roadmap-grid">
-          <article
-            v-for="feature in upcomingDashboardFeatures"
-            :key="feature.title"
-            class="roadmap-card tm-card-surface"
-            aria-disabled="true"
-          >
-            <div>
-              <h3>{{ feature.title }}</h3>
-              <p>{{ feature.description }}</p>
-            </div>
-            <a-tag color="default">Coming soon · {{ feature.milestone }}</a-tag>
-          </article>
-        </div>
-      </a-collapse-panel>
-    </a-collapse>
+    <a-card class="tasks-card tm-card-surface" title="Activity snippet">
+      <a-list class="tm-list-surface" :data-source="activity">
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <a-list-item-meta
+              :title="item.date"
+              :description="`Created ${item.tasksCreated} · Completed ${item.tasksCompleted} · Events ${item.eventsIngested}`"
+            />
+          </a-list-item>
+        </template>
+      </a-list>
+    </a-card>
   </AppLayout>
 </template>
 
