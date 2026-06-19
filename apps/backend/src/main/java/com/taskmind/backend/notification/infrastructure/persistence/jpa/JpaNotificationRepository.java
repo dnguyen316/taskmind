@@ -87,6 +87,16 @@ public class JpaNotificationRepository implements NotificationRepository {
                 Timestamp.from(a.attemptedAt()));
     }
 
+    public Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, NotificationChannel channel) {
+        return jdbc.query(
+                        "select * from notification_delivery_attempts where notification_id=? and channel=? order by attempted_at desc limit 1",
+                        this::mapAttempt,
+                        notificationId,
+                        channel.name())
+                .stream()
+                .findFirst();
+    }
+
     public boolean reminderExists(UUID t, UUID u) {
         Boolean b =
                 jdbc.queryForObject(
@@ -117,6 +127,17 @@ public class JpaNotificationRepository implements NotificationRepository {
                                 rs.getTimestamp("due_at").toInstant()),
                 Timestamp.from(now),
                 limit);
+    }
+
+    private DeliveryAttempt mapAttempt(java.sql.ResultSet rs, int i) throws java.sql.SQLException {
+        return new DeliveryAttempt(
+                (UUID) rs.getObject("id"),
+                (UUID) rs.getObject("notification_id"),
+                (UUID) rs.getObject("user_id"),
+                NotificationChannel.valueOf(rs.getString("channel")),
+                DeliveryStatus.valueOf(rs.getString("status")),
+                rs.getString("error_message"),
+                rs.getTimestamp("attempted_at").toInstant());
     }
 
     private Notification map(java.sql.ResultSet rs, int i) throws java.sql.SQLException {

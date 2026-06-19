@@ -19,6 +19,8 @@ public interface NotificationRepository {
 
     void recordDelivery(DeliveryAttempt attempt);
 
+    Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, NotificationChannel channel);
+
     boolean reminderExists(UUID taskId, UUID userId);
 
     void recordReminder(ReminderState state);

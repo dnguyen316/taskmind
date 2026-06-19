@@ -1,3 +1,16 @@
+## 2026-06-19 (M11 Notification Delivery Completion)
+
+### Changed
+
+- Replaced fake-by-default notification email/Slack delivery with configurable SMTP/SES-compatible email delivery and Slack webhook/API delivery while keeping fake delivery defaults only for local, staging, and test profiles.
+- Added notification delivery attempt coordination so successful and failed external channel attempts are persisted and failed attempts observe a configurable retry backoff before jobs retry them.
+- Updated notification digest and Slack notification paths to record provider failures without losing in-app notifications or stopping scheduled processing.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest='Notification*Test' -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-18 (M09 Spec Breakdown Async Worker)
 
 ### Changed
