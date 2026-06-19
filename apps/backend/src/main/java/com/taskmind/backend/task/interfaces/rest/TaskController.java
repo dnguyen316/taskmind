@@ -8,6 +8,7 @@ import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
 import com.taskmind.backend.task.interfaces.rest.dto.CreateTaskRequest;
 import com.taskmind.backend.task.interfaces.rest.dto.TaskCompletionResponse;
+import com.taskmind.backend.task.interfaces.rest.dto.TaskResponse;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskRequest;
 import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
@@ -40,7 +41,7 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(
+    public ResponseEntity<TaskResponse> createTask(
             AuthenticatedUser requester, @Valid @RequestBody CreateTaskRequest request) {
         try {
             Task created =
@@ -64,45 +65,54 @@ public class TaskController {
                                     request.energyLevel(),
                                     request.source(),
                                     request.confidence()));
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(TaskResponse.from(created));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
         }
     }
 
     @GetMapping
-    public List<Task> listTasks(
+    public List<TaskResponse> listTasks(
             AuthenticatedUser requester,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(defaultValue = "false") boolean overdueOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return taskApplicationService.list(
-                requester,
-                Optional.ofNullable(userId),
-                Optional.ofNullable(status),
-                overdueOnly,
-                page,
-                size);
+        return taskApplicationService
+                .list(
+                        requester,
+                        Optional.ofNullable(userId),
+                        Optional.ofNullable(status),
+                        overdueOnly,
+                        page,
+                        size)
+                .stream()
+                .map(TaskResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTask(AuthenticatedUser requester, @PathVariable UUID id) {
+    public ResponseEntity<TaskResponse> getTask(AuthenticatedUser requester, @PathVariable UUID id) {
         return taskApplicationService
                 .findById(requester, id)
+                .map(TaskResponse::from)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/children")
-    public List<Task> children(AuthenticatedUser requester, @PathVariable UUID id) {
-        return taskApplicationService.children(requester, id);
+    public List<TaskResponse> children(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.children(requester, id).stream()
+                .map(TaskResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}/ancestors")
-    public List<Task> ancestors(AuthenticatedUser requester, @PathVariable UUID id) {
-        return taskApplicationService.ancestors(requester, id);
+    public List<TaskResponse> ancestors(AuthenticatedUser requester, @PathVariable UUID id) {
+        return taskApplicationService.ancestors(requester, id).stream()
+                .map(TaskResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}/completion")
@@ -122,7 +132,7 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Task> updateTask(
+    public ResponseEntity<TaskResponse> updateTask(
             AuthenticatedUser requester,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTaskRequest request) {
@@ -147,6 +157,7 @@ public class TaskController {
                                     request.dueAt(),
                                     request.durationMinutes(),
                                     request.energyLevel()))
+                    .map(TaskResponse::from)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
@@ -155,13 +166,14 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Task> updateTaskStatus(
+    public ResponseEntity<TaskResponse> updateTaskStatus(
             AuthenticatedUser requester,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTaskStatusRequest request) {
         try {
             return taskApplicationService
                     .updateStatus(requester, id, request.status())
+                    .map(TaskResponse::from)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
@@ -170,10 +182,11 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}/archive")
-    public ResponseEntity<Task> archiveTask(AuthenticatedUser requester, @PathVariable UUID id) {
+    public ResponseEntity<TaskResponse> archiveTask(AuthenticatedUser requester, @PathVariable UUID id) {
         try {
             return taskApplicationService
                     .archive(requester, id)
+                    .map(TaskResponse::from)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {

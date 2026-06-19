@@ -69,6 +69,7 @@ function adaptTaskResponse(data: unknown): Task {
 
   return {
     id: readRequiredString(data, 'id', 'task'),
+    version: readNullableNumber(data, 'version'),
     projectId: readNullableString(data, 'projectId') ?? '',
     userId: readRequiredString(data, 'userId', 'task'),
     title: readRequiredString(data, 'title', 'task'),
