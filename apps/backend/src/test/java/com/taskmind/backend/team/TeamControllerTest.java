@@ -1,6 +1,7 @@
 package com.taskmind.backend.team;
 
 import static com.taskmind.backend.security.TestJwtSupport.jwt;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,14 +26,15 @@ class TeamControllerTest {
     @MockBean AnalyticsRollupRepository analytics;
 
     @Test
-    void privilegedUserGetsEmptyDirectory() throws Exception {
+    void privilegedUserGetsSeededDirectory() throws Exception {
         when(analytics.assigneeWorkload()).thenReturn(List.of());
         mockMvc.perform(
                         get("/v1/team/directory")
                                 .with(jwt("11111111-1111-1111-1111-111111111111", "ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalMembers").value(1))
-                .andExpect(jsonPath("$.members").isArray());
+                .andExpect(jsonPath("$.totalMembers").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.members").isArray())
+                .andExpect(jsonPath("$.members[?(@.email == 'superadmin@taskmind.local')]").exists());
     }
 
     @Test
