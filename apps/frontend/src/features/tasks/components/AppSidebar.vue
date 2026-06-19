@@ -87,8 +87,8 @@ function initials(value: string) {
         class="menu-item"
         :class="{ active: isTeam }"
         @click="emit('navigate')"
-        title="Team directory is planned and currently shows availability details"
-        ><TeamOutlined />Team <span class="nav-badge">Soon</span></RouterLink
+        title="Team directory and workload totals"
+        ><TeamOutlined />Team</RouterLink
       >
       <RouterLink
         to="/calendar"
@@ -111,8 +111,8 @@ function initials(value: string) {
         class="menu-item"
         :class="{ active: isReports }"
         @click="emit('navigate')"
-        title="Reports are planned and currently show availability details"
-        ><BarChartOutlined />Reports <span class="nav-badge">Soon</span></RouterLink
+        title="Reports from analytics rollups"
+        ><BarChartOutlined />Reports</RouterLink
       >
       <RouterLink
         to="/activity"

@@ -1,5 +1,21 @@
 # Frontend Feature Changelog
 
+## 2026-06-18 (Team and Reports Core Integration)
+
+### Changed
+
+- Wired the Team page to Core `GET /v1/team/directory` with typed response adaptation, a directory composable, loading/error/empty states, and live member/workload rendering.
+- Wired the Reports page to Core `GET /v1/reports?range=week|month|quarter` with typed response adaptation, a reports composable, range switching, loading/error/empty states, KPI cards, and workload/throughput tables.
+- Updated the sidebar Team and Reports entries to remove coming-soon badges now that they navigate to live Core-backed pages.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/team/pages/TeamPage.vue src/features/team/types.ts src/features/team/api/teamApi.ts src/features/team/composables/useTeamDirectory.ts src/features/reports/pages/ReportsPage.vue src/features/reports/types.ts src/features/reports/api/reportsApi.ts src/features/reports/composables/useReports.ts src/features/tasks/components/AppSidebar.vue ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck`.
+- Full gate verification: `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused Core integration update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-18 (Task Attachment Multi-Upload)
 
 ### Changed
