@@ -29,7 +29,17 @@ class ActivitySearchControllerTest {
     }
 
     @Test
+    void disabledSuggestionsFailPredictably() throws Exception {
+        mockMvc.perform(
+                        get("/v1/activity/search/suggest")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("q", "task"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get("/v1/activity/search")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v1/activity/search/suggest")).andExpect(status().isUnauthorized());
     }
 }

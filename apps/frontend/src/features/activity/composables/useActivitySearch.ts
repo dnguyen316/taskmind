@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue'
-import { searchActivity } from '../../tasks/api/activitySearchApi'
+import { computed, onScopeDispose, ref, watch } from 'vue'
+import { searchActivity, suggestActivitySearch } from '../../tasks/api/activitySearchApi'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
 export function useActivitySearch(defaultSize = 20) {
@@ -8,8 +8,61 @@ export function useActivitySearch(defaultSize = 20) {
   const loading = ref(false)
   const errorMessage = ref('')
   const results = ref<ActivitySearchDocument[]>([])
+  const suggestions = ref<string[]>([])
+  const suggestionsLoading = ref(false)
+  const suggestionsErrorMessage = ref('')
+  let suggestionTimer: ReturnType<typeof setTimeout> | undefined
+  let suggestionRequestId = 0
 
   const hasResults = computed(() => results.value.length > 0)
+
+  async function loadSuggestions() {
+    const suggestionQuery = query.value.trim()
+    suggestionRequestId += 1
+    const requestId = suggestionRequestId
+
+    if (suggestionQuery.length < 2) {
+      suggestions.value = []
+      suggestionsErrorMessage.value = ''
+      suggestionsLoading.value = false
+      return
+    }
+
+    suggestionsLoading.value = true
+    suggestionsErrorMessage.value = ''
+
+    try {
+      const nextSuggestions = await suggestActivitySearch({ query: suggestionQuery, size: 8 })
+      if (requestId === suggestionRequestId) {
+        suggestions.value = nextSuggestions
+      }
+    } catch (error: unknown) {
+      if (requestId === suggestionRequestId) {
+        suggestions.value = []
+        suggestionsErrorMessage.value =
+          error instanceof Error ? error.message : 'Failed to load activity suggestions.'
+      }
+    } finally {
+      if (requestId === suggestionRequestId) {
+        suggestionsLoading.value = false
+      }
+    }
+  }
+
+  watch(query, () => {
+    if (suggestionTimer) {
+      clearTimeout(suggestionTimer)
+    }
+    suggestionTimer = setTimeout(() => {
+      void loadSuggestions()
+    }, 250)
+  })
+
+  onScopeDispose(() => {
+    if (suggestionTimer) {
+      clearTimeout(suggestionTimer)
+    }
+  })
 
   async function runSearch() {
     loading.value = true
@@ -31,6 +84,8 @@ export function useActivitySearch(defaultSize = 20) {
     query.value = ''
     results.value = []
     errorMessage.value = ''
+    suggestions.value = []
+    suggestionsErrorMessage.value = ''
   }
 
   return {
@@ -39,7 +94,11 @@ export function useActivitySearch(defaultSize = 20) {
     loading,
     errorMessage,
     results,
+    suggestions,
+    suggestionsLoading,
+    suggestionsErrorMessage,
     hasResults,
+    loadSuggestions,
     runSearch,
     clearSearch,
   }

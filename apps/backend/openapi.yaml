@@ -1156,6 +1156,30 @@ paths:
         '503':
           description: Activity search is disabled or not configured
 
+  /v1/activity/search/suggest:
+    get:
+      summary: Suggest authenticated user activity search terms
+      operationId: suggestActivitySearch
+      tags: [Activity]
+      parameters:
+        - in: query
+          name: q
+          schema: {type: string}
+        - in: query
+          name: size
+          schema: {type: integer, minimum: 1, maximum: 100, default: 10}
+      responses:
+        '200':
+          description: Suggested activity search terms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySearchSuggestions'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Activity search is disabled or not configured
+
   /v1/tasks/{taskId}/attachments:
     post:
       summary: Upload a task attachment
@@ -1987,6 +2011,11 @@ components:
         deletedAt: {type: string, format: date-time, nullable: true}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+
+    ActivitySearchSuggestions:
+      type: array
+      items:
+        type: string
 
     ActivitySearchDocument:
       type: object
