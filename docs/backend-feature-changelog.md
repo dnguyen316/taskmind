@@ -578,3 +578,14 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Expanded `TaskControllerTest#rejectsStaleTaskUpdateWithConflict` to assert create, detail read, and list task responses include numeric versions before verifying stale updates return `409 Conflict`.
+
+## 2026-06-19 (Integration Publish Identity)
+
+### Changed
+
+- Integration publish idempotency now scopes lookup to the exact task/project-link pair instead of task/provider, so one TaskMind task can be published to multiple Jira project links or wiki spaces for the same provider.
+- Added a publish-record uniqueness constraint on `(task_id, project_link_id)` to prevent duplicate publish records for the same linked destination while allowing separate links under the same provider.
+
+### Tests
+
+- Expanded integration controller coverage for publishing one task to two Jira links, publishing one task to two wiki spaces, and idempotent re-publish behavior for the original link.
