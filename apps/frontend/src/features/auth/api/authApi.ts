@@ -31,6 +31,20 @@ export interface LogoutPayload {
   refreshToken: string
 }
 
+export type PasswordRecoveryFlow = 'reset-request' | 'reset-complete'
+
+export interface PasswordResetRequestPayload {
+  email: string
+}
+
+export interface PasswordResetCompletePayload {
+  email: string
+  token: string
+  password: string
+}
+
+export type PasswordRecoveryPayload = PasswordResetRequestPayload | PasswordResetCompletePayload
+
 export async function login(payload: LoginPayload) {
   const response = await apiClient.post<AuthTokensResponse>('/v1/auth/login', payload)
   return response.data
@@ -43,6 +57,21 @@ export async function signupEmail(payload: SignupEmailPayload) {
 export async function verifyOtp(payload: VerifyOtpPayload) {
   const response = await apiClient.post<AuthTokensResponse>('/v1/auth/verify', payload)
   return response.data
+}
+
+export async function runPasswordFlow(
+  flow: PasswordRecoveryFlow,
+  payload: PasswordRecoveryPayload,
+) {
+  await apiClient.post<void>(`/v1/auth/password/${flow}`, payload)
+}
+
+export async function requestPasswordReset(payload: PasswordResetRequestPayload) {
+  await runPasswordFlow('reset-request', payload)
+}
+
+export async function completePasswordReset(payload: PasswordResetCompletePayload) {
+  await runPasswordFlow('reset-complete', payload)
 }
 
 export async function logout(payload: LogoutPayload) {

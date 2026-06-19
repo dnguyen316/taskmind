@@ -1,5 +1,19 @@
 # Frontend Feature Changelog
 
+## 2026-06-19 (Dedicated Password Recovery UI)
+
+### Changed
+
+- Added a dedicated `/forgot-password` recovery page with Ant Design Vue request, accepted, and error states instead of routing the path through the shared login/signup form.
+- Added typed frontend helpers for Core's documented public `/v1/auth/password/{flow}` password recovery endpoint and wired the forgot-password route to the new page.
+
+### Verification notes
+
+- Targeted frontend verification: `cd apps/frontend && npm run format -- src/features/auth/pages/ForgotPasswordPage.vue src/features/auth/pages/AuthPage.vue src/features/auth/api/authApi.ts src/router/index.ts ../../docs/frontend-feature-changelog.md`.
+- Targeted frontend verification: `cd apps/frontend && npm run typecheck && npm run build`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused auth recovery UI update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (Task Detail Client Validation)
 
 ### Changed

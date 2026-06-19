@@ -7,6 +7,7 @@ import ProjectsDashboardPage from '../features/projects/pages/ProjectsDashboardP
 import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage.vue'
 import LandingPage from '../features/landing/pages/LandingPage.vue'
 import AuthPage from '../features/auth/pages/AuthPage.vue'
+import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage.vue'
 import InboxCapturePage from '../features/ai/pages/InboxCapturePage.vue'
 import CalendarPage from '../features/scheduler/pages/CalendarPage.vue'
 import TeamPage from '../features/team/pages/TeamPage.vue'
@@ -41,7 +42,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: AuthPage,
+    component: ForgotPasswordPage,
     meta: publicMeta,
   },
   {
