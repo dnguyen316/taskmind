@@ -521,6 +521,13 @@ This changelog tracks backend feature progress against the core implementation p
 - Added per-service Logback configuration with readable local/test console output and JSON console output under the `prod` profile.
 - Added focused servlet filter tests covering generated and inbound correlation IDs, response header emission, and MDC cleanup.
 
+
+## 2026-06-19 (Integration Credential Storage Hardening)
+
+- Replaced the integrations token XOR obfuscation with AES-GCM authenticated encryption, storing ciphertext as `enc:v2:gcm:<key-version>:<nonce>:<ciphertext>` so credentials carry key-version and nonce metadata.
+- Added startup validation that requires `taskmind.integrations.token-key` outside local/test profiles and fails prod when the secure key is absent, while keeping legacy `enc:` XOR values decryptable with the configured key for migration compatibility.
+- Added TokenCipher coverage for wrong-key failures, tamper rejection, blank/null handling, prod missing-key guardrails, and legacy decrypt compatibility.
+
 ## 2026-06-19 (M10 Real Integration Provider Clients)
 
 ### Changed
