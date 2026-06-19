@@ -1,0 +1,6 @@
+export const TASK_TITLE_MAX_LENGTH = 200
+export const TASK_DESCRIPTION_MAX_LENGTH = 2000
+export const TASK_PRIORITY_MIN = 1
+export const TASK_PRIORITY_MAX = 4
+export const TASK_DURATION_MIN_MINUTES = 1
+export const TASK_DURATION_MAX_MINUTES = 1440

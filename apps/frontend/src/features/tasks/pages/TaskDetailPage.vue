@@ -5,6 +5,12 @@ import AppLayout from '../components/AppLayout.vue'
 import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import { useTasks } from '../composables/useTasks'
 import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import {
+  TASK_DURATION_MAX_MINUTES,
+  TASK_PRIORITY_MAX,
+  TASK_PRIORITY_MIN,
+  TASK_TITLE_MAX_LENGTH,
+} from '../validation/taskFormValidation'
 import type { EnergyLevel, Task, TaskStatus } from '../types'
 
 const ENERGY_LEVEL_OPTIONS: EnergyLevel[] = ['LOW', 'MEDIUM', 'HIGH']
@@ -109,18 +115,13 @@ async function saveTask() {
   successMessage.value = ''
   errorMessage.value = ''
 
+  const payload = validateTaskDetailForm()
+  if (!payload) {
+    return
+  }
+
   try {
-    const updated = await updateTaskDetails(formState.id, {
-      version: formState.version,
-      projectId: formState.projectId.trim(),
-      title: formState.title.trim(),
-      description: formState.description.trim() || null,
-      priority: Number(formState.priority),
-      dueAt: formState.dueAt ? new Date(formState.dueAt).toISOString() : null,
-      durationMinutes: formState.durationMinutes ? Number(formState.durationMinutes) : null,
-      energyLevel: formState.energyLevel || null,
-      status: formState.status,
-    })
+    const updated = await updateTaskDetails(formState.id, payload)
 
     if (updated && typeof updated === 'object') {
       hydrateForm(updated)
@@ -130,6 +131,85 @@ async function saveTask() {
   } catch {
     // errorMessage is managed by useTasks
   }
+}
+
+function validateTaskDetailForm() {
+  const title = formState.title.trim()
+  if (!title) {
+    errorMessage.value = 'Title is required.'
+    return null
+  }
+
+  if (title.length > TASK_TITLE_MAX_LENGTH) {
+    errorMessage.value = `Title must be at most ${TASK_TITLE_MAX_LENGTH} characters.`
+    return null
+  }
+
+  const priority = Number(formState.priority)
+  if (!Number.isInteger(priority) || priority < TASK_PRIORITY_MIN || priority > TASK_PRIORITY_MAX) {
+    errorMessage.value = `Priority must be an integer between ${TASK_PRIORITY_MIN} and ${TASK_PRIORITY_MAX}.`
+    return null
+  }
+
+  const durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
+  if (durationMinutes === undefined) {
+    return null
+  }
+
+  const dueAt = normalizeDueAt(formState.dueAt)
+  if (dueAt === undefined) {
+    return null
+  }
+
+  return {
+    version: formState.version,
+    projectId: formState.projectId.trim(),
+    title,
+    description: formState.description.trim() || null,
+    priority,
+    dueAt,
+    durationMinutes,
+    energyLevel: formState.energyLevel || null,
+    status: formState.status,
+  }
+}
+
+function normalizeDurationMinutes(value: number | null): number | null | undefined {
+  if (value === null || value === 0) {
+    return null
+  }
+
+  const durationMinutes = Number(value)
+  if (!Number.isInteger(durationMinutes) || durationMinutes < 0) {
+    errorMessage.value = 'Duration must be a whole number of minutes, or blank.'
+    return undefined
+  }
+
+  if (durationMinutes === 0) {
+    return null
+  }
+
+  if (durationMinutes > TASK_DURATION_MAX_MINUTES) {
+    errorMessage.value = `Duration must be at most ${TASK_DURATION_MAX_MINUTES} minutes.`
+    return undefined
+  }
+
+  return durationMinutes
+}
+
+function normalizeDueAt(value: string): string | null | undefined {
+  const dueAtValue = value.trim()
+  if (!dueAtValue) {
+    return null
+  }
+
+  const dueAt = new Date(dueAtValue)
+  if (Number.isNaN(dueAt.getTime())) {
+    errorMessage.value = 'Due date must be a valid date and time.'
+    return undefined
+  }
+
+  return dueAt.toISOString()
 }
 
 function toDatetimeLocal(value: string | null) {

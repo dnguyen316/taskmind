@@ -4,6 +4,14 @@ import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
 import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
 import { DEFAULT_CREATE_TASK_FORM } from '../constants/taskConstants'
+import {
+  TASK_DESCRIPTION_MAX_LENGTH,
+  TASK_DURATION_MAX_MINUTES,
+  TASK_DURATION_MIN_MINUTES,
+  TASK_PRIORITY_MAX,
+  TASK_PRIORITY_MIN,
+  TASK_TITLE_MAX_LENGTH,
+} from '../validation/taskFormValidation'
 import type { Project } from '../../projects/types'
 import type { CreateTaskFormValues, CreateTaskPayload } from '../types'
 
@@ -28,17 +36,23 @@ const schema = yup.object({
     .string()
     .trim()
     .required('Title is required')
-    .max(200, 'Title must be at most 200 characters'),
-  description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
-  priority: yup.number().integer().min(1).max(4).required(),
+    .max(TASK_TITLE_MAX_LENGTH, `Title must be at most ${TASK_TITLE_MAX_LENGTH} characters`),
+  description: yup
+    .string()
+    .max(
+      TASK_DESCRIPTION_MAX_LENGTH,
+      `Description must be at most ${TASK_DESCRIPTION_MAX_LENGTH} characters`,
+    )
+    .nullable(),
+  priority: yup.number().integer().min(TASK_PRIORITY_MIN).max(TASK_PRIORITY_MAX).required(),
   durationMinutes: yup
     .number()
     .transform((value, originalValue) =>
       originalValue === '' || originalValue === null ? null : value,
     )
     .integer()
-    .min(1)
-    .max(1440)
+    .min(TASK_DURATION_MIN_MINUTES)
+    .max(TASK_DURATION_MAX_MINUTES)
     .nullable()
     .optional(),
   dueAt: yup.string().nullable(),

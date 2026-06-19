@@ -1,5 +1,18 @@
 # Frontend Feature Changelog
 
+## 2026-06-19 (Task Detail Client Validation)
+
+### Changed
+
+- Added client-side task detail validation before save so blank titles, too-long titles, out-of-range priorities, invalid durations, and invalid due dates surface through the existing task detail error alert without calling Core.
+- Centralized task form validation limits for create and detail task forms under `apps/frontend/src/features/tasks/validation/`.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; there is no frontend test runner configured yet.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this form-validation slice.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (M12 Dashboard and Reports Completion)
 
 ### Changed
@@ -123,6 +136,19 @@
 - Applicable skills: none. Delegated agents: none.
 
 # Frontend Feature Changelog
+
+## 2026-06-19 (Task Detail Client Validation)
+
+### Changed
+
+- Added client-side task detail validation before save so blank titles, too-long titles, out-of-range priorities, invalid durations, and invalid due dates surface through the existing task detail error alert without calling Core.
+- Centralized task form validation limits for create and detail task forms under `apps/frontend/src/features/tasks/validation/`.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; there is no frontend test runner configured yet.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this form-validation slice.
+- Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-16 (Sidebar Navigation Availability Labels)
 
@@ -272,6 +298,19 @@
 - Refactored the Projects dashboard into the shared app shell, removed the user-facing owner-id field from project creation, and aligned project creation/list styling with TaskMind surface-card layout patterns.
 
 # Frontend Feature Changelog
+
+## 2026-06-19 (Task Detail Client Validation)
+
+### Changed
+
+- Added client-side task detail validation before save so blank titles, too-long titles, out-of-range priorities, invalid durations, and invalid due dates surface through the existing task detail error alert without calling Core.
+- Centralized task form validation limits for create and detail task forms under `apps/frontend/src/features/tasks/validation/`.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; there is no frontend test runner configured yet.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this form-validation slice.
+- Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-15 (Authenticated Shell Mobile Navigation)
 
