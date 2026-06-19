@@ -520,3 +520,15 @@ This changelog tracks backend feature progress against the core implementation p
 - Configured Core outbound Relay and Nova RestClient beans to propagate the active `X-Correlation-Id` header.
 - Added per-service Logback configuration with readable local/test console output and JSON console output under the `prod` profile.
 - Added focused servlet filter tests covering generated and inbound correlation IDs, response header emission, and MDC cleanup.
+
+## 2026-06-19 (M10 Real Integration Provider Clients)
+
+### Changed
+
+- Replaced placeholder Jira, GitHub, and wiki integration clients with real HTTP calls using each connection's configured provider base URL and decrypted bearer access token.
+- Integration import and publish services now resolve credentials from the linked `IntegrationConnection` before invoking provider APIs, so project keys/repository names are no longer treated as sufficient credentials.
+- Added stable provider failure mapping for auth failures, provider 4xx/5xx responses, and rate limits, including retry-safe metadata on Core problem responses.
+
+### Tests
+
+- Added focused provider client tests for successful Jira import/publish, GitHub import, wiki publish, provider auth failure, rate limiting, and 5xx retry-safe mapping.

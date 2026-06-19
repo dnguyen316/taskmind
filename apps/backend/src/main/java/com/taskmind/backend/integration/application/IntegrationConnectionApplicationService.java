@@ -23,4 +23,6 @@ public class IntegrationConnectionApplicationService {
     }
     public List<IntegrationConnection> list(AuthenticatedUser actor) { return connections.findByOwnerUserId(actor.userId()); }
     public IntegrationConnection requireOwned(AuthenticatedUser actor, UUID id) { return connections.findById(id).filter(c -> actor.isPrivileged() || c.ownerUserId().equals(actor.userId())).orElseThrow(() -> new IllegalArgumentException("Connection not found")); }
+    public ConnectionCredentials credentials(IntegrationConnection connection) { return new ConnectionCredentials(connection.baseUrl(), cipher.decrypt(connection.encryptedAccessToken())); }
+    public record ConnectionCredentials(String baseUrl, String accessToken) {}
 }
