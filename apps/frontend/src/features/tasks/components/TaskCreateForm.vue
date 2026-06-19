@@ -31,7 +31,16 @@ const schema = yup.object({
     .max(200, 'Title must be at most 200 characters'),
   description: yup.string().max(2000, 'Description must be at most 2000 characters').nullable(),
   priority: yup.number().integer().min(1).max(4).required(),
-  durationMinutes: yup.number().integer().min(1).max(1440).required('Duration is required'),
+  durationMinutes: yup
+    .number()
+    .transform((value, originalValue) =>
+      originalValue === '' || originalValue === null ? null : value,
+    )
+    .integer()
+    .min(1)
+    .max(1440)
+    .nullable()
+    .optional(),
   dueAt: yup.string().nullable(),
   status: yup.string().oneOf(['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']).required(),
 })
@@ -70,7 +79,7 @@ async function handleValidSubmit(
     title: formValues.title.trim(),
     description: formValues.description?.trim() || null,
     dueAt: formValues.dueAt ? new Date(formValues.dueAt).toISOString() : null,
-    durationMinutes: Number(formValues.durationMinutes),
+    durationMinutes: nullableNumberValue(formValues.durationMinutes),
     priority: Number(formValues.priority),
     status: formValues.status,
   }
@@ -90,7 +99,7 @@ function toCreateTaskFormValues(values: Record<string, unknown>): CreateTaskForm
     title: stringValue(values.title),
     description: stringValue(values.description),
     priority: numberValue(values.priority, DEFAULT_CREATE_TASK_FORM.priority),
-    durationMinutes: numberValue(values.durationMinutes, DEFAULT_CREATE_TASK_FORM.durationMinutes),
+    durationMinutes: nullableNumberValue(values.durationMinutes),
     dueAt: stringValue(values.dueAt),
     status: isTaskStatus(values.status) ? values.status : DEFAULT_CREATE_TASK_FORM.status,
   }
@@ -102,6 +111,14 @@ function stringValue(value: unknown): string {
 
 function numberValue(value: unknown, fallback: number): number {
   return typeof value === 'number' ? value : Number(value ?? fallback)
+}
+
+function nullableNumberValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  return typeof value === 'number' ? value : Number(value)
 }
 
 function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
@@ -199,7 +216,7 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
           </a-col>
 
           <a-col :xs="24" :md="8">
-            <a-form-item label="Duration (minutes)">
+            <a-form-item label="Duration (minutes, optional)">
               <Field name="durationMinutes" v-slot="{ value, handleChange }">
                 <a-input-number
                   :value="value"
