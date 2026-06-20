@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { RobotOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
 const route = useRoute()
+const recommendationDropdownFocused = ref(false)
 const {
   query,
   size,
@@ -48,13 +49,24 @@ const suggestionOptions = computed(() =>
   suggestions.value.map((suggestion) => ({ value: suggestion, label: suggestion })),
 )
 
+const showRecommendationDropdown = computed(() => {
+  return recommendationDropdownFocused.value && query.value.trim().length >= 2
+})
+
 function submitSearch() {
   void runSearch()
 }
 
 function selectSuggestion(value: string) {
   query.value = value
+  recommendationDropdownFocused.value = false
   void runSearch()
+}
+
+function closeRecommendationDropdown() {
+  window.setTimeout(() => {
+    recommendationDropdownFocused.value = false
+  }, 150)
 }
 
 function formatEventType(value: string) {
@@ -95,13 +107,19 @@ function payloadPreview(document: ActivitySearchDocument) {
           <a-auto-complete
             v-model:value="query"
             :options="suggestionOptions"
+            :open="showRecommendationDropdown"
             placeholder="Search activity, tasks, status changes..."
             allow-clear
+            @focus="recommendationDropdownFocused = true"
+            @blur="closeRecommendationDropdown"
             @select="selectSuggestion"
           >
             <template #notFoundContent>
-              <a-spin v-if="suggestionsLoading" size="small" />
-              <span v-else-if="suggestionsErrorMessage">{{ suggestionsErrorMessage }}</span>
+              <div class="recommendation-empty">
+                <a-spin v-if="suggestionsLoading" size="small" />
+                <span v-else-if="suggestionsErrorMessage">{{ suggestionsErrorMessage }}</span>
+                <span v-else>No recommendations yet.</span>
+              </div>
             </template>
           </a-auto-complete>
         </a-form-item>
@@ -187,6 +205,11 @@ function payloadPreview(document: ActivitySearchDocument) {
 .ai-proposal-card {
   background: var(--tm-surface-muted);
   border-radius: 14px;
+}
+  
+.recommendation-empty {
+  padding: 8px 12px;
+  color: var(--tm-text-muted);
 }
 
 .activity-search-item {

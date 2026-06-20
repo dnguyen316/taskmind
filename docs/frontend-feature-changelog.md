@@ -1,3 +1,16 @@
+## 2026-06-20 (Activity Search Recommendation Dropdown)
+
+### Changed
+
+- Activity search now keeps the autocomplete recommendation dropdown open while the search input is focused and the user has typed at least two characters, so recommendation items are visible as they type.
+- Added an explicit empty/loading/error dropdown body for recommendation lookups so users receive feedback even before matching suggestions arrive.
+
+### Verification notes
+
+- Exact verification commands for this slice: `cd apps/frontend && npm run format -- src/features/activity/components/ActivitySearchPanel.vue src/features/activity/composables/useActivitySearch.ts`; `cd apps/frontend && npm run typecheck`; `git diff --check`; `git diff --stat`; `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this small autocomplete behavior slice.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (Activity Search Autocomplete)
 
 ### Added
