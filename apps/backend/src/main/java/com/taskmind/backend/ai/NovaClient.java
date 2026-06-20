@@ -1,5 +1,7 @@
 package com.taskmind.backend.ai;
 
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistRequest;
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse;
 import com.taskmind.ai.contracts.audit.AiRunSummary;
 import com.taskmind.ai.contracts.capability.CapabilitiesResponse;
 import com.taskmind.ai.contracts.capability.CapabilityRequest;
@@ -16,6 +18,10 @@ public interface NovaClient {
     void chatStream(ChatRequest request, OutputStream outputStream) throws IOException;
 
     CapabilityResponse executeCapability(String capabilityId, CapabilityRequest request);
+
+    default ActivitySearchAssistResponse assistActivitySearch(ActivitySearchAssistRequest request) {
+        throw new UnsupportedOperationException("Activity search assist is not implemented");
+    }
 
     CapabilitiesResponse capabilities();
 

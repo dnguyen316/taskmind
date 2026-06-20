@@ -35,6 +35,12 @@ export interface TaskAttachment {
   updatedAt: string
 }
 
+export interface ActivitySearchAssistResponse {
+  query: string
+  explanation: string | null
+  suggestedFilters: string[]
+}
+
 export interface ActivitySearchDocument {
   eventId: string
   eventType: string

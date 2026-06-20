@@ -525,3 +525,8 @@
 
 - Frontend coverage for this slice is currently through `vue-tsc --noEmit`; there is no frontend test runner configured yet.
 - Applicable skills: none. Delegated agents: none.
+
+## 2026-06-20 (Activity Search AI Assist)
+
+- Added an Ask Nova action to the activity search panel so users can review a proposed refined query, optional explanation, and future suggested filters before applying the query and running search.
+- Kept the browser integration Core-only through `POST /v1/activity/search/assist`.

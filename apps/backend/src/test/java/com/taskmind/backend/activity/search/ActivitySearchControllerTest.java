@@ -1,13 +1,20 @@
 package com.taskmind.backend.activity.search;
 
 import static com.taskmind.backend.security.TestJwtSupport.jwt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.taskmind.backend.ai.NovaClient;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import(com.taskmind.backend.security.TestJwtSupport.Config.class)
 class ActivitySearchControllerTest {
     @Autowired MockMvc mockMvc;
+
+    @MockBean NovaClient novaClient;
 
     @Test
     void disabledSearchFailsPredictably() throws Exception {
@@ -60,8 +69,27 @@ class ActivitySearchControllerTest {
     }
 
     @Test
+    void assistsSearchThroughNovaFacade() throws Exception {
+        when(novaClient.assistActivitySearch(any()))
+                .thenReturn(
+                        new com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse(
+                                "completed onboarding", "Refined", List.of()));
+
+        mockMvc.perform(
+                        post("/v1/activity/search/assist")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .contentType("application/json")
+                                .content(
+                                        "{\"prompt\":\"show completed onboarding activity\",\"currentQuery\":\"onboarding\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.query").value("completed onboarding"))
+                .andExpect(jsonPath("$.explanation").value("Refined"));
+    }
+
+    @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get("/v1/activity/search")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/v1/activity/search/suggest")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/v1/activity/search/assist")).andExpect(status().isUnauthorized());
     }
 }

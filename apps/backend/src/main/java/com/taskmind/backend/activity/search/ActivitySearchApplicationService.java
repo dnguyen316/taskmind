@@ -1,21 +1,24 @@
 package com.taskmind.backend.activity.search;
 
+import com.taskmind.backend.ai.NovaClient;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class ActivitySearchApplicationService {
     private final Optional<ActivitySearchRepository> repository;
+    private final NovaClient novaClient;
 
-    public ActivitySearchApplicationService(Optional<ActivitySearchRepository> repository) {
+    public ActivitySearchApplicationService(Optional<ActivitySearchRepository> repository, NovaClient novaClient) {
         this.repository = repository;
+        this.novaClient = novaClient;
     }
 
     public List<ActivitySearchDocument> search(
@@ -46,6 +49,19 @@ public class ActivitySearchApplicationService {
         return repository
                 .orElseGet(DisabledActivitySearchRepository::new)
                 .suggest(normalizeRequest(requester, query, size, entityType, status, projectId, from, to, eventType));
+    }
+
+    public ActivitySearchAssistResponse assist(
+            AuthenticatedUser requester, ActivitySearchAssistRequest request) {
+        com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse response =
+                novaClient.assistActivitySearch(
+                        new com.taskmind.ai.contracts.activity.ActivitySearchAssistRequest(
+                                requester.userId(),
+                                request.prompt(),
+                                normalizeText(request.currentQuery()),
+                                List.of("entityType", "status", "projectId", "from", "to", "eventType")));
+        return new ActivitySearchAssistResponse(
+                response.query(), response.explanation(), response.suggestedFilters());
     }
 
     private ActivitySearchRequest normalizeRequest(
