@@ -18,7 +18,7 @@ public class RateLimitProperties {
     @Valid private Bucket authFlow = new Bucket(20, Duration.ofMinutes(1));
     @Valid private Bucket aiHeavy = new Bucket(30, Duration.ofMinutes(1));
     private List<String> authFlowPaths = List.of("/v1/auth/");
-    private List<String> aiHeavyPaths = List.of("/v1/ai/", "/v1/spec-breakdowns/");
+    private List<String> aiHeavyPaths = List.of("/v1/ai/", "/v1/spec-breakdown/");
     private List<String> publicApiPrefixes = List.of("/v1/", "/api/health");
     private List<String> internalPrefixes = List.of("/internal/");
 

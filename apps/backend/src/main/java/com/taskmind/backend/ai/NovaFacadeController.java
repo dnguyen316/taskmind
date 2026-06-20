@@ -5,7 +5,7 @@ import com.taskmind.ai.contracts.capability.CapabilitiesResponse;
 import com.taskmind.ai.contracts.chat.ChatRequest;
 import com.taskmind.ai.contracts.chat.ChatResponse;
 import jakarta.validation.Valid;
-import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/v1/nova")
@@ -35,12 +36,27 @@ public class NovaFacadeController {
     }
 
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    ResponseEntity<byte[]> chatStream(@Valid @RequestBody ChatRequest request) throws IOException {
-        ByteArrayOutputStream bufferedStream = new ByteArrayOutputStream();
-        novaClient.chatStream(request, bufferedStream);
-        return ResponseEntity.ok()
-                .contentType(MediaType.TEXT_EVENT_STREAM)
-                .body(bufferedStream.toByteArray());
+    ResponseEntity<StreamingResponseBody> chatStream(@Valid @RequestBody ChatRequest request) throws IOException {
+        StreamingResponseBody responseBody = outputStream -> novaClient.chatStream(request, new FlushingOutputStream(outputStream));
+        return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(responseBody);
+    }
+
+    private static final class FlushingOutputStream extends FilterOutputStream {
+        private FlushingOutputStream(java.io.OutputStream outputStream) {
+            super(outputStream);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            out.write(b);
+            out.flush();
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            out.write(bytes, offset, length);
+            out.flush();
+        }
     }
 
     @GetMapping("/capabilities")
