@@ -8,9 +8,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.junit.jupiter.api.Test;
 import com.taskmind.backend.ai.NovaClient;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +44,28 @@ class ActivitySearchControllerTest {
                                 .with(jwt("11111111-1111-1111-1111-111111111111"))
                                 .queryParam("q", "task"))
                 .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void rejectsInvalidStructuredFilters() throws Exception {
+        mockMvc.perform(
+                        get("/v1/activity/search")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("projectId", "not-a-uuid"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(
+                        get("/v1/activity/search")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("from", "2026-02-01T00:00:00Z")
+                                .queryParam("to", "2026-01-01T00:00:00Z"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsUnauthenticatedStructuredFilterSearch() throws Exception {
+        mockMvc.perform(get("/v1/activity/search").queryParam("entityType", "task"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

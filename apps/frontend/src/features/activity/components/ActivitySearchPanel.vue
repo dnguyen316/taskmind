@@ -10,6 +10,12 @@ const recommendationDropdownFocused = ref(false)
 const {
   query,
   size,
+  entityType,
+  status,
+  projectId,
+  from,
+  to,
+  eventType,
   loading,
   errorMessage,
   results,
@@ -123,6 +129,50 @@ function payloadPreview(document: ActivitySearchDocument) {
             </template>
           </a-auto-complete>
         </a-form-item>
+
+        <a-form-item label="Entity">
+          <a-select
+            v-model:value="entityType"
+            allow-clear
+            placeholder="Any"
+            style="width: 120px"
+            :options="[
+              { value: 'task', label: 'Task' },
+              { value: 'project', label: 'Project' },
+              { value: 'attachment', label: 'Attachment' },
+            ]"
+          />
+        </a-form-item>
+        <a-form-item label="Status">
+          <a-input
+            v-model:value="status"
+            allow-clear
+            placeholder="Any status"
+            style="width: 130px"
+          />
+        </a-form-item>
+        <a-form-item label="Event">
+          <a-input
+            v-model:value="eventType"
+            allow-clear
+            placeholder="task.updated"
+            style="width: 150px"
+          />
+        </a-form-item>
+        <a-form-item label="Project">
+          <a-input
+            v-model:value="projectId"
+            allow-clear
+            placeholder="Project UUID"
+            style="width: 220px"
+          />
+        </a-form-item>
+        <a-form-item label="From">
+          <a-input v-model:value="from" type="datetime-local" style="width: 190px" />
+        </a-form-item>
+        <a-form-item label="To">
+          <a-input v-model:value="to" type="datetime-local" style="width: 190px" />
+        </a-form-item>
         <a-form-item label="Size">
           <a-input-number v-model:value="size" :min="1" :max="100" :step="5" />
         </a-form-item>
@@ -206,7 +256,7 @@ function payloadPreview(document: ActivitySearchDocument) {
   background: var(--tm-surface-muted);
   border-radius: 14px;
 }
-  
+
 .recommendation-empty {
   padding: 8px 12px;
   color: var(--tm-text-muted);

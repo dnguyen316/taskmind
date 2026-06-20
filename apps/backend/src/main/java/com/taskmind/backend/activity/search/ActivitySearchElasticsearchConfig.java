@@ -48,19 +48,19 @@ public class ActivitySearchElasticsearchConfig {
         }
 
         @Override
-        public List<ActivitySearchDocument> search(UUID userId, String query, int size) {
+        public List<ActivitySearchDocument> search(ActivitySearchRequest request) {
             ObjectNode root = objectMapper.createObjectNode();
-            root.put("size", size);
+            root.put("size", request.size());
             ObjectNode bool = root.putObject("query").putObject("bool");
             ArrayNode filter = bool.putArray("filter");
-            filter.addObject().putObject("term").put("userId", userId.toString());
-            if (query == null || query.isBlank()) {
+            addFilters(filter, request);
+            if (request.query() == null || request.query().isBlank()) {
                 bool.set("must", objectMapper.createArrayNode().addObject().putObject("match_all"));
             } else {
                 bool.putArray("must")
                         .addObject()
                         .putObject("multi_match")
-                        .put("query", query)
+                        .put("query", request.query())
                         .putArray("fields")
                         .add("title^2")
                         .add("eventType")
@@ -97,16 +97,16 @@ public class ActivitySearchElasticsearchConfig {
         }
 
         @Override
-        public List<String> suggest(UUID userId, String query, int size) {
-            if (query == null || query.isBlank()) {
+        public List<String> suggest(ActivitySearchRequest request) {
+            if (request.query() == null || request.query().isBlank()) {
                 return List.of();
             }
 
-            String trimmedQuery = query.trim();
+            String trimmedQuery = request.query().trim();
             ObjectNode root = objectMapper.createObjectNode();
-            root.put("size", Math.min(size * 3, 100));
+            root.put("size", Math.min(request.size() * 3, 100));
             ObjectNode bool = root.putObject("query").putObject("bool");
-            bool.putArray("filter").addObject().putObject("term").put("userId", userId.toString());
+            addFilters(bool.putArray("filter"), request);
             bool.putArray("must")
                     .addObject()
                     .putObject("multi_match")
@@ -133,14 +133,39 @@ public class ActivitySearchElasticsearchConfig {
             }
             for (JsonNode hit : response.path("hits").path("hits")) {
                 JsonNode source = hit.path("_source");
-                addSuggestion(suggestions, source.path("title").asText(null), trimmedQuery, size);
-                addSuggestion(suggestions, source.path("eventType").asText(null), trimmedQuery, size);
-                addSuggestion(suggestions, source.path("status").asText(null), trimmedQuery, size);
-                if (suggestions.size() >= size) {
+                addSuggestion(suggestions, source.path("title").asText(null), trimmedQuery, request.size());
+                addSuggestion(suggestions, source.path("eventType").asText(null), trimmedQuery, request.size());
+                addSuggestion(suggestions, source.path("status").asText(null), trimmedQuery, request.size());
+                if (suggestions.size() >= request.size()) {
                     break;
                 }
             }
             return List.copyOf(suggestions);
+        }
+
+        private void addFilters(ArrayNode filter, ActivitySearchRequest request) {
+            filter.addObject().putObject("term").put("userId", request.userId().toString());
+            addTermFilter(filter, "entityType", request.entityType());
+            addTermFilter(filter, "status", request.status());
+            addTermFilter(filter, "eventType", request.eventType());
+            if (request.projectId() != null) {
+                addTermFilter(filter, "projectId", request.projectId().toString());
+            }
+            if (request.from() != null || request.to() != null) {
+                ObjectNode range = filter.addObject().putObject("range").putObject("occurredAt");
+                if (request.from() != null) {
+                    range.put("gte", request.from().toString());
+                }
+                if (request.to() != null) {
+                    range.put("lte", request.to().toString());
+                }
+            }
+        }
+
+        private void addTermFilter(ArrayNode filter, String field, String value) {
+            if (value != null && !value.isBlank()) {
+                filter.addObject().putObject("term").put(field, value);
+            }
         }
 
         private void addSuggestion(

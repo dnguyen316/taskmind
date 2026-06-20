@@ -1,3 +1,15 @@
+## 2026-06-20 (Activity Search Structured Filters)
+
+### Changed
+
+- Normalized activity search filters for entity type, status, project id, event type, and occurred-at date range before repository dispatch.
+- Extended OpenSearch activity search queries and suggestions to keep the user isolation filter while adding structured filter clauses.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/backend -am -Dtest=ActivitySearchControllerTest,ActivitySearchElasticsearchRepositoryTest test`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-19 (Activity Search Suggestions)
 
 ### Added

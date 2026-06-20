@@ -64,14 +64,48 @@ class ActivitySearchElasticsearchRepositoryTest {
                                 """,
                                 MediaType.APPLICATION_JSON));
 
-        var suggestions = repository.suggest(USER_ID, "tas", 5);
+        var suggestions = repository.suggest(new ActivitySearchRequest(USER_ID, "tas", 5, null, null, null, null, null, null));
 
         assertThat(suggestions).containsExactly("Task planning", "task.created", "task.updated");
         server.verify();
     }
 
     @Test
+    void searchAppliesStructuredFiltersForAuthenticatedUser() {
+        server.expect(once(), requestTo(BASE_URL + "/" + INDEX_NAME + "/_search"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(
+                        content()
+                                .string(
+                                        allOf(
+                                                containsString("\"userId\":\"" + USER_ID + "\""),
+                                                containsString("\"entityType\":\"task\""),
+                                                containsString("\"status\":\"DONE\""),
+                                                containsString("\"projectId\":\"22222222-2222-2222-2222-222222222222\""),
+                                                containsString("\"eventType\":\"task.updated\""),
+                                                containsString("\"gte\":\"2026-01-01T00:00:00Z\""),
+                                                containsString("\"lte\":\"2026-01-31T00:00:00Z\""))))
+                .andRespond(withSuccess("{\"hits\":{\"hits\":[]}}", MediaType.APPLICATION_JSON));
+
+        var results =
+                repository.search(
+                        new ActivitySearchRequest(
+                                USER_ID,
+                                "plan",
+                                20,
+                                "task",
+                                "DONE",
+                                UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                                java.time.Instant.parse("2026-01-01T00:00:00Z"),
+                                java.time.Instant.parse("2026-01-31T00:00:00Z"),
+                                "task.updated"));
+
+        assertThat(results).isEmpty();
+        server.verify();
+    }
+
+    @Test
     void skipsBlankSuggestionQueries() {
-        assertThat(repository.suggest(USER_ID, " ", 5)).isEmpty();
+        assertThat(repository.suggest(new ActivitySearchRequest(USER_ID, " ", 5, null, null, null, null, null, null))).isEmpty();
     }
 }

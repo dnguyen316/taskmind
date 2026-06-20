@@ -1,21 +1,35 @@
 import { apiClient } from '../../../lib/apiClient'
 import type { ActivitySearchAssistResponse, ActivitySearchDocument } from '../types'
 
-export interface SearchActivityOptions {
+export interface ActivitySearchFilters {
+  entityType?: string
+  status?: string
+  projectId?: string
+  from?: string
+  to?: string
+  eventType?: string
+}
+
+export interface SearchActivityOptions extends ActivitySearchFilters {
   query?: string
   size?: number
 }
 
-export interface SuggestActivitySearchOptions {
+export interface SuggestActivitySearchOptions extends ActivitySearchFilters {
   query: string
   size?: number
 }
 
-export async function suggestActivitySearch({ query, size = 10 }: SuggestActivitySearchOptions) {
+export async function suggestActivitySearch({
+  query,
+  size = 10,
+  ...filters
+}: SuggestActivitySearchOptions) {
   const response = await apiClient.get<unknown>('/v1/activity/search/suggest', {
     params: {
       q: query.trim(),
       size,
+      ...cleanFilters(filters),
     },
   })
 
@@ -31,15 +45,28 @@ export async function assistActivitySearch(prompt: string, currentQuery?: string
   return adaptActivitySearchAssistResponse(response.data)
 }
 
-export async function searchActivity({ query = '', size = 20 }: SearchActivityOptions = {}) {
+export async function searchActivity({
+  query = '',
+  size = 20,
+  ...filters
+}: SearchActivityOptions = {}) {
   const response = await apiClient.get<unknown>('/v1/activity/search', {
     params: {
       q: query.trim() || undefined,
       size,
+      ...cleanFilters(filters),
     },
   })
 
   return adaptActivitySearchDocumentListResponse(response.data)
+}
+
+function cleanFilters(filters: ActivitySearchFilters) {
+  return Object.fromEntries(
+    Object.entries(filters)
+      .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+      .filter(([, value]) => value !== undefined && value !== null && value !== ''),
+  )
 }
 
 function adaptActivitySearchAssistResponse(data: unknown): ActivitySearchAssistResponse {

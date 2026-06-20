@@ -10,12 +10,12 @@ public class DisabledActivitySearchRepository implements ActivitySearchRepositor
     }
 
     @Override
-    public List<ActivitySearchDocument> search(UUID userId, String query, int size) {
+    public List<ActivitySearchDocument> search(ActivitySearchRequest request) {
         throw new ActivitySearchDisabledException();
     }
 
     @Override
-    public List<String> suggest(UUID userId, String query, int size) {
+    public List<String> suggest(ActivitySearchRequest request) {
         throw new ActivitySearchDisabledException();
     }
 }
