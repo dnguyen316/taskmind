@@ -1,3 +1,16 @@
+## 2026-06-20 (Project Task Detail Route)
+
+### Changed
+
+- Added the protected project-scoped task detail route while keeping the existing global task detail route available.
+- Updated task detail loading and editing context handling so project-scoped routes read `taskId`, preserve global `id` fallback behavior, and validate the route project against the loaded task project.
+
+### Verification notes
+
+- Exact verification commands for this slice: `cd apps/frontend && npm run format -- src/router/index.ts src/features/tasks/pages/TaskDetailPage.vue src/features/tasks/components/TaskList.vue src/features/tasks/components/AppLayout.vue`; `cd apps/frontend && npm run typecheck && npm run build`; `cd apps/frontend && git diff --check`; `cd apps/frontend && git diff --stat`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this route-only frontend update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-20 (Activity Search Recommendation Dropdown)
 
 ### Changed

@@ -58,6 +58,13 @@ const routes: RouteRecordRaw[] = [
     meta: protectedMeta,
   },
   {
+    path: '/projects/:projectId/tasks/:taskId',
+    name: 'project-task-detail',
+    component: TaskDetailPage,
+    props: true,
+    meta: protectedMeta,
+  },
+  {
     path: '/projects/:id',
     name: 'project-detail',
     component: ProjectDetailPage,
