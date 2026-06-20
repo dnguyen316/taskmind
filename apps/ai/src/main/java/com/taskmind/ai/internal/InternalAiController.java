@@ -2,6 +2,7 @@ package com.taskmind.ai.internal;
 
 import com.taskmind.ai.agent.AiAgentRuntime;
 import com.taskmind.ai.agent.InvalidCapabilityInputException;
+import com.taskmind.ai.activity.ActivitySearchAssistService;
 import com.taskmind.ai.agent.UnknownCapabilityException;
 import com.taskmind.ai.audit.AiRunAuditRepository;
 import com.taskmind.ai.capability.CapabilityDescriptor;
@@ -9,6 +10,8 @@ import com.taskmind.ai.capability.CapabilityRegistry;
 import com.taskmind.ai.chat.ChatService;
 import com.taskmind.ai.chat.InvalidChatRequestException;
 import com.taskmind.ai.contracts.AiCapabilityId;
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistRequest;
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse;
 import com.taskmind.ai.contracts.audit.AiRunSummary;
 import com.taskmind.ai.contracts.capability.CapabilityError;
 import com.taskmind.ai.contracts.capability.CapabilityRequest;
@@ -35,16 +38,19 @@ public class InternalAiController {
     private final AiAgentRuntime aiAgentRuntime;
     private final AiRunAuditRepository auditRepository;
     private final CapabilityRegistry capabilityRegistry;
+    private final ActivitySearchAssistService activitySearchAssistService;
 
     public InternalAiController(
             ChatService chatService,
             AiAgentRuntime aiAgentRuntime,
             AiRunAuditRepository auditRepository,
-            CapabilityRegistry capabilityRegistry) {
+            CapabilityRegistry capabilityRegistry,
+            ActivitySearchAssistService activitySearchAssistService) {
         this.chatService = chatService;
         this.aiAgentRuntime = aiAgentRuntime;
         this.auditRepository = auditRepository;
         this.capabilityRegistry = capabilityRegistry;
+        this.activitySearchAssistService = activitySearchAssistService;
     }
 
     @PostMapping("/internal/ai/chat")
@@ -64,6 +70,12 @@ public class InternalAiController {
                         request.correlationId(),
                         request.idempotencyKey());
         return aiAgentRuntime.execute(normalizedRequest);
+    }
+
+    @PostMapping("/internal/ai/activity/search/assist")
+    ActivitySearchAssistResponse assistActivitySearch(
+            @Valid @RequestBody ActivitySearchAssistRequest request) {
+        return activitySearchAssistService.assist(request);
     }
 
     @GetMapping("/internal/ai/runs/{runId}")

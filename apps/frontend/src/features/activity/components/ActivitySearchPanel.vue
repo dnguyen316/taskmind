@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { SearchOutlined } from '@ant-design/icons-vue'
+import { RobotOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
@@ -16,7 +16,13 @@ const {
   suggestions,
   suggestionsLoading,
   suggestionsErrorMessage,
+  aiLoading,
+  aiErrorMessage,
+  aiProposal,
   hasResults,
+  askNova,
+  applyAiProposal,
+  dismissAiProposal,
   runSearch,
   clearSearch,
 } = useActivitySearch()
@@ -124,8 +130,30 @@ function payloadPreview(document: ActivitySearchDocument) {
           <template #icon><SearchOutlined /></template>
           Search
         </a-button>
+        <a-button :loading="aiLoading" :disabled="loading || !query.trim()" @click="askNova">
+          <template #icon><RobotOutlined /></template>
+          Ask Nova
+        </a-button>
         <a-button :disabled="loading && !query" @click="clearSearch">Clear</a-button>
       </a-form>
+
+      <a-alert v-if="aiErrorMessage" type="error" show-icon :message="aiErrorMessage" />
+
+      <a-card v-if="aiProposal" size="small" class="ai-proposal-card" title="Nova refined query">
+        <a-space direction="vertical" size="small" style="width: 100%">
+          <a-typography-text code>{{ aiProposal.query }}</a-typography-text>
+          <a-typography-text v-if="aiProposal.explanation" type="secondary">
+            {{ aiProposal.explanation }}
+          </a-typography-text>
+          <a-space v-if="aiProposal.suggestedFilters.length" wrap>
+            <a-tag v-for="filter in aiProposal.suggestedFilters" :key="filter">{{ filter }}</a-tag>
+          </a-space>
+          <a-space>
+            <a-button type="primary" @click="applyAiProposal">Apply and search</a-button>
+            <a-button @click="dismissAiProposal">Dismiss</a-button>
+          </a-space>
+        </a-space>
+      </a-card>
 
       <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
 
@@ -174,6 +202,11 @@ function payloadPreview(document: ActivitySearchDocument) {
   min-width: 280px;
 }
 
+.ai-proposal-card {
+  background: var(--tm-surface-muted);
+  border-radius: 14px;
+}
+  
 .recommendation-empty {
   padding: 8px 12px;
   color: var(--tm-text-muted);

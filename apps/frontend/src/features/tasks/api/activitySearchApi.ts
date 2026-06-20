@@ -1,5 +1,5 @@
 import { apiClient } from '../../../lib/apiClient'
-import type { ActivitySearchDocument } from '../types'
+import type { ActivitySearchAssistResponse, ActivitySearchDocument } from '../types'
 
 export interface SearchActivityOptions {
   query?: string
@@ -22,6 +22,15 @@ export async function suggestActivitySearch({ query, size = 10 }: SuggestActivit
   return adaptStringListResponse(response.data, 'activity search suggestions')
 }
 
+export async function assistActivitySearch(prompt: string, currentQuery?: string) {
+  const response = await apiClient.post<unknown>('/v1/activity/search/assist', {
+    prompt: prompt.trim(),
+    currentQuery: currentQuery?.trim() || null,
+  })
+
+  return adaptActivitySearchAssistResponse(response.data)
+}
+
 export async function searchActivity({ query = '', size = 20 }: SearchActivityOptions = {}) {
   const response = await apiClient.get<unknown>('/v1/activity/search', {
     params: {
@@ -31,6 +40,26 @@ export async function searchActivity({ query = '', size = 20 }: SearchActivityOp
   })
 
   return adaptActivitySearchDocumentListResponse(response.data)
+}
+
+function adaptActivitySearchAssistResponse(data: unknown): ActivitySearchAssistResponse {
+  if (!isObject(data)) {
+    throw new Error('Invalid activity search assist response.')
+  }
+
+  const suggestedFilters = data.suggestedFilters
+  if (
+    !Array.isArray(suggestedFilters) ||
+    suggestedFilters.some((value) => typeof value !== 'string')
+  ) {
+    throw new Error('Invalid activity search assist response: suggestedFilters must be strings.')
+  }
+
+  return {
+    query: readRequiredString(data, 'query', 'activity search assist'),
+    explanation: readNullableString(data, 'explanation'),
+    suggestedFilters,
+  }
 }
 
 function adaptActivitySearchDocumentListResponse(data: unknown): ActivitySearchDocument[] {
