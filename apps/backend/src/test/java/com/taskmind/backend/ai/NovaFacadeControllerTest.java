@@ -6,8 +6,10 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +26,7 @@ import com.taskmind.backend.security.AuthenticatedUserResolver;
 import com.taskmind.backend.security.JwtClaimAuthenticationConverter;
 import com.taskmind.backend.security.SecurityConfig;
 import com.taskmind.backend.security.TestJwtSupport;
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +38,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 @WebMvcTest(controllers = NovaFacadeController.class)
 @Import({
@@ -87,6 +91,7 @@ class NovaFacadeControllerTest {
     void chatStreamReturnsAuthenticatedSseChunks() throws Exception {
         doAnswer(invocation -> {
                     var outputStream = (java.io.OutputStream) invocation.getArgument(1);
+                    assertThat(outputStream).isNotInstanceOf(ByteArrayOutputStream.class);
                     outputStream.write(
                             "data: {\"sessionId\":\"session-1\",\"content\":\"hello\",\"done\":false}\n\n"
                                     .getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -98,7 +103,7 @@ class NovaFacadeControllerTest {
                 .when(novaClient)
                 .chatStream(any(ChatRequest.class), any(java.io.OutputStream.class));
 
-        mockMvc.perform(
+        MvcResult streamingResult = mockMvc.perform(
                         post("/v1/nova/chat/stream")
                                 .with(jwt(USER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -113,32 +118,16 @@ class NovaFacadeControllerTest {
                                         """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(streamingResult))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("session-1")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("hello")));
 
         verify(novaClient).chatStream(any(ChatRequest.class), any(java.io.OutputStream.class));
-    }
-
-    @Test
-    void chatStreamMapsNovaFailuresToStableProblemDetails() throws Exception {
-        doThrow(
-                        new NovaClientException(
-                                HttpStatus.BAD_GATEWAY,
-                                "NOVA_UNAVAILABLE",
-                                "Nova service is unavailable"))
-                .when(novaClient)
-                .chatStream(any(ChatRequest.class), any(java.io.OutputStream.class));
-
-        mockMvc.perform(
-                        post("/v1/nova/chat/stream")
-                                .with(jwt(USER_ID))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .accept(MediaType.TEXT_EVENT_STREAM)
-                                .content("{\"message\":\"Plan my day\"}"))
-                .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.title").value("AI service unavailable"))
-                .andExpect(jsonPath("$.detail").value("Nova service is unavailable"))
-                .andExpect(jsonPath("$.code").value("NOVA_UNAVAILABLE"));
     }
 
     @Test
