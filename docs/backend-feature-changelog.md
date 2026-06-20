@@ -606,3 +606,13 @@ This changelog tracks backend feature progress against the core implementation p
 - Added authenticated Core `POST /v1/activity/search/assist` facade that sends natural-language search intent to Nova and returns a structured query proposal.
 - Added Nova activity-search assist validation that strips unsafe query syntax and rejects unsupported filters until the activity search model formally supports them.
 - Updated Core OpenAPI for the activity search assist request/response contract.
+
+## 2026-06-20 (Spec Breakdown Rate Limit Path)
+
+### Changed
+
+- Corrected Core's default AI-heavy rate-limit path prefix from the stale plural spec-breakdown prefix to `/v1/spec-breakdown/` so spec-breakdown draft and job endpoints use the intended AI-heavy bucket.
+
+### Tests
+
+- Added rate-limit filter coverage proving `/v1/spec-breakdown/drafts` consumes the AI-heavy bucket for authenticated users.

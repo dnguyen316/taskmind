@@ -71,6 +71,22 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void specBreakdownDraftRequestsUseAiHeavyBucketLimits() throws Exception {
+        SecurityContextHolder.getContext()
+                .setAuthentication(new TestingAuthenticationToken("user-123", "n/a", "ROLE_USER"));
+        RateLimitProperties properties = propertiesWithLimits(10, 10);
+        properties.setAiHeavy(new RateLimitProperties.Bucket(1, Duration.ofMinutes(1)));
+        InMemoryRateLimitService service = new InMemoryRateLimitService();
+        RateLimitFilter filter = new RateLimitFilter(properties, service, new ObjectMapper());
+
+        assertThat(execute(filter, request("/v1/spec-breakdown/drafts")).getStatus()).isEqualTo(200);
+        MockHttpServletResponse limited = execute(filter, request("/v1/spec-breakdown/drafts"));
+
+        assertThat(limited.getStatus()).isEqualTo(429);
+        assertThat(service.lastKey).isEqualTo("taskmind:ratelimit:ai-heavy:user-123");
+    }
+
+    @Test
     void limitExceededResponseContainsStatusAndHeaders() throws Exception {
         RateLimitProperties properties = propertiesWithLimits(0, 0);
         RateLimitFilter filter =
