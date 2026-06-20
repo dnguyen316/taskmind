@@ -1,11 +1,21 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'ARCHIVED'
 export type EnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+export type TaskLevel = 'EPIC' | 'STORY' | 'TASK' | 'SUBTASK'
+export type TaskType = 'EPIC' | 'STORY' | 'TASK' | 'BUG' | 'SUBTASK' | 'MILESTONE'
 
 export interface Task {
   id: string
   version: number | null
   projectId: string
   userId: string
+  taskKey: string | null
+  assigneeId: string | null
+  parentTaskId: string | null
+  taskLevel: TaskLevel | null
+  taskType: TaskType | null
+  storyPoints: number | null
+  releaseVersion: string | null
+  deletedAt: string | null
   title: string
   description: string | null
   status: TaskStatus

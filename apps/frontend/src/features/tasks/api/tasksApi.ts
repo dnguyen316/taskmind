@@ -1,5 +1,13 @@
 import { apiClient } from '../../../lib/apiClient'
-import type { CreateTaskPayload, EnergyLevel, Task, TaskStatus, UpdateTaskPayload } from '../types'
+import type {
+  CreateTaskPayload,
+  EnergyLevel,
+  Task,
+  TaskLevel,
+  TaskStatus,
+  TaskType,
+  UpdateTaskPayload,
+} from '../types'
 
 export async function listTasks({
   userId,
@@ -59,6 +67,8 @@ function adaptTaskResponse(data: unknown): Task {
 
   const status = readRequiredString(data, 'status', 'task')
   const energyLevel = readNullableString(data, 'energyLevel')
+  const taskLevel = readNullableString(data, 'taskLevel')
+  const taskType = readNullableString(data, 'taskType')
 
   if (!isTaskStatus(status)) {
     throw new Error('Invalid task status response.')
@@ -68,11 +78,27 @@ function adaptTaskResponse(data: unknown): Task {
     throw new Error('Invalid task energy level response.')
   }
 
+  if (taskLevel !== null && !isTaskLevel(taskLevel)) {
+    throw new Error('Invalid task level response.')
+  }
+
+  if (taskType !== null && !isTaskType(taskType)) {
+    throw new Error('Invalid task type response.')
+  }
+
   return {
     id: readRequiredString(data, 'id', 'task'),
     version: readNullableNumber(data, 'version'),
     projectId: readNullableString(data, 'projectId') ?? '',
     userId: readRequiredString(data, 'userId', 'task'),
+    taskKey: readNullableString(data, 'taskKey'),
+    assigneeId: readNullableString(data, 'assigneeId'),
+    parentTaskId: readNullableString(data, 'parentTaskId'),
+    taskLevel,
+    taskType,
+    storyPoints: readNullableNumber(data, 'storyPoints'),
+    releaseVersion: readNullableString(data, 'releaseVersion'),
+    deletedAt: readNullableString(data, 'deletedAt'),
     title: readRequiredString(data, 'title', 'task'),
     description: readNullableString(data, 'description'),
     status,
@@ -145,4 +171,12 @@ function isTaskStatus(status: string): status is TaskStatus {
 
 function isEnergyLevel(energyLevel: string): energyLevel is EnergyLevel {
   return ['LOW', 'MEDIUM', 'HIGH'].includes(energyLevel)
+}
+
+function isTaskLevel(taskLevel: string): taskLevel is TaskLevel {
+  return ['EPIC', 'STORY', 'TASK', 'SUBTASK'].includes(taskLevel)
+}
+
+function isTaskType(taskType: string): taskType is TaskType {
+  return ['EPIC', 'STORY', 'TASK', 'BUG', 'SUBTASK', 'MILESTONE'].includes(taskType)
 }

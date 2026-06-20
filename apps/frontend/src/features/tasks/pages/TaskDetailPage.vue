@@ -12,7 +12,7 @@ import {
   TASK_PRIORITY_MIN,
   TASK_TITLE_MAX_LENGTH,
 } from '../validation/taskFormValidation'
-import type { EnergyLevel, Task, TaskStatus } from '../types'
+import type { EnergyLevel, Task, TaskLevel, TaskStatus, TaskType } from '../types'
 
 const ENERGY_LEVEL_OPTIONS: EnergyLevel[] = ['LOW', 'MEDIUM', 'HIGH']
 
@@ -27,6 +27,14 @@ interface TaskDetailFormState {
   id: string
   version: number | null
   projectId: string
+  taskKey: string | null
+  assigneeId: string | null
+  parentTaskId: string | null
+  taskLevel: TaskLevel | null
+  taskType: TaskType | null
+  storyPoints: number | null
+  releaseVersion: string | null
+  deletedAt: string | null
   title: string
   description: string
   priority: number
@@ -40,6 +48,14 @@ const formState = reactive<TaskDetailFormState>({
   id: '',
   version: null,
   projectId: '',
+  taskKey: null,
+  assigneeId: null,
+  parentTaskId: null,
+  taskLevel: null,
+  taskType: null,
+  storyPoints: null,
+  releaseVersion: null,
+  deletedAt: null,
   title: '',
   description: '',
   priority: 3,
@@ -107,6 +123,14 @@ function hydrateForm(task: Task) {
   formState.id = task.id
   formState.version = task.version ?? null
   formState.projectId = taskProjectId || routeProjectId.value
+  formState.taskKey = task.taskKey
+  formState.assigneeId = task.assigneeId
+  formState.parentTaskId = task.parentTaskId
+  formState.taskLevel = task.taskLevel
+  formState.taskType = task.taskType
+  formState.storyPoints = task.storyPoints
+  formState.releaseVersion = task.releaseVersion
+  formState.deletedAt = task.deletedAt
   formState.title = task.title ?? ''
   formState.description = task.description ?? ''
   formState.priority = Number(task.priority ?? 3)
@@ -252,7 +276,9 @@ function toDatetimeLocal(value: string | null) {
             >
               {{ routeProjectId ? 'Back to project' : 'Back to tasks' }}
             </a-button>
-            <span class="task-id" v-if="formState.id">ID: {{ formState.id }}</span>
+            <span class="task-id" v-if="formState.id">
+              {{ formState.taskKey ? `Key: ${formState.taskKey}` : `ID: ${formState.id}` }}
+            </span>
           </a-space>
 
           <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
@@ -266,6 +292,34 @@ function toDatetimeLocal(value: string | null) {
           />
 
           <template v-else>
+            <a-descriptions bordered :column="2" size="small" title="Task metadata">
+              <a-descriptions-item label="ID">{{ formState.id }}</a-descriptions-item>
+              <a-descriptions-item label="Task key">{{
+                formState.taskKey || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Level">{{
+                formState.taskLevel || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Type">{{
+                formState.taskType || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Story points">{{
+                formState.storyPoints ?? '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Release">{{
+                formState.releaseVersion || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Assignee">{{
+                formState.assigneeId || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item label="Parent task">{{
+                formState.parentTaskId || '—'
+              }}</a-descriptions-item>
+              <a-descriptions-item v-if="formState.deletedAt" label="Deleted at">
+                {{ formState.deletedAt }}
+              </a-descriptions-item>
+            </a-descriptions>
+
             <a-form layout="vertical" @submit.prevent="saveTask">
               <a-row :gutter="12">
                 <a-col :xs="24" :md="12">
