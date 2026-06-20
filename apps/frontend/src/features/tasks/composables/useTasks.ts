@@ -115,8 +115,13 @@ export function useTasks() {
     pendingStatusTaskIds.value = [...pendingStatusTaskIds.value, taskId]
 
     try {
-      await updateTaskStatus(taskId, status)
-      await fetchTasks()
+      const updatedTask = await updateTaskStatus(taskId, status)
+
+      if (filters.status && updatedTask.status !== filters.status) {
+        await fetchTasks()
+      } else {
+        tasks.value = tasks.value.map((task) => (task.id === taskId ? updatedTask : task))
+      }
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to update status.'
     } finally {

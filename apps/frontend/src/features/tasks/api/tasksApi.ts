@@ -40,7 +40,8 @@ export async function getTaskById(taskId: string) {
 }
 
 export async function updateTaskStatus(taskId: string, status: TaskStatus) {
-  await apiClient.patch(`/v1/tasks/${taskId}/status`, { status })
+  const response = await apiClient.patch<unknown>(`/v1/tasks/${taskId}/status`, { status })
+  return adaptTaskResponse(response.data)
 }
 
 function adaptTaskListResponse(data: unknown): Task[] {
