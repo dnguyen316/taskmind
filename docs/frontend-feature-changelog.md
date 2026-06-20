@@ -1,3 +1,15 @@
+## 2026-06-20 (Activity Search Structured Filters)
+
+### Changed
+
+- Added compact manual filters to the activity search panel while keeping the original simple query and autocomplete flow.
+- Sent structured filter values from the activity search API/composable for both searches and autocomplete suggestions.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/backend -am -Dtest=ActivitySearchControllerTest,ActivitySearchElasticsearchRepositoryTest test`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-20 (Activity Search Recommendation Dropdown)
 
 ### Changed

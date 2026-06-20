@@ -38,6 +38,28 @@ class ActivitySearchControllerTest {
     }
 
     @Test
+    void rejectsInvalidStructuredFilters() throws Exception {
+        mockMvc.perform(
+                        get("/v1/activity/search")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("projectId", "not-a-uuid"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(
+                        get("/v1/activity/search")
+                                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                                .queryParam("from", "2026-02-01T00:00:00Z")
+                                .queryParam("to", "2026-01-01T00:00:00Z"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsUnauthenticatedStructuredFilterSearch() throws Exception {
+        mockMvc.perform(get("/v1/activity/search").queryParam("entityType", "task"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get("/v1/activity/search")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/v1/activity/search/suggest")).andExpect(status().isUnauthorized());

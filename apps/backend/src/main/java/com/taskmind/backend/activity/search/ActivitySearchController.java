@@ -25,9 +25,15 @@ public class ActivitySearchController {
     public List<ActivitySearchDocument> search(
             AuthenticatedUser requester,
             @RequestParam(name = "q", defaultValue = "") String query,
-            @RequestParam(defaultValue = "20") @Min(1) int size) {
+            @RequestParam(defaultValue = "20") @Min(1) int size,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String projectId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String eventType) {
         try {
-            return service.search(requester, query, size);
+            return service.search(requester, query, size, entityType, status, projectId, from, to, eventType);
         } catch (ActivitySearchDisabledException e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         }
@@ -37,9 +43,15 @@ public class ActivitySearchController {
     public List<String> suggest(
             AuthenticatedUser requester,
             @RequestParam(name = "q", defaultValue = "") String query,
-            @RequestParam(defaultValue = "10") @Min(1) int size) {
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String projectId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String eventType) {
         try {
-            return service.suggest(requester, query, size);
+            return service.suggest(requester, query, size, entityType, status, projectId, from, to, eventType);
         } catch (ActivitySearchDisabledException e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         }

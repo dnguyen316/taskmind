@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface ActivitySearchRepository {
     boolean enabled();
 
-    List<ActivitySearchDocument> search(UUID userId, String query, int size);
+    List<ActivitySearchDocument> search(ActivitySearchRequest request);
 
-    List<String> suggest(UUID userId, String query, int size);
+    List<String> suggest(ActivitySearchRequest request);
 }

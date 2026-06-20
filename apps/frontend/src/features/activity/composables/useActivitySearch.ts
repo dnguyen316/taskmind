@@ -5,6 +5,12 @@ import type { ActivitySearchDocument } from '../../tasks/types'
 export function useActivitySearch(defaultSize = 20) {
   const query = ref('')
   const size = ref(defaultSize)
+  const entityType = ref('')
+  const status = ref('')
+  const projectId = ref('')
+  const from = ref('')
+  const to = ref('')
+  const eventType = ref('')
   const loading = ref(false)
   const errorMessage = ref('')
   const results = ref<ActivitySearchDocument[]>([])
@@ -32,7 +38,11 @@ export function useActivitySearch(defaultSize = 20) {
     suggestionsErrorMessage.value = ''
 
     try {
-      const nextSuggestions = await suggestActivitySearch({ query: suggestionQuery, size: 8 })
+      const nextSuggestions = await suggestActivitySearch({
+        query: suggestionQuery,
+        size: 8,
+        ...currentFilters(),
+      })
       if (requestId === suggestionRequestId) {
         suggestions.value = nextSuggestions
       }
@@ -64,6 +74,17 @@ export function useActivitySearch(defaultSize = 20) {
     }
   })
 
+  function currentFilters() {
+    return {
+      entityType: entityType.value,
+      status: status.value,
+      projectId: projectId.value,
+      from: from.value ? new Date(from.value).toISOString() : undefined,
+      to: to.value ? new Date(to.value).toISOString() : undefined,
+      eventType: eventType.value,
+    }
+  }
+
   async function runSearch() {
     loading.value = true
     errorMessage.value = ''
@@ -72,6 +93,7 @@ export function useActivitySearch(defaultSize = 20) {
       results.value = await searchActivity({
         query: query.value,
         size: size.value,
+        ...currentFilters(),
       })
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to search activity.'
@@ -86,11 +108,23 @@ export function useActivitySearch(defaultSize = 20) {
     errorMessage.value = ''
     suggestions.value = []
     suggestionsErrorMessage.value = ''
+    entityType.value = ''
+    status.value = ''
+    projectId.value = ''
+    from.value = ''
+    to.value = ''
+    eventType.value = ''
   }
 
   return {
     query,
     size,
+    entityType,
+    status,
+    projectId,
+    from,
+    to,
+    eventType,
     loading,
     errorMessage,
     results,
