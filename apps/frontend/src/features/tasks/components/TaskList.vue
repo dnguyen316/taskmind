@@ -8,6 +8,7 @@ const props = defineProps<{
   pendingStatusTaskIds?: string[]
   loading?: boolean
   errorMessage?: string
+  projectId?: string
 }>()
 const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
 
@@ -45,6 +46,16 @@ const pendingStatusTaskIds = computed(() => new Set(props.pendingStatusTaskIds ?
 
 function isStatusPending(taskId: string) {
   return pendingStatusTaskIds.value.has(taskId)
+}
+
+function taskDetailRoute(task: TaskTableRecord) {
+  const projectId = props.projectId
+
+  if (projectId) {
+    return { name: 'project-task-detail', params: { projectId, taskId: task.id } }
+  }
+
+  return { name: 'task-detail', params: { id: task.id } }
 }
 
 function handleStatusChange(task: TaskTableRecord, nextStatus: TaskStatus) {
@@ -85,7 +96,9 @@ function dueLabel(task: Task) {
     <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
       <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
       <template v-else-if="column.key === 'title'">
-        <router-link :to="`/tasks/${record.id}`" class="task-link">{{ record.title }}</router-link>
+        <router-link :to="taskDetailRoute(record)" class="task-link">{{
+          record.title
+        }}</router-link>
         <div class="desc">{{ record.description || 'No description' }}</div>
       </template>
       <template v-else-if="column.key === 'status'">

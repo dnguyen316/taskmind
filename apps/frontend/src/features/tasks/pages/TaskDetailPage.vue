@@ -49,7 +49,8 @@ const formState = reactive<TaskDetailFormState>({
   status: 'TODO',
 })
 
-const taskId = computed(() => String(route.params.id ?? '').trim())
+const taskId = computed(() => String(route.params.taskId ?? route.params.id ?? '').trim())
+const routeProjectId = computed(() => String(route.params.projectId ?? '').trim())
 const isValidId = computed(() =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value),
 )
@@ -59,7 +60,7 @@ onMounted(() => {
   void loadTask()
 })
 
-watch(taskId, () => {
+watch([taskId, routeProjectId], () => {
   void loadTask()
 })
 
@@ -95,9 +96,17 @@ async function loadTask() {
 }
 
 function hydrateForm(task: Task) {
+  const taskProjectId = task.projectId ?? ''
+
+  if (routeProjectId.value && taskProjectId && taskProjectId !== routeProjectId.value) {
+    errorMessage.value = 'This task does not belong to the project in the current route.'
+    taskNotFound.value = true
+    return
+  }
+
   formState.id = task.id
   formState.version = task.version ?? null
-  formState.projectId = task.projectId ?? ''
+  formState.projectId = taskProjectId || routeProjectId.value
   formState.title = task.title ?? ''
   formState.description = task.description ?? ''
   formState.priority = Number(task.priority ?? 3)
@@ -234,7 +243,15 @@ function toDatetimeLocal(value: string | null) {
       <a-card title="Task detail" class="surface-card">
         <a-space direction="vertical" style="width: 100%" size="middle">
           <a-space>
-            <a-button @click="router.push('/tasks')">Back to tasks</a-button>
+            <a-button
+              @click="
+                routeProjectId
+                  ? router.push({ name: 'project-detail', params: { id: routeProjectId } })
+                  : router.push('/tasks')
+              "
+            >
+              {{ routeProjectId ? 'Back to project' : 'Back to tasks' }}
+            </a-button>
             <span class="task-id" v-if="formState.id">ID: {{ formState.id }}</span>
           </a-space>
 

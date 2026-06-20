@@ -14,6 +14,7 @@ const currentPageTitle = computed(() => {
   if (route.path.startsWith('/dashboard')) return 'Dashboard'
   if (route.path.startsWith('/tasks/')) return 'Task detail'
   if (route.path.startsWith('/tasks')) return 'Tasks'
+  if (route.name === 'project-task-detail') return 'Task detail'
   if (route.path.startsWith('/projects/')) return 'Project detail'
   if (route.path.startsWith('/projects')) return 'Projects'
   if (route.path.startsWith('/team')) return 'Team'
