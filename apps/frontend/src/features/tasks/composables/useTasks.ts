@@ -39,7 +39,7 @@ export function useTasks() {
         return true
       }
 
-      return [task.id, task.title, task.description ?? ''].some((value) =>
+      return [task.id, task.taskKey ?? '', task.title, task.description ?? ''].some((value) =>
         value.toLowerCase().includes(searchText),
       )
     })

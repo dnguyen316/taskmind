@@ -94,7 +94,7 @@ function dueLabel(task: Task) {
       />
     </template>
     <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
-      <template v-if="column.key === 'id'">{{ record.id.slice(0, 8) }}</template>
+      <template v-if="column.key === 'id'">{{ record.taskKey || record.id.slice(0, 8) }}</template>
       <template v-else-if="column.key === 'title'">
         <router-link :to="taskDetailRoute(record)" class="task-link">{{
           record.title
