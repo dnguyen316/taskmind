@@ -1,6 +1,10 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
-import { searchActivity, suggestActivitySearch } from '../../tasks/api/activitySearchApi'
-import type { ActivitySearchDocument } from '../../tasks/types'
+import {
+  assistActivitySearch,
+  searchActivity,
+  suggestActivitySearch,
+} from '../../tasks/api/activitySearchApi'
+import type { ActivitySearchAssistResponse, ActivitySearchDocument } from '../../tasks/types'
 
 export function useActivitySearch(defaultSize = 20) {
   const query = ref('')
@@ -11,6 +15,9 @@ export function useActivitySearch(defaultSize = 20) {
   const suggestions = ref<string[]>([])
   const suggestionsLoading = ref(false)
   const suggestionsErrorMessage = ref('')
+  const aiLoading = ref(false)
+  const aiErrorMessage = ref('')
+  const aiProposal = ref<ActivitySearchAssistResponse | null>(null)
   let suggestionTimer: ReturnType<typeof setTimeout> | undefined
   let suggestionRequestId = 0
 
@@ -64,6 +71,41 @@ export function useActivitySearch(defaultSize = 20) {
     }
   })
 
+  async function askNova() {
+    const prompt = query.value.trim()
+    if (!prompt) {
+      aiErrorMessage.value = 'Enter a search intent before asking Nova.'
+      return
+    }
+
+    aiLoading.value = true
+    aiErrorMessage.value = ''
+    aiProposal.value = null
+
+    try {
+      aiProposal.value = await assistActivitySearch(prompt, query.value)
+    } catch (error: unknown) {
+      aiErrorMessage.value =
+        error instanceof Error ? error.message : 'Nova could not refine this search.'
+    } finally {
+      aiLoading.value = false
+    }
+  }
+
+  function applyAiProposal() {
+    if (!aiProposal.value) {
+      return
+    }
+    query.value = aiProposal.value.query
+    aiProposal.value = null
+    void runSearch()
+  }
+
+  function dismissAiProposal() {
+    aiProposal.value = null
+    aiErrorMessage.value = ''
+  }
+
   async function runSearch() {
     loading.value = true
     errorMessage.value = ''
@@ -86,6 +128,8 @@ export function useActivitySearch(defaultSize = 20) {
     errorMessage.value = ''
     suggestions.value = []
     suggestionsErrorMessage.value = ''
+    aiProposal.value = null
+    aiErrorMessage.value = ''
   }
 
   return {
@@ -97,8 +141,14 @@ export function useActivitySearch(defaultSize = 20) {
     suggestions,
     suggestionsLoading,
     suggestionsErrorMessage,
+    aiLoading,
+    aiErrorMessage,
+    aiProposal,
     hasResults,
     loadSuggestions,
+    askNova,
+    applyAiProposal,
+    dismissAiProposal,
     runSearch,
     clearSearch,
   }

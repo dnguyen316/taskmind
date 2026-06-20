@@ -2,6 +2,8 @@ package com.taskmind.backend.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistRequest;
+import com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse;
 import com.taskmind.ai.contracts.audit.AiRunSummary;
 import com.taskmind.ai.contracts.capability.CapabilitiesResponse;
 import com.taskmind.ai.contracts.capability.CapabilityError;
@@ -66,6 +68,19 @@ public class RestNovaClient implements NovaClient {
                                 .body(request)
                                 .retrieve()
                                 .body(CapabilityResponse.class));
+    }
+
+    @Override
+    public ActivitySearchAssistResponse assistActivitySearch(ActivitySearchAssistRequest request) {
+        return exchange(
+                () ->
+                        restClient
+                                .post()
+                                .uri("/internal/ai/activity/search/assist")
+                                .header(SERVICE_TOKEN_HEADER, properties.serviceToken())
+                                .body(request)
+                                .retrieve()
+                                .body(ActivitySearchAssistResponse.class));
     }
 
     @Override

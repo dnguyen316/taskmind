@@ -1156,6 +1156,31 @@ paths:
         '503':
           description: Activity search is disabled or not configured
 
+  /v1/activity/search/assist:
+    post:
+      summary: Refine natural-language activity search intent through Nova
+      operationId: assistActivitySearch
+      tags: [Activity]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivitySearchAssistRequest'
+      responses:
+        '200':
+          description: Structured activity search query proposal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySearchAssistResponse'
+        '400':
+          description: Invalid prompt or unsupported search syntax
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          $ref: '#/components/responses/NovaFacadeError'
+
   /v1/activity/search/suggest:
     get:
       summary: Suggest authenticated user activity search terms
@@ -2011,6 +2036,35 @@ components:
         deletedAt: {type: string, format: date-time, nullable: true}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+
+    ActivitySearchAssistRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 500
+        currentQuery:
+          type: string
+          nullable: true
+          maxLength: 300
+
+    ActivitySearchAssistResponse:
+      type: object
+      required: [query, suggestedFilters]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 300
+        explanation:
+          type: string
+          nullable: true
+        suggestedFilters:
+          type: array
+          items:
+            type: string
 
     ActivitySearchSuggestions:
       type: array

@@ -134,3 +134,10 @@ Use these patterns consistently across AI endpoints and DTOs:
   recoverable failure, and non-recoverable failure states.
 - UI workflows that persist AI output need browser E2E proof using the local/staging/test
   e2e bypass user, never production bypass configuration.
+
+### Activity search assist
+
+- Capability: activity-search assist converts a user's natural-language search intent into a constrained activity-search query proposal.
+- Core facade: `POST /v1/activity/search/assist`; the browser never calls Nova directly.
+- Nova returns structured fields (`query`, optional `explanation`, `suggestedFilters`) instead of free-form assistant text.
+- Nova currently allows plain activity search query text only and rejects requested filters until the search model advertises supported filter keys; unsafe query operator characters and boolean operators are sanitized from generated query text.

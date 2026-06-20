@@ -600,3 +600,9 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Expanded integration controller coverage for publishing one task to two Jira links, publishing one task to two wiki spaces, and idempotent re-publish behavior for the original link.
+
+## 2026-06-20 (Activity Search AI Assist)
+
+- Added authenticated Core `POST /v1/activity/search/assist` facade that sends natural-language search intent to Nova and returns a structured query proposal.
+- Added Nova activity-search assist validation that strips unsafe query syntax and rejects unsupported filters until the activity search model formally supports them.
+- Updated Core OpenAPI for the activity search assist request/response contract.
