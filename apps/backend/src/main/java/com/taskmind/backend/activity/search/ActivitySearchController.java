@@ -65,4 +65,22 @@ public class ActivitySearchController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         }
     }
+
+    @GetMapping("/recommendations")
+    public List<ActivitySearchSuggestion> recommendations(
+            AuthenticatedUser requester,
+            @RequestParam(name = "q", defaultValue = "") String query,
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String projectId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String eventType) {
+        try {
+            return service.recommend(requester, query, size, entityType, status, projectId, from, to, eventType);
+        } catch (ActivitySearchDisabledException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+        }
+    }
 }

@@ -51,6 +51,21 @@ public class ActivitySearchApplicationService {
                 .suggest(normalizeRequest(requester, query, size, entityType, status, projectId, from, to, eventType));
     }
 
+    public List<ActivitySearchSuggestion> recommend(
+            AuthenticatedUser requester,
+            String query,
+            int size,
+            String entityType,
+            String status,
+            String projectId,
+            String from,
+            String to,
+            String eventType) {
+        return repository
+                .orElseGet(DisabledActivitySearchRepository::new)
+                .recommend(normalizeRequest(requester, query, size, entityType, status, projectId, from, to, eventType));
+    }
+
     public ActivitySearchAssistResponse assist(
             AuthenticatedUser requester, ActivitySearchAssistRequest request) {
         com.taskmind.ai.contracts.activity.ActivitySearchAssistResponse response =

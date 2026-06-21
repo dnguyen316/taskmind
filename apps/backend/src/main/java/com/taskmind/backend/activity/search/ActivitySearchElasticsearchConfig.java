@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -141,6 +143,82 @@ public class ActivitySearchElasticsearchConfig {
                 }
             }
             return List.copyOf(suggestions);
+        }
+
+        @Override
+        public List<ActivitySearchSuggestion> recommend(ActivitySearchRequest request) {
+            if (request.query() == null || request.query().isBlank()) {
+                return List.of();
+            }
+
+            String trimmedQuery = request.query().trim();
+            ObjectNode root = objectMapper.createObjectNode();
+            root.put("size", Math.min(request.size() * 3, 100));
+            ObjectNode bool = root.putObject("query").putObject("bool");
+            addFilters(bool.putArray("filter"), request);
+            bool.putArray("must")
+                    .addObject()
+                    .putObject("multi_match")
+                    .put("query", trimmedQuery)
+                    .put("type", "bool_prefix")
+                    .putArray("fields")
+                    .add("title^3")
+                    .add("eventType")
+                    .add("status")
+                    .add("payloadText");
+            root.putArray("_source")
+                    .add("entityType")
+                    .add("entityId")
+                    .add("eventType")
+                    .add("status")
+                    .add("title")
+                    .add("occurredAt");
+            root.putObject("sort").putObject("occurredAt").put("order", "desc");
+
+            JsonNode response =
+                    client.post()
+                            .uri("/{index}/_search", indexName)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(root)
+                            .retrieve()
+                            .body(JsonNode.class);
+
+            Map<String, ActivitySearchSuggestion> recommendations = new LinkedHashMap<>();
+            if (response == null) {
+                return List.of();
+            }
+            for (JsonNode hit : response.path("hits").path("hits")) {
+                JsonNode source = hit.path("_source");
+                ActivitySearchSuggestion recommendation = toSuggestion(source);
+                if (recommendation.label().toLowerCase().contains(trimmedQuery.toLowerCase())) {
+                    recommendations.putIfAbsent(recommendation.value(), recommendation);
+                }
+                if (recommendations.size() >= request.size()) {
+                    break;
+                }
+            }
+            return List.copyOf(recommendations.values());
+        }
+
+        private ActivitySearchSuggestion toSuggestion(JsonNode source) {
+            String entityType = source.path("entityType").asText("");
+            UUID entityId = uuid(source, "entityId");
+            String eventType = source.path("eventType").asText("");
+            String status = source.path("status").asText("");
+            String title = source.path("title").asText("");
+            Instant occurredAt = Instant.parse(source.path("occurredAt").asText());
+            String label = title.isBlank() ? entityType + " " + entityId : title;
+            String value = label;
+            return new ActivitySearchSuggestion(
+                    label, value, entityType, entityId, eventType, status, title, occurredAt, routeName(entityType));
+        }
+
+        private String routeName(String entityType) {
+            return switch (entityType) {
+                case "task" -> "task-detail";
+                case "project" -> "project-detail";
+                default -> null;
+            };
         }
 
         private void addFilters(ArrayNode filter, ActivitySearchRequest request) {

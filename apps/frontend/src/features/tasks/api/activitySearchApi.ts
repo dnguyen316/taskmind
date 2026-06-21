@@ -1,5 +1,9 @@
 import { apiClient } from '../../../lib/apiClient'
-import type { ActivitySearchAssistResponse, ActivitySearchDocument } from '../types'
+import type {
+  ActivitySearchAssistResponse,
+  ActivitySearchDocument,
+  ActivitySearchSuggestion,
+} from '../types'
 
 export interface ActivitySearchFilters {
   entityType?: string
@@ -20,12 +24,12 @@ export interface SuggestActivitySearchOptions extends ActivitySearchFilters {
   size?: number
 }
 
-export async function suggestActivitySearch({
+export async function recommendActivitySearch({
   query,
   size = 10,
   ...filters
 }: SuggestActivitySearchOptions) {
-  const response = await apiClient.get<unknown>('/v1/activity/search/suggest', {
+  const response = await apiClient.get<unknown>('/v1/activity/search/recommendations', {
     params: {
       q: query.trim(),
       size,
@@ -33,7 +37,13 @@ export async function suggestActivitySearch({
     },
   })
 
-  return adaptStringListResponse(response.data, 'activity search suggestions')
+  return adaptActivitySearchSuggestionListResponse(response.data)
+}
+
+export async function suggestActivitySearch(options: SuggestActivitySearchOptions) {
+  const recommendations = await recommendActivitySearch(options)
+
+  return recommendations.map((recommendation) => recommendation.value)
 }
 
 export async function assistActivitySearch(prompt: string, currentQuery?: string) {
@@ -97,12 +107,44 @@ function adaptActivitySearchDocumentListResponse(data: unknown): ActivitySearchD
   return data.map(adaptActivitySearchDocumentResponse)
 }
 
-function adaptStringListResponse(data: unknown, resourceName: string): string[] {
-  if (!Array.isArray(data) || data.some((value) => typeof value !== 'string')) {
-    throw new Error(`Invalid ${resourceName} response.`)
+function adaptActivitySearchSuggestionListResponse(data: unknown): ActivitySearchSuggestion[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid activity search recommendations response.')
   }
 
-  return data
+  return data.map(adaptActivitySearchSuggestionResponse)
+}
+
+function adaptActivitySearchSuggestionResponse(data: unknown): ActivitySearchSuggestion {
+  if (typeof data === 'string') {
+    return {
+      label: data,
+      value: data,
+      entityType: 'activity',
+      entityId: '',
+      eventType: '',
+      status: null,
+      title: data,
+      occurredAt: '',
+      routeName: null,
+    }
+  }
+
+  if (!isObject(data)) {
+    throw new Error('Invalid activity search recommendation response.')
+  }
+
+  return {
+    label: readRequiredString(data, 'label', 'activity search recommendation'),
+    value: readRequiredString(data, 'value', 'activity search recommendation'),
+    entityType: readRequiredString(data, 'entityType', 'activity search recommendation'),
+    entityId: readRequiredString(data, 'entityId', 'activity search recommendation'),
+    eventType: readRequiredString(data, 'eventType', 'activity search recommendation'),
+    status: readNullableString(data, 'status'),
+    title: readNullableString(data, 'title'),
+    occurredAt: readRequiredString(data, 'occurredAt', 'activity search recommendation'),
+    routeName: readNullableString(data, 'routeName'),
+  }
 }
 
 function adaptActivitySearchDocumentResponse(data: unknown): ActivitySearchDocument {

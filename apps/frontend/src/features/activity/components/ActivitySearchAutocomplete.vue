@@ -2,9 +2,10 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { SearchOutlined } from '@ant-design/icons-vue'
 import {
-  suggestActivitySearch,
+  recommendActivitySearch,
   type ActivitySearchFilters,
 } from '../../tasks/api/activitySearchApi'
+import type { ActivitySearchSuggestion } from '../../tasks/types'
 
 const props = withDefaults(
   defineProps<{
@@ -34,7 +35,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:value': [value: string]
-  selectSuggestion: [value: string]
+  selectSuggestion: [value: string, recommendation?: ActivitySearchSuggestion]
   submitSearch: [value: string]
   viewAll: [value: string]
 }>()
@@ -42,7 +43,7 @@ const emit = defineEmits<{
 const VIEW_ALL_OPTION_PREFIX = '__taskmind_view_all__:'
 
 const focused = ref(false)
-const suggestions = ref<string[]>([])
+const suggestions = ref<ActivitySearchSuggestion[]>([])
 const suggestionsLoading = ref(false)
 const suggestionsErrorMessage = ref('')
 let suggestionTimer: ReturnType<typeof setTimeout> | undefined
@@ -76,7 +77,11 @@ const suggestionOptions = computed(() => {
     ]
   }
 
-  const options = suggestions.value.map((suggestion) => ({ value: suggestion, label: suggestion }))
+  const options = suggestions.value.map((suggestion) => ({
+    value: suggestion.value,
+    label: suggestion.label,
+    recommendation: suggestion,
+  }))
 
   if (options.length === 0 && props.showViewAll) {
     return [
@@ -104,7 +109,7 @@ async function loadSuggestions() {
   suggestionsErrorMessage.value = ''
 
   try {
-    const nextSuggestions = await suggestActivitySearch({
+    const nextSuggestions = await recommendActivitySearch({
       query: suggestionQuery,
       size: props.suggestionLimit,
       ...props.filters,
@@ -166,9 +171,18 @@ function selectSuggestion(value: string) {
     return
   }
 
+  const recommendation = suggestions.value.find((suggestion) => suggestion.value === value)
   updateValue(value)
   focused.value = false
-  emit('selectSuggestion', value)
+  emit('selectSuggestion', value, recommendation)
+}
+
+function recommendationMeta(recommendation: ActivitySearchSuggestion) {
+  return [recommendation.entityType, recommendation.status].filter(Boolean).join(' · ')
+}
+
+function recommendationTarget(recommendation: ActivitySearchSuggestion) {
+  return recommendation.routeName ? 'Open item' : 'Use search term'
 }
 
 function closeRecommendationDropdown() {
@@ -194,6 +208,18 @@ function closeRecommendationDropdown() {
       <a-input :size="inputSize" :placeholder="placeholder" @press-enter="submitSearch()">
         <template #prefix><SearchOutlined /></template>
       </a-input>
+      <template #option="option">
+        <div v-if="option.recommendation" class="recommendation-option">
+          <div>
+            <div class="recommendation-label">{{ option.recommendation.label }}</div>
+            <div class="recommendation-meta">{{ recommendationMeta(option.recommendation) }}</div>
+          </div>
+          <span class="recommendation-target">{{
+            recommendationTarget(option.recommendation)
+          }}</span>
+        </div>
+        <span v-else>{{ option.label }}</span>
+      </template>
       <template #notFoundContent>
         <div class="recommendation-empty">
           <a-spin v-if="suggestionsLoading" size="small" />
@@ -214,5 +240,27 @@ function closeRecommendationDropdown() {
 .recommendation-empty {
   padding: 8px 12px;
   color: var(--tm-text-muted);
+}
+
+.recommendation-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recommendation-label {
+  color: var(--tm-text);
+  font-weight: 600;
+}
+
+.recommendation-meta,
+.recommendation-target {
+  color: var(--tm-text-muted);
+  font-size: 12px;
+}
+
+.recommendation-target {
+  white-space: nowrap;
 }
 </style>

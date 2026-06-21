@@ -1,3 +1,10 @@
+## 2026-06-21 (Typed Activity Search Recommendations)
+
+### Changed
+
+- Activity search autocomplete now calls Core typed recommendations and renders each row with label, entity type/status metadata, and an explicit action target.
+- Kept the legacy `suggestActivitySearch` adapter as a string-only compatibility wrapper over typed recommendations.
+
 ## 2026-06-21 (Shared Activity Search Autocomplete)
 
 ### Changed

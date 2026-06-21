@@ -1,3 +1,11 @@
+## 2026-06-21 (Typed Activity Search Recommendations)
+
+### Changed
+
+- Added Core `GET /v1/activity/search/recommendations` for typed recommendation items while keeping `/suggest` as the legacy string endpoint.
+- Mapped OpenSearch activity hits to recommendation metadata including label, entity type/id, event type, status, title, occurred time, and route name.
+- Updated Core OpenAPI with the typed recommendation schema.
+
 ## 2026-06-21 (Relay JDBC Timestamp Binding)
 
 ### Changed
