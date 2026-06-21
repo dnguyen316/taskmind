@@ -10,9 +10,13 @@ import org.springframework.core.io.ClassPathResource;
 class BackendProdProfileConfigurationTest {
 
     @Test
-    void prodProfileRequiresRelayServiceTokenWithoutLocalFallback() throws IOException {
+    void prodProfileRequiresServiceTokensWithoutLocalFallbacks() throws IOException {
         Properties properties = prodProperties();
 
+        assertThat(properties.getProperty("taskmind.nova.service-token"))
+                .isEqualTo("${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN}}");
+        assertThat(properties.getProperty("taskmind.nova.service-token"))
+                .doesNotContain("development-only-nova-service-token");
         assertThat(properties.getProperty("taskmind.relay.client.service-token"))
                 .isEqualTo("${TASKMIND_RELAY_SERVICE_TOKEN}");
         assertThat(properties.getProperty("taskmind.relay.client.service-token"))

@@ -218,7 +218,7 @@ Use environment variables for all secrets and provider choices. Suggested proper
 - `taskmind.ai.provider.default=mock`
 - `taskmind.ai.provider.openai.api-key=${OPENAI_API_KEY:}`
 - `taskmind.ai.provider.anthropic.api-key=${ANTHROPIC_API_KEY:}`
-- `taskmind.ai.service-token=${TASKMIND_AI_SERVICE_TOKEN:local-ai-token}`
+- `taskmind.ai.service-token=${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN:development-only-nova-service-token}}` (`TASKMIND_AI_SERVICE_TOKEN` is a deprecated alias)
 - `taskmind.core.base-url=${TASKMIND_CORE_BASE_URL:http://localhost:8080}`
 - `taskmind.core.service-token=${TASKMIND_CORE_SERVICE_TOKEN:local-core-token}`
 - `taskmind.relay.base-url=${TASKMIND_RELAY_BASE_URL:http://localhost:8081}`
