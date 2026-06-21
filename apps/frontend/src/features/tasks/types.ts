@@ -51,6 +51,18 @@ export interface ActivitySearchAssistResponse {
   suggestedFilters: string[]
 }
 
+export interface ActivitySearchSuggestion {
+  label: string
+  value: string
+  entityType: string
+  entityId: string
+  eventType: string
+  status: string | null
+  title: string | null
+  occurredAt: string
+  routeName: string | null
+}
+
 export interface ActivitySearchDocument {
   eventId: string
   eventType: string

@@ -71,6 +71,46 @@ class ActivitySearchElasticsearchRepositoryTest {
     }
 
     @Test
+    void recommendsTypedActivityHitsForAuthenticatedUser() {
+        server.expect(once(), requestTo(BASE_URL + "/" + INDEX_NAME + "/_search"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(
+                        content()
+                                .string(
+                                        allOf(
+                                                containsString("\"userId\":\"" + USER_ID + "\""),
+                                                containsString("\"query\":\"tas\""),
+                                                containsString("\"type\":\"bool_prefix\""),
+                                                containsString("entityType"),
+                                                containsString("entityId"),
+                                                containsString("occurredAt"))))
+                .andRespond(
+                        withSuccess(
+                                """
+                                {
+                                  "hits": {
+                                    "hits": [
+                                      {"_source": {"entityType": "task", "entityId": "33333333-3333-3333-3333-333333333333", "title": "Task planning", "eventType": "task.updated", "status": "DONE", "occurredAt": "2026-01-02T00:00:00Z"}}
+                                    ]
+                                  }
+                                }
+                                """,
+                                MediaType.APPLICATION_JSON));
+
+        var recommendations =
+                repository.recommend(new ActivitySearchRequest(USER_ID, "tas", 5, null, null, null, null, null, null));
+
+        assertThat(recommendations).hasSize(1);
+        assertThat(recommendations.get(0).label()).isEqualTo("Task planning");
+        assertThat(recommendations.get(0).entityType()).isEqualTo("task");
+        assertThat(recommendations.get(0).entityId())
+                .isEqualTo(UUID.fromString("33333333-3333-3333-3333-333333333333"));
+        assertThat(recommendations.get(0).status()).isEqualTo("DONE");
+        assertThat(recommendations.get(0).routeName()).isEqualTo("task-detail");
+        server.verify();
+    }
+
+    @Test
     void searchAppliesStructuredFiltersForAuthenticatedUser() {
         server.expect(once(), requestTo(BASE_URL + "/" + INDEX_NAME + "/_search"))
                 .andExpect(method(HttpMethod.POST))
@@ -106,6 +146,9 @@ class ActivitySearchElasticsearchRepositoryTest {
 
     @Test
     void skipsBlankSuggestionQueries() {
-        assertThat(repository.suggest(new ActivitySearchRequest(USER_ID, " ", 5, null, null, null, null, null, null))).isEmpty();
+        var blankRequest = new ActivitySearchRequest(USER_ID, " ", 5, null, null, null, null, null, null);
+
+        assertThat(repository.suggest(blankRequest)).isEmpty();
+        assertThat(repository.recommend(blankRequest)).isEmpty();
     }
 }

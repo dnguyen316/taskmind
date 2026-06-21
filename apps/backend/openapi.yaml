@@ -1245,6 +1245,50 @@ paths:
         '503':
           description: Activity search is disabled or not configured
 
+  /v1/activity/search/recommendations:
+    get:
+      summary: Recommend typed authenticated user activity search results
+      operationId: recommendActivitySearch
+      tags: [Activity]
+      parameters:
+        - in: query
+          name: q
+          schema: {type: string}
+        - in: query
+          name: size
+          schema: {type: integer, minimum: 1, maximum: 100, default: 10}
+        - in: query
+          name: entityType
+          schema: {type: string}
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: projectId
+          schema: {type: string, format: uuid}
+        - in: query
+          name: from
+          schema: {type: string, format: date-time}
+        - in: query
+          name: to
+          schema: {type: string, format: date-time}
+        - in: query
+          name: eventType
+          schema: {type: string}
+      responses:
+        '200':
+          description: Typed activity search recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivitySearchSuggestion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Activity search is disabled or not configured
+
   /v1/tasks/{taskId}/attachments:
     post:
       summary: Upload a task attachment
@@ -2110,6 +2154,20 @@ components:
       type: array
       items:
         type: string
+
+    ActivitySearchSuggestion:
+      type: object
+      required: [label, value, entityType, entityId, eventType, occurredAt]
+      properties:
+        label: {type: string}
+        value: {type: string}
+        entityType: {type: string}
+        entityId: {type: string, format: uuid}
+        eventType: {type: string}
+        status: {type: string, nullable: true}
+        title: {type: string, nullable: true}
+        occurredAt: {type: string, format: date-time}
+        routeName: {type: string, nullable: true}
 
     ActivitySearchDocument:
       type: object
