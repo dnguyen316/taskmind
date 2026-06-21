@@ -1,6 +1,7 @@
 package com.taskmind.relay.projection;
 
 import com.taskmind.events.DomainEvent;
+import com.taskmind.relay.jdbc.RelayJdbcParameters;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -23,11 +24,21 @@ public class ProjectProjectionHandler {
         try {
             jdbcTemplate.update(
                     "insert into analytics.project_projection (project_id, owner_user_id, name, project_key, archived, updated_at) values (?, ?, ?, ?, ?, ?)",
-                    event.entity().id(), event.scope().userId(), name, key, archived, event.occurredAt());
+                    event.entity().id(),
+                    event.scope().userId(),
+                    name,
+                    key,
+                    archived,
+                    RelayJdbcParameters.timestamp(event.occurredAt()));
         } catch (DuplicateKeyException ex) {
             jdbcTemplate.update(
                     "update analytics.project_projection set owner_user_id=?, name=?, project_key=?, archived=?, updated_at=? where project_id=?",
-                    event.scope().userId(), name, key, archived, event.occurredAt(), event.entity().id());
+                    event.scope().userId(),
+                    name,
+                    key,
+                    archived,
+                    RelayJdbcParameters.timestamp(event.occurredAt()),
+                    event.entity().id());
         }
     }
 }

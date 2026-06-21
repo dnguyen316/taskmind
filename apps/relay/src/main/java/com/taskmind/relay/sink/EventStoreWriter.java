@@ -1,6 +1,7 @@
 package com.taskmind.relay.sink;
 
 import com.taskmind.events.DomainEvent;
+import com.taskmind.relay.jdbc.RelayJdbcParameters;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ public class EventStoreWriter {
                     event.entity().type(),
                     event.entity().id(),
                     event.scope().projectId(),
-                    event.occurredAt(),
+                    RelayJdbcParameters.timestamp(event.occurredAt()),
                     event.payload().toString(),
                     event.context().toString());
             return true;

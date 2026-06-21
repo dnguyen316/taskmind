@@ -1,6 +1,7 @@
 package com.taskmind.relay.dlq;
 
 import com.taskmind.events.DomainEvent;
+import com.taskmind.relay.jdbc.RelayJdbcParameters;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +23,11 @@ public class RelayDeadLetterWriter {
         String eventType = event == null ? null : event.eventType();
         jdbcTemplate.update(
                 "insert into analytics.relay_dlq (id, event_id, event_type, payload, error_message, failed_at) values (?, ?, ?, ?, ?, ?)",
-                UUID.randomUUID(), eventId, eventType, rawPayload, error.getMessage(), Instant.now());
+                UUID.randomUUID(),
+                eventId,
+                eventType,
+                rawPayload,
+                error.getMessage(),
+                RelayJdbcParameters.timestamp(Instant.now()));
     }
 }
