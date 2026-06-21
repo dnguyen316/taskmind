@@ -13,7 +13,7 @@ public class RelayClientConfig {
     public RestClient relayRestClient(
             RestClient.Builder builder, RelayClientProperties properties) {
         return builder.baseUrl(properties.baseUrl())
-                .defaultHeader("X-TaskMind-Service-Token", properties.serviceToken())
+                .defaultHeaders(headers -> headers.setBearerAuth(properties.serviceToken()))
                 .requestInterceptor(
                         (request, body, execution) -> {
                             request.getHeaders()
