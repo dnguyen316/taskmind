@@ -1,3 +1,16 @@
+## 2026-06-21 (Dashboard Search Recommendations)
+
+### Changed
+
+- Replaced the dashboard header search redirect-on-type flow with an autocomplete dropdown backed by the existing activity search suggestion API.
+- Added debounced suggestion loading plus explicit searching, empty, and error dropdown rows; dashboard search now navigates only from Enter, selecting a suggestion, or the “View all results” action.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; no frontend unit test runner is configured.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused dashboard autocomplete update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-20 (Activity Search Structured Filters)
 
 ### Changed
@@ -8,6 +21,7 @@
 ### Verification notes
 
 - Exact verification commands for this slice: `mvn -q -pl apps/backend -am -Dtest=ActivitySearchControllerTest,ActivitySearchElasticsearchRepositoryTest test`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+
 ## 2026-06-20 (Project Task Detail Route)
 
 ### Changed
