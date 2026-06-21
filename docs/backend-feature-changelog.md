@@ -1,3 +1,14 @@
+## 2026-06-21 (Relay JDBC Timestamp Binding)
+
+### Changed
+
+- Converted Relay `Instant` JDBC parameters to `java.sql.Timestamp` before binding so PostgreSQL can persist DLQ, event store, and projection timestamps without driver type inference errors.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/relay -am -Dtest=RelayJdbcParametersTest,RelayIndexingFailureIngestTest test`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-20 (Activity Search Structured Filters)
 
 ### Changed
