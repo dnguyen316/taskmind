@@ -27,6 +27,8 @@ import com.taskmind.events.EventTypes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -67,8 +69,11 @@ public class SpecBreakdownApplicationService {
         this.mapper = mapper;
         this.tasks = tasks;
         this.events = events;
-        this.transactions =
-                transactionManager == null ? null : new TransactionTemplate(transactionManager);
+        this.transactions = transactionManager == null ? null : new TransactionTemplate(transactionManager);
+        if (this.transactions != null) {
+            this.transactions.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            this.transactions.setReadOnly(false);
+        }
     }
 
     public SpecBreakdownApplicationService(
@@ -135,6 +140,7 @@ public class SpecBreakdownApplicationService {
                         null));
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public boolean processOneQueuedJob() {
         ClaimedQueuedJob claimed = runInTransaction(this::claimNextQueuedJob);
         if (!claimed.queuedJobFound()) {
