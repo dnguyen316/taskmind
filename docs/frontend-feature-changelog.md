@@ -1,3 +1,16 @@
+## 2026-06-21 (Shared Activity Search Autocomplete)
+
+### Changed
+
+- Extracted the activity recommendation dropdown into a reusable autocomplete component that owns focus state, debounced Core suggestion loading, loading/error/empty rows, suggestion selection, submit, and optional view-all actions.
+- Updated both the `/activity` search panel and dashboard topbar search to use the shared component while preserving activity filters and keeping dashboard navigation limited to explicit submit or view-all.
+
+### Verification notes
+
+- Exact verification commands for this slice: `cd apps/frontend && npm run format -- src/features/activity/components/ActivitySearchAutocomplete.vue src/features/activity/components/ActivitySearchPanel.vue src/features/activity/composables/useActivitySearch.ts src/features/tasks/pages/DashboardPage.vue ../../docs/frontend-feature-changelog.md`; `cd apps/frontend && npm run typecheck`; `cd apps/frontend && npm run build`; `git diff --check`; `git diff --stat`; `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this shared autocomplete refactor.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-21 (Dashboard Search Recommendations)
 
 ### Changed

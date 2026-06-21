@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { RobotOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import ActivitySearchAutocomplete from './ActivitySearchAutocomplete.vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
 const route = useRoute()
-const recommendationDropdownFocused = ref(false)
 const {
   query,
   size,
@@ -19,9 +19,6 @@ const {
   loading,
   errorMessage,
   results,
-  suggestions,
-  suggestionsLoading,
-  suggestionsErrorMessage,
   aiLoading,
   aiErrorMessage,
   aiProposal,
@@ -51,13 +48,14 @@ watch(
   },
 )
 
-const suggestionOptions = computed(() =>
-  suggestions.value.map((suggestion) => ({ value: suggestion, label: suggestion })),
-)
-
-const showRecommendationDropdown = computed(() => {
-  return recommendationDropdownFocused.value && query.value.trim().length >= 2
-})
+const searchFilters = computed(() => ({
+  entityType: entityType.value,
+  status: status.value,
+  projectId: projectId.value,
+  from: from.value ? new Date(from.value).toISOString() : undefined,
+  to: to.value ? new Date(to.value).toISOString() : undefined,
+  eventType: eventType.value,
+}))
 
 function submitSearch() {
   void runSearch()
@@ -65,14 +63,7 @@ function submitSearch() {
 
 function selectSuggestion(value: string) {
   query.value = value
-  recommendationDropdownFocused.value = false
   void runSearch()
-}
-
-function closeRecommendationDropdown() {
-  window.setTimeout(() => {
-    recommendationDropdownFocused.value = false
-  }, 150)
 }
 
 function formatEventType(value: string) {
@@ -110,24 +101,13 @@ function payloadPreview(document: ActivitySearchDocument) {
     <a-space direction="vertical" size="middle" style="width: 100%">
       <a-form layout="inline" class="activity-search-form" @submit.prevent="submitSearch">
         <a-form-item label="Query">
-          <a-auto-complete
+          <ActivitySearchAutocomplete
             v-model:value="query"
-            :options="suggestionOptions"
-            :open="showRecommendationDropdown"
+            :filters="searchFilters"
             placeholder="Search activity, tasks, status changes..."
-            allow-clear
-            @focus="recommendationDropdownFocused = true"
-            @blur="closeRecommendationDropdown"
-            @select="selectSuggestion"
-          >
-            <template #notFoundContent>
-              <div class="recommendation-empty">
-                <a-spin v-if="suggestionsLoading" size="small" />
-                <span v-else-if="suggestionsErrorMessage">{{ suggestionsErrorMessage }}</span>
-                <span v-else>No recommendations yet.</span>
-              </div>
-            </template>
-          </a-auto-complete>
+            @select-suggestion="selectSuggestion"
+            @submit-search="submitSearch"
+          />
         </a-form-item>
 
         <a-form-item label="Entity">
@@ -255,11 +235,6 @@ function payloadPreview(document: ActivitySearchDocument) {
 .ai-proposal-card {
   background: var(--tm-surface-muted);
   border-radius: 14px;
-}
-
-.recommendation-empty {
-  padding: 8px 12px;
-  color: var(--tm-text-muted);
 }
 
 .activity-search-item {

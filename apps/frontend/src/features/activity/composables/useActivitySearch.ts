@@ -1,9 +1,5 @@
-import { computed, onScopeDispose, ref, watch } from 'vue'
-import {
-  assistActivitySearch,
-  searchActivity,
-  suggestActivitySearch,
-} from '../../tasks/api/activitySearchApi'
+import { computed, ref } from 'vue'
+import { assistActivitySearch, searchActivity } from '../../tasks/api/activitySearchApi'
 import type { ActivitySearchAssistResponse, ActivitySearchDocument } from '../../tasks/types'
 
 export function useActivitySearch(defaultSize = 20) {
@@ -18,68 +14,11 @@ export function useActivitySearch(defaultSize = 20) {
   const loading = ref(false)
   const errorMessage = ref('')
   const results = ref<ActivitySearchDocument[]>([])
-  const suggestions = ref<string[]>([])
-  const suggestionsLoading = ref(false)
-  const suggestionsErrorMessage = ref('')
   const aiLoading = ref(false)
   const aiErrorMessage = ref('')
   const aiProposal = ref<ActivitySearchAssistResponse | null>(null)
-  let suggestionTimer: ReturnType<typeof setTimeout> | undefined
-  let suggestionRequestId = 0
 
   const hasResults = computed(() => results.value.length > 0)
-
-  async function loadSuggestions() {
-    const suggestionQuery = query.value.trim()
-    suggestionRequestId += 1
-    const requestId = suggestionRequestId
-
-    if (suggestionQuery.length < 2) {
-      suggestions.value = []
-      suggestionsErrorMessage.value = ''
-      suggestionsLoading.value = false
-      return
-    }
-
-    suggestionsLoading.value = true
-    suggestionsErrorMessage.value = ''
-
-    try {
-      const nextSuggestions = await suggestActivitySearch({
-        query: suggestionQuery,
-        size: 8,
-        ...currentFilters(),
-      })
-      if (requestId === suggestionRequestId) {
-        suggestions.value = nextSuggestions
-      }
-    } catch (error: unknown) {
-      if (requestId === suggestionRequestId) {
-        suggestions.value = []
-        suggestionsErrorMessage.value =
-          error instanceof Error ? error.message : 'Failed to load activity suggestions.'
-      }
-    } finally {
-      if (requestId === suggestionRequestId) {
-        suggestionsLoading.value = false
-      }
-    }
-  }
-
-  watch(query, () => {
-    if (suggestionTimer) {
-      clearTimeout(suggestionTimer)
-    }
-    suggestionTimer = setTimeout(() => {
-      void loadSuggestions()
-    }, 250)
-  })
-
-  onScopeDispose(() => {
-    if (suggestionTimer) {
-      clearTimeout(suggestionTimer)
-    }
-  })
 
   function currentFilters() {
     return {
@@ -148,8 +87,6 @@ export function useActivitySearch(defaultSize = 20) {
     query.value = ''
     results.value = []
     errorMessage.value = ''
-    suggestions.value = []
-    suggestionsErrorMessage.value = ''
     entityType.value = ''
     status.value = ''
     projectId.value = ''
@@ -172,14 +109,10 @@ export function useActivitySearch(defaultSize = 20) {
     loading,
     errorMessage,
     results,
-    suggestions,
-    suggestionsLoading,
-    suggestionsErrorMessage,
     aiLoading,
     aiErrorMessage,
     aiProposal,
     hasResults,
-    loadSuggestions,
     askNova,
     applyAiProposal,
     dismissAiProposal,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, h, onMounted, onScopeDispose, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { BellOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { BellOutlined } from '@ant-design/icons-vue'
 import { useDashboard } from '../../dashboard/composables/useDashboard'
-import { suggestActivitySearch } from '../api/activitySearchApi'
+import ActivitySearchAutocomplete from '../../activity/components/ActivitySearchAutocomplete.vue'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime } from '../utils/taskDates'
 import type { DashboardTaskItem } from '../../dashboard/types'
@@ -11,17 +11,6 @@ import type { DashboardTaskItem } from '../../dashboard/types'
 const { dashboard, loading, errorMessage, fetchDashboard } = useDashboard()
 const router = useRouter()
 const searchQuery = ref('')
-const searchFocused = ref(false)
-const searchSuggestions = ref<string[]>([])
-const searchSuggestionsLoading = ref(false)
-const searchSuggestionsErrorMessage = ref('')
-let searchSuggestionTimer: ReturnType<typeof setTimeout> | undefined
-let searchSuggestionRequestId = 0
-
-const DASHBOARD_SEARCH_MIN_LENGTH = 2
-const DASHBOARD_SEARCH_SUGGESTION_LIMIT = 6
-const VIEW_ALL_OPTION_PREFIX = '__taskmind_view_all__:'
-
 const dashboardKpis = computed(() => dashboard.value?.kpis)
 const realTaskMetrics = computed(() => ({
   active: dashboardKpis.value?.openTasks ?? 0,
@@ -31,105 +20,6 @@ const realTaskMetrics = computed(() => ({
 }))
 const myTasks = computed<DashboardTaskItem[]>(() => dashboard.value?.myTasks.slice(0, 6) ?? [])
 const activity = computed(() => dashboard.value?.activity ?? [])
-const trimmedSearchQuery = computed(() => searchQuery.value.trim())
-const showSearchDropdown = computed(
-  () => searchFocused.value && trimmedSearchQuery.value.length >= DASHBOARD_SEARCH_MIN_LENGTH,
-)
-const searchSuggestionOptions = computed(() => {
-  const query = trimmedSearchQuery.value
-
-  if (query.length < DASHBOARD_SEARCH_MIN_LENGTH) {
-    return []
-  }
-
-  if (searchSuggestionsLoading.value) {
-    return [{ value: 'dashboard-search-loading', label: 'Searching…', disabled: true }]
-  }
-
-  if (searchSuggestionsErrorMessage.value) {
-    return [
-      {
-        value: 'dashboard-search-error',
-        label: 'Suggestion request failed.',
-        disabled: true,
-      },
-      viewAllOption(query),
-    ]
-  }
-
-  const suggestionOptions = searchSuggestions.value.map((suggestion) => ({
-    value: suggestion,
-    label: suggestion,
-  }))
-
-  if (suggestionOptions.length === 0) {
-    return [
-      { value: 'dashboard-search-empty', label: 'No matches found.', disabled: true },
-      viewAllOption(query),
-    ]
-  }
-
-  return [...suggestionOptions, viewAllOption(query)]
-})
-
-function viewAllOption(query: string) {
-  return {
-    value: `${VIEW_ALL_OPTION_PREFIX}${query}`,
-    label: h('strong', `View all results for “${query}”`),
-  }
-}
-
-async function loadDashboardSearchSuggestions() {
-  const query = trimmedSearchQuery.value
-  searchSuggestionRequestId += 1
-  const requestId = searchSuggestionRequestId
-
-  if (query.length < DASHBOARD_SEARCH_MIN_LENGTH) {
-    searchSuggestions.value = []
-    searchSuggestionsErrorMessage.value = ''
-    searchSuggestionsLoading.value = false
-    return
-  }
-
-  searchSuggestionsLoading.value = true
-  searchSuggestionsErrorMessage.value = ''
-
-  try {
-    const suggestions = await suggestActivitySearch({
-      query,
-      size: DASHBOARD_SEARCH_SUGGESTION_LIMIT,
-    })
-    if (requestId === searchSuggestionRequestId) {
-      searchSuggestions.value = suggestions
-    }
-  } catch (error: unknown) {
-    if (requestId === searchSuggestionRequestId) {
-      searchSuggestions.value = []
-      searchSuggestionsErrorMessage.value =
-        error instanceof Error ? error.message : 'Failed to load activity suggestions.'
-    }
-  } finally {
-    if (requestId === searchSuggestionRequestId) {
-      searchSuggestionsLoading.value = false
-    }
-  }
-}
-
-watch(searchQuery, () => {
-  if (searchSuggestionTimer) {
-    clearTimeout(searchSuggestionTimer)
-  }
-  searchSuggestionTimer = setTimeout(() => {
-    void loadDashboardSearchSuggestions()
-  }, 250)
-})
-
-onScopeDispose(() => {
-  if (searchSuggestionTimer) {
-    clearTimeout(searchSuggestionTimer)
-  }
-})
-
 function submitDashboardSearch(value = searchQuery.value) {
   const query = value.trim()
 
@@ -137,24 +27,11 @@ function submitDashboardSearch(value = searchQuery.value) {
     return
   }
 
-  searchFocused.value = false
   void router.push({ name: 'activity-search', query: { q: query } })
 }
 
 function selectDashboardSearchOption(value: string) {
-  if (value.startsWith(VIEW_ALL_OPTION_PREFIX)) {
-    submitDashboardSearch(value.slice(VIEW_ALL_OPTION_PREFIX.length))
-    return
-  }
-
   searchQuery.value = value
-  submitDashboardSearch(value)
-}
-
-function closeSearchDropdown() {
-  window.setTimeout(() => {
-    searchFocused.value = false
-  }, 150)
 }
 
 onMounted(async () => {
@@ -168,24 +45,17 @@ onMounted(async () => {
     <template #subtitle>Live Core dashboard aggregation from analytics read models.</template>
     <template #headerActions>
       <div class="dashboard-search">
-        <a-auto-complete
+        <ActivitySearchAutocomplete
           v-model:value="searchQuery"
           class="dashboard-search-autocomplete"
-          :options="searchSuggestionOptions"
-          :open="showSearchDropdown"
-          allow-clear
-          @focus="searchFocused = true"
-          @blur="closeSearchDropdown"
-          @select="selectDashboardSearchOption"
-        >
-          <a-input
-            size="large"
-            placeholder="Search activity, tasks, projects..."
-            @press-enter="submitDashboardSearch()"
-          >
-            <template #prefix><SearchOutlined /></template>
-          </a-input>
-        </a-auto-complete>
+          input-size="large"
+          :suggestion-limit="6"
+          show-view-all
+          view-all-label="View all results"
+          @select-suggestion="selectDashboardSearchOption"
+          @submit-search="submitDashboardSearch"
+          @view-all="submitDashboardSearch"
+        />
       </div>
       <a-button shape="circle" disabled title="Notifications coming in a later milestone"
         ><BellOutlined
