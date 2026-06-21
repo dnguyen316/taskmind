@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { apiClient } from '../../../lib/apiClient'
+import { apiClient, fetchWithAuthRetry } from '../../../lib/apiClient'
 import { isApiError } from '../../../lib/apiError'
 import { getAuthorizationHeader } from '../../../lib/authToken'
 
@@ -46,14 +46,18 @@ export function useNovaChat() {
   }
 
   async function streamChat(message: string, assistantMessage: NovaChatMessage) {
-    const response = await fetch(`${apiClient.defaults.baseURL ?? ''}/v1/nova/chat/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-        ...(getAuthorizationHeader() ? { Authorization: getAuthorizationHeader() as string } : {}),
-      },
-      body: JSON.stringify({ message, sessionId: sessionId.value }),
+    const response = await fetchWithAuthRetry(() => {
+      const authorizationHeader = getAuthorizationHeader()
+
+      return fetch(`${apiClient.defaults.baseURL ?? ''}/v1/nova/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),
+        },
+        body: JSON.stringify({ message, sessionId: sessionId.value }),
+      })
     })
 
     if (!response.ok) {
