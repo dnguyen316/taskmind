@@ -120,6 +120,9 @@ function payloadPreview(document: ActivitySearchDocument) {
               { value: 'task', label: 'Task' },
               { value: 'project', label: 'Project' },
               { value: 'attachment', label: 'Attachment' },
+              { value: 'document', label: 'Document' },
+              { value: 'spec', label: 'Spec' },
+              { value: 'spec-document', label: 'Spec document' },
             ]"
           />
         </a-form-item>
