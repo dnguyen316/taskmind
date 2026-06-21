@@ -24,7 +24,7 @@ class NovaProdProfileConfigurationTest {
         assertThat(properties.getProperty("spring.flyway.enabled")).isEqualTo("true");
         assertThat(properties.getProperty("spring.flyway.schemas")).isEqualTo("ai");
         assertThat(properties.getProperty("taskmind.ai.service-token"))
-                .isEqualTo("${TASKMIND_AI_SERVICE_TOKEN}");
+                .isEqualTo("${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN}}");
         assertThat(properties.getProperty("management.endpoints.web.exposure.include"))
                 .isEqualTo("health,info");
         assertThat(properties.getProperty("logging.level.com.taskmind.ai")).isEqualTo("INFO");

@@ -4,6 +4,7 @@ ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 FRONTEND_DIR := $(ROOT_DIR)/apps/frontend
 LOG_DIR := $(ROOT_DIR)/.taskmind/logs
 PID_DIR := $(ROOT_DIR)/.taskmind/pids
+ENV_FILE := $(ROOT_DIR)/infra/env/.env
 
 MVN ?= mvn
 NPM ?= npm
@@ -76,13 +77,13 @@ image-build-frontend: ## Build the Vue SPA production image.
 	docker build -f apps/frontend/Dockerfile --build-arg VITE_API_BASE_URL="$(VITE_API_BASE_URL)" -t $(IMAGE_REGISTRY)/taskmind-frontend:$(IMAGE_TAG) .
 
 run-backend: ## Run Core API in the foreground on BACKEND_PORT (default 8080).
-	SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(BACKEND_PORT)" $(MVN) -pl apps/backend spring-boot:run
+	bash -lc 'set -a; [ ! -f "$(ENV_FILE)" ] || source "$(ENV_FILE)"; set +a; exec env SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(BACKEND_PORT)" $(MVN) -pl apps/backend spring-boot:run'
 
 run-relay: ## Run Relay in the foreground on RELAY_PORT (default 8081).
-	SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(RELAY_PORT)" $(MVN) -pl apps/relay spring-boot:run
+	bash -lc 'set -a; [ ! -f "$(ENV_FILE)" ] || source "$(ENV_FILE)"; set +a; exec env SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(RELAY_PORT)" $(MVN) -pl apps/relay spring-boot:run'
 
 run-ai: ## Run Nova AI in the foreground on AI_PORT (default 8082).
-	SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(AI_PORT)" $(MVN) -pl apps/ai spring-boot:run
+	bash -lc 'set -a; [ ! -f "$(ENV_FILE)" ] || source "$(ENV_FILE)"; set +a; exec env SPRING_PROFILES_ACTIVE="$(SPRING_PROFILES_ACTIVE)" SERVER_PORT="$(AI_PORT)" $(MVN) -pl apps/ai spring-boot:run'
 
 run-frontend: ## Run the Vue dev server in the foreground on FRONTEND_PORT (default 5173).
 	cd "$(FRONTEND_DIR)" && $(NPM) run dev -- --host 0.0.0.0 --port "$(FRONTEND_PORT)"
@@ -108,7 +109,7 @@ _start:
 		echo "$(NAME) is already running (pid $$(cat "$(PID_DIR)/$(NAME).pid"))."; \
 	else \
 		echo "Starting $(NAME); logs: $(LOG_DIR)/$(NAME).log"; \
-		bash -lc 'cd "$(ROOT_DIR)" && exec $(CMD)' >"$(LOG_DIR)/$(NAME).log" 2>&1 & \
+		bash -lc 'cd "$(ROOT_DIR)" && set -a; [ ! -f "$(ENV_FILE)" ] || source "$(ENV_FILE)"; set +a; exec $(CMD)' >"$(LOG_DIR)/$(NAME).log" 2>&1 & \
 		echo $$! >"$(PID_DIR)/$(NAME).pid"; \
 	fi
 

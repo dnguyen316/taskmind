@@ -639,3 +639,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added rate-limit filter coverage proving `/v1/spec-breakdown/drafts` consumes the AI-heavy bucket for authenticated users.
+
+## 2026-06-21 (Core/Nova Service Token Alignment)
+
+### Changed
+
+- Standardized Core-to-Nova service-token configuration on `TASKMIND_NOVA_SERVICE_TOKEN`, with `TASKMIND_AI_SERVICE_TOKEN` retained as a deprecated alias for older Nova deployments.
+- Matched Core and Nova local fallback tokens and required explicit non-local service-token secrets in production profiles.
+- Added a local `infra/env/.env.example` template and Makefile env-file sourcing so local Core and Nova app runs receive the same shared token intentionally.
+
+### Tests
+
+- Added configuration tests for Core/Nova local defaults and production token placeholders, and expanded Nova security coverage for both `X-Service-Token` and bearer-token internal auth.

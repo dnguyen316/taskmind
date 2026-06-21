@@ -28,5 +28,8 @@ class NovaSecurityTest {
         mockMvc.perform(get("/internal/ai/capabilities").header("X-Service-Token", "test-ai-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.capabilities").isArray());
+        mockMvc.perform(get("/internal/ai/capabilities").header("Authorization", "Bearer test-ai-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capabilities").isArray());
     }
 }
