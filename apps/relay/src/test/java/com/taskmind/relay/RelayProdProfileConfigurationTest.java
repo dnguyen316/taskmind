@@ -35,7 +35,7 @@ class RelayProdProfileConfigurationTest {
         Properties properties = prodProperties();
 
         assertThat(properties.getProperty("taskmind.relay.service-token"))
-                .doesNotContain("development-service-token");
+                .doesNotContain("local-relay-service-token");
         assertThat(properties.getProperty("spring.elasticsearch.uris"))
                 .doesNotContain("localhost");
         assertThat(properties.getProperty("spring.data.redis.host")).doesNotContain(":");
