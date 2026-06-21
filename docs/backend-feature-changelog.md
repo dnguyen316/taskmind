@@ -1,3 +1,14 @@
+## 2026-06-21 (Nova AI Run Timestamp Binding)
+
+### Changed
+
+- Bound Nova AI run audit `Instant` values with explicit `TIMESTAMP_WITH_TIMEZONE` JDBC types so PostgreSQL can persist run start, success, and failure timestamps without driver type inference errors.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/ai -am -Dtest=AiRunAuditRepositoryTest -Dsurefire.failIfNoSpecifiedTests=false test`; `mvn -q -pl apps/ai -am test`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-21 (Relay JDBC Timestamp Binding)
 
 ### Changed
