@@ -78,8 +78,7 @@ apiClient.interceptors.response.use(
           return apiClient.request(requestConfig)
         }
       } catch {
-        clearAuthTokens()
-        notifySessionExpired()
+        expireAuthSession()
       }
     }
 
@@ -99,7 +98,7 @@ function shouldRefresh(
   )
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     const refreshToken = getRefreshToken()
 
@@ -129,6 +128,27 @@ async function refreshAccessToken() {
   }
 
   return refreshPromise
+}
+
+export async function fetchWithAuthRetry(createRequest: () => Promise<Response>) {
+  const response = await createRequest()
+
+  if (response.status !== 401) {
+    return response
+  }
+
+  try {
+    await refreshAccessToken()
+    return createRequest()
+  } catch {
+    expireAuthSession()
+    return response
+  }
+}
+
+function expireAuthSession() {
+  clearAuthTokens()
+  notifySessionExpired()
 }
 
 function isPublicAuthEndpoint(url: string | undefined) {
