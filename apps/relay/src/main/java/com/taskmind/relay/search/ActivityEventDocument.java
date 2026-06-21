@@ -3,6 +3,7 @@ package com.taskmind.relay.search;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.taskmind.events.DomainEvent;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record ActivityEventDocument(
@@ -18,6 +19,10 @@ public record ActivityEventDocument(
         JsonNode payload,
         String payloadText,
         Instant occurredAt) {
+    private static final List<String> TITLE_FIELDS =
+            List.of("title", "name", "fileName", "filename", "displayName", "summary");
+    private static final List<String> STATUS_FIELDS = List.of("status", "state", "lifecycle", "archived");
+
     public static ActivityEventDocument from(DomainEvent event) {
         return new ActivityEventDocument(
                 event.eventId(),
@@ -27,10 +32,33 @@ public record ActivityEventDocument(
                 event.scope().projectId(),
                 event.entity().type(),
                 event.entity().id(),
-                event.payload().path("title").asText(""),
-                event.payload().path("status").asText(""),
+                firstText(event.payload(), TITLE_FIELDS),
+                firstText(event.payload(), STATUS_FIELDS),
                 event.payload(),
-                event.payload().toString(),
+                searchablePayloadText(event.payload()),
                 event.occurredAt());
+    }
+
+    private static String firstText(JsonNode payload, List<String> fieldNames) {
+        if (payload == null || payload.isMissingNode() || payload.isNull()) {
+            return "";
+        }
+        for (String fieldName : fieldNames) {
+            JsonNode value = payload.path(fieldName);
+            if (!value.isMissingNode() && !value.isNull()) {
+                String text = value.isTextual() ? value.asText() : value.asText("");
+                if (!text.isBlank()) {
+                    return text;
+                }
+            }
+        }
+        return "";
+    }
+
+    private static String searchablePayloadText(JsonNode payload) {
+        if (payload == null || payload.isMissingNode() || payload.isNull()) {
+            return "";
+        }
+        return payload.toString();
     }
 }

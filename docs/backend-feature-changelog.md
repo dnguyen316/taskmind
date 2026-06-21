@@ -1,3 +1,16 @@
+## 2026-06-21 (Relay Recommendation Index Entity Types)
+
+### Changed
+
+- Replaced Relay's task-only OpenSearch indexing guard with the configurable `taskmind.activity-search.recommendation-entity-types` allowlist, defaulting to task, project, attachment, document, spec, and spec-document entities.
+- Made Relay activity search documents derive titles/status text safely from non-task payload shapes such as projects and attachments.
+- Aligned the frontend activity entity filter options with the Relay recommendation indexing allowlist.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/relay -am -Dtest=ElasticsearchIndexerTest,ActivityEventDocumentTest -Dsurefire.failIfNoSpecifiedTests=false test`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-21 (Typed Activity Search Recommendations)
 
 ### Changed
