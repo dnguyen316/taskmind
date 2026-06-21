@@ -5,6 +5,16 @@
 - Added Core `GET /v1/activity/search/recommendations` for typed recommendation items while keeping `/suggest` as the legacy string endpoint.
 - Mapped OpenSearch activity hits to recommendation metadata including label, entity type/id, event type, status, title, occurred time, and route name.
 - Updated Core OpenAPI with the typed recommendation schema.
+## 2026-06-21 (Nova AI Run Timestamp Binding)
+
+### Changed
+
+- Bound Nova AI run audit `Instant` values with explicit `TIMESTAMP_WITH_TIMEZONE` JDBC types so PostgreSQL can persist run start, success, and failure timestamps without driver type inference errors.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/ai -am -Dtest=AiRunAuditRepositoryTest -Dsurefire.failIfNoSpecifiedTests=false test`; `mvn -q -pl apps/ai -am test`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-21 (Relay JDBC Timestamp Binding)
 

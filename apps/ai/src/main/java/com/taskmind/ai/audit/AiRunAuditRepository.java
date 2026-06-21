@@ -6,8 +6,10 @@ import com.taskmind.ai.contracts.AiCapabilityId;
 import com.taskmind.ai.contracts.AiProviderId;
 import com.taskmind.ai.contracts.AiRunStatus;
 import com.taskmind.ai.contracts.audit.AiRunSummary;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,18 +36,20 @@ public class AiRunAuditRepository {
                   input_json, correlation_id, created_at, started_at, version
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
-                id,
-                record.userId(),
-                record.workspaceId(),
-                record.capabilityId().value(),
-                record.providerId().value(),
-                record.modelId(),
-                AiRunStatus.RUNNING.name(),
-                record.requestHash(),
-                toJson(record.input()),
-                record.correlationId(),
-                now,
-                now);
+                ps -> {
+                    ps.setObject(1, id);
+                    ps.setObject(2, record.userId());
+                    ps.setString(3, record.workspaceId());
+                    ps.setString(4, record.capabilityId().value());
+                    ps.setString(5, record.providerId().value());
+                    ps.setString(6, record.modelId());
+                    ps.setString(7, AiRunStatus.RUNNING.name());
+                    ps.setString(8, record.requestHash());
+                    ps.setString(9, toJson(record.input()));
+                    ps.setString(10, record.correlationId());
+                    setInstant(ps, 11, now);
+                    setInstant(ps, 12, now);
+                });
         return id;
     }
 
@@ -63,14 +67,16 @@ public class AiRunAuditRepository {
                     latency_ms = ?, completed_at = ?, version = version + 1
                 WHERE id = ?
                 """,
-                AiRunStatus.SUCCEEDED.name(),
-                toJson(output),
-                promptTokens,
-                completionTokens,
-                totalTokens,
-                latencyMs,
-                Instant.now(),
-                runId);
+                ps -> {
+                    ps.setString(1, AiRunStatus.SUCCEEDED.name());
+                    ps.setString(2, toJson(output));
+                    ps.setInt(3, promptTokens);
+                    ps.setInt(4, completionTokens);
+                    ps.setInt(5, totalTokens);
+                    ps.setLong(6, latencyMs);
+                    setInstant(ps, 7, Instant.now());
+                    ps.setObject(8, runId);
+                });
     }
 
     public void fail(UUID runId, String errorCode, String errorMessage, long latencyMs) {
@@ -80,12 +86,14 @@ public class AiRunAuditRepository {
                 SET status = ?, error_code = ?, error_message = ?, latency_ms = ?, completed_at = ?, version = version + 1
                 WHERE id = ?
                 """,
-                AiRunStatus.FAILED.name(),
-                errorCode,
-                errorMessage,
-                latencyMs,
-                Instant.now(),
-                runId);
+                ps -> {
+                    ps.setString(1, AiRunStatus.FAILED.name());
+                    ps.setString(2, errorCode);
+                    ps.setString(3, errorMessage);
+                    ps.setLong(4, latencyMs);
+                    setInstant(ps, 5, Instant.now());
+                    ps.setObject(6, runId);
+                });
     }
 
     public Optional<AiRunSummary> findSummary(UUID runId) {
@@ -112,6 +120,11 @@ public class AiRunAuditRepository {
                 rs.getObject("created_at", Instant.class),
                 rs.getObject("started_at", Instant.class),
                 rs.getObject("completed_at", Instant.class));
+    }
+
+    private void setInstant(PreparedStatement ps, int parameterIndex, Instant instant)
+            throws SQLException {
+        ps.setObject(parameterIndex, instant, Types.TIMESTAMP_WITH_TIMEZONE);
     }
 
     private String toJson(JsonNode node) {
