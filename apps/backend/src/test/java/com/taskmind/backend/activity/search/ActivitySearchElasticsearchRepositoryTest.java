@@ -46,9 +46,9 @@ class ActivitySearchElasticsearchRepositoryTest {
                                                 containsString("\"userId\":\"" + USER_ID + "\""),
                                                 containsString("\"query\":\"tas\""),
                                                 containsString("\"type\":\"bool_prefix\""),
-                                                containsString("title^3"),
-                                                containsString("eventType"),
-                                                containsString("status"),
+                                                containsString("title.autocomplete^4"),
+                                                containsString("eventTypeKeyword^2"),
+                                                containsString("statusKeyword^2"),
                                                 containsString("payloadText"))))
                 .andRespond(
                         withSuccess(
@@ -80,17 +80,20 @@ class ActivitySearchElasticsearchRepositoryTest {
                                         allOf(
                                                 containsString("\"userId\":\"" + USER_ID + "\""),
                                                 containsString("\"query\":\"tas\""),
-                                                containsString("\"type\":\"bool_prefix\""),
-                                                containsString("entityType"),
+                                                containsString("\"function_score\""),
+                                                containsString("title.keyword"),
                                                 containsString("entityId"),
-                                                containsString("occurredAt"))))
+                                                containsString("title.autocomplete^6"),
+                                                containsString("payloadText^1"),
+                                                containsString("occurredAt"),
+                                                containsString("_score"))))
                 .andRespond(
                         withSuccess(
                                 """
                                 {
                                   "hits": {
                                     "hits": [
-                                      {"_source": {"entityType": "task", "entityId": "33333333-3333-3333-3333-333333333333", "title": "Task planning", "eventType": "task.updated", "status": "DONE", "occurredAt": "2026-01-02T00:00:00Z"}}
+                                      {"_score": 12.5, "_source": {"entityType": "task", "entityId": "33333333-3333-3333-3333-333333333333", "title": "Task planning", "eventType": "task.updated", "status": "DONE", "occurredAt": "2026-01-02T00:00:00Z"}}
                                     ]
                                   }
                                 }
@@ -107,6 +110,37 @@ class ActivitySearchElasticsearchRepositoryTest {
                 .isEqualTo(UUID.fromString("33333333-3333-3333-3333-333333333333"));
         assertThat(recommendations.get(0).status()).isEqualTo("DONE");
         assertThat(recommendations.get(0).routeName()).isEqualTo("task-detail");
+        assertThat(recommendations.get(0).score()).isEqualTo(12.5);
+        server.verify();
+    }
+
+    @Test
+    void recommendationsKeepHighestRankedHitPerEntity() {
+        UUID entityId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        server.expect(once(), requestTo(BASE_URL + "/" + INDEX_NAME + "/_search"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(
+                        withSuccess(
+                                """
+                                {
+                                  "hits": {
+                                    "hits": [
+                                      {"_score": 30.0, "_source": {"entityType": "task", "entityId": "33333333-3333-3333-3333-333333333333", "title": "Task exact", "eventType": "task.updated", "status": "DONE", "occurredAt": "2026-01-03T00:00:00Z"}},
+                                      {"_score": 10.0, "_source": {"entityType": "task", "entityId": "33333333-3333-3333-3333-333333333333", "title": "Task stale", "eventType": "task.created", "status": "TODO", "occurredAt": "2026-01-01T00:00:00Z"}},
+                                      {"_score": 8.0, "_source": {"entityType": "project", "entityId": "44444444-4444-4444-4444-444444444444", "title": "Task project", "eventType": "project.updated", "status": "ACTIVE", "occurredAt": "2026-01-02T00:00:00Z"}}
+                                    ]
+                                  }
+                                }
+                                """,
+                                MediaType.APPLICATION_JSON));
+
+        var recommendations =
+                repository.recommend(new ActivitySearchRequest(USER_ID, "task", 5, null, null, null, null, null, null));
+
+        assertThat(recommendations).extracting(ActivitySearchSuggestion::entityId)
+                .containsExactly(entityId, UUID.fromString("44444444-4444-4444-4444-444444444444"));
+        assertThat(recommendations).extracting(ActivitySearchSuggestion::label).containsExactly("Task exact", "Task project");
+        assertThat(recommendations).extracting(ActivitySearchSuggestion::score).containsExactly(30.0, 8.0);
         server.verify();
     }
 
@@ -120,7 +154,7 @@ class ActivitySearchElasticsearchRepositoryTest {
                                         allOf(
                                                 containsString("\"userId\":\"" + USER_ID + "\""),
                                                 containsString("\"entityType\":\"task\""),
-                                                containsString("\"status\":\"DONE\""),
+                                                containsString("\"status\":\"done\""),
                                                 containsString("\"projectId\":\"22222222-2222-2222-2222-222222222222\""),
                                                 containsString("\"eventType\":\"task.updated\""),
                                                 containsString("\"gte\":\"2026-01-01T00:00:00Z\""),

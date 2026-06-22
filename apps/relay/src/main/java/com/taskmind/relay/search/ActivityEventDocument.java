@@ -13,9 +13,12 @@ public record ActivityEventDocument(
         UUID userId,
         UUID projectId,
         String entityType,
+        String entityTypeKeyword,
         UUID entityId,
         String title,
         String status,
+        String statusKeyword,
+        String eventTypeKeyword,
         JsonNode payload,
         String payloadText,
         Instant occurredAt) {
@@ -31,9 +34,12 @@ public record ActivityEventDocument(
                 event.scope().userId(),
                 event.scope().projectId(),
                 event.entity().type(),
+                normalizeKeyword(event.entity().type()),
                 event.entity().id(),
                 firstText(event.payload(), TITLE_FIELDS),
                 firstText(event.payload(), STATUS_FIELDS),
+                normalizeKeyword(firstText(event.payload(), STATUS_FIELDS)),
+                normalizeKeyword(event.eventType()),
                 event.payload(),
                 searchablePayloadText(event.payload()),
                 event.occurredAt());
@@ -53,6 +59,10 @@ public record ActivityEventDocument(
             }
         }
         return "";
+    }
+
+    private static String normalizeKeyword(String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static String searchablePayloadText(JsonNode payload) {

@@ -29,6 +29,8 @@ class ElasticsearchIndexerTest {
 
         assertEquals(4, repository.count);
         assertEquals("Import spec", repository.last.title());
+        assertEquals("spec", repository.last.entityTypeKeyword());
+        assertEquals("spec.created", repository.last.eventTypeKeyword());
     }
 
     @Test

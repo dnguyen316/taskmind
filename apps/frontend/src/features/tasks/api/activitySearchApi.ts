@@ -127,6 +127,7 @@ function adaptActivitySearchSuggestionResponse(data: unknown): ActivitySearchSug
       title: data,
       occurredAt: '',
       routeName: null,
+      score: 0,
     }
   }
 
@@ -144,7 +145,19 @@ function adaptActivitySearchSuggestionResponse(data: unknown): ActivitySearchSug
     title: readNullableString(data, 'title'),
     occurredAt: readRequiredString(data, 'occurredAt', 'activity search recommendation'),
     routeName: readNullableString(data, 'routeName'),
+    score: readOptionalNumber(data, 'score') ?? 0,
   }
+}
+
+function readOptionalNumber(data: Record<string, unknown>, field: string): number | null {
+  const value = data[field]
+  if (value == null) {
+    return null
+  }
+  if (typeof value !== 'number') {
+    throw new Error(`Invalid ${field} in response.`)
+  }
+  return value
 }
 
 function adaptActivitySearchDocumentResponse(data: unknown): ActivitySearchDocument {

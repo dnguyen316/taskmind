@@ -61,6 +61,7 @@ export interface ActivitySearchSuggestion {
   title: string | null
   occurredAt: string
   routeName: string | null
+  score: number
 }
 
 export interface ActivitySearchDocument {

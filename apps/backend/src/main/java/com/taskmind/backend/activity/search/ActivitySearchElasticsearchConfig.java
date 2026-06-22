@@ -115,9 +115,11 @@ public class ActivitySearchElasticsearchConfig {
                     .put("query", trimmedQuery)
                     .put("type", "bool_prefix")
                     .putArray("fields")
-                    .add("title^3")
-                    .add("eventType")
-                    .add("status")
+                    .add("title.autocomplete^4")
+                    .add("title.autocomplete._2gram^3")
+                    .add("title.autocomplete._3gram^3")
+                    .add("eventTypeKeyword^2")
+                    .add("statusKeyword^2")
                     .add("payloadText");
             root.putArray("_source").add("title").add("eventType").add("status").add("payloadText");
 
@@ -156,16 +158,30 @@ public class ActivitySearchElasticsearchConfig {
             root.put("size", Math.min(request.size() * 3, 100));
             ObjectNode bool = root.putObject("query").putObject("bool");
             addFilters(bool.putArray("filter"), request);
-            bool.putArray("must")
+            ObjectNode functionScore = bool.putArray("must").addObject().putObject("function_score");
+            ObjectNode queryBool = functionScore.putObject("query").putObject("bool");
+            ArrayNode should = queryBool.putArray("should");
+            should.addObject().putObject("term").putObject("title.keyword").put("value", trimmedQuery).put("boost", 20);
+            should.addObject().putObject("term").putObject("entityId").put("value", trimmedQuery).put("boost", 18);
+            should.addObject().putObject("term").putObject("entityTypeKeyword").put("value", normalizeKeyword(trimmedQuery)).put("boost", 14);
+            should.addObject().putObject("match_bool_prefix").putObject("title.autocomplete").put("query", trimmedQuery).put("boost", 8);
+            should.addObject().putObject("multi_match").put("query", trimmedQuery).put("type", "bool_prefix").putArray("fields")
+                    .add("title.autocomplete^6")
+                    .add("title.autocomplete._2gram^5")
+                    .add("title.autocomplete._3gram^5")
+                    .add("eventTypeKeyword^3")
+                    .add("statusKeyword^3")
+                    .add("payloadText^1");
+            queryBool.put("minimum_should_match", 1);
+            functionScore.put("boost_mode", "sum");
+            functionScore.put("score_mode", "sum");
+            functionScore.putArray("functions")
                     .addObject()
-                    .putObject("multi_match")
-                    .put("query", trimmedQuery)
-                    .put("type", "bool_prefix")
-                    .putArray("fields")
-                    .add("title^3")
-                    .add("eventType")
-                    .add("status")
-                    .add("payloadText");
+                    .putObject("gauss")
+                    .putObject("occurredAt")
+                    .put("origin", "now")
+                    .put("scale", "14d")
+                    .put("decay", 0.5);
             root.putArray("_source")
                     .add("entityType")
                     .add("entityId")
@@ -173,7 +189,7 @@ public class ActivitySearchElasticsearchConfig {
                     .add("status")
                     .add("title")
                     .add("occurredAt");
-            root.putObject("sort").putObject("occurredAt").put("order", "desc");
+            root.putArray("sort").addObject().putObject("_score").put("order", "desc");
 
             JsonNode response =
                     client.post()
@@ -189,10 +205,8 @@ public class ActivitySearchElasticsearchConfig {
             }
             for (JsonNode hit : response.path("hits").path("hits")) {
                 JsonNode source = hit.path("_source");
-                ActivitySearchSuggestion recommendation = toSuggestion(source);
-                if (recommendation.label().toLowerCase().contains(trimmedQuery.toLowerCase())) {
-                    recommendations.putIfAbsent(recommendation.value(), recommendation);
-                }
+                ActivitySearchSuggestion recommendation = toSuggestion(source, hit.path("_score").asDouble(0));
+                recommendations.putIfAbsent(recommendation.entityType() + ":" + recommendation.entityId(), recommendation);
                 if (recommendations.size() >= request.size()) {
                     break;
                 }
@@ -200,7 +214,7 @@ public class ActivitySearchElasticsearchConfig {
             return List.copyOf(recommendations.values());
         }
 
-        private ActivitySearchSuggestion toSuggestion(JsonNode source) {
+        private ActivitySearchSuggestion toSuggestion(JsonNode source, double score) {
             String entityType = source.path("entityType").asText("");
             UUID entityId = uuid(source, "entityId");
             String eventType = source.path("eventType").asText("");
@@ -210,7 +224,7 @@ public class ActivitySearchElasticsearchConfig {
             String label = title.isBlank() ? entityType + " " + entityId : title;
             String value = label;
             return new ActivitySearchSuggestion(
-                    label, value, entityType, entityId, eventType, status, title, occurredAt, routeName(entityType));
+                    label, value, entityType, entityId, eventType, status, title, occurredAt, routeName(entityType), score);
         }
 
         private String routeName(String entityType) {
@@ -219,6 +233,10 @@ public class ActivitySearchElasticsearchConfig {
                 case "project" -> "project-detail";
                 default -> null;
             };
+        }
+
+        private String normalizeKeyword(String value) {
+            return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
         }
 
         private void addFilters(ArrayNode filter, ActivitySearchRequest request) {
@@ -242,7 +260,7 @@ public class ActivitySearchElasticsearchConfig {
 
         private void addTermFilter(ArrayNode filter, String field, String value) {
             if (value != null && !value.isBlank()) {
-                filter.addObject().putObject("term").put(field, value);
+                filter.addObject().putObject("term").put(field, normalizeKeyword(value));
             }
         }
 
