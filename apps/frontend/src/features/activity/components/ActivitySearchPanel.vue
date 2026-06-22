@@ -63,7 +63,6 @@ function submitSearch() {
 
 function selectSuggestion(value: string) {
   query.value = value
-  void runSearch()
 }
 
 function formatEventType(value: string) {
@@ -107,6 +106,7 @@ function payloadPreview(document: ActivitySearchDocument) {
             placeholder="Search activity, tasks, status changes..."
             @select-suggestion="selectSuggestion"
             @submit-search="submitSearch"
+            @view-all="submitSearch"
           />
         </a-form-item>
 

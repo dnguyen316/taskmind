@@ -28,7 +28,7 @@ const props = withDefaults(
     minLength: 2,
     debounceMs: 250,
     allowClear: true,
-    showViewAll: false,
+    showViewAll: true,
     viewAllLabel: 'View all results',
   },
 )
@@ -41,56 +41,103 @@ const emit = defineEmits<{
 }>()
 
 const VIEW_ALL_OPTION_PREFIX = '__taskmind_view_all__:'
+const STATUS_OPTION_PREFIX = '__taskmind_status__:'
+
+type SuggestionOption = {
+  value: string
+  label: string
+  disabled?: boolean
+  recommendation?: ActivitySearchSuggestion
+  kind: 'status' | 'recommendation' | 'viewAll'
+}
 
 const focused = ref(false)
 const suggestions = ref<ActivitySearchSuggestion[]>([])
 const suggestionsLoading = ref(false)
 const suggestionsErrorMessage = ref('')
 let suggestionTimer: ReturnType<typeof setTimeout> | undefined
+let blurTimer: ReturnType<typeof setTimeout> | undefined
 let suggestionRequestId = 0
 
 const trimmedQuery = computed(() => props.value.trim())
-const showRecommendationDropdown = computed(
-  () => focused.value && trimmedQuery.value.length >= props.minLength,
-)
-const viewAllLabelText = computed(() => `${props.viewAllLabel} for “${trimmedQuery.value}”`)
-const suggestionOptions = computed(() => {
-  if (trimmedQuery.value.length < props.minLength) {
-    return []
+const hasValidQuery = computed(() => trimmedQuery.value.length >= props.minLength)
+const remainingCharacters = computed(() => Math.max(props.minLength - trimmedQuery.value.length, 0))
+const showRecommendationDropdown = computed(() => focused.value)
+const viewAllLabelText = computed(() => `View all results for “${trimmedQuery.value}”`)
+const dropdownState = computed(() => {
+  if (!hasValidQuery.value) {
+    return 'too-short'
   }
 
-  const viewAllOption = props.showViewAll
-    ? [{ value: `${VIEW_ALL_OPTION_PREFIX}${trimmedQuery.value}`, label: viewAllLabelText.value }]
-    : []
-
   if (suggestionsLoading.value) {
-    return [
-      { value: 'activity-search-loading', label: 'Searching…', disabled: true },
-      ...viewAllOption,
-    ]
+    return 'loading'
   }
 
   if (suggestionsErrorMessage.value) {
+    return 'error'
+  }
+
+  if (suggestions.value.length === 0) {
+    return 'empty'
+  }
+
+  return 'matches'
+})
+const suggestionOptions = computed<SuggestionOption[]>(() => {
+  if (!hasValidQuery.value) {
+    const characterLabel = remainingCharacters.value === 1 ? 'character' : 'characters'
     return [
-      { value: 'activity-search-error', label: suggestionsErrorMessage.value, disabled: true },
-      ...viewAllOption,
+      {
+        value: `${STATUS_OPTION_PREFIX}too-short`,
+        label: `Type ${remainingCharacters.value} more ${characterLabel} to see recommendations.`,
+        disabled: true,
+        kind: 'status',
+      },
     ]
   }
 
-  const options = suggestions.value.map((suggestion) => ({
-    value: suggestion.value,
-    label: suggestion.label,
-    recommendation: suggestion,
-  }))
+  const stateOptions: SuggestionOption[] = []
 
-  if (options.length === 0 && props.showViewAll) {
-    return [
-      { value: 'activity-search-empty', label: 'No matches found.', disabled: true },
-      ...viewAllOption,
-    ]
+  if (dropdownState.value === 'loading') {
+    stateOptions.push({
+      value: `${STATUS_OPTION_PREFIX}loading`,
+      label: 'Searching recommendations…',
+      disabled: true,
+      kind: 'status',
+    })
+  } else if (dropdownState.value === 'error') {
+    stateOptions.push({
+      value: `${STATUS_OPTION_PREFIX}error`,
+      label: suggestionsErrorMessage.value,
+      disabled: true,
+      kind: 'status',
+    })
+  } else if (dropdownState.value === 'empty') {
+    stateOptions.push({
+      value: `${STATUS_OPTION_PREFIX}empty`,
+      label: 'No recommendation matches. Run a full search instead.',
+      disabled: true,
+      kind: 'status',
+    })
+  } else {
+    stateOptions.push(
+      ...suggestions.value.map((suggestion) => ({
+        value: suggestion.value,
+        label: suggestion.label,
+        recommendation: suggestion,
+        kind: 'recommendation' as const,
+      })),
+    )
   }
 
-  return [...options, ...viewAllOption]
+  return [
+    ...stateOptions,
+    {
+      value: `${VIEW_ALL_OPTION_PREFIX}${trimmedQuery.value}`,
+      label: viewAllLabelText.value,
+      kind: 'viewAll',
+    },
+  ]
 })
 
 async function loadSuggestions() {
@@ -147,6 +194,9 @@ onScopeDispose(() => {
   if (suggestionTimer) {
     clearTimeout(suggestionTimer)
   }
+  if (blurTimer) {
+    clearTimeout(blurTimer)
+  }
 })
 
 function updateValue(value: string) {
@@ -165,6 +215,10 @@ function submitSearch(value = props.value) {
 }
 
 function selectSuggestion(value: string) {
+  if (value.startsWith(STATUS_OPTION_PREFIX)) {
+    return
+  }
+
   if (value.startsWith(VIEW_ALL_OPTION_PREFIX)) {
     focused.value = false
     emit('viewAll', value.slice(VIEW_ALL_OPTION_PREFIX.length))
@@ -185,10 +239,30 @@ function recommendationTarget(recommendation: ActivitySearchSuggestion) {
   return recommendation.routeName ? 'Open item' : 'Use search term'
 }
 
+function focusRecommendationDropdown() {
+  if (blurTimer) {
+    clearTimeout(blurTimer)
+  }
+  focused.value = true
+}
+
 function closeRecommendationDropdown() {
-  window.setTimeout(() => {
+  blurTimer = setTimeout(() => {
     focused.value = false
   }, 150)
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    focused.value = false
+    return
+  }
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    focused.value = true
+    return
+  }
 }
 </script>
 
@@ -201,11 +275,16 @@ function closeRecommendationDropdown() {
       :open="showRecommendationDropdown"
       :allow-clear="allowClear"
       @update:value="updateValue"
-      @focus="focused = true"
+      @focus="focusRecommendationDropdown"
       @blur="closeRecommendationDropdown"
       @select="selectSuggestion"
     >
-      <a-input :size="inputSize" :placeholder="placeholder" @press-enter="submitSearch()">
+      <a-input
+        :size="inputSize"
+        :placeholder="placeholder"
+        @keydown="handleKeydown"
+        @press-enter="submitSearch()"
+      >
         <template #prefix><SearchOutlined /></template>
       </a-input>
       <template #option="option">
@@ -218,14 +297,16 @@ function closeRecommendationDropdown() {
             recommendationTarget(option.recommendation)
           }}</span>
         </div>
-        <span v-else>{{ option.label }}</span>
+        <div v-else-if="option.kind === 'viewAll'" class="recommendation-view-all">
+          {{ option.label }}
+        </div>
+        <div v-else class="recommendation-status" :data-state="dropdownState">
+          <a-spin v-if="dropdownState === 'loading'" size="small" />
+          <span>{{ option.label }}</span>
+        </div>
       </template>
       <template #notFoundContent>
-        <div class="recommendation-empty">
-          <a-spin v-if="suggestionsLoading" size="small" />
-          <span v-else-if="suggestionsErrorMessage">{{ suggestionsErrorMessage }}</span>
-          <span v-else>No recommendations yet.</span>
-        </div>
+        <div class="recommendation-empty">Type to search recommendations.</div>
       </template>
     </a-auto-complete>
   </div>
@@ -237,8 +318,17 @@ function closeRecommendationDropdown() {
   width: 100%;
 }
 
-.recommendation-empty {
+.recommendation-empty,
+.recommendation-status,
+.recommendation-view-all {
   padding: 8px 12px;
+}
+
+.recommendation-empty,
+.recommendation-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   color: var(--tm-text-muted);
 }
 
@@ -249,9 +339,14 @@ function closeRecommendationDropdown() {
   gap: 12px;
 }
 
-.recommendation-label {
+.recommendation-label,
+.recommendation-view-all {
   color: var(--tm-text);
   font-weight: 600;
+}
+
+.recommendation-view-all {
+  border-top: 1px solid var(--tm-border-subtle);
 }
 
 .recommendation-meta,
