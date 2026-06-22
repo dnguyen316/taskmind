@@ -1,3 +1,17 @@
+## 2026-06-22 (Activity Search Dropdown UX)
+
+### Changed
+
+- Refined the shared activity search autocomplete dropdown to show distinct short-query, loading, error, no-match, and recommendation states.
+- Added an explicit “View all results for …” action for valid queries and kept suggestion selection from automatically running the full search unless the view-all or submit action is used.
+- Improved keyboard and blur handling so Escape closes the dropdown, arrow keys reopen it for navigation, Enter submits the typed query, and delayed blur still permits mouse selection.
+
+### Verification notes
+
+- Exact verification commands for this slice: `cd apps/frontend && npm run format -- src/features/activity/components/ActivitySearchAutocomplete.vue src/features/activity/components/ActivitySearchPanel.vue ../../docs/frontend-feature-changelog.md`; `cd apps/frontend && npm run typecheck`; `git diff --check`; `git diff --stat`; `make vibe-verify`.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused dropdown UX update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-21 (Typed Activity Search Recommendations)
 
 ### Changed
