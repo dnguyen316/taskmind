@@ -2157,7 +2157,7 @@ components:
 
     ActivitySearchSuggestion:
       type: object
-      required: [label, value, entityType, entityId, eventType, occurredAt]
+      required: [label, value, entityType, entityId, eventType, occurredAt, score]
       properties:
         label: {type: string}
         value: {type: string}
@@ -2168,6 +2168,7 @@ components:
         title: {type: string, nullable: true}
         occurredAt: {type: string, format: date-time}
         routeName: {type: string, nullable: true}
+        score: {type: number, format: double}
 
     ActivitySearchDocument:
       type: object

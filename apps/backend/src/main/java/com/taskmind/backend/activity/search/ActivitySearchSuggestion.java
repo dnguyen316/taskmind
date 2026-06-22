@@ -12,4 +12,5 @@ public record ActivitySearchSuggestion(
         String status,
         String title,
         Instant occurredAt,
-        String routeName) {}
+        String routeName,
+        double score) {}

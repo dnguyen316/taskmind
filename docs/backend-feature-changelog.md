@@ -1,3 +1,16 @@
+## 2026-06-22 (OpenSearch Recommendation Query Design)
+
+### Changed
+
+- Documented the Relay activity-event recommendation index mapping with `title.autocomplete`, normalized keyword fields, and searchable `payloadText`.
+- Populated normalized Relay recommendation document fields for entity type, event type, and status.
+- Updated Core recommendation queries to boost exact title/entity matches, autocomplete title prefixes, payload text, and recent events while returning typed hits with OpenSearch scores.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/backend,apps/relay -am -Dtest=ActivitySearchElasticsearchRepositoryTest,ElasticsearchIndexerTest,ActivityEventIndexMappingTest -Dsurefire.failIfNoSpecifiedTests=false test`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-21 (Relay Recommendation Index Entity Types)
 
 ### Changed
