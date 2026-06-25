@@ -131,6 +131,8 @@ clear and update this file list with the final location.
 - Keep the E2E auth bypass disabled in `prod`. The application must fail fast if
   `taskmind.auth.e2e-bypass.*` is enabled with the `prod` profile.
 - Require strong JWT and service-token secrets from the environment or AWS Secrets Manager.
+- Set `TASKMIND_AUTH_OTP_MAX_ATTEMPTS` deliberately per environment; Core defaults to `5`
+  and invalidates an OTP challenge when failed verification reaches the limit.
 - Use the managed AWS endpoints in production: RDS JDBC URL, ElastiCache Redis URL,
   OpenSearch endpoint, and S3 bucket/region.
 - Do not allow the production S3 adapter to silently fall back to local filesystem storage

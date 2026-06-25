@@ -103,7 +103,9 @@ Relay, plus Core's activity-search read API, target OpenSearch:
   OpenSearch.
 - Exposure: **Core only** is public; Relay, Nova, and the data plane stay private.
 - Put **WAF** on the ALB for coarse IP limits. Keep **Redis-backed application rate
-  limits** (`taskmind.ratelimit.*`) for per-user and AI quotas.
+  limits** (`taskmind.ratelimit.*`) for per-user and AI quotas. Configure Core OTP abuse
+  protection with `TASKMIND_AUTH_OTP_MAX_ATTEMPTS` / `taskmind.auth.otp.max-attempts`
+  (default `5`) so failed verification challenges are invalidated after the limit.
 - Store secrets in **AWS Secrets Manager**: `TASKMIND_JWT_SECRET`,
   `TASKMIND_*_SERVICE_TOKEN`, LLM API keys, database password, and OAuth client secrets.
 - Set `SPRING_PROFILES_ACTIVE=prod` in production. The production profile disables the E2E

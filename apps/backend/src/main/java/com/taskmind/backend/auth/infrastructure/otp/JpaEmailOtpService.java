@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -22,6 +23,7 @@ public class JpaEmailOtpService implements OtpService {
     private final PasswordHasher hasher;
     private final Duration ttl;
     private final String fixedCode;
+    private final int maxAttempts;
     private final SecureRandom random = new SecureRandom();
 
     public JpaEmailOtpService(
@@ -29,12 +31,14 @@ public class JpaEmailOtpService implements OtpService {
             UserJpaRepository users,
             PasswordHasher hasher,
             @Value("${taskmind.auth.otp.ttl:PT10M}") Duration ttl,
-            @Value("${taskmind.auth.otp.fixed-code:}") String fixedCode) {
+            @Value("${taskmind.auth.otp.fixed-code:}") String fixedCode,
+            @Value("${taskmind.auth.otp.max-attempts:5}") int maxAttempts) {
         this.challenges = challenges;
         this.users = users;
         this.hasher = hasher;
         this.ttl = ttl;
         this.fixedCode = fixedCode;
+        this.maxAttempts = Math.max(1, maxAttempts);
     }
 
     @Override
@@ -55,7 +59,7 @@ public class JpaEmailOtpService implements OtpService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean verifyOtp(String destination, String otp) {
         OtpChallengeJpaEntity challenge =
                 challenges
@@ -63,11 +67,21 @@ public class JpaEmailOtpService implements OtpService {
                                 destination, Instant.now())
                         .orElse(null);
         if (challenge == null) return false;
-        if (!hasher.matches(otp, challenge.getOtpHash())) {
-            challenge.recordFailedAttempt();
+
+        Instant now = Instant.now();
+        if (challenge.getAttemptCount() >= maxAttempts) {
+            challenge.consume(now);
             return false;
         }
-        challenge.consume(Instant.now());
+
+        if (!hasher.matches(otp, challenge.getOtpHash())) {
+            challenge.recordFailedAttempt();
+            if (challenge.getAttemptCount() >= maxAttempts) {
+                challenge.consume(now);
+            }
+            return false;
+        }
+        challenge.consume(now);
         return true;
     }
 }

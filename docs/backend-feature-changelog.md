@@ -1,3 +1,10 @@
+
+## 2026-06-25 - Auth OTP attempt limit hardening
+
+- Added configurable Core OTP verification attempt limits with `taskmind.auth.otp.max-attempts` / `TASKMIND_AUTH_OTP_MAX_ATTEMPTS` defaulting to `5`.
+- Invalid OTP verification now increments challenge attempts and consumes the active challenge when failures reach the configured maximum, requiring a freshly issued OTP before verification can succeed.
+- Added auth integration coverage for successful verification before the limit, failed-attempt counting, lockout of the consumed challenge, and successful verification with a newly issued OTP.
+
 ## 2026-06-22 (OpenSearch Recommendation Query Design)
 
 ### Changed
