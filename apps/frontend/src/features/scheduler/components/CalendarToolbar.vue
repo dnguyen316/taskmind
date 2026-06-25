@@ -1,17 +1,48 @@
 <script setup lang="ts">
-import { CalendarOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { computed } from 'vue'
+import {
+  CalendarOutlined,
+  LeftOutlined,
+  ReloadOutlined,
+  RightOutlined,
+} from '@ant-design/icons-vue'
+import type { CalendarViewMode } from '../types'
 
 const props = defineProps<{
   loading?: boolean
   generating?: boolean
   missedCount: number
   scheduledCount: number
+  viewMode: CalendarViewMode
+  periodLabel: string
+  selectedDate: Date | string
 }>()
 
 const emit = defineEmits<{
   refresh: []
   generate: []
+  'update:viewMode': [mode: CalendarViewMode]
+  today: []
+  previous: []
+  next: []
 }>()
+
+const viewOptions: Array<{ label: string; value: CalendarViewMode }> = [
+  { label: 'Day', value: 'day' },
+  { label: 'Week', value: 'week' },
+  { label: 'Month', value: 'month' },
+]
+
+const selectedDateLabel = computed(() => {
+  const date =
+    props.selectedDate instanceof Date ? props.selectedDate : new Date(props.selectedDate)
+
+  return Number.isNaN(date.getTime()) ? props.periodLabel : date.toLocaleDateString()
+})
+
+function updateViewMode(value: string | number) {
+  emit('update:viewMode', value as CalendarViewMode)
+}
 </script>
 
 <template>
@@ -21,14 +52,28 @@ const emit = defineEmits<{
       <div>
         <a-tag color="purple">M04 Scheduler</a-tag>
         <h1>Calendar</h1>
-        <p>
-          Generate task blocks from Core scheduling preferences, track missed work, and review
-          reschedule proposals.
-        </p>
+        <p :title="`Selected date: ${selectedDateLabel}`">{{ props.periodLabel }}</p>
       </div>
     </div>
 
     <div class="toolbar-actions">
+      <a-segmented
+        :value="props.viewMode"
+        :options="viewOptions"
+        class="view-mode-control"
+        @change="updateViewMode"
+      />
+      <a-button-group class="period-controls">
+        <a-button aria-label="Previous period" @click="emit('previous')">
+          <template #icon><LeftOutlined /></template>
+          Previous
+        </a-button>
+        <a-button @click="emit('today')">Today</a-button>
+        <a-button aria-label="Next period" @click="emit('next')">
+          Next
+          <template #icon><RightOutlined /></template>
+        </a-button>
+      </a-button-group>
       <a-statistic title="Scheduled blocks" :value="props.scheduledCount" />
       <a-statistic title="Missed" :value="props.missedCount" />
       <a-button :loading="props.loading" @click="emit('refresh')">
@@ -93,6 +138,14 @@ p {
 
 .toolbar-actions :deep(.ant-statistic) {
   min-width: 110px;
+}
+
+.view-mode-control {
+  min-height: 40px;
+}
+
+.period-controls {
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

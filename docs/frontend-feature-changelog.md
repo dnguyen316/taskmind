@@ -1,3 +1,15 @@
+## 2026-06-25 - Scheduler toolbar range controls
+
+### Changed
+
+- Moved the scheduler Day/Week/Month selector and previous/today/next period controls into the calendar toolbar so the range title, navigation, refresh, and schedule generation actions are grouped in one header.
+- Calendar toolbar navigation remains backed by the existing visible-range watcher, so changing view mode or period refetches scheduled blocks for the new Core scheduler date range.
+
+### Verification notes
+
+- Exact verification commands for this toolbar slice: `cd apps/frontend && npm run format -- src/features/scheduler/components/CalendarToolbar.vue src/features/scheduler/pages/CalendarPage.vue`; `git diff --check`; `cd apps/frontend && npm run typecheck`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-22 (Activity Search Dropdown UX)
 
 ### Changed
