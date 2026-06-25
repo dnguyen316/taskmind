@@ -589,3 +589,17 @@
 
 - Added an Ask Nova action to the activity search panel so users can review a proposed refined query, optional explanation, and future suggested filters before applying the query and running search.
 - Kept the browser integration Core-only through `POST /v1/activity/search/assist`.
+
+## 2026-06-25 - Scheduler calendar view layer
+
+### Calendar UI completion notes
+
+- Added a scheduler calendar view model with day/week/month modes plus date-range utilities for day and week bounds, padded month grids, Core scheduler ISO query ranges, and minute offsets for time-grid placement.
+- Replaced the scheduler main-column block list with a Google Calendar-like calendar shell: Day/Week/Month segmented switching, Today and previous/next navigation, visible range title, day/week hourly grids, month cells with stacked events and overflow counts, and responsive week horizontal scrolling.
+- Added reusable calendar components for view switching, date navigation, status-colored event cards, and day/week/month grids while preserving completion and reschedule/edit actions in an event drawer.
+- Kept SchedulingPreferencesForm and RescheduleProposalList in the side panel, which now collapses below the calendar on narrower screens.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/scheduler`
+- `cd apps/frontend && npm run typecheck`

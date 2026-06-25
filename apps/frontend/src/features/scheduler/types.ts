@@ -1,3 +1,5 @@
+export type CalendarViewMode = 'day' | 'week' | 'month'
+
 export type ScheduledBlockStatus = 'SCHEDULED' | 'COMPLETED' | 'MISSED' | 'CANCELLED'
 
 export interface SchedulingPreferences {
