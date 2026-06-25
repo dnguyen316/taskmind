@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.auth.domain.OtpService;
 import com.taskmind.backend.auth.infrastructure.persistence.jpa.*;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -16,12 +17,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = {"taskmind.auth.otp.max-attempts=2", "taskmind.ratelimit.auth-flow.capacity=100"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AuthIntegrationTest {
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired UserJpaRepository users;
     @Autowired UserIdentityJpaRepository identities; @Autowired OtpChallengeJpaRepository challenges; @Autowired SessionJpaRepository sessions;
+    @Autowired OtpService otpService;
 
     @Test
     void testProfileE2eBypassSeedsWorkingSuperAdminLogin() throws Exception {
@@ -54,6 +56,55 @@ class AuthIntegrationTest {
         mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"otp\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized());
         assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.PENDING_VERIFICATION);
+    }
+
+
+    @Test
+    void validOtpStillWorksBeforeAttemptLimit() throws Exception {
+        var email = email();
+        mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email)))
+                .andExpect(status().isAccepted());
+
+        var tokens = verify(email, "1");
+
+        assertThat(tokens.path("accessToken").asText()).isNotBlank();
+        assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.ACTIVE);
+    }
+
+    @Test
+    void invalidOtpIncrementsAttemptsAndMaxFailuresInvalidateChallengeUntilNewOtpIsIssued() throws Exception {
+        var email = email();
+        mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email)))
+                .andExpect(status().isAccepted());
+
+        mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"" + email + "\",\"otp\":\"wrong\"}"))
+                .andExpect(status().isUnauthorized());
+        assertThat(challenges.findByDestinationAndExpiresAtAfter(email, java.time.Instant.now()))
+                .singleElement()
+                .satisfies(challenge -> assertThat(challenge.getAttemptCount()).isEqualTo(1));
+
+        mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"" + email + "\",\"otp\":\"still-wrong\"}"))
+                .andExpect(status().isUnauthorized());
+        assertThat(challenges.findByDestinationAndExpiresAtAfter(email, java.time.Instant.now()))
+                .singleElement()
+                .satisfies(challenge -> {
+                    assertThat(challenge.getAttemptCount()).isEqualTo(2);
+                    assertThat(challenge.getConsumedAt()).isNotNull();
+                });
+
+        mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"" + email + "\",\"otp\":\"1\"}"))
+                .andExpect(status().isUnauthorized());
+        assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.PENDING_VERIFICATION);
+
+        otpService.dispatchOtp("EMAIL", email);
+        assertThat(challenges.findByDestinationAndExpiresAtAfter(email, java.time.Instant.now()))
+                .filteredOn(challenge -> challenge.getConsumedAt() == null)
+                .singleElement()
+                .satisfies(challenge -> assertThat(challenge.getAttemptCount()).isZero());
+
+        var tokens = verify(email, "1");
+        assertThat(tokens.path("accessToken").asText()).isNotBlank();
+        assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.ACTIVE);
     }
 
     @Test
