@@ -101,7 +101,7 @@ invariant.
   class define public versus protected routes. Errors are RFC-7807 `ProblemDetail`.
 - `/internal/**` routes are guarded by a separate `@Order(0)` chain requiring the
   `X-Service-Token` header.
-- E2E bypass is profile-gated (`local`/`staging`/`test` only) and must **fail startup** in
+- E2E bypass is profile-gated (`local`/`test`/dedicated `e2e` only) and must **fail startup** in
   `prod`.
 
 ## REST + OpenAPI

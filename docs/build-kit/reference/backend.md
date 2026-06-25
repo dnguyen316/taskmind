@@ -94,7 +94,7 @@ Core is a stateless **JWT resource server**. Errors use RFC 7807 `ProblemDetail`
 - **Denied:** all other routes.
 - `/internal/**` is a separate `@Order(0)` chain requiring `X-Service-Token`.
 - JWT claims become authorities via `JwtClaimAuthenticationConverter`; `AuthenticatedUserResolver` exposes the current user to controllers.
-- **E2E bypass** (`taskmind.auth.e2e-bypass.*`) seeds the super-admin (`superadmin@taskmind.local` / password `1` / OTP `1`), is enabled in `local`, `staging`, and `test`, and **fails startup in `prod`** if enabled.
+- **E2E bypass** (`taskmind.auth.e2e-bypass.*`) seeds the super-admin (`superadmin@taskmind.local` / password `1` / OTP `1`), is enabled in `local`, `test`, and isolated browser E2E runs that activate the dedicated `e2e` profile; generic `staging` keeps it disabled and startup fails if the bypass is forced on without `local`, `test`, or `e2e`.
 
 ## Persistence
 
@@ -126,7 +126,8 @@ flowchart LR
 |---------|-----|
 | `local` | dev against compose infra; E2E bypass on |
 | `test` | H2 in PostgreSQL mode; Flyway runs; OpenSearch/ES autoconfig excluded; bypass on |
-| `staging` | pre-prod; bypass on |
+| `staging` | pre-prod; bypass off by default |
+| `e2e` | isolated browser E2E opt-in layered onto non-prod environments; bypass on |
 | `prod` | requires `TASKMIND_JWT_SECRET`; bypass must be off (enforced) |
 
 Key environment and property families: `TASKMIND_JWT_SECRET`, `TASKMIND_*_SERVICE_TOKEN`, `TASKMIND_STORAGE_*` for S3, `spring.elasticsearch.uris` for OpenSearch, `TASKMIND_AI_*` for Nova provider routing, `taskmind.outbox.*`, `taskmind.relay.*`, and `taskmind.ratelimit.*`.

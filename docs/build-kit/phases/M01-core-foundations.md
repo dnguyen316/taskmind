@@ -109,7 +109,8 @@ ConflictException.java
 # config / profiles (apps/backend/src/main/resources/)
 application.properties                     # taskmind.auth.jwt.*, OTP, e2e-bypass defaults
 application-local.properties               # e2e-bypass on
-application-staging.properties             # e2e-bypass on
+application-staging.properties             # e2e-bypass off
+application-e2e.properties                 # isolated browser E2E opt-in; e2e-bypass on
 application-prod.properties                # e2e-bypass off; require TASKMIND_JWT_SECRET
 
 # test resources
@@ -139,10 +140,11 @@ persistence tests for the auth/session entities.
   `roles`, `authorities`, and `scope` claim shapes described by the Core API contract.
 - Sessions store hashed refresh tokens. Refresh rotates the token, updates the session,
   and invalidates the previous refresh token.
-- E2E bypass is enabled only for `local`, `staging`, and `test`; the app must fail startup
-  in `prod` if the bypass is enabled.
+- E2E bypass is enabled only for `local`, `test`, and isolated browser E2E runs that
+  activate the dedicated `e2e` profile; generic `staging` keeps it disabled, and the app
+  must fail startup if the bypass is forced on without an allowed profile.
 - E2E seeding creates `superadmin@taskmind.local` with password `1` and OTP `1` for the
-  documented local/staging/test bypass flow.
+  documented local/test/e2e bypass flow.
 - Errors return RFC 7807 `ProblemDetail` bodies. Unauthenticated requests return `401`
   `ProblemDetail` responses.
 - Keep `apps/backend/openapi.yaml` in sync with any Core request or response DTOs added in
@@ -180,5 +182,5 @@ make run-backend
 ## Definition of Done
 
 Auth, security, and persistence foundations are green under `make vibe-verify`; Core
-starts with local/test/staging bypass settings, rejects an enabled prod bypass at startup,
+starts with local/test/e2e bypass settings, keeps generic staging bypass disabled, rejects an enabled disallowed-profile bypass at startup,
 and allows the seeded super-admin to authenticate locally.
