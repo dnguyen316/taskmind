@@ -702,3 +702,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added configuration tests for Core/Nova local defaults and production token placeholders, and expanded Nova security coverage for both `X-Service-Token` and bearer-token internal auth.
+
+## 2026-06-25 (Staging Auth Bypass Hardening)
+
+### Changed
+
+- Disabled the E2E auth bypass and fixed OTP code in generic staging configuration by default.
+- Added a dedicated `e2e` profile for isolated browser E2E runs that intentionally need the super-admin bypass.
+- Hardened bypass startup validation so enabled bypasses require the `local`, `test`, or `e2e` profile.
+
+### Tests
+
+- Expanded `AuthE2eBypassGuardTest` to cover disabled staging defaults, rejected staging-only forced bypasses, and staging plus `e2e` opt-in behavior.

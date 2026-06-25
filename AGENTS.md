@@ -158,8 +158,9 @@ Core is a **stateless JWT resource server**. Public routes: `/api/health` and th
 flows (`/v1/auth/login`, `/signup`, `/verify`, `/oauth`, `/password`, `/token/refresh`,
 `/logout`); everything else under `/v1/**` requires authentication; all else is denied.
 
-**E2E auth bypass** (`taskmind.auth.e2e-bypass.*`) seeds a super-admin and is enabled in
-`local`/`staging`/`test` only - the app **fails to start in `prod`** if it is enabled.
+**E2E auth bypass** (`taskmind.auth.e2e-bypass.*`) seeds a super-admin and is enabled only for `local`, `test`, or isolated browser E2E runs that activate the dedicated
+`e2e` profile - generic `staging` keeps it disabled and startup fails if the bypass is
+forced on without an allowed profile.
 
 ```text
 E2E login: superadmin@taskmind.local / password 1 / OTP 1
