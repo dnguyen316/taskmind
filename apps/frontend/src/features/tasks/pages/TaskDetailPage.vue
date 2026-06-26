@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import TaskDescriptionEditor from '../components/TaskDescriptionEditor.vue'
+import TaskStatusChip from '../components/TaskStatusChip.vue'
 import { useTasks } from '../composables/useTasks'
-import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import {
   TASK_DURATION_MAX_MINUTES,
   TASK_PRIORITY_MAX,
@@ -312,6 +313,9 @@ function toDatetimeLocal(value: string | null) {
               <a-descriptions-item label="Assignee">{{
                 formState.assigneeId || '—'
               }}</a-descriptions-item>
+              <a-descriptions-item label="Status">
+                <TaskStatusChip :status="formState.status" />
+              </a-descriptions-item>
               <a-descriptions-item label="Parent task">{{
                 formState.parentTaskId || '—'
               }}</a-descriptions-item>
@@ -332,11 +336,11 @@ function toDatetimeLocal(value: string | null) {
                   <a-form-item label="Status">
                     <a-select v-model:value="formState.status">
                       <a-select-option
-                        v-for="status in TASK_STATUS_OPTIONS"
-                        :key="status"
-                        :value="status"
+                        v-for="option in TASK_STATUS_SELECT_OPTIONS"
+                        :key="option.value"
+                        :value="option.value"
                       >
-                        {{ status }}
+                        <TaskStatusChip :status="option.value" />
                       </a-select-option>
                     </a-select>
                   </a-form-item>

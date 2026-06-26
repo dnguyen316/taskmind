@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import TaskStatusChip from './TaskStatusChip.vue'
+import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import { formatDateTime, isTaskOverdue, toTimestamp } from '../utils/taskDates'
 import type { Task, TaskStatus } from '../types'
 
@@ -30,13 +32,6 @@ const columns: TaskTableColumn[] = [
   { title: 'PRIORITY', dataIndex: 'priority', key: 'priority', width: 110 },
   { title: 'DUE', dataIndex: 'dueAt', key: 'dueAt', width: 160 },
   { title: 'EFFORT', dataIndex: 'durationMinutes', key: 'durationMinutes', width: 90 },
-]
-
-const statusOptions: { label: string; value: TaskStatus }[] = [
-  { label: 'To do', value: 'TODO' },
-  { label: 'In progress', value: 'IN_PROGRESS' },
-  { label: 'Done', value: 'DONE' },
-  { label: 'Archived', value: 'ARCHIVED' },
 ]
 
 const dataSource = computed<TaskTableRecord[]>(() =>
@@ -104,13 +99,18 @@ function dueLabel(task: Task) {
       <template v-else-if="column.key === 'status'">
         <a-select
           :value="record.status"
-          :options="statusOptions"
+          :options="TASK_STATUS_SELECT_OPTIONS"
           :disabled="isStatusPending(record.id)"
           :loading="isStatusPending(record.id)"
           aria-label="Task status"
           class="status-select"
           @change="(status: TaskStatus) => handleStatusChange(record, status)"
-        />
+        >
+          <template #option="{ value }">
+            <TaskStatusChip :status="value as TaskStatus" />
+          </template>
+        </a-select>
+        <TaskStatusChip :status="record.status" class="status-current-chip" />
       </template>
       <template v-else-if="column.key === 'priority'">P{{ record.priority }}</template>
       <template v-else-if="column.key === 'dueAt'">

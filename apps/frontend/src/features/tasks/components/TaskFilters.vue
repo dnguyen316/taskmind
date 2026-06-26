@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TASK_STATUS_OPTIONS } from '../constants/taskConstants'
+import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import type { Project } from '../../projects/types'
 import type { TaskFilters, TaskSortBy } from '../types'
 
@@ -13,9 +13,7 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-const statusOptions = computed(() =>
-  TASK_STATUS_OPTIONS.map((status) => ({ label: status.replace('_', ' '), value: status })),
-)
+const statusOptions = computed(() => TASK_STATUS_SELECT_OPTIONS)
 const projectOptions = computed(() =>
   props.projects.map((project) => ({ label: project.name, value: project.id })),
 )
