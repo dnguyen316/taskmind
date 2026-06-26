@@ -77,29 +77,56 @@ async function loadScheduler() {
   }
 }
 
+async function runCalendarAction<T>(action: () => Promise<T>, onSuccess: (result: T) => void) {
+  pageMessage.value = ''
+  try {
+    const result = await action()
+    onSuccess(result)
+  } catch {
+    // Composables own their error messages; the page-level error alert surfaces them.
+  } finally {
+    // Composables own loading state cleanup.
+  }
+}
+
 async function savePreferences(payload: UpdateSchedulingPreferencesPayload) {
-  await preferencesState.savePreferences(payload)
-  pageMessage.value = preferencesState.successMessage.value
+  await runCalendarAction(
+    () => preferencesState.savePreferences(payload),
+    () => {
+      pageMessage.value = preferencesState.successMessage.value
+    },
+  )
 }
 
 async function generateSchedule() {
-  pageMessage.value = ''
-  const result = await generationState.generate(rangeParams.value)
-  blocksState.mergeBlocks(result.blocks)
-  proposals.value = result.proposals
-  pageMessage.value = result.blocks.length
-    ? `Generated ${result.blocks.length} scheduled block${result.blocks.length === 1 ? '' : 's'}.`
-    : 'No new blocks were generated for the current task window.'
+  await runCalendarAction(
+    () => generationState.generate(rangeParams.value),
+    (result) => {
+      blocksState.mergeBlocks(result.blocks)
+      proposals.value = result.proposals
+      pageMessage.value = result.blocks.length
+        ? `Generated ${result.blocks.length} scheduled block${result.blocks.length === 1 ? '' : 's'}.`
+        : 'No new blocks were generated for the current task window.'
+    },
+  )
 }
 
 async function completeBlock(blockId: string) {
-  await blocksState.completeBlock(blockId)
-  pageMessage.value = 'Scheduled block completed.'
+  await runCalendarAction(
+    () => blocksState.completeBlock(blockId),
+    () => {
+      pageMessage.value = 'Scheduled block completed.'
+    },
+  )
 }
 
 async function rescheduleBlock(blockId: string, payload: UpdateScheduledBlockPayload) {
-  await blocksState.saveBlock(blockId, payload)
-  pageMessage.value = 'Scheduled block updated.'
+  await runCalendarAction(
+    () => blocksState.saveBlock(blockId, payload),
+    () => {
+      pageMessage.value = 'Scheduled block updated.'
+    },
+  )
 }
 
 function movePeriod(direction: 1 | -1) {
