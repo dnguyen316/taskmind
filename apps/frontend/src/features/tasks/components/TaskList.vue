@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import TaskStatusChip from './TaskStatusChip.vue'
 import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import { formatDateTime, isTaskOverdue, toTimestamp } from '../utils/taskDates'
+import { taskDetailRoute as buildTaskDetailRoute } from '../utils/taskRoutes'
 import type { Task, TaskStatus } from '../types'
 
 const props = defineProps<{
@@ -44,13 +45,7 @@ function isStatusPending(taskId: string) {
 }
 
 function taskDetailRoute(task: TaskTableRecord) {
-  const projectId = props.projectId
-
-  if (projectId) {
-    return { name: 'project-task-detail', params: { projectId, taskId: task.id } }
-  }
-
-  return { name: 'task-detail', params: { id: task.id } }
+  return buildTaskDetailRoute(task, props.projectId)
 }
 
 function handleStatusChange(task: TaskTableRecord, nextStatus: TaskStatus) {
