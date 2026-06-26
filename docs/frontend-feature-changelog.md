@@ -1,3 +1,16 @@
+## 2026-06-26 - Task list table density
+
+### Changed
+
+- Moved task keys into the task title cell, added project, owner, updated, and created columns, and enabled horizontal scrolling for the wider task table.
+- Added truncation affordances for long task titles and descriptions while preserving the existing status selector and detail-route behavior.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for this task-list slice before repository verification.
+- Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-26 - M03 Shared task status presentation
 
 ### Changed
