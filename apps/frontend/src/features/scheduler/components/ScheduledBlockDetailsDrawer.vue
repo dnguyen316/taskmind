@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { CheckCircleOutlined } from '@ant-design/icons-vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
 import {
@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const editValues = reactive({ startsAt: '', endsAt: '', rationale: '' })
+const validationMessage = ref('')
 const drawerOpen = computed({
   get: () => props.open,
   set: (value: boolean) => emit('update:open', value),
@@ -35,14 +36,37 @@ const drawerOpen = computed({
 watch(() => props.block, resetEditValues, { immediate: true })
 
 function resetEditValues() {
+  validationMessage.value = ''
   if (!props.block) return
   editValues.startsAt = toDateTimeLocal(props.block.startsAt)
   editValues.endsAt = toDateTimeLocal(props.block.endsAt)
   editValues.rationale = props.block.rationale ?? ''
 }
 
+function parseDateTimeLocal(value: string) {
+  if (!value.trim()) return null
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) return null
+  return parsedDate
+}
+
 function submitReschedule() {
+  validationMessage.value = ''
   if (!props.block) return
+
+  const startsAt = parseDateTimeLocal(editValues.startsAt)
+  const endsAt = parseDateTimeLocal(editValues.endsAt)
+
+  if (!startsAt || !endsAt) {
+    validationMessage.value = 'Enter valid start and end times.'
+    return
+  }
+
+  if (endsAt.getTime() <= startsAt.getTime()) {
+    validationMessage.value = 'End time must be after start time.'
+    return
+  }
+
   emit('reschedule', props.block.id, {
     version: props.block.version,
     startsAt: fromDateTimeLocal(editValues.startsAt),
@@ -99,6 +123,8 @@ function completeBlock() {
       </label>
     </div>
 
+    <a-alert v-if="validationMessage" type="error" show-icon :message="validationMessage" />
+
     <div class="block-actions">
       <a-button :loading="saving" @click="submitReschedule">Save time</a-button>
       <a-button
@@ -153,6 +179,8 @@ function completeBlock() {
           ><span>Rationale</span><input v-model="editValues.rationale" maxlength="500"
         /></label>
       </div>
+
+      <a-alert v-if="validationMessage" type="error" show-icon :message="validationMessage" />
     </div>
 
     <template #footer>
