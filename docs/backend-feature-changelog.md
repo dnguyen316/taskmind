@@ -714,3 +714,13 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Expanded `AuthE2eBypassGuardTest` to cover disabled staging defaults, rejected staging-only forced bypasses, and staging plus `e2e` opt-in behavior.
+
+## 2026-06-26 (Nova Local Datasource Defaults)
+
+### Changed
+
+- Added default Nova datasource and Flyway schema settings to the shared AI service configuration so `make run-ai` with the `local` profile can create the `ai` schema against the local Postgres database instead of failing before startup when no datasource URL is provided.
+
+### Tests
+
+- Expanded Nova local-default configuration coverage to assert the local datasource, driver, and Flyway schema defaults used by the AI service.
