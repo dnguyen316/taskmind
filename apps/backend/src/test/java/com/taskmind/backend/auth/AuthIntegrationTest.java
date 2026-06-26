@@ -8,12 +8,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.backend.auth.domain.OtpService;
 import com.taskmind.backend.auth.infrastructure.persistence.jpa.*;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,7 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class AuthIntegrationTest {
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired UserJpaRepository users;
     @Autowired UserIdentityJpaRepository identities; @Autowired OtpChallengeJpaRepository challenges; @Autowired SessionJpaRepository sessions;
-    @Autowired OtpService otpService;
+    @Autowired OtpService otpService; @Autowired JwtEncoder jwtEncoder;
 
     @Test
     void testProfileE2eBypassSeedsWorkingSuperAdminLogin() throws Exception {
@@ -115,6 +122,31 @@ class AuthIntegrationTest {
         mvc.perform(get("/v1/auth/me")).andExpect(status().isUnauthorized()).andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
     }
 
+
+    @Test
+    void meRejectsTokenWithWrongIssuer() throws Exception {
+        String token = signedToken("wrong-issuer", List.of("taskmind-core-api"));
+
+        mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void meRejectsTokenWithMissingAudience() throws Exception {
+        String token = signedToken("taskmind-core-test", List.of());
+
+        mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void meRejectsTokenWithWrongAudience() throws Exception {
+        String token = signedToken("taskmind-core-test", List.of("other-api"));
+
+        mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
     @Test
     void refreshRotatesPersistentTokenAndInvalidatesPreviousToken() throws Exception {
         var email=email(); var old=signupAndVerify(email); var oldRefresh=old.path("refreshToken").asText();
@@ -135,6 +167,20 @@ class AuthIntegrationTest {
     private JsonNode signupAndVerify(String email) throws Exception { mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email))).andExpect(status().isAccepted()); return verify(email,"1"); }
     private JsonNode verify(String email,String otp) throws Exception { var r=mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"otp\":\""+otp+"\"}" )).andExpect(status().isOk()).andReturn(); return json.readTree(r.getResponse().getContentAsString()); }
     private JsonNode login(String email) throws Exception { var r=mvc.perform(post("/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"password\":\"correct horse battery staple\"}" )).andExpect(status().isOk()).andReturn(); return json.readTree(r.getResponse().getContentAsString()); }
+    private String signedToken(String issuer, List<String> audience) {
+        Instant now = Instant.now();
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(300))
+                .subject(UUID.randomUUID().toString())
+                .claim("email", "jwt-test@example.com");
+        if (!audience.isEmpty()) {
+            claims.audience(audience);
+        }
+        return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims.build()))
+                .getTokenValue();
+    }
     private String signup(String email) { return "{\"email\":\""+email+"\",\"password\":\"correct horse battery staple\",\"displayName\":\"Ada Lovelace\"}"; }
     private String email() { return "user-"+UUID.randomUUID()+"@example.com"; }
 }
