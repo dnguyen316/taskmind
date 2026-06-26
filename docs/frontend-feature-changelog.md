@@ -1,3 +1,14 @@
+## 2026-06-26 - M03 Resizable workspace sidebar
+
+### Changed
+
+- Added desktop shell controls so the authenticated workspace sidebar can collapse into icon-only navigation and expand back to the full navigation.
+- Added a mouse drag handle on the desktop sidebar edge so users can resize the navigation column between compact and wide widths while leaving the mobile drawer flow unchanged.
+
+### Verification notes
+
+- Frontend formatting, typecheck, build, and repository vibe verification were run for this UI slice.
+- Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
 ## 2026-06-26 - Scheduler fetch race guard
 
 ### Changed

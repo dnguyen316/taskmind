@@ -101,6 +101,7 @@ flowchart TD
 
 ## Notable feature mechanics
 
+- **Shell navigation** — authenticated desktop workspace routes render inside a persistent sidebar that can be collapsed to icon-only mode or resized between compact and wide widths with the mouse; mobile routes continue to use the drawer navigation.
 - **Tasks editor** — Tiptap-based block editor with custom image/video node views, media resize, and AI **description autocomplete** inline suggestions.
 - **AI** — capture, goal breakdown, weekly review for the authenticated user, project brief, translate, and **Nova Chat** through Core facades. Nova chat streams via Core at `/v1/nova/chat/stream`.
 - **Notifications** — notification bell plus SSE stream from Core at `/v1/notifications/stream`.
