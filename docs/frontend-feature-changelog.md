@@ -603,3 +603,13 @@
 
 - `cd apps/frontend && npm run format -- src/features/scheduler`
 - `cd apps/frontend && npm run typecheck`
+
+## 2026-06-25 - Scheduler block display refactor
+
+### Summary
+- Extracted scheduler block display formatting and status helpers into a local scheduler utility for shared list and calendar rendering.
+- Split calendar event presentation from edit details by adding a reusable scheduled block details drawer/inline editor component.
+- Updated day, week, and month scheduler calendar views so selecting an event card opens the shared details drawer while preserving complete and reschedule actions.
+
+### Verification
+- Frontend format run for touched scheduler files.

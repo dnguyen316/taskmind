@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import CalendarEventCard from './CalendarEventCard.vue'
+import ScheduledBlockDetailsDrawer from './ScheduledBlockDetailsDrawer.vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
 import { blocksForDay, buildMonthGrid } from '../utils/calendarDates'
 
@@ -10,6 +11,17 @@ const emit = defineEmits<{
   reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
 }>()
 const days = computed(() => buildMonthGrid(props.date))
+const selectedBlock = ref<ScheduledBlock | null>(null)
+const detailOpen = ref(false)
+
+function openBlockDetails(block: ScheduledBlock) {
+  selectedBlock.value = block
+  detailOpen.value = true
+}
+
+function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload) {
+  emit('reschedule', blockId, payload)
+}
 </script>
 
 <template>
@@ -33,9 +45,7 @@ const days = computed(() => buildMonthGrid(props.date))
             :key="block.id"
             compact
             :block="block"
-            :saving="savingBlockIds.has(block.id)"
-            @complete="emit('complete', $event)"
-            @reschedule="(id, payload) => emit('reschedule', id, payload)"
+            @select="openBlockDetails"
           />
           <span v-if="blocksForDay(blocks, day.date).length > 3" class="overflow"
             >+{{ blocksForDay(blocks, day.date).length - 3 }} more</span
@@ -43,6 +53,14 @@ const days = computed(() => buildMonthGrid(props.date))
         </div>
       </article>
     </div>
+
+    <ScheduledBlockDetailsDrawer
+      v-model:open="detailOpen"
+      :block="selectedBlock"
+      :saving="selectedBlock ? savingBlockIds.has(selectedBlock.id) : false"
+      @complete="emit('complete', $event)"
+      @reschedule="forwardReschedule"
+    />
   </a-card>
 </template>
 

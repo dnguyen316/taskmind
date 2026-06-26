@@ -1,116 +1,28 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import { CheckCircleOutlined } from '@ant-design/icons-vue'
-import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
+import { computed } from 'vue'
+import type { ScheduledBlock } from '../types'
+import { compactTimeRange, durationLabel, statusLabel } from '../utils/scheduledBlockDisplay'
 
-const props = defineProps<{ block: ScheduledBlock; compact?: boolean; saving?: boolean }>()
-const emit = defineEmits<{
-  complete: [blockId: string]
-  reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
-}>()
+const props = defineProps<{ block: ScheduledBlock; compact?: boolean }>()
+const emit = defineEmits<{ select: [block: ScheduledBlock] }>()
 
-const drawerOpen = ref(false)
-const editValues = reactive({ startsAt: '', endsAt: '', rationale: '' })
-
-const statusColor = computed(() => {
-  if (props.block.status === 'COMPLETED') return 'green'
-  if (props.block.status === 'MISSED') return 'orange'
-  if (props.block.status === 'CANCELLED') return 'default'
-  return 'blue'
-})
 const cardClass = computed(() => `status-${props.block.status.toLowerCase()}`)
-const timeLabel = computed(
-  () =>
-    `${new Date(props.block.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${new Date(props.block.endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-)
-const durationLabel = computed(() => {
-  const minutes = Math.max(
-    0,
-    Math.round(
-      (new Date(props.block.endsAt).getTime() - new Date(props.block.startsAt).getTime()) / 60_000,
-    ),
-  )
-  return `${minutes} min`
-})
-
-watch(() => props.block, resetEditValues, { immediate: true })
-
-function resetEditValues() {
-  editValues.startsAt = toDateTimeLocal(props.block.startsAt)
-  editValues.endsAt = toDateTimeLocal(props.block.endsAt)
-  editValues.rationale = props.block.rationale ?? ''
-}
-
-function submitReschedule() {
-  emit('reschedule', props.block.id, {
-    version: props.block.version,
-    startsAt: fromDateTimeLocal(editValues.startsAt),
-    endsAt: fromDateTimeLocal(editValues.endsAt),
-    rationale: editValues.rationale.trim() || null,
-  })
-}
-
-function toDateTimeLocal(value: string) {
-  const date = new Date(value)
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
-}
-
-function fromDateTimeLocal(value: string) {
-  return new Date(value).toISOString()
-}
+const isCompleted = computed(() => props.block.status === 'COMPLETED')
+const isMissed = computed(() => props.block.status === 'MISSED')
 </script>
 
 <template>
-  <button class="calendar-event-card" :class="[cardClass, { compact }]" @click="drawerOpen = true">
-    <span class="event-time">{{ timeLabel }}</span>
+  <button
+    class="calendar-event-card"
+    :class="[cardClass, { compact, completed: isCompleted, missed: isMissed }]"
+    @click="emit('select', block)"
+  >
+    <span class="event-time">{{ compactTimeRange(block) }}</span>
     <strong>Task {{ block.taskId.slice(0, 8) }}</strong>
-    <span v-if="!compact" class="event-meta">{{ block.status }} · {{ durationLabel }}</span>
+    <span v-if="!compact" class="event-meta"
+      >{{ statusLabel(block.status) }} · {{ durationLabel(block) }}</span
+    >
   </button>
-
-  <a-drawer v-model:open="drawerOpen" title="Scheduled block" width="420" class="event-drawer">
-    <div class="event-details">
-      <a-tag :color="statusColor">{{ block.status }}</a-tag>
-      <h3>Task {{ block.taskId.slice(0, 8) }}</h3>
-      <p>{{ new Date(block.startsAt).toLocaleString() }} → {{ timeLabel.split('–')[1].trim() }}</p>
-      <p v-if="block.rationale" class="muted">{{ block.rationale }}</p>
-      <a-alert
-        v-if="block.status === 'MISSED'"
-        type="warning"
-        show-icon
-        message="Missed block"
-        description="Edit this time or generate a schedule to get a reschedule proposal."
-      />
-      <a-alert
-        v-if="block.status === 'COMPLETED'"
-        type="success"
-        show-icon
-        message="Completed"
-        :description="
-          block.completedAt ? new Date(block.completedAt).toLocaleString() : 'Completed block.'
-        "
-      />
-
-      <label><span>Start</span><input v-model="editValues.startsAt" type="datetime-local" /></label>
-      <label><span>End</span><input v-model="editValues.endsAt" type="datetime-local" /></label>
-      <label><span>Rationale</span><input v-model="editValues.rationale" maxlength="500" /></label>
-    </div>
-
-    <template #footer>
-      <div class="drawer-actions">
-        <a-button @click="drawerOpen = false">Close</a-button>
-        <a-button :loading="saving" @click="submitReschedule">Save time</a-button>
-        <a-button
-          v-if="block.status !== 'COMPLETED'"
-          type="primary"
-          :loading="saving"
-          @click="emit('complete', block.id)"
-        >
-          <template #icon><CheckCircleOutlined /></template>
-          Complete
-        </a-button>
-      </div>
-    </template>
-  </a-drawer>
 </template>
 
 <style scoped>
@@ -152,35 +64,17 @@ function fromDateTimeLocal(value: string) {
   overflow: hidden;
   padding: 5px 7px;
 }
+.calendar-event-card.completed {
+  text-decoration-color: rgba(22, 101, 52, 0.55);
+  text-decoration-line: line-through;
+}
+.calendar-event-card.missed {
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
 .event-time,
-.event-meta,
-.muted {
+.event-meta {
   color: inherit;
   font-size: 12px;
   opacity: 0.78;
-}
-.event-details {
-  display: grid;
-  gap: 12px;
-}
-.event-details label {
-  display: grid;
-  gap: 6px;
-}
-.event-details span {
-  font-size: 12px;
-  font-weight: 600;
-}
-.event-details input {
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  min-height: 36px;
-  padding: 4px 11px;
-}
-.drawer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
 }
 </style>
