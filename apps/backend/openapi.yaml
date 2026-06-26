@@ -1631,6 +1631,54 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/IntegrationProjectLinkResponse' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/integrations/github/repositories/{owner}/{repo}:
+    get:
+      summary: Discover GitHub repository metadata for a connected account
+      operationId: getGitHubRepository
+      tags: [Integrations]
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema: { type: string }
+        - name: repo
+          in: path
+          required: true
+          schema: { type: string }
+        - name: connectionId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: GitHub repository metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GitHubRepositoryResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/integrations/github/projects/{projectId}/repositories:
+    post:
+      summary: Link a TaskMind project to a GitHub repository
+      operationId: linkGitHubRepository
+      tags: [Integrations]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GitHubRepositoryLinkRequest' }
+      responses:
+        '201':
+          description: Created GitHub repository project link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationProjectLinkResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /v1/integrations/project-links/{projectLinkId}/imports:
     post:
       summary: Import bounded external issues into TaskMind tasks
@@ -2070,6 +2118,34 @@ components:
         externalProjectKey: { type: string }
         externalProjectName: { type: string }
         metadataJson: { type: string }
+        repositoryOwner: { type: string }
+        repositoryName: { type: string }
+        defaultBranch: { type: string }
+        installationId: { type: string }
+        accountId: { type: string }
+        allowedOperationsJson: { type: string }
+    GitHubRepositoryLinkRequest:
+      type: object
+      required: [connectionId, owner, repo]
+      properties:
+        connectionId: { type: string, format: uuid }
+        owner: { type: string }
+        repo: { type: string }
+        allowedOperations:
+          type: array
+          items: { type: string, enum: [READ_ISSUES, READ_CODE, CREATE_BRANCH, CREATE_PR, COMMENT] }
+    GitHubRepositoryResponse:
+      type: object
+      properties:
+        id: { type: string }
+        owner: { type: string }
+        name: { type: string }
+        fullName: { type: string }
+        defaultBranch: { type: string }
+        isPrivate: { type: boolean }
+        htmlUrl: { type: string }
+        installationId: { type: string }
+        accountId: { type: string }
     IntegrationImportRequest:
       type: object
       properties:

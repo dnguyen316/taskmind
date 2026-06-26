@@ -14,6 +14,6 @@ public class IntegrationExternalLinkApplicationService {
         return links.findByProviderAndExternalTypeAndExternalIdentity(provider, "ISSUE", externalId, externalKey);
     }
     public IntegrationExternalLink record(UUID taskId, UUID projectId, IntegrationProvider provider, String type, String externalId, String externalKey, String url, String direction, String metadataJson) {
-        return links.findByTaskIdAndProvider(taskId, provider).orElseGet(() -> { Instant now = Instant.now(); return links.save(new IntegrationExternalLink(UUID.randomUUID(), null, taskId, projectId, provider, type, externalId, externalKey, url, direction, metadataJson, now, now)); });
+        return links.findByTaskIdAndProvider(taskId, provider).orElseGet(() -> { Instant now = Instant.now(); return links.save(new IntegrationExternalLink(UUID.randomUUID(), null, taskId, projectId, provider, type, externalId, externalKey, url, direction, metadataJson, null, null, null, null, null, now, now)); });
     }
 }
