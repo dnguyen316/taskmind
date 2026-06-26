@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.integration.infrastructure.github.GitHubClient;
 import com.taskmind.backend.integration.infrastructure.jira.JiraCloudClient;
 import com.taskmind.backend.integration.infrastructure.wiki.WikiClient;
 import java.util.List;
@@ -49,6 +50,17 @@ class IntegrationControllerTest {
                     int count = JIRA_PUBLISH_COUNTS.computeIfAbsent(projectKey, ignored -> new AtomicInteger()).incrementAndGet();
                     String key = projectKey + "-PUB-" + count;
                     return new PublishedIssue(projectKey + "-id-" + count, key, "https://example.test/browse/" + key);
+                }
+            };
+        }
+
+        @Bean
+        @Primary
+        GitHubClient gitHubClient() {
+            return new GitHubClient(org.springframework.web.client.RestClient.builder()) {
+                @Override
+                public RepositoryMetadata getRepository(String baseUrl, String accessToken, String owner, String repo) {
+                    return new RepositoryMetadata("repo-node-1", owner, repo, owner + "/" + repo, "main", false, "https://github.com/" + owner + "/" + repo, "99", "42");
                 }
             };
         }
@@ -149,6 +161,27 @@ class IntegrationControllerTest {
                 .andExpect(jsonPath("$.externalKey").value("SPACEA:1"));
         org.assertj.core.api.Assertions.assertThat(WIKI_PUBLISH_COUNTS.get("SPACEA").get()).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(WIKI_PUBLISH_COUNTS.get("SPACEB").get()).isEqualTo(1);
+    }
+
+    @Test void discoversAndLinksGitHubRepositoryWithAllowedOperations() throws Exception {
+        String projectId = createProject(USER);
+        String connectionId = mapper.readTree(connect("GITHUB", USER).andReturn().getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/v1/integrations/github/repositories/{owner}/{repo}", "taskmind", "core").queryParam("connectionId", connectionId).with(jwt(USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fullName").value("taskmind/core"))
+                .andExpect(jsonPath("$.defaultBranch").value("main"));
+
+        mockMvc.perform(post("/v1/integrations/github/projects/{projectId}/repositories", projectId).with(jwt(USER)).contentType(MediaType.APPLICATION_JSON).content("""
+                {"connectionId":"%s","owner":"taskmind","repo":"core","allowedOperations":["READ_ISSUES","CREATE_PR","COMMENT"]}
+                """.formatted(connectionId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.provider").value("GITHUB"))
+                .andExpect(jsonPath("$.externalProjectId").value("taskmind/core"))
+                .andExpect(jsonPath("$.repositoryOwner").value("taskmind"))
+                .andExpect(jsonPath("$.repositoryName").value("core"))
+                .andExpect(jsonPath("$.defaultBranch").value("main"))
+                .andExpect(jsonPath("$.allowedOperationsJson", containsString("CREATE_PR")));
     }
 
     @Test void repeatedJiraImportSkipsPreviouslyImportedIssues() throws Exception {

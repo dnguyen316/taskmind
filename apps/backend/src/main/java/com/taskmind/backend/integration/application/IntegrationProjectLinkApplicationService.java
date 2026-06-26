@@ -21,7 +21,7 @@ public class IntegrationProjectLinkApplicationService {
         IntegrationConnection c = connections.requireOwned(actor, connectionId);
         if (externalProjectId == null || externalProjectId.isBlank()) throw new IllegalArgumentException("externalProjectId is required");
         Instant now = Instant.now();
-        return links.save(new IntegrationProjectLink(UUID.randomUUID(), null, projectId, connectionId, c.provider(), externalProjectId.trim(), externalProjectKey, externalProjectName, metadataJson, actor.userId(), now, now));
+        return links.save(new IntegrationProjectLink(UUID.randomUUID(), null, projectId, connectionId, c.provider(), externalProjectId.trim(), externalProjectKey, externalProjectName, metadataJson, null, null, null, null, null, null, actor.userId(), now, now));
     }
     public List<IntegrationProjectLink> list(AuthenticatedUser actor, UUID projectId) { if (!canAccess(actor, projectId)) throw new IllegalArgumentException("Project access denied"); return links.findByProjectId(projectId); }
     public IntegrationProjectLink requireAccessible(AuthenticatedUser actor, UUID id) { IntegrationProjectLink l = links.findById(id).orElseThrow(() -> new IllegalArgumentException("Project link not found")); if (!canAccess(actor, l.projectId())) throw new IllegalArgumentException("Project access denied"); return l; }

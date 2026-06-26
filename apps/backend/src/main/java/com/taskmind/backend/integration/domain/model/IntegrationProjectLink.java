@@ -13,6 +13,12 @@ public record IntegrationProjectLink(
         String externalProjectKey,
         String externalProjectName,
         String metadataJson,
+        String repositoryOwner,
+        String repositoryName,
+        String defaultBranch,
+        String installationId,
+        String accountId,
+        String allowedOperationsJson,
         UUID createdBy,
         Instant createdAt,
         Instant updatedAt) {}
