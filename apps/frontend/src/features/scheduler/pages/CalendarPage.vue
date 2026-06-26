@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import AppLayout from '../../tasks/components/AppLayout.vue'
-import CalendarDateNavigator from '../components/CalendarDateNavigator.vue'
 import CalendarDayView from '../components/CalendarDayView.vue'
 import CalendarMonthView from '../components/CalendarMonthView.vue'
 import CalendarToolbar from '../components/CalendarToolbar.vue'
-import CalendarViewSwitcher from '../components/CalendarViewSwitcher.vue'
 import CalendarWeekView from '../components/CalendarWeekView.vue'
 import RescheduleProposalList from '../components/RescheduleProposalList.vue'
 import SchedulingPreferencesForm from '../components/SchedulingPreferencesForm.vue'
@@ -113,10 +111,16 @@ function movePeriod(direction: 1 | -1) {
   <AppLayout>
     <section class="calendar-page">
       <CalendarToolbar
+        v-model:view-mode="viewMode"
+        :period-label="visibleTitle"
+        :selected-date="selectedDate"
         :loading="loading"
         :generating="generationState.generating.value"
         :missed-count="blocksState.missedBlocks.value.length"
         :scheduled-count="scheduledCount"
+        @today="selectedDate = new Date()"
+        @previous="movePeriod(-1)"
+        @next="movePeriod(1)"
         @refresh="loadScheduler"
         @generate="generateSchedule"
       />
@@ -134,19 +138,6 @@ function movePeriod(direction: 1 | -1) {
 
       <div class="scheduler-grid">
         <div class="main-column">
-          <a-card class="calendar-shell tm-card-surface">
-            <div class="calendar-controls">
-              <CalendarDateNavigator
-                :title="visibleTitle"
-                :loading="blocksState.loading.value"
-                @today="selectedDate = new Date()"
-                @previous="movePeriod(-1)"
-                @next="movePeriod(1)"
-              />
-              <CalendarViewSwitcher :view-mode="viewMode" @change="viewMode = $event" />
-            </div>
-          </a-card>
-
           <CalendarDayView
             v-if="viewMode === 'day'"
             :date="selectedDate"
@@ -214,25 +205,12 @@ function movePeriod(direction: 1 | -1) {
   display: grid;
   gap: 16px;
 }
-.calendar-controls {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
-}
 .empty-state {
   border: 1px dashed #c4b5fd;
 }
 @media (max-width: 1100px) {
   .scheduler-grid {
     grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 700px) {
-  .calendar-controls {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
 </style>
