@@ -9,9 +9,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 @Configuration
@@ -51,7 +56,30 @@ public class AuthSecurityConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(JwtDecoder.class)
-    JwtDecoder jwtDecoder(SecretKey key) {
-        return NimbusJwtDecoder.withSecretKey(key).build();
+    JwtDecoder jwtDecoder(
+            SecretKey key,
+            @Value("${taskmind.auth.jwt.issuer}") String issuer,
+            @Value("${taskmind.auth.jwt.audience}") String audience) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).build();
+        decoder.setJwtValidator(
+                JwtValidators.createDefaultWithValidators(
+                        JwtValidators.createDefaultWithIssuer(issuer), new AudienceValidator(audience)));
+        return decoder;
+    }
+
+    private record AudienceValidator(String audience) implements OAuth2TokenValidator<Jwt> {
+        private static final OAuth2Error MISSING_OR_INVALID_AUDIENCE =
+                new OAuth2Error(
+                        "invalid_token",
+                        "The token is missing the required TaskMind Core audience.",
+                        null);
+
+        @Override
+        public OAuth2TokenValidatorResult validate(Jwt token) {
+            if (token.getAudience() != null && token.getAudience().contains(audience)) {
+                return OAuth2TokenValidatorResult.success();
+            }
+            return OAuth2TokenValidatorResult.failure(MISSING_OR_INVALID_AUDIENCE);
+        }
     }
 }

@@ -24,12 +24,19 @@ import org.springframework.stereotype.Service;
 public class JwtTokenService implements TokenService {
     private final JwtEncoder encoder;
     private final Duration accessTtl;
+    private final String issuer;
+    private final String audience;
     private final SecureRandom random = new SecureRandom();
 
     public JwtTokenService(
-            JwtEncoder encoder, @Value("${taskmind.auth.jwt.access-ttl:PT1H}") Duration accessTtl) {
+            JwtEncoder encoder,
+            @Value("${taskmind.auth.jwt.access-ttl:PT1H}") Duration accessTtl,
+            @Value("${taskmind.auth.jwt.issuer}") String issuer,
+            @Value("${taskmind.auth.jwt.audience}") String audience) {
         this.encoder = encoder;
         this.accessTtl = accessTtl;
+        this.issuer = issuer;
+        this.audience = audience;
     }
 
     @Override
@@ -37,7 +44,8 @@ public class JwtTokenService implements TokenService {
         Instant now = Instant.now();
         org.springframework.security.oauth2.jwt.JwtClaimsSet claims =
                 JwtClaimsSet.builder()
-                        .issuer("taskmind-core")
+                        .issuer(issuer)
+                        .audience(java.util.List.of(audience))
                         .issuedAt(now)
                         .expiresAt(now.plus(accessTtl))
                         .subject(userId.toString())
