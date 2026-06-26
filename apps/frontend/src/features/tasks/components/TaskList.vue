@@ -20,6 +20,7 @@ interface TaskTableColumn {
   dataIndex: keyof Task | 'key'
   key: keyof Task | 'key'
   width?: number
+  ellipsis?: boolean
 }
 
 interface TaskTableRecord extends Task {
@@ -27,13 +28,18 @@ interface TaskTableRecord extends Task {
 }
 
 const columns: TaskTableColumn[] = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 120 },
-  { title: 'TASK', dataIndex: 'title', key: 'title' },
+  { title: 'TASK', dataIndex: 'title', key: 'title', width: 360, ellipsis: true },
+  { title: 'PROJECT', dataIndex: 'projectId', key: 'projectId', width: 180, ellipsis: true },
+  { title: 'OWNER', dataIndex: 'userId', key: 'userId', width: 180, ellipsis: true },
   { title: 'STATUS', dataIndex: 'status', key: 'status', width: 180 },
   { title: 'PRIORITY', dataIndex: 'priority', key: 'priority', width: 110 },
   { title: 'DUE', dataIndex: 'dueAt', key: 'dueAt', width: 160 },
+  { title: 'UPDATED', dataIndex: 'updatedAt', key: 'updatedAt', width: 170 },
+  { title: 'CREATED', dataIndex: 'createdAt', key: 'createdAt', width: 170 },
   { title: 'EFFORT', dataIndex: 'durationMinutes', key: 'durationMinutes', width: 90 },
 ]
+
+const tableScroll = { x: 1400 }
 
 const dataSource = computed<TaskTableRecord[]>(() =>
   props.tasks.map((task) => ({ ...task, key: task.id })),
@@ -54,6 +60,18 @@ function handleStatusChange(task: TaskTableRecord, nextStatus: TaskStatus) {
   }
 }
 
+function compactId(value: string) {
+  return value.slice(0, 8)
+}
+
+function taskKeyLabel(task: Task) {
+  return task.taskKey || compactId(task.id)
+}
+
+function ownerLabel(task: Task) {
+  return task.assigneeId || task.userId
+}
+
 function dueLabel(task: Task) {
   if (!task.dueAt) return '—'
   const due = toTimestamp(task.dueAt)
@@ -72,6 +90,7 @@ function dueLabel(task: Task) {
     :data-source="dataSource"
     :pagination="{ pageSize: 12 }"
     :loading="props.loading"
+    :scroll="tableScroll"
     size="middle"
   >
     <template #emptyText>
@@ -84,12 +103,26 @@ function dueLabel(task: Task) {
       />
     </template>
     <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
-      <template v-if="column.key === 'id'">{{ record.taskKey || record.id.slice(0, 8) }}</template>
-      <template v-else-if="column.key === 'title'">
-        <router-link :to="taskDetailRoute(record)" class="task-link">{{
-          record.title
-        }}</router-link>
-        <div class="desc">{{ record.description || 'No description' }}</div>
+      <template v-if="column.key === 'title'">
+        <div class="task-title-cell">
+          <router-link :to="taskDetailRoute(record)" class="task-link" :title="record.title">
+            {{ record.title }}
+          </router-link>
+          <span class="task-key">{{ taskKeyLabel(record) }}</span>
+        </div>
+        <div class="desc" :title="record.description || 'No description'">
+          {{ record.description || 'No description' }}
+        </div>
+      </template>
+      <template v-else-if="column.key === 'projectId'">
+        <span class="secondary-id" :title="record.projectId">{{
+          compactId(record.projectId)
+        }}</span>
+      </template>
+      <template v-else-if="column.key === 'userId'">
+        <span class="secondary-id" :title="ownerLabel(record)">{{
+          compactId(ownerLabel(record))
+        }}</span>
       </template>
       <template v-else-if="column.key === 'status'">
         <a-select
@@ -111,6 +144,12 @@ function dueLabel(task: Task) {
       <template v-else-if="column.key === 'dueAt'">
         <span :class="{ overdue: isTaskOverdue(record) }">{{ dueLabel(record) }}</span>
       </template>
+      <template v-else-if="column.key === 'updatedAt'">{{
+        formatDateTime(record.updatedAt)
+      }}</template>
+      <template v-else-if="column.key === 'createdAt'">{{
+        formatDateTime(record.createdAt)
+      }}</template>
       <template v-else-if="column.key === 'durationMinutes'">{{
         Math.max(1, Math.round((record.durationMinutes || 30) / 30))
       }}</template>
@@ -119,13 +158,43 @@ function dueLabel(task: Task) {
 </template>
 
 <style scoped>
+.task-title-cell {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
 .task-link {
+  display: block;
+  flex: 1 1 auto;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-key {
+  background: #f1f5f9;
+  border-radius: 999px;
+  color: #475569;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 8px;
 }
 .desc {
   color: #64748b;
   font-size: 12px;
   margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.secondary-id {
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
 }
 .overdue {
   color: #cf1322;
