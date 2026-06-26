@@ -50,7 +50,9 @@ onMounted(async () => {
         <h1>Tasks</h1>
         <p>Everything assigned, in progress, or waiting</p>
       </div>
-      <a-button type="primary" @click="isCreateTaskModalOpen = true">New task</a-button>
+      <a-button class="topbar__action" type="primary" @click="isCreateTaskModalOpen = true"
+        >New task</a-button
+      >
     </header>
 
     <section class="tasks-content">
@@ -96,20 +98,42 @@ onMounted(async () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
+
 .topbar h1 {
   margin: 0;
   font-size: 32px;
 }
+
 .topbar p {
   margin: 4px 0 0;
   color: #64748b;
 }
-.tasks-content {
-  width: 100%;
+
+.topbar__action {
+  flex-shrink: 0;
 }
+
+.tasks-content {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .tasks-error {
-  margin-bottom: 12px;
+  margin: 0;
+}
+
+@media (max-width: 575px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar__action {
+    width: 100%;
+  }
 }
 </style>
