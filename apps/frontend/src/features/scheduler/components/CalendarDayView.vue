@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import CalendarEventCard from './CalendarEventCard.vue'
+import ScheduledBlockDetailsDrawer from './ScheduledBlockDetailsDrawer.vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
 import { blockDurationMinutes, HOUR_MARKS, minuteOffset } from '../utils/calendarDates'
 
@@ -9,6 +11,17 @@ const emit = defineEmits<{
   reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
 }>()
 const hourHeight = 72
+const selectedBlock = ref<ScheduledBlock | null>(null)
+const detailOpen = ref(false)
+
+function openBlockDetails(block: ScheduledBlock) {
+  selectedBlock.value = block
+  detailOpen.value = true
+}
+
+function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload) {
+  emit('reschedule', blockId, payload)
+}
 </script>
 
 <template>
@@ -34,14 +47,17 @@ const hourHeight = 72
           height: `${(blockDurationMinutes(block) / 60) * hourHeight}px`,
         }"
       >
-        <CalendarEventCard
-          :block="block"
-          :saving="savingBlockIds.has(block.id)"
-          @complete="emit('complete', $event)"
-          @reschedule="(id, payload) => emit('reschedule', id, payload)"
-        />
+        <CalendarEventCard :block="block" @select="openBlockDetails" />
       </div>
     </div>
+
+    <ScheduledBlockDetailsDrawer
+      v-model:open="detailOpen"
+      :block="selectedBlock"
+      :saving="selectedBlock ? savingBlockIds.has(selectedBlock.id) : false"
+      @complete="emit('complete', $event)"
+      @reschedule="forwardReschedule"
+    />
   </a-card>
 </template>
 
