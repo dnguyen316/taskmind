@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: taskmind-ai
+  datasource:
+    url: ${TASKMIND_AI_DB_URL:${TASKMIND_DB_URL:jdbc:postgresql://localhost:5432/taskmind}}
+    username: ${TASKMIND_AI_DB_USERNAME:${TASKMIND_DB_USERNAME:taskmind}}
+    password: ${TASKMIND_AI_DB_PASSWORD:${TASKMIND_DB_PASSWORD:taskmind}}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: ai
+    default-schema: ai
+    locations: classpath:db/migration
+
 
 taskmind:
   ai:

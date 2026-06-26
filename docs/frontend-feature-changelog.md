@@ -9,6 +9,15 @@
 
 - Frontend formatting, typecheck, build, and repository vibe verification were run for this UI slice.
 - Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+## 2026-06-26 - Scheduler fetch race guard
+
+### Changed
+
+- Guarded scheduler block loading so stale calendar range requests cannot overwrite the latest visible range's blocks, loading state, or fetch error.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; no browser E2E was run because this behavior-only race guard does not introduce a visible layout change.
 - Applicable skills: none. Delegated agents: none.
 
 ## 2026-06-25 - Scheduler toolbar range controls

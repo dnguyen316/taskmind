@@ -20,6 +20,17 @@ class NovaLocalDefaultsConfigurationTest {
                         "${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN:"
                                 + SHARED_NOVA_SERVICE_TOKEN_DEFAULT
                                 + "}}");
+        assertThat(properties.getProperty("spring.datasource.url"))
+                .isEqualTo(
+                        "${TASKMIND_AI_DB_URL:${TASKMIND_DB_URL:jdbc:postgresql://localhost:5432/taskmind}}");
+        assertThat(properties.getProperty("spring.datasource.username"))
+                .isEqualTo("${TASKMIND_AI_DB_USERNAME:${TASKMIND_DB_USERNAME:taskmind}}");
+        assertThat(properties.getProperty("spring.datasource.password"))
+                .isEqualTo("${TASKMIND_AI_DB_PASSWORD:${TASKMIND_DB_PASSWORD:taskmind}}");
+        assertThat(properties.getProperty("spring.datasource.driver-class-name"))
+                .isEqualTo("org.postgresql.Driver");
+        assertThat(properties.getProperty("spring.flyway.schemas")).isEqualTo("ai");
+        assertThat(properties.getProperty("spring.flyway.default-schema")).isEqualTo("ai");
     }
 
     private Properties applicationYamlProperties() {

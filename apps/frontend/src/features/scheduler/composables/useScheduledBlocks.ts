@@ -11,6 +11,7 @@ export function useScheduledBlocks() {
   const loading = ref(false)
   const savingBlockIds = ref<Set<string>>(new Set())
   const errorMessage = ref('')
+  let fetchRequestId = 0
 
   const sortedBlocks = computed(() => [...blocks.value].sort(compareBlocks))
   const missedBlocks = computed(() =>
@@ -19,18 +20,29 @@ export function useScheduledBlocks() {
   const hasBlocks = computed(() => blocks.value.length > 0)
 
   async function fetchBlocks(params?: GenerateSchedulePayload) {
+    const currentRequestId = ++fetchRequestId
     loading.value = true
     errorMessage.value = ''
 
     try {
-      blocks.value = await listScheduledBlocks(params)
-      return blocks.value
+      const fetchedBlocks = await listScheduledBlocks(params)
+
+      if (currentRequestId === fetchRequestId) {
+        blocks.value = fetchedBlocks
+      }
+
+      return fetchedBlocks
     } catch (error: unknown) {
-      errorMessage.value =
-        error instanceof Error ? error.message : 'Failed to load scheduled blocks.'
+      if (currentRequestId === fetchRequestId) {
+        errorMessage.value =
+          error instanceof Error ? error.message : 'Failed to load scheduled blocks.'
+      }
+
       throw error
     } finally {
-      loading.value = false
+      if (currentRequestId === fetchRequestId) {
+        loading.value = false
+      }
     }
   }
 
