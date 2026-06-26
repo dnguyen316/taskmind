@@ -1,3 +1,16 @@
+## 2026-06-26 - M03 Shared task status presentation
+
+### Changed
+
+- Added shared task status metadata and a reusable status chip so task list, detail, and filters present the same labels and colors.
+- Updated task status selectors to use shared labels instead of raw enum text while preserving the existing task status values sent to Core.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for this UI slice before the repository quality gate.
+- Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-26 - M03 Resizable workspace sidebar
 
 ### Changed
@@ -9,6 +22,7 @@
 
 - Frontend formatting, typecheck, build, and repository vibe verification were run for this UI slice.
 - Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+
 ## 2026-06-26 - Scheduler fetch race guard
 
 ### Changed
