@@ -1,3 +1,16 @@
+## 2026-06-26 - M03 Resizable workspace sidebar
+
+### Changed
+
+- Added desktop shell controls so the authenticated workspace sidebar can collapse into icon-only navigation and expand back to the full navigation.
+- Added a mouse drag handle on the desktop sidebar edge so users can resize the navigation column between compact and wide widths while leaving the mobile drawer flow unchanged.
+
+### Verification notes
+
+- Frontend formatting, typecheck, build, and repository vibe verification were run for this UI slice.
+- Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-25 - Scheduler toolbar range controls
 
 ### Changed
@@ -619,9 +632,11 @@
 ## 2026-06-25 - Scheduler block display refactor
 
 ### Summary
+
 - Extracted scheduler block display formatting and status helpers into a local scheduler utility for shared list and calendar rendering.
 - Split calendar event presentation from edit details by adding a reusable scheduled block details drawer/inline editor component.
 - Updated day, week, and month scheduler calendar views so selecting an event card opens the shared details drawer while preserving complete and reschedule actions.
 
 ### Verification
+
 - Frontend format run for touched scheduler files.

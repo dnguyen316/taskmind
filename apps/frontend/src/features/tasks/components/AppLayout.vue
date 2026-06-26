@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { MenuOutlined } from '@ant-design/icons-vue'
 
@@ -9,6 +9,17 @@ defineProps<{ taskCount?: number }>()
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+const sidebarCollapsed = ref(false)
+const sidebarWidth = ref(240)
+const isResizingSidebar = ref(false)
+
+const SIDEBAR_MIN_WIDTH = 200
+const SIDEBAR_MAX_WIDTH = 380
+const SIDEBAR_COLLAPSED_WIDTH = 72
+
+const desktopSidebarWidth = computed(() =>
+  sidebarCollapsed.value ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth.value,
+)
 
 const currentPageTitle = computed(() => {
   if (route.path.startsWith('/dashboard')) return 'Dashboard'
@@ -30,14 +41,55 @@ function closeMobileMenu() {
   mobileMenuOpen.value = false
 }
 
+function toggleSidebarCollapse() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+function clampSidebarWidth(width: number) {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)))
+}
+
+function stopSidebarResize() {
+  if (!isResizingSidebar.value) return
+
+  isResizingSidebar.value = false
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+  window.removeEventListener('pointermove', resizeSidebar)
+  window.removeEventListener('pointerup', stopSidebarResize)
+}
+
+function resizeSidebar(event: PointerEvent) {
+  sidebarWidth.value = clampSidebarWidth(event.clientX)
+}
+
+function startSidebarResize(event: PointerEvent) {
+  if (sidebarCollapsed.value) {
+    sidebarCollapsed.value = false
+  }
+
+  isResizingSidebar.value = true
+  sidebarWidth.value = clampSidebarWidth(event.clientX)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  window.addEventListener('pointermove', resizeSidebar)
+  window.addEventListener('pointerup', stopSidebarResize)
+}
+
 watch(
   () => route.fullPath,
   () => closeMobileMenu(),
 )
+
+onBeforeUnmount(() => stopSidebarResize())
 </script>
 
 <template>
-  <main class="dashboard-layout tm-app-shell">
+  <main
+    class="dashboard-layout tm-app-shell"
+    :class="{ 'is-sidebar-resizing': isResizingSidebar }"
+    :style="{ '--desktop-sidebar-width': `${desktopSidebarWidth}px` }"
+  >
     <header class="mobile-topbar" aria-label="Authenticated workspace navigation">
       <div class="mobile-brand-group">
         <div class="mobile-brand">Taskmind <span>AI</span></div>
@@ -55,7 +107,21 @@ watch(
       </a-button>
     </header>
 
-    <AppSidebar :task-count="taskCount" />
+    <div class="desktop-sidebar-frame">
+      <AppSidebar
+        :task-count="taskCount"
+        :collapsed="sidebarCollapsed"
+        @toggle-collapse="toggleSidebarCollapse"
+      />
+      <button
+        v-if="!sidebarCollapsed"
+        class="sidebar-resize-handle"
+        type="button"
+        aria-label="Resize workspace navigation sidebar"
+        title="Drag to resize sidebar"
+        @pointerdown="startSidebarResize"
+      />
+    </div>
 
     <a-drawer
       id="mobile-navigation-drawer"
@@ -94,10 +160,45 @@ watch(
 <style scoped>
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: var(--desktop-sidebar-width, 240px) minmax(0, 1fr);
   min-height: 100vh;
   overflow: hidden;
   background: var(--tm-bg);
+}
+
+.desktop-sidebar-frame {
+  position: relative;
+  min-width: 0;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 15;
+  width: 8px;
+  padding: 0;
+  cursor: col-resize;
+  background: transparent;
+  border: 0;
+}
+
+.sidebar-resize-handle::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  content: '';
+  background: transparent;
+  transition: background 160ms ease;
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:focus-visible::after,
+.is-sidebar-resizing .sidebar-resize-handle::after {
+  background: var(--tm-primary);
 }
 
 .mobile-topbar {
@@ -246,7 +347,7 @@ watch(
     padding: 20px;
   }
 
-  :deep(.sidebar:not(.sidebar-mobile)) {
+  .desktop-sidebar-frame {
     display: none;
   }
 }

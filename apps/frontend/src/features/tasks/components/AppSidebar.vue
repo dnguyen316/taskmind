@@ -10,14 +10,16 @@ import {
   FolderOutlined,
   InboxOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   TeamOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 
 import { useAuthStore } from '../../../stores/auth'
 
-defineProps<{ taskCount?: number; mobile?: boolean }>()
-const emit = defineEmits<{ navigate: [] }>()
+defineProps<{ taskCount?: number; mobile?: boolean; collapsed?: boolean }>()
+const emit = defineEmits<{ navigate: []; toggleCollapse: [] }>()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -55,22 +57,39 @@ function initials(value: string) {
 </script>
 
 <template>
-  <aside class="sidebar tm-shell-sidebar" :class="{ 'sidebar-mobile': mobile }">
-    <div class="brand">Taskmind <span>AI</span></div>
+  <aside
+    class="sidebar tm-shell-sidebar"
+    :class="{ 'sidebar-mobile': mobile, 'sidebar-collapsed': collapsed && !mobile }"
+  >
+    <div class="brand-row">
+      <div class="brand" aria-label="Taskmind AI">Taskmind <span>AI</span></div>
+      <a-button
+        v-if="!mobile"
+        class="sidebar-collapse-button"
+        type="text"
+        :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        :aria-expanded="!collapsed"
+        @click="emit('toggleCollapse')"
+      >
+        <MenuUnfoldOutlined v-if="collapsed" />
+        <MenuFoldOutlined v-else />
+      </a-button>
+    </div>
     <nav class="menu-group">
       <RouterLink
         to="/dashboard"
         class="menu-item"
         :class="{ active: isDashboard }"
         @click="emit('navigate')"
-        ><AppstoreOutlined />Dashboard</RouterLink
+        ><AppstoreOutlined /><span class="menu-label">Dashboard</span></RouterLink
       >
       <RouterLink
         to="/tasks"
         class="menu-item"
         :class="{ active: isTasks }"
         @click="emit('navigate')"
-        ><UnorderedListOutlined />Tasks
+        ><UnorderedListOutlined /><span class="menu-label">Tasks</span>
         <em v-if="taskCount !== undefined">{{ taskCount }}</em></RouterLink
       >
       <RouterLink
@@ -78,7 +97,7 @@ function initials(value: string) {
         class="menu-item"
         :class="{ active: isProjects }"
         @click="emit('navigate')"
-        ><FolderOutlined />Projects</RouterLink
+        ><FolderOutlined /><span class="menu-label">Projects</span></RouterLink
       >
     </nav>
     <p class="group-title">Workspace</p>
@@ -89,7 +108,7 @@ function initials(value: string) {
         :class="{ active: isTeam }"
         @click="emit('navigate')"
         title="Team directory and workload totals"
-        ><TeamOutlined />Team</RouterLink
+        ><TeamOutlined /><span class="menu-label">Team</span></RouterLink
       >
       <RouterLink
         to="/calendar"
@@ -97,7 +116,8 @@ function initials(value: string) {
         :class="{ active: isCalendar }"
         @click="emit('navigate')"
         title="Calendar scheduling is available as an early preview"
-        ><CalendarOutlined />Calendar <span class="nav-badge">Preview</span></RouterLink
+        ><CalendarOutlined /><span class="menu-label">Calendar</span>
+        <span class="nav-badge">Preview</span></RouterLink
       >
       <RouterLink
         to="/inbox"
@@ -105,7 +125,8 @@ function initials(value: string) {
         :class="{ active: isInbox }"
         @click="emit('navigate')"
         title="Inbox capture AI tools are available as a beta"
-        ><InboxOutlined />Inbox <span class="nav-badge">Beta</span></RouterLink
+        ><InboxOutlined /><span class="menu-label">Inbox</span>
+        <span class="nav-badge">Beta</span></RouterLink
       >
       <RouterLink
         to="/reports"
@@ -113,14 +134,14 @@ function initials(value: string) {
         :class="{ active: isReports }"
         @click="emit('navigate')"
         title="Reports from analytics rollups"
-        ><BarChartOutlined />Reports</RouterLink
+        ><BarChartOutlined /><span class="menu-label">Reports</span></RouterLink
       >
       <RouterLink
         to="/activity"
         class="menu-item"
         :class="{ active: isActivity }"
         @click="emit('navigate')"
-        ><AuditOutlined />Activity</RouterLink
+        ><AuditOutlined /><span class="menu-label">Activity</span></RouterLink
       >
     </nav>
     <div class="user-pill">
@@ -156,12 +177,65 @@ function initials(value: string) {
   border-right: 0;
 }
 
-.brand {
+.sidebar-collapsed {
+  padding-inline: 10px;
+}
+
+.sidebar-collapsed .brand {
+  overflow: hidden;
+  width: 0;
+  opacity: 0;
+}
+
+.sidebar-collapsed .brand-row {
+  justify-content: center;
+}
+
+.sidebar-collapsed .menu-item {
+  justify-content: center;
+  padding-inline: 10px;
+}
+
+.sidebar-collapsed .menu-label,
+.sidebar-collapsed .group-title,
+.sidebar-collapsed .nav-badge,
+.sidebar-collapsed .menu-item em,
+.sidebar-collapsed .user-meta {
+  display: none;
+}
+
+.sidebar-collapsed .user-pill {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebar-collapsed .logout-button {
+  display: none;
+}
+
+.brand-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 22px;
+}
+
+.brand {
+  min-width: 0;
   color: var(--tm-text);
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.04em;
+}
+
+.sidebar-collapse-button {
+  display: inline-grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  color: var(--tm-text-muted);
+  place-items: center;
 }
 
 .brand span {
