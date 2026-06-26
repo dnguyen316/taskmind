@@ -1,3 +1,14 @@
+## 2026-06-26 - Scheduler fetch race guard
+
+### Changed
+
+- Guarded scheduler block loading so stale calendar range requests cannot overwrite the latest visible range's blocks, loading state, or fetch error.
+
+### Verification notes
+
+- Frontend coverage for this slice is through formatting and `vue-tsc --noEmit`; no browser E2E was run because this behavior-only race guard does not introduce a visible layout change.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-25 - Scheduler toolbar range controls
 
 ### Changed
@@ -619,9 +630,11 @@
 ## 2026-06-25 - Scheduler block display refactor
 
 ### Summary
+
 - Extracted scheduler block display formatting and status helpers into a local scheduler utility for shared list and calendar rendering.
 - Split calendar event presentation from edit details by adding a reusable scheduled block details drawer/inline editor component.
 - Updated day, week, and month scheduler calendar views so selecting an event card opens the shared details drawer while preserving complete and reschedule actions.
 
 ### Verification
+
 - Frontend format run for touched scheduler files.
