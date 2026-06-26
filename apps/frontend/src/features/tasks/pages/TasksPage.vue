@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import '../task-list-views.css'
 import AppLayout from '../components/AppLayout.vue'
 import TaskFilters from '../components/TaskFilters.vue'
 import TaskCreateForm from '../components/TaskCreateForm.vue'
 import TaskList from '../components/TaskList.vue'
+import TaskKanbanView from '../components/TaskKanbanView.vue'
+import TaskBacklogView from '../components/TaskBacklogView.vue'
 import { useTasks } from '../composables/useTasks'
 import type { TaskStatus } from '../types'
 
@@ -22,6 +25,7 @@ const {
   changeStatus,
 } = useTasks()
 
+const viewMode = ref<'list' | 'kanban' | 'backlog'>('list')
 const isCreateTaskModalOpen = ref(false)
 
 async function handleCreateTask(payload: Parameters<typeof submitTask>[0]) {
@@ -50,9 +54,16 @@ onMounted(async () => {
         <h1>Tasks</h1>
         <p>Everything assigned, in progress, or waiting</p>
       </div>
-      <a-button class="topbar__action" type="primary" @click="isCreateTaskModalOpen = true"
-        >New task</a-button
-      >
+      <div class="topbar__actions">
+        <a-radio-group v-model:value="viewMode" button-style="solid" class="tm-view-switcher">
+          <a-radio-button value="list">List</a-radio-button>
+          <a-radio-button value="kanban">Kanban</a-radio-button>
+          <a-radio-button value="backlog">Backlog</a-radio-button>
+        </a-radio-group>
+        <a-button class="topbar__action" type="primary" @click="isCreateTaskModalOpen = true"
+          >New task</a-button
+        >
+      </div>
     </header>
 
     <section class="tasks-content">
@@ -65,10 +76,25 @@ onMounted(async () => {
         class="tasks-error"
       />
       <TaskList
+        v-if="viewMode === 'list'"
         :tasks="visibleTasks"
         :pending-status-task-ids="pendingStatusTaskIds"
         :loading="loading"
         :error-message="errorMessage"
+        @change-status="handleChangeStatus"
+      />
+      <TaskKanbanView
+        v-else-if="viewMode === 'kanban'"
+        :tasks="visibleTasks"
+        :pending-status-task-ids="pendingStatusTaskIds"
+        :loading="loading"
+        @change-status="handleChangeStatus"
+      />
+      <TaskBacklogView
+        v-else
+        :tasks="visibleTasks"
+        :pending-status-task-ids="pendingStatusTaskIds"
+        :loading="loading"
         @change-status="handleChangeStatus"
       />
     </section>
@@ -111,6 +137,14 @@ onMounted(async () => {
   color: #64748b;
 }
 
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .topbar__action {
   flex-shrink: 0;
 }
@@ -132,8 +166,13 @@ onMounted(async () => {
     align-items: stretch;
   }
 
+  .topbar__actions,
   .topbar__action {
     width: 100%;
+  }
+
+  .topbar__actions {
+    justify-content: stretch;
   }
 }
 </style>
