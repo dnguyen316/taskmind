@@ -28,6 +28,7 @@ const emit = defineEmits<{
 
 const editValues = reactive({ startsAt: '', endsAt: '', rationale: '' })
 const validationMessage = ref('')
+const canEditBlock = computed(() => props.block?.status !== 'COMPLETED')
 const drawerOpen = computed({
   get: () => props.open,
   set: (value: boolean) => emit('update:open', value),
@@ -52,7 +53,7 @@ function parseDateTimeLocal(value: string) {
 
 function submitReschedule() {
   validationMessage.value = ''
-  if (!props.block) return
+  if (!props.block || !canEditBlock.value) return
 
   const startsAt = parseDateTimeLocal(editValues.startsAt)
   const endsAt = parseDateTimeLocal(editValues.endsAt)
@@ -111,22 +112,27 @@ function completeBlock() {
     <div class="edit-grid">
       <label>
         <span>Start</span>
-        <input v-model="editValues.startsAt" type="datetime-local" />
+        <input v-model="editValues.startsAt" type="datetime-local" :disabled="!canEditBlock" />
       </label>
       <label>
         <span>End</span>
-        <input v-model="editValues.endsAt" type="datetime-local" />
+        <input v-model="editValues.endsAt" type="datetime-local" :disabled="!canEditBlock" />
       </label>
       <label class="rationale-input">
         <span>Rationale</span>
-        <input v-model="editValues.rationale" maxlength="500" placeholder="Why this block moved" />
+        <input
+          v-model="editValues.rationale"
+          maxlength="500"
+          placeholder="Why this block moved"
+          :disabled="!canEditBlock"
+        />
       </label>
     </div>
 
     <a-alert v-if="validationMessage" type="error" show-icon :message="validationMessage" />
 
     <div class="block-actions">
-      <a-button :loading="saving" @click="submitReschedule">Save time</a-button>
+      <a-button v-if="canEditBlock" :loading="saving" @click="submitReschedule">Save time</a-button>
       <a-button
         v-if="block.status !== 'COMPLETED'"
         type="primary"
@@ -172,11 +178,16 @@ function completeBlock() {
 
       <div class="edit-grid single-column">
         <label
-          ><span>Start</span><input v-model="editValues.startsAt" type="datetime-local"
+          ><span>Start</span
+          ><input v-model="editValues.startsAt" type="datetime-local" :disabled="!canEditBlock"
         /></label>
-        <label><span>End</span><input v-model="editValues.endsAt" type="datetime-local" /></label>
         <label
-          ><span>Rationale</span><input v-model="editValues.rationale" maxlength="500"
+          ><span>End</span
+          ><input v-model="editValues.endsAt" type="datetime-local" :disabled="!canEditBlock"
+        /></label>
+        <label
+          ><span>Rationale</span
+          ><input v-model="editValues.rationale" maxlength="500" :disabled="!canEditBlock"
         /></label>
       </div>
 
@@ -186,7 +197,9 @@ function completeBlock() {
     <template #footer>
       <div v-if="block" class="block-actions">
         <a-button @click="drawerOpen = false">Close</a-button>
-        <a-button :loading="saving" @click="submitReschedule">Save time</a-button>
+        <a-button v-if="canEditBlock" :loading="saving" @click="submitReschedule"
+          >Save time</a-button
+        >
         <a-button
           v-if="block.status !== 'COMPLETED'"
           type="primary"
