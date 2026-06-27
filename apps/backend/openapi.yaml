@@ -1829,6 +1829,85 @@ paths:
               schema: {type: string}
         '401': {$ref: '#/components/responses/Unauthorized'}
 
+  /v1/projects/{projectId}/ai-workflow-templates:
+    get:
+      summary: List active AI workflow templates for a project
+      operationId: listAiWorkflowTemplates
+      tags: [AI Workflow Templates]
+      parameters:
+        - {name: projectId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Active templates visible to the project member
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/AiWorkflowTemplate'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {description: Project membership required}
+    post:
+      summary: Create an AI workflow template
+      operationId: createAiWorkflowTemplate
+      tags: [AI Workflow Templates]
+      parameters:
+        - {name: projectId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiWorkflowTemplateRequest'}
+      responses:
+        '201':
+          description: Created template
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiWorkflowTemplate'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {description: Project admin role required}
+  /v1/ai-workflow-templates/{templateId}:
+    get:
+      summary: Get an active AI workflow template
+      operationId: getAiWorkflowTemplate
+      tags: [AI Workflow Templates]
+      parameters:
+        - {name: templateId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiWorkflowTemplate'}
+        '404': {description: Template not found, archived, or hidden}
+    put:
+      summary: Update an active AI workflow template
+      operationId: updateAiWorkflowTemplate
+      tags: [AI Workflow Templates]
+      parameters:
+        - {name: templateId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiWorkflowTemplateRequest'}
+      responses:
+        '200':
+          description: Updated template
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiWorkflowTemplate'}
+        '404': {description: Template not found, archived, or hidden}
+        '409': {description: Optimistic locking conflict}
+    delete:
+      summary: Archive an AI workflow template
+      operationId: archiveAiWorkflowTemplate
+      tags: [AI Workflow Templates]
+      parameters:
+        - {name: templateId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204': {description: Template archived}
+        '404': {description: Template not found, already archived, or hidden}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2022,6 +2101,28 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+    AiWorkflowTemplateRequest:
+      type: object
+      required: [name, workflowType, templateBody, approvalPolicy]
+      properties:
+        name: {type: string}
+        description: {type: string}
+        workflowType: {type: string, enum: [TASK_RESOLUTION, BUG_TRIAGE, PR_REVIEW]}
+        templateBody: {type: string}
+        allowedTools: {type: string, description: JSON array of tool identifiers}
+        approvalPolicy: {type: string, enum: [AUTO, MANUAL, ADMIN_ONLY]}
+        defaultModelPolicy: {type: string, description: JSON model policy object}
+    AiWorkflowTemplate:
+      allOf:
+        - {$ref: '#/components/schemas/AiWorkflowTemplateRequest'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            projectId: {type: string, format: uuid}
+            version: {type: integer, format: int64}
+            archivedAt: {type: string, format: date-time, nullable: true}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
 
     NotificationType:
       type: string

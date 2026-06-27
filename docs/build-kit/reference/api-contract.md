@@ -15,6 +15,7 @@ Core exposes the only **public** API; the frontend talks only to Core. Relay and
 | Comments | `/v1/tasks/{taskId}/comments`, `/v1/comments/{commentId}`, reactions | CRUD + reactions. |
 | Projects | `/v1/projects`, `/v1/projects/{id}`, members, archive | CRUD + membership. |
 | Project brief (AI) | `/v1/projects/{projectId}/ai-brief` | BFF → Nova. |
+| AI workflow templates | `/v1/projects/{projectId}/ai-workflow-templates`, `/v1/ai-workflow-templates/{templateId}` | Core-owned project-scoped AI workflow prompt/tool/model templates; project members can read active templates, while project owners/admins and privileged users can create, update, and archive. |
 | Scheduler | `/v1/scheduler/generate`, `/blocks`, `/preferences` | Auto-schedule + blocks. |
 | Dashboard | `/v1/dashboard` | Aggregated home. |
 | Analytics | `/v1/reports` (`week`/`month`/`quarter`) | From analytics rollups. |

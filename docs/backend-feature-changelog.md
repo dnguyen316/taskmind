@@ -724,3 +724,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Expanded Nova local-default configuration coverage to assert the local datasource, driver, and Flyway schema defaults used by the AI service.
+
+## 2026-06-27 (Core AI Workflow Templates)
+
+### Changed
+
+- Added Core-owned, project-scoped AI workflow template storage for task resolution, bug triage, and PR review templates, including tool allow-list, approval policy, default model policy, audit timestamps, archive state, and optimistic-lock versioning.
+- Added authenticated REST endpoints to create, list, get, update, and archive active templates, with read access gated by project membership and management access gated by project owner/admin or privileged roles.
+- Documented the public AI workflow template contract in `apps/backend/openapi.yaml` and the API reference.
+
+### Tests
+
+- Added controller coverage for CRUD, member/admin authorization, optimistic-lock conflict handling, and hiding archived templates from list/get responses.
