@@ -141,3 +141,7 @@ Use these patterns consistently across AI endpoints and DTOs:
 - Core facade: `POST /v1/activity/search/assist`; the browser never calls Nova directly.
 - Nova returns structured fields (`query`, optional `explanation`, `suggestedFilters`) instead of free-form assistant text.
 - Nova currently allows plain activity search query text only and rejects requested filters until the search model advertises supported filter keys; unsafe query operator characters and boolean operators are sanitized from generated query text.
+
+## `task-resolution-agent`
+
+Nova supports a typed `task-resolution-agent` capability for task resolution planning. The capability accepts task context, project id, GitHub repository metadata, selected workflow template/version, allowed Core-routed tools, and an approval policy. Version `task-resolution-agent.v1` validates templates `task-resolution-default@1` and `github-task-resolution@1`, emits deterministic mock-provider plans for tests, and restricts generated tool calls to Core internal endpoints rather than direct browser or GitHub access.

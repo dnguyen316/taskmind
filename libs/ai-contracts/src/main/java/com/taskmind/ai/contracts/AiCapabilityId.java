@@ -25,6 +25,7 @@ public record AiCapabilityId(String value) {
     public static final AiCapabilityId SPEC_BREAKDOWN_SECTION = new AiCapabilityId("spec-breakdown-section");
     public static final AiCapabilityId SPEC_MERGE = new AiCapabilityId("spec-merge");
     public static final AiCapabilityId SPEC_SUGGEST_LINKS = new AiCapabilityId("spec-suggest-links");
+    public static final AiCapabilityId TASK_RESOLUTION_AGENT = new AiCapabilityId("task-resolution-agent");
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public AiCapabilityId {

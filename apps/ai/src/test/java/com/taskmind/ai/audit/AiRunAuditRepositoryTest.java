@@ -32,6 +32,8 @@ class AiRunAuditRepositoryTest {
                         "mock-model",
                         "request-hash",
                         objectMapper.createObjectNode().put("message", "hello"),
+                        "chat.v1",
+                        "VALID",
                         "corr-1");
 
         repository.start(record);
@@ -43,7 +45,7 @@ class AiRunAuditRepositoryTest {
         assertThat(bindings)
                 .filteredOn(binding -> binding.sqlType() == Types.TIMESTAMP_WITH_TIMEZONE)
                 .extracting(TypedObjectBinding::parameterIndex)
-                .containsExactly(11, 12);
+                .containsExactly(13, 14);
         assertThat(bindings)
                 .filteredOn(binding -> binding.sqlType() == Types.TIMESTAMP_WITH_TIMEZONE)
                 .extracting(TypedObjectBinding::value)

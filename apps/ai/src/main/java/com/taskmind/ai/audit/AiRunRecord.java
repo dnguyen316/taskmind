@@ -13,4 +13,6 @@ public record AiRunRecord(
         String modelId,
         String requestHash,
         JsonNode input,
+        String promptVersion,
+        String validationOutcome,
         String correlationId) {}

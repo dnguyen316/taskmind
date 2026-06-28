@@ -61,12 +61,15 @@ public class ChatService {
                                 provider.modelId(),
                                 requestHash(sessionId, request.message()),
                                 objectMapper.createObjectNode().put("message", request.message()),
+                                "chat.v1",
+                                "VALID",
                                 request.correlationId()));
         ProviderResponse providerResponse =
                 provider.complete(
                         new ProviderRequest(
                                 AiCapabilityId.CHAT,
                                 objectMapper.createObjectNode().put("message", request.message()),
+                                "chat.v1",
                                 contents(messages),
                                 request.correlationId()));
         messages.add(new ChatMessage("assistant", providerResponse.message(), Instant.now()));
