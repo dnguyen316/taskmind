@@ -3,14 +3,9 @@ import { ref } from 'vue'
 import CalendarEventCard from './CalendarEventCard.vue'
 import ScheduledBlockDetailsDrawer from './ScheduledBlockDetailsDrawer.vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
-import {
-  blockDurationMinutes,
-  blocksForDay,
-  HOUR_MARKS,
-  minuteOffset,
-} from '../utils/calendarDates'
+import { HOUR_MARKS, layoutBlocksForDay, type ScheduledBlockLayout } from '../utils/calendarDates'
 
-defineProps<{ days: Date[]; blocks: ScheduledBlock[]; savingBlockIds: Set<string> }>()
+const props = defineProps<{ days: Date[]; blocks: ScheduledBlock[]; savingBlockIds: Set<string> }>()
 const emit = defineEmits<{
   complete: [blockId: string]
   reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
@@ -26,6 +21,21 @@ function openBlockDetails(block: ScheduledBlock) {
 
 function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload) {
   emit('reschedule', blockId, payload)
+}
+
+function layoutsForDay(day: Date) {
+  return layoutBlocksForDay(props.blocks, day)
+}
+
+function blockStyle(layout: ScheduledBlockLayout) {
+  const gutter = 4
+  return {
+    top: `${(layout.topMinutes / 60) * hourHeight}px`,
+    height: `${(layout.durationMinutes / 60) * hourHeight}px`,
+    left: `calc((${layout.laneIndex} * 100%) / ${layout.laneCount} + ${gutter / 2}px)`,
+    right: 'auto',
+    width: `calc(100% / ${layout.laneCount} - ${gutter}px)`,
+  }
 }
 </script>
 
@@ -61,15 +71,12 @@ function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload
           :style="{ gridColumn: index + 2 }"
         >
           <div
-            v-for="block in blocksForDay(blocks, day)"
-            :key="block.id"
+            v-for="layout in layoutsForDay(day)"
+            :key="layout.block.id"
             class="event-position"
-            :style="{
-              top: `${(minuteOffset(block.startsAt) / 60) * hourHeight}px`,
-              height: `${(blockDurationMinutes(block) / 60) * hourHeight}px`,
-            }"
+            :style="blockStyle(layout)"
           >
-            <CalendarEventCard compact :block="block" @select="openBlockDetails" />
+            <CalendarEventCard compact :block="layout.block" @select="openBlockDetails" />
           </div>
         </div>
       </div>

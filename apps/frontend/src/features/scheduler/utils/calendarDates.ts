@@ -9,6 +9,78 @@ export interface CalendarMonthDay {
   isToday: boolean
 }
 
+export interface ScheduledBlockLayout {
+  block: ScheduledBlock
+  laneIndex: number
+  laneCount: number
+  topMinutes: number
+  durationMinutes: number
+}
+
+interface ActiveLayoutBlock {
+  layout: ScheduledBlockLayout
+  endsAtMs: number
+}
+
+export function layoutBlocksForDay(blocks: ScheduledBlock[], day: Date): ScheduledBlockLayout[] {
+  const sortedBlocks = blocksForDay(blocks, day).sort((left, right) => {
+    const startDelta = new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+    if (startDelta !== 0) return startDelta
+
+    return new Date(left.endsAt).getTime() - new Date(right.endsAt).getTime()
+  })
+  const layouts: ScheduledBlockLayout[] = []
+  let activeBlocks: ActiveLayoutBlock[] = []
+  let clusterLayouts: ScheduledBlockLayout[] = []
+  let clusterLaneCount = 0
+  let clusterEndsAtMs = Number.NEGATIVE_INFINITY
+
+  function closeCluster() {
+    for (const layout of clusterLayouts) {
+      layout.laneCount = clusterLaneCount
+    }
+    clusterLayouts = []
+    clusterLaneCount = 0
+    clusterEndsAtMs = Number.NEGATIVE_INFINITY
+  }
+
+  for (const block of sortedBlocks) {
+    const startsAt = new Date(block.startsAt)
+    const endsAt = new Date(block.endsAt)
+    const startsAtMs = startsAt.getTime()
+    const endsAtMs = endsAt.getTime()
+
+    if (clusterLayouts.length > 0 && startsAtMs >= clusterEndsAtMs) {
+      closeCluster()
+      activeBlocks = []
+    }
+
+    activeBlocks = activeBlocks.filter((activeBlock) => activeBlock.endsAtMs > startsAtMs)
+
+    const occupiedLanes = new Set(activeBlocks.map((activeBlock) => activeBlock.layout.laneIndex))
+    let laneIndex = 0
+    while (occupiedLanes.has(laneIndex)) laneIndex += 1
+
+    const layout: ScheduledBlockLayout = {
+      block,
+      laneIndex,
+      laneCount: 1,
+      topMinutes: minuteOffset(startsAt),
+      durationMinutes: blockDurationMinutes(block),
+    }
+
+    activeBlocks.push({ layout, endsAtMs })
+    clusterLayouts.push(layout)
+    clusterLaneCount = Math.max(clusterLaneCount, activeBlocks.length, laneIndex + 1)
+    clusterEndsAtMs = Math.max(clusterEndsAtMs, endsAtMs)
+    layouts.push(layout)
+  }
+
+  closeCluster()
+
+  return layouts
+}
+
 export function startOfDay(date: Date) {
   const next = new Date(date)
   next.setHours(0, 0, 0, 0)
