@@ -21,7 +21,6 @@ import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskLevel;
 import com.taskmind.backend.task.domain.model.TaskSource;
 import com.taskmind.backend.task.domain.model.TaskStatus;
-import com.taskmind.backend.task.domain.model.TaskType;
 import com.taskmind.events.EventTypes;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -553,7 +552,7 @@ public class SpecBreakdownApplicationService {
 
     private UUID createTask(AuthenticatedUser u, SpecBreakdownDraft d, JsonNode n, UUID parent) {
         TaskLevel level = deriveTaskLevel(n, parent);
-        TaskType type = deriveTaskType(level);
+        String type = deriveTaskType(level);
         Integer storyPoints = parseStoryPoints(n);
         CreateTaskCommand command =
                 buildGeneratedTaskCommand(d, n, parent, level, type, storyPoints);
@@ -569,14 +568,14 @@ public class SpecBreakdownApplicationService {
         return TaskLevel.valueOf(node.path("level").asText(defaultLevel));
     }
 
-    private TaskType deriveTaskType(TaskLevel level) {
+    private String deriveTaskType(TaskLevel level) {
         if (level == TaskLevel.EPIC) {
-            return TaskType.EPIC;
+            return "EPIC";
         }
         if (level == TaskLevel.STORY) {
-            return TaskType.STORY;
+            return "STORY";
         }
-        return TaskType.SUBTASK;
+        return "SUBTASK";
     }
 
     private Integer parseStoryPoints(JsonNode node) {
@@ -592,7 +591,7 @@ public class SpecBreakdownApplicationService {
             JsonNode node,
             UUID parent,
             TaskLevel level,
-            TaskType type,
+            String type,
             Integer storyPoints) {
         return new CreateTaskCommand(
                 draft.ownerUserId(),

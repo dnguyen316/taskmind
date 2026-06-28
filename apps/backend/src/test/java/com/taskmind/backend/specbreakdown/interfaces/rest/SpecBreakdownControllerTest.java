@@ -93,19 +93,19 @@ class SpecBreakdownControllerTest {
 
         assertThat(epic.parentTaskId()).isNull();
         assertThat(epic.taskLevel()).isEqualTo(TaskLevel.EPIC);
-        assertThat(epic.taskType()).isEqualTo(TaskType.EPIC);
+        assertThat(epic.taskType()).isEqualTo("EPIC");
         assertThat(epic.storyPoints()).isEqualTo(13);
         assertThat(epic.title()).isEqualTo("Parent epic");
         assertThat(epic.description()).isEqualTo("Epic details");
 
         assertThat(story.parentTaskId()).isEqualTo(CapturingTaskService.idFor(0));
         assertThat(story.taskLevel()).isEqualTo(TaskLevel.STORY);
-        assertThat(story.taskType()).isEqualTo(TaskType.STORY);
+        assertThat(story.taskType()).isEqualTo("STORY");
         assertThat(story.storyPoints()).isEqualTo(5);
 
         assertThat(task.parentTaskId()).isEqualTo(CapturingTaskService.idFor(1));
         assertThat(task.taskLevel()).isEqualTo(TaskLevel.SUBTASK);
-        assertThat(task.taskType()).isEqualTo(TaskType.SUBTASK);
+        assertThat(task.taskType()).isEqualTo("SUBTASK");
         assertThat(task.storyPoints()).isNull();
     }
 
@@ -123,14 +123,14 @@ class SpecBreakdownControllerTest {
         CreateTaskCommand child = taskService.commands().get(1);
 
         assertThat(root.taskLevel()).isEqualTo(TaskLevel.EPIC);
-        assertThat(root.taskType()).isEqualTo(TaskType.EPIC);
+        assertThat(root.taskType()).isEqualTo("EPIC");
         assertThat(root.title()).isEqualTo("Generated task");
         assertThat(root.description()).isNull();
         assertThat(root.storyPoints()).isNull();
 
         assertThat(child.parentTaskId()).isEqualTo(CapturingTaskService.idFor(0));
         assertThat(child.taskLevel()).isEqualTo(TaskLevel.SUBTASK);
-        assertThat(child.taskType()).isEqualTo(TaskType.SUBTASK);
+        assertThat(child.taskType()).isEqualTo("SUBTASK");
         assertThat(child.title()).isEqualTo("Generated task");
         assertThat(child.description()).isNull();
         assertThat(child.storyPoints()).isNull();

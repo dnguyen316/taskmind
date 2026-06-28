@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Form as VeeForm, Field, ErrorMessage } from 'vee-validate'
 import type { FormState, SubmissionContext } from 'vee-validate'
 import * as yup from 'yup'
@@ -14,6 +14,7 @@ import {
 } from '../validation/taskFormValidation'
 import type { Project } from '../../projects/types'
 import type { CreateTaskFormValues, CreateTaskPayload } from '../types'
+import { useTaskTypesStore } from '../stores/taskTypesStore'
 
 type SubmitTaskPayload = Omit<CreateTaskPayload, 'userId' | 'source'>
 
@@ -57,6 +58,7 @@ const schema = yup.object({
     .optional(),
   dueAt: yup.string().nullable(),
   status: yup.string().oneOf(['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']).required(),
+  taskType: yup.string().trim().nullable(),
 })
 
 const initialValues = computed<CreateTaskFormValues>(() => ({
@@ -65,7 +67,13 @@ const initialValues = computed<CreateTaskFormValues>(() => ({
 }))
 
 const hasProjectOptions = computed(() => props.projectOptions.length > 0)
+const taskTypesStore = useTaskTypesStore()
+const taskTypeOptions = computed(() => taskTypesStore.activeTaskTypes)
 const taskForm = ref<InstanceType<typeof VeeForm> | null>(null)
+
+onMounted(() => {
+  void taskTypesStore.fetchTaskTypes(props.defaultProjectId || null)
+})
 
 watch(
   () => [props.defaultProjectId, props.projectOptions.length] as const,
@@ -96,6 +104,7 @@ async function handleValidSubmit(
     durationMinutes: nullableNumberValue(formValues.durationMinutes),
     priority: Number(formValues.priority),
     status: formValues.status,
+    taskType: formValues.taskType || null,
   }
 
   await props.onSubmitTask(payload)
@@ -103,6 +112,7 @@ async function handleValidSubmit(
     values: {
       ...DEFAULT_CREATE_TASK_FORM,
       projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
+      taskType: DEFAULT_CREATE_TASK_FORM.taskType,
     },
   } satisfies Partial<FormState<Record<string, unknown>>>)
 }
@@ -116,6 +126,7 @@ function toCreateTaskFormValues(values: Record<string, unknown>): CreateTaskForm
     durationMinutes: nullableNumberValue(values.durationMinutes),
     dueAt: stringValue(values.dueAt),
     status: isTaskStatus(values.status) ? values.status : DEFAULT_CREATE_TASK_FORM.status,
+    taskType: stringValue(values.taskType) || DEFAULT_CREATE_TASK_FORM.taskType,
   }
 }
 
@@ -188,6 +199,29 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
                 <a-input v-bind="field" placeholder="Ship daily planner MVP" />
               </Field>
               <ErrorMessage class="field-error" name="title" />
+            </a-form-item>
+          </a-col>
+
+
+          <a-col :xs="24" :md="12">
+            <a-form-item label="Type">
+              <Field name="taskType" v-slot="{ value, handleChange }">
+                <a-select
+                  :value="value || undefined"
+                  placeholder="Select a type"
+                  :loading="taskTypesStore.loading"
+                  allow-clear
+                  @update:value="handleChange"
+                >
+                  <a-select-option
+                    v-for="taskType in taskTypeOptions"
+                    :key="taskType.id"
+                    :value="taskType.key"
+                  >
+                    {{ taskType.name }}
+                  </a-select-option>
+                </a-select>
+              </Field>
             </a-form-item>
           </a-col>
 

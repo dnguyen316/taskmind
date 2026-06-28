@@ -17,7 +17,8 @@ public class TaskJpaEntity {
     @Column(name="assignee_id") private UUID assigneeId;
     @Column(name="parent_task_id") private UUID parentTaskId;
     @Enumerated(EnumType.STRING) @Column(name="task_level",nullable=false) private TaskLevel taskLevel;
-    @Enumerated(EnumType.STRING) @Column(name="task_type",nullable=false) private TaskType taskType;
+    @Column(name="task_type",nullable=false) private String taskType;
+    @Column(name="task_type_id") private UUID taskTypeId;
     @Column(name="story_points") private Integer storyPoints;
     @Column(name="release_version") private String releaseVersion;
     @Column(name="deleted_at") private Instant deletedAt;
