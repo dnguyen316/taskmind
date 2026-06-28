@@ -10,7 +10,14 @@ const emit = defineEmits<{
   complete: [blockId: string]
   reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
 }>()
-const days = computed(() => buildMonthGrid(props.date))
+const dayCells = computed(() =>
+  buildMonthGrid(props.date).map((day) => ({
+    date: day.date,
+    isCurrentMonth: day.isCurrentMonth,
+    isToday: day.isToday,
+    blocks: blocksForDay(props.blocks, day.date),
+  })),
+)
 const selectedBlock = ref<ScheduledBlock | null>(null)
 const detailOpen = ref(false)
 
@@ -33,7 +40,7 @@ function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload
     </div>
     <div class="month-grid">
       <article
-        v-for="day in days"
+        v-for="day in dayCells"
         :key="day.date.toISOString()"
         class="month-cell"
         :class="{ muted: !day.isCurrentMonth, today: day.isToday }"
@@ -41,14 +48,14 @@ function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload
         <div class="day-number">{{ day.date.getDate() }}</div>
         <div class="month-events">
           <CalendarEventCard
-            v-for="block in blocksForDay(blocks, day.date).slice(0, 3)"
+            v-for="block in day.blocks.slice(0, 3)"
             :key="block.id"
             compact
             :block="block"
             @select="openBlockDetails"
           />
-          <span v-if="blocksForDay(blocks, day.date).length > 3" class="overflow"
-            >+{{ blocksForDay(blocks, day.date).length - 3 }} more</span
+          <span v-if="day.blocks.length > 3" class="overflow"
+            >+{{ day.blocks.length - 3 }} more</span
           >
         </div>
       </article>
