@@ -13,7 +13,7 @@ import {
   TASK_TITLE_MAX_LENGTH,
 } from '../validation/taskFormValidation'
 import type { Project } from '../../projects/types'
-import type { CreateTaskFormValues, CreateTaskPayload } from '../types'
+import type { CreateTaskFormValues, CreateTaskPayload, TaskLevel } from '../types'
 import { useTaskTypesStore } from '../stores/taskTypesStore'
 
 type SubmitTaskPayload = Omit<CreateTaskPayload, 'userId' | 'source'>
@@ -58,7 +58,7 @@ const schema = yup.object({
     .optional(),
   dueAt: yup.string().nullable(),
   status: yup.string().oneOf(['TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED']).required(),
-  taskType: yup.string().trim().nullable(),
+  taskType: yup.string().trim().required('Task type is required'),
 })
 
 const initialValues = computed<CreateTaskFormValues>(() => ({
@@ -68,7 +68,11 @@ const initialValues = computed<CreateTaskFormValues>(() => ({
 
 const hasProjectOptions = computed(() => props.projectOptions.length > 0)
 const taskTypesStore = useTaskTypesStore()
-const taskTypeOptions = computed(() => taskTypesStore.activeTaskTypes)
+const taskTypeOptions = computed(() =>
+  taskTypesStore.activeTaskTypes.filter((taskType) =>
+    isTaskTypeCompatibleWithLevel(taskType.key, 'TASK'),
+  ),
+)
 const taskForm = ref<InstanceType<typeof VeeForm> | null>(null)
 
 onMounted(() => {
@@ -104,7 +108,7 @@ async function handleValidSubmit(
     durationMinutes: nullableNumberValue(formValues.durationMinutes),
     priority: Number(formValues.priority),
     status: formValues.status,
-    taskType: formValues.taskType || null,
+    taskType: normalizeTaskType(formValues.taskType),
   }
 
   await props.onSubmitTask(payload)
@@ -112,7 +116,7 @@ async function handleValidSubmit(
     values: {
       ...DEFAULT_CREATE_TASK_FORM,
       projectId: props.defaultProjectId || DEFAULT_CREATE_TASK_FORM.projectId,
-      taskType: DEFAULT_CREATE_TASK_FORM.taskType,
+      taskType: DEFAULT_CREATE_TASK_FORM.taskType ?? 'TASK',
     },
   } satisfies Partial<FormState<Record<string, unknown>>>)
 }
@@ -126,8 +130,35 @@ function toCreateTaskFormValues(values: Record<string, unknown>): CreateTaskForm
     durationMinutes: nullableNumberValue(values.durationMinutes),
     dueAt: stringValue(values.dueAt),
     status: isTaskStatus(values.status) ? values.status : DEFAULT_CREATE_TASK_FORM.status,
-    taskType: stringValue(values.taskType) || DEFAULT_CREATE_TASK_FORM.taskType,
+    taskType: normalizeTaskType(values.taskType),
   }
+}
+
+async function handleProjectChange(projectId: string, handleChange: (value: string) => void) {
+  handleChange(projectId)
+  taskForm.value?.setFieldValue('taskType', DEFAULT_CREATE_TASK_FORM.taskType ?? 'TASK')
+  await taskTypesStore.fetchTaskTypes(projectId || null)
+}
+
+function normalizeTaskType(value: unknown): string {
+  const type = stringValue(value).trim().toUpperCase()
+  return isTaskTypeCompatibleWithLevel(type, 'TASK')
+    ? type
+    : (DEFAULT_CREATE_TASK_FORM.taskType ?? 'TASK')
+}
+
+function isTaskTypeCompatibleWithLevel(type: string | null | undefined, level: TaskLevel): boolean {
+  if (!type) {
+    return false
+  }
+
+  const normalizedType = type.trim().toUpperCase()
+  return (
+    (normalizedType !== 'EPIC' || level === 'EPIC') &&
+    (normalizedType !== 'STORY' || level === 'STORY') &&
+    (normalizedType !== 'SUBTASK' || level === 'SUBTASK') &&
+    (normalizedType !== 'MILESTONE' || level !== 'SUBTASK')
+  )
 }
 
 function stringValue(value: unknown): string {
@@ -178,7 +209,9 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
                   :value="value"
                   placeholder="Select a project"
                   :disabled="!hasProjectOptions"
-                  @update:value="handleChange"
+                  @update:value="
+                    (projectId: string) => handleProjectChange(projectId, handleChange)
+                  "
                 >
                   <a-select-option
                     v-for="project in projectOptions"
@@ -202,7 +235,6 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
             </a-form-item>
           </a-col>
 
-
           <a-col :xs="24" :md="12">
             <a-form-item label="Type">
               <Field name="taskType" v-slot="{ value, handleChange }">
@@ -210,7 +242,6 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
                   :value="value || undefined"
                   placeholder="Select a type"
                   :loading="taskTypesStore.loading"
-                  allow-clear
                   @update:value="handleChange"
                 >
                   <a-select-option
@@ -222,6 +253,7 @@ function isTaskStatus(value: unknown): value is CreateTaskFormValues['status'] {
                   </a-select-option>
                 </a-select>
               </Field>
+              <ErrorMessage class="field-error" name="taskType" />
             </a-form-item>
           </a-col>
 

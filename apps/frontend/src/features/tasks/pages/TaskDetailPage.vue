@@ -25,7 +25,11 @@ const successMessage = ref('')
 const taskNotFound = ref(false)
 const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useTasks()
 const taskTypesStore = useTaskTypesStore()
-const taskTypeOptions = computed(() => taskTypesStore.activeTaskTypes)
+const taskTypeOptions = computed(() =>
+  taskTypesStore.activeTaskTypes.filter((taskType) =>
+    isTaskTypeCompatibleWithLevel(taskType.key, formState.taskLevel),
+  ),
+)
 
 interface TaskDetailFormState {
   id: string
@@ -190,6 +194,11 @@ function validateTaskDetailForm() {
     return null
   }
 
+  const normalizedTaskType = normalizeTaskType(formState.taskType, formState.taskLevel)
+  if (!normalizedTaskType) {
+    return null
+  }
+
   const durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
   if (durationMinutes === undefined) {
     return null
@@ -210,8 +219,40 @@ function validateTaskDetailForm() {
     durationMinutes,
     energyLevel: formState.energyLevel || null,
     status: formState.status,
-    taskType: formState.taskType,
+    taskType: normalizedTaskType,
   }
+}
+
+function normalizeTaskType(type: TaskType | null, level: TaskLevel | null): TaskType | null {
+  const normalizedType = type?.trim().toUpperCase() || null
+  if (!normalizedType) {
+    errorMessage.value = 'Task type is required.'
+    return null
+  }
+
+  if (!isTaskTypeCompatibleWithLevel(normalizedType, level)) {
+    errorMessage.value = 'Task type is not valid for its hierarchy level.'
+    return null
+  }
+
+  return normalizedType
+}
+
+function isTaskTypeCompatibleWithLevel(
+  type: string | null | undefined,
+  level: TaskLevel | null,
+): boolean {
+  if (!type || !level) {
+    return false
+  }
+
+  const normalizedType = type.trim().toUpperCase()
+  return (
+    (normalizedType !== 'EPIC' || level === 'EPIC') &&
+    (normalizedType !== 'STORY' || level === 'STORY') &&
+    (normalizedType !== 'SUBTASK' || level === 'SUBTASK') &&
+    (normalizedType !== 'MILESTONE' || level !== 'SUBTASK')
+  )
 }
 
 function normalizeDurationMinutes(value: number | null): number | null | undefined {
@@ -334,6 +375,24 @@ function toDatetimeLocal(value: string | null) {
                 <a-col :xs="24" :md="12">
                   <a-form-item label="Title" required>
                     <a-input v-model:value="formState.title" placeholder="Task title" />
+                  </a-form-item>
+                </a-col>
+
+                <a-col :xs="24" :md="12">
+                  <a-form-item label="Type" required>
+                    <a-select
+                      v-model:value="formState.taskType"
+                      :loading="taskTypesStore.loading"
+                      placeholder="Select task type"
+                    >
+                      <a-select-option
+                        v-for="taskType in taskTypeOptions"
+                        :key="taskType.id"
+                        :value="taskType.key"
+                      >
+                        {{ taskType.name }}
+                      </a-select-option>
+                    </a-select>
                   </a-form-item>
                 </a-col>
 
