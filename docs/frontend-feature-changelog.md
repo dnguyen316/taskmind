@@ -1,3 +1,17 @@
+## 2026-06-28 - Task type selection safeguards
+
+### Changed
+
+- Exposed task type selection in the create-task and task-detail forms using the existing dynamic task type store.
+- Filtered selectable task types by the backend hierarchy compatibility rules so `EPIC`, `STORY`, `SUBTASK`, and `MILESTONE` remain aligned with Core `TaskTypeRules` constraints.
+- Kept submitted task type keys normalized to uppercase and defaulted new task creation to `TASK` when the current selection is missing or incompatible.
+
+### Verification notes
+
+- Frontend format and typecheck were run for the touched task files.
+- Browser E2E was skipped because local services/browser orchestration were not started in this container.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-28 - Scheduler calendar overlap lanes
 
 ### Changed
