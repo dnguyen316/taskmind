@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import CalendarEventCard from './CalendarEventCard.vue'
 import ScheduledBlockDetailsDrawer from './ScheduledBlockDetailsDrawer.vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
-import { blockDurationMinutes, HOUR_MARKS, minuteOffset } from '../utils/calendarDates'
+import { HOUR_MARKS, layoutBlocksForDay, type ScheduledBlockLayout } from '../utils/calendarDates'
 
-defineProps<{ date: Date; blocks: ScheduledBlock[]; savingBlockIds: Set<string> }>()
+const props = defineProps<{ date: Date; blocks: ScheduledBlock[]; savingBlockIds: Set<string> }>()
 const emit = defineEmits<{
   complete: [blockId: string]
   reschedule: [blockId: string, payload: UpdateScheduledBlockPayload]
@@ -13,6 +13,7 @@ const emit = defineEmits<{
 const hourHeight = 72
 const selectedBlock = ref<ScheduledBlock | null>(null)
 const detailOpen = ref(false)
+const laidOutBlocks = computed(() => layoutBlocksForDay(props.blocks, props.date))
 
 function openBlockDetails(block: ScheduledBlock) {
   selectedBlock.value = block
@@ -21,6 +22,17 @@ function openBlockDetails(block: ScheduledBlock) {
 
 function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload) {
   emit('reschedule', blockId, payload)
+}
+
+function blockStyle(layout: ScheduledBlockLayout) {
+  const gutter = 6
+  return {
+    top: `${(layout.topMinutes / 60) * hourHeight}px`,
+    height: `${(layout.durationMinutes / 60) * hourHeight}px`,
+    left: `calc(68px + ((100% - 78px) * ${layout.laneIndex}) / ${layout.laneCount} + ${gutter / 2}px)`,
+    right: 'auto',
+    width: `calc((100% - 78px) / ${layout.laneCount} - ${gutter}px)`,
+  }
 }
 </script>
 
@@ -39,15 +51,12 @@ function forwardReschedule(blockId: string, payload: UpdateScheduledBlockPayload
         <span>{{ hour.toString().padStart(2, '0') }}:00</span>
       </div>
       <div
-        v-for="block in blocks"
-        :key="block.id"
+        v-for="layout in laidOutBlocks"
+        :key="layout.block.id"
         class="event-position"
-        :style="{
-          top: `${(minuteOffset(block.startsAt) / 60) * hourHeight}px`,
-          height: `${(blockDurationMinutes(block) / 60) * hourHeight}px`,
-        }"
+        :style="blockStyle(layout)"
       >
-        <CalendarEventCard :block="block" @select="openBlockDetails" />
+        <CalendarEventCard :block="layout.block" @select="openBlockDetails" />
       </div>
     </div>
 

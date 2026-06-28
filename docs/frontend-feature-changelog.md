@@ -1,3 +1,16 @@
+## 2026-06-28 - Scheduler calendar overlap lanes
+
+### Changed
+
+- Added scheduler calendar layout metadata so day and week timed blocks are grouped by day and assigned non-overlapping lanes when their time ranges intersect.
+- Updated day and week calendar event positioning to use lane-aware inline offsets while preserving existing event-card selection and details drawer behavior.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for this scheduler calendar layout slice before repository verification.
+- Browser E2E proof was skipped because this container has no configured browser E2E harness; manual verification should use the super-admin bypass once local services are running.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-26 - Task list table density
 
 ### Changed
