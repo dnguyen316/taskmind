@@ -1974,6 +1974,89 @@ paths:
         '204': {description: Template archived}
         '404': {description: Template not found, already archived, or hidden}
 
+
+  /v1/tasks/{taskId}/ai-resolution-jobs:
+    post:
+      summary: Queue an AI task-resolution job
+      operationId: createAiTaskResolutionJob
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiTaskResolutionJobRequest'}
+      responses:
+        '201':
+          description: Queued AI task-resolution job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionJobResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Task not found}
+    get:
+      summary: List AI task-resolution jobs for a task
+      operationId: listAiTaskResolutionJobs
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: taskId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: AI task-resolution jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/AiTaskResolutionJobResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Task not found}
+  /v1/ai-resolution-jobs/{jobId}:
+    get:
+      summary: Get an AI task-resolution job
+      operationId: getAiTaskResolutionJob
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: AI task-resolution job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionJobResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Job not found}
+  /v1/ai-resolution-jobs/{jobId}/cancel:
+    post:
+      summary: Cancel an AI task-resolution job
+      operationId: cancelAiTaskResolutionJob
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Canceled AI task-resolution job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionJobResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Job not found}
+  /v1/ai-resolution-jobs/{jobId}/approve:
+    post:
+      summary: Approve an AI task-resolution job
+      operationId: approveAiTaskResolutionJob
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Approved AI task-resolution job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionJobResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Job not found}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2167,6 +2250,31 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+
+    AiTaskResolutionJobRequest:
+      type: object
+      properties:
+        templateId: {type: string, format: uuid, nullable: true}
+        githubProjectLinkId: {type: string, format: uuid, nullable: true}
+        idempotencyKey: {type: string, nullable: true}
+    AiTaskResolutionJobResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        taskId: {type: string, format: uuid}
+        projectId: {type: string, format: uuid}
+        templateId: {type: string, format: uuid, nullable: true}
+        githubProjectLinkId: {type: string, format: uuid, nullable: true}
+        status: {type: string, enum: [QUEUED, RUNNING, WAITING_FOR_APPROVAL, SUCCEEDED, FAILED, CANCELED, PAUSED]}
+        requestedBy: {type: string, format: uuid}
+        idempotencyKey: {type: string, nullable: true}
+        novaRunId: {type: string, format: uuid, nullable: true}
+        currentStep: {type: string, nullable: true}
+        resultSummary: {type: string, nullable: true}
+        errorCode: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        completedAt: {type: string, format: date-time, nullable: true}
     AiWorkflowTemplateRequest:
       type: object
       required: [name, workflowType, templateBody, approvalPolicy]
