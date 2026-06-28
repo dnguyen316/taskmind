@@ -65,6 +65,44 @@ class DashboardControllerTest {
     }
 
     @Test
+    void acceptsRelayJsonScalarValues() throws Exception {
+        UUID task = UUID.randomUUID(), project = UUID.randomUUID();
+        when(relay.userTasks(any()))
+                .thenReturn(
+                        List.of(
+                                Map.of(
+                                        "task_id",
+                                        task.toString(),
+                                        "project_id",
+                                        project.toString(),
+                                        "title",
+                                        "Review dashboard",
+                                        "status",
+                                        "DONE",
+                                        "updated_at",
+                                        "2026-01-02T03:04:05Z")));
+        when(relay.projectMetrics(any()))
+                .thenReturn(
+                        List.of(
+                                Map.of(
+                                        "metric_date",
+                                        "2026-01-02",
+                                        "tasks_created",
+                                        1,
+                                        "tasks_completed",
+                                        1,
+                                        "events_ingested",
+                                        2)));
+
+        mockMvc.perform(get("/v1/dashboard").with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kpis.completedTasks").value(1))
+                .andExpect(jsonPath("$.myTasks[0].taskId").value(task.toString()))
+                .andExpect(jsonPath("$.myTasks[0].updatedAt").value("2026-01-02T03:04:05Z"))
+                .andExpect(jsonPath("$.activity[0].date").value("2026-01-02"));
+    }
+
+    @Test
     void returnsEmptyState() throws Exception {
         when(relay.userTasks(any())).thenReturn(List.of());
         when(relay.projectMetrics(any())).thenReturn(List.of());

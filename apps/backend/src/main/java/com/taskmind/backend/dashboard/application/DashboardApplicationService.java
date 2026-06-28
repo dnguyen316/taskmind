@@ -53,8 +53,8 @@ public class DashboardApplicationService {
 
     private MyTaskItem task(Map<String, Object> m) {
         return new MyTaskItem(
-                (UUID) m.get("task_id"),
-                (UUID) m.get("project_id"),
+                uuid(m.get("task_id")),
+                uuid(m.get("project_id")),
                 String.valueOf(m.getOrDefault("title", "Untitled")),
                 String.valueOf(m.getOrDefault("status", "TODO")),
                 offset(m.get("updated_at")));
@@ -78,9 +78,17 @@ public class DashboardApplicationService {
         return v instanceof Number n ? n.intValue() : 0;
     }
 
+    private UUID uuid(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID id) return id;
+        return UUID.fromString(String.valueOf(value));
+    }
+
     private OffsetDateTime offset(Object value) {
         if (value instanceof OffsetDateTime o) return o;
+        if (value instanceof Instant i) return i.atOffset(ZoneOffset.UTC);
         if (value instanceof Timestamp t) return t.toInstant().atOffset(ZoneOffset.UTC);
+        if (value instanceof CharSequence s) return OffsetDateTime.parse(s);
         return OffsetDateTime.now(ZoneOffset.UTC);
     }
 }
