@@ -43,6 +43,7 @@ class CaptureGoalWeeklyReviewTranslateAutocompleteCapabilityTest {
                         new ProviderRequest(
                                 capabilityId,
                                 objectMapper.createObjectNode().put(field, value),
+                                "test.v1",
                                 List.of(),
                                 "corr"))
                 .output();

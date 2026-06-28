@@ -17,6 +17,7 @@ class MockAiProviderTest {
                 new ProviderRequest(
                         AiCapabilityId.CAPTURE,
                         objectMapper.createObjectNode().put("text", "remember the launch plan"),
+                        "test.v1",
                         List.of("user:remember the launch plan"),
                         "corr-1");
 

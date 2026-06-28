@@ -63,6 +63,8 @@ public class AiAgentRuntime {
                                 provider.modelId(),
                                 requestHash(capability.id().value(), providerInput),
                                 providerInput,
+                                promptVersion(providerInput),
+                                "VALID",
                                 request.correlationId()));
         Instant started = Instant.now();
         try {
@@ -71,6 +73,7 @@ public class AiAgentRuntime {
                             new ProviderRequest(
                                     capability.id(),
                                     providerInput,
+                                    promptVersion(providerInput),
                                     List.of(),
                                     request.correlationId()));
             auditRepository.succeed(
@@ -91,6 +94,11 @@ public class AiAgentRuntime {
                     List.of(),
                     new CapabilityError("PROVIDER_ERROR", "Provider execution failed", null));
         }
+    }
+
+    private String promptVersion(JsonNode input) {
+        JsonNode value = input == null ? null : input.get("promptVersion");
+        return value == null || value.asText("").isBlank() ? "default.v1" : value.asText();
     }
 
     private long elapsed(Instant started, long providerLatencyMs) {

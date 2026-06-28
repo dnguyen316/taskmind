@@ -5,4 +5,4 @@ import com.taskmind.ai.contracts.AiCapabilityId;
 import java.util.List;
 
 public record ProviderRequest(
-        AiCapabilityId capabilityId, JsonNode input, List<String> messages, String correlationId) {}
+        AiCapabilityId capabilityId, JsonNode input, String promptVersion, List<String> messages, String correlationId) {}

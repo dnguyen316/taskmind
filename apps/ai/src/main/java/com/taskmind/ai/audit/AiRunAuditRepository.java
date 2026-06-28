@@ -33,8 +33,8 @@ public class AiRunAuditRepository {
                 """
                 INSERT INTO ai.ai_runs (
                   id, user_id, workspace_id, capability_id, provider_id, model_id, status, request_hash,
-                  input_json, correlation_id, created_at, started_at, version
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                  input_json, prompt_version, validation_outcome, correlation_id, created_at, started_at, version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
                 ps -> {
                     ps.setObject(1, id);
@@ -46,9 +46,11 @@ public class AiRunAuditRepository {
                     ps.setString(7, AiRunStatus.RUNNING.name());
                     ps.setString(8, record.requestHash());
                     ps.setString(9, toJson(record.input()));
-                    ps.setString(10, record.correlationId());
-                    setInstant(ps, 11, now);
-                    setInstant(ps, 12, now);
+                    ps.setString(10, record.promptVersion());
+                    ps.setString(11, record.validationOutcome());
+                    ps.setString(12, record.correlationId());
+                    setInstant(ps, 13, now);
+                    setInstant(ps, 14, now);
                 });
         return id;
     }

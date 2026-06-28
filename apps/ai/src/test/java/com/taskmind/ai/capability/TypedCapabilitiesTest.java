@@ -40,7 +40,7 @@ class TypedCapabilitiesTest {
 
         JsonNode output =
                 provider.complete(
-                                new ProviderRequest(capability.id(), validInput, List.of(), "corr"))
+                                new ProviderRequest(capability.id(), validInput, "test.v1", List.of(), "corr"))
                         .output();
 
         expectedOutputFields.forEach(field -> assertThat(output.has(field)).as(field).isTrue());

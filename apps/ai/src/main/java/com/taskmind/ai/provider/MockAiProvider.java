@@ -213,6 +213,34 @@ public class MockAiProvider implements AiProvider {
                 output.putArray("dependencies").add("Confirm upstream API availability.");
                 output.putArray("warnings");
             }
+
+            case "task-resolution-agent" -> {
+                output.put("taskId", text(input.path("task"), "id", "task-unknown"));
+                output.put("workflowTemplateId", text(input.path("workflowTemplate"), "id", "task-resolution-default"));
+                output.put("workflowTemplateVersion", text(input.path("workflowTemplate"), "version", "1"));
+                output.put("approvalPolicy", text(input, "approvalPolicy", "propose-only"));
+                var toolCalls = output.putArray("toolCalls");
+                ObjectNode toolCall = toolCalls.addObject();
+                String toolId = input.path("allowedTools").path(0).asText("core.task.comment");
+                toolCall.put("toolId", toolId);
+                toolCall.put("coreInternalEndpoint", coreEndpoint(toolId));
+                toolCall.put("method", "POST");
+                ObjectNode arguments = toolCall.putObject("arguments");
+                arguments.put("taskId", text(input.path("task"), "id", "task-unknown"));
+                arguments.put("message", "Deterministic resolution proposal " + fingerprint);
+                var plan = output.putArray("plan");
+                ObjectNode step = plan.addObject();
+                step.put("order", 1);
+                step.put("title", "Resolve task through Core");
+                step.put("description", "Use approved Core internal endpoints only.");
+                var actions = step.putArray("actions");
+                ObjectNode action = actions.addObject();
+                action.put("actionId", "propose-core-tool-call");
+                action.put("title", "Prepare " + toolId);
+                action.put("rationale", "Tool calls are routed back through Core for policy enforcement.");
+                action.set("toolCalls", toolCalls.deepCopy());
+                output.putArray("warnings");
+            }
             case "dashboard-insights" -> {
                 output.put("userId", text(input, "userId", "00000000-0000-0000-0000-000000000000"));
                 output.put("summary", "Focus on overdue and high-priority work first.");
@@ -228,6 +256,15 @@ public class MockAiProvider implements AiProvider {
             }
         }
         return output;
+    }
+
+    private String coreEndpoint(String toolId) {
+        return switch (toolId) {
+            case "core.task.update" -> "/internal/v1/tasks/update";
+            case "core.github.issue.comment" -> "/internal/v1/integrations/github/issues/comment";
+            case "core.github.pull-request.create" -> "/internal/v1/integrations/github/pull-requests";
+            default -> "/internal/v1/tasks/comment";
+        };
     }
 
     private String firstMeaningfulLine(String text) {
