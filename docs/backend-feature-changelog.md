@@ -1,3 +1,13 @@
+## 2026-06-28 - Dashboard Relay JSON scalar coercion
+
+- Fixed Core dashboard aggregation to accept Relay REST JSON scalar values for task/project IDs and timestamps instead of assuming in-process UUID and OffsetDateTime instances.
+- Added dashboard controller coverage for Relay-style string UUID/date-time values so `/v1/dashboard` no longer returns a 500 when Core consumes Relay over HTTP.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/backend -am -Dtest=DashboardControllerTest#acceptsRelayJsonScalarValues -Dsurefire.failIfNoSpecifiedTests=false test`; `mvn -q -pl apps/backend -am -Dtest=DashboardControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`; `make vibe-verify`.
+- Applicable skills: none. Delegated agents: none.
+
 
 ## 2026-06-25 - Auth OTP attempt limit hardening
 
