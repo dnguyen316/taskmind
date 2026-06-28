@@ -6,6 +6,7 @@ import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import TaskDescriptionEditor from '../components/TaskDescriptionEditor.vue'
 import TaskStatusChip from '../components/TaskStatusChip.vue'
 import { useTasks } from '../composables/useTasks'
+import { useTaskTypesStore } from '../stores/taskTypesStore'
 import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import {
   TASK_DURATION_MAX_MINUTES,
@@ -23,6 +24,8 @@ const router = useRouter()
 const successMessage = ref('')
 const taskNotFound = ref(false)
 const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useTasks()
+const taskTypesStore = useTaskTypesStore()
+const taskTypeOptions = computed(() => taskTypesStore.activeTaskTypes)
 
 interface TaskDetailFormState {
   id: string
@@ -107,6 +110,7 @@ async function loadTask() {
     }
 
     hydrateForm(task)
+    void taskTypesStore.fetchTaskTypes(task.projectId)
   } catch {
     // errorMessage is managed by useTasks
   }
@@ -206,6 +210,7 @@ function validateTaskDetailForm() {
     durationMinutes,
     energyLevel: formState.energyLevel || null,
     status: formState.status,
+    taskType: formState.taskType,
   }
 }
 

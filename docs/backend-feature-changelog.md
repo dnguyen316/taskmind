@@ -736,3 +736,8 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added controller coverage for CRUD, member/admin authorization, optimistic-lock conflict handling, and hiding archived templates from list/get responses.
+
+## Configurable task types
+
+- Added `V26__create_configurable_task_types.sql` to introduce `task_types`, seed system type definitions, and backfill `tasks.task_type_id` while preserving the legacy `tasks.task_type` key during the deprecation window.
+- Added Core task type DDD module and `/v1/task-types` read/create/update endpoints; task create/update now resolve stable string task type keys through active configured definitions.

@@ -676,3 +676,8 @@
 ### Verification
 
 - Frontend format run for touched scheduler files.
+
+## Configurable task types
+
+- Replaced the fixed frontend task type union with dynamic task type DTOs, a task type API client, and a Pinia store used by create/detail task forms.
+- Task response adaptation now accepts unknown configured task type keys instead of rejecting responses outside the original built-in set.

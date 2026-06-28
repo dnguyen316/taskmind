@@ -5,7 +5,6 @@ import type {
   Task,
   TaskLevel,
   TaskStatus,
-  TaskType,
   UpdateTaskPayload,
 } from '../types'
 
@@ -82,9 +81,6 @@ function adaptTaskResponse(data: unknown): Task {
     throw new Error('Invalid task level response.')
   }
 
-  if (taskType !== null && !isTaskType(taskType)) {
-    throw new Error('Invalid task type response.')
-  }
 
   return {
     id: readRequiredString(data, 'id', 'task'),
@@ -175,8 +171,4 @@ function isEnergyLevel(energyLevel: string): energyLevel is EnergyLevel {
 
 function isTaskLevel(taskLevel: string): taskLevel is TaskLevel {
   return ['EPIC', 'STORY', 'TASK', 'SUBTASK'].includes(taskLevel)
-}
-
-function isTaskType(taskType: string): taskType is TaskType {
-  return ['EPIC', 'STORY', 'TASK', 'BUG', 'SUBTASK', 'MILESTONE'].includes(taskType)
 }

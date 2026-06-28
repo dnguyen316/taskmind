@@ -6,8 +6,10 @@ import com.taskmind.backend.project.application.ProjectMembershipApplicationServ
 import com.taskmind.backend.task.domain.*;
 import com.taskmind.backend.task.domain.model.*;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
+import com.taskmind.backend.tasktype.application.TaskTypeApplicationService;
 import java.time.*;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,16 +20,29 @@ public class TaskApplicationService {
     private final ProjectMembershipApplicationService memberships;
     private final TaskKeyAssigner keys;
     private final TaskDomainEventPublisher events;
+    private final TaskTypeApplicationService taskTypes;
+
 
     public TaskApplicationService(
             TaskRepository tasks,
             ProjectMembershipApplicationService memberships,
             TaskKeyAssigner keys,
             TaskDomainEventPublisher events) {
+        this(tasks, memberships, keys, events, null);
+    }
+
+    @Autowired
+    public TaskApplicationService(
+            TaskRepository tasks,
+            ProjectMembershipApplicationService memberships,
+            TaskKeyAssigner keys,
+            TaskDomainEventPublisher events,
+            TaskTypeApplicationService taskTypes) {
         this.tasks = tasks;
         this.memberships = memberships;
         this.keys = keys;
         this.events = events;
+        this.taskTypes = taskTypes;
     }
 
     @Transactional
@@ -36,7 +51,8 @@ public class TaskApplicationService {
         memberships.validateMembership(c.projectId(), owner);
         if (c.assigneeId() != null) memberships.validateMembership(c.projectId(), c.assigneeId());
         TaskLevel level = c.taskLevel() == null ? TaskLevel.TASK : c.taskLevel();
-        TaskType type = c.taskType() == null ? TaskType.TASK : c.taskType();
+        String type = c.taskType() == null ? "TASK" : c.taskType().trim().toUpperCase();
+        if (taskTypes != null) taskTypes.requireActiveByKey(c.projectId(), type);
         TaskTypeRules.validate(type, level);
         Instant now = Instant.now();
         Task task =
@@ -112,6 +128,8 @@ public class TaskApplicationService {
                             memberships.validateMembership(project, e.userId());
                             if (c.assigneeId() != null)
                                 memberships.validateMembership(project, c.assigneeId());
+                            String resolvedType = c.taskType() != null ? c.taskType().trim().toUpperCase() : e.taskType();
+                            if (taskTypes != null) taskTypes.requireActiveByKey(project, resolvedType);
                             Task updated =
                                     new Task(
                                             e.id(),
@@ -126,7 +144,7 @@ public class TaskApplicationService {
                                                     ? c.parentTaskId()
                                                     : e.parentTaskId(),
                                             c.taskLevel() != null ? c.taskLevel() : e.taskLevel(),
-                                            c.taskType() != null ? c.taskType() : e.taskType(),
+                                            resolvedType,
                                             c.storyPoints() != null
                                                     ? c.storyPoints()
                                                     : e.storyPoints(),

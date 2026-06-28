@@ -5,7 +5,6 @@ import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskLevel;
 import com.taskmind.backend.task.domain.model.TaskSource;
 import com.taskmind.backend.task.domain.model.TaskStatus;
-import com.taskmind.backend.task.domain.model.TaskType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -20,7 +19,7 @@ public record TaskResponse(
         UUID assigneeId,
         UUID parentTaskId,
         TaskLevel taskLevel,
-        TaskType taskType,
+        String taskType,
         Integer storyPoints,
         String releaseVersion,
         Instant deletedAt,

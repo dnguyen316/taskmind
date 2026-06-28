@@ -1,7 +1,22 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'ARCHIVED'
 export type EnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 export type TaskLevel = 'EPIC' | 'STORY' | 'TASK' | 'SUBTASK'
-export type TaskType = 'EPIC' | 'STORY' | 'TASK' | 'BUG' | 'SUBTASK' | 'MILESTONE'
+export type TaskType = string
+
+export interface TaskTypeDefinition {
+  id: string
+  version: number | null
+  projectId: string | null
+  key: string
+  name: string
+  color: string | null
+  icon: string | null
+  system: boolean
+  active: boolean
+  sortOrder: number | null
+  createdAt: string
+  updatedAt: string
+}
 
 export interface Task {
   id: string
@@ -98,6 +113,7 @@ export interface CreateTaskPayload {
   durationMinutes: number | null
   dueAt: string | null
   status: TaskStatus
+  taskType?: string | null
 }
 
 export interface UpdateTaskPayload {
@@ -110,6 +126,7 @@ export interface UpdateTaskPayload {
   durationMinutes: number | null
   energyLevel: EnergyLevel | null
   status: TaskStatus
+  taskType?: string | null
 }
 
 export interface CreateTaskFormValues {
@@ -120,4 +137,5 @@ export interface CreateTaskFormValues {
   durationMinutes: number | null | ''
   dueAt: string
   status: TaskStatus
+  taskType: string | null
 }

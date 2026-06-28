@@ -610,6 +610,72 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /v1/task-types:
+    get:
+      summary: List active task type definitions
+      operationId: listTaskTypes
+      tags: [TaskTypes]
+      parameters:
+        - in: query
+          name: projectId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active task type definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskTypeDefinition'
+    post:
+      summary: Create a configurable task type
+      operationId: createTaskType
+      tags: [TaskTypes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskTypeRequest'
+      responses:
+        '201':
+          description: Task type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTypeDefinition'
+
+  /v1/task-types/{id}:
+    patch:
+      summary: Update a configurable task type
+      operationId: updateTaskType
+      tags: [TaskTypes]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskTypeRequest'
+      responses:
+        '200':
+          description: Task type updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTypeDefinition'
+        '404':
+          description: Task type not found
+
   /v1/tasks:
     post:
       summary: Create a task
@@ -2885,6 +2951,43 @@ components:
           type: string
           format: date-time
 
+    TaskTypeDefinition:
+      type: object
+      required: [id, key, name, system, active, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        version: {type: integer, format: int64, nullable: true}
+        projectId: {type: string, format: uuid, nullable: true}
+        key: {type: string, example: TASK}
+        name: {type: string, example: Task}
+        color: {type: string, nullable: true}
+        icon: {type: string, nullable: true}
+        system: {type: boolean}
+        active: {type: boolean}
+        sortOrder: {type: integer, nullable: true}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+
+    CreateTaskTypeRequest:
+      type: object
+      required: [key, name]
+      properties:
+        projectId: {type: string, format: uuid, nullable: true}
+        key: {type: string, minLength: 1}
+        name: {type: string, minLength: 1}
+        color: {type: string, nullable: true}
+        icon: {type: string, nullable: true}
+        sortOrder: {type: integer, nullable: true}
+
+    UpdateTaskTypeRequest:
+      type: object
+      properties:
+        name: {type: string}
+        color: {type: string, nullable: true}
+        icon: {type: string, nullable: true}
+        active: {type: boolean}
+        sortOrder: {type: integer, nullable: true}
+
     TaskStatus:
       type: string
       enum:
@@ -2913,7 +3016,8 @@ components:
       enum: [EPIC, STORY, TASK, SUBTASK]
     TaskType:
       type: string
-      enum: [EPIC, STORY, TASK, BUG, SUBTASK, MILESTONE]
+      description: Stable configurable task type key. Defaults seed EPIC, STORY, TASK, BUG, SUBTASK, and MILESTONE, but callers must tolerate additional configured keys.
+      example: TASK
     TaskLinkType:
       type: string
       enum: [BLOCKS, RELATES_TO, DUPLICATES]

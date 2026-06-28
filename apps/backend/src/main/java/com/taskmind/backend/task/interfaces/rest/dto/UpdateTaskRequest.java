@@ -14,7 +14,7 @@ public record UpdateTaskRequest(
     UUID assigneeId,
     UUID parentTaskId,
     com.taskmind.backend.task.domain.model.TaskLevel taskLevel,
-    com.taskmind.backend.task.domain.model.TaskType taskType,
+    String taskType,
     @Min(0) Integer storyPoints,
     String releaseVersion,
     String title,

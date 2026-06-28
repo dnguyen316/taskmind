@@ -21,7 +21,7 @@ public class IntegrationPublishApplicationService {
         IntegrationProjectLink link = links.requireAccessible(actor, projectLinkId); IntegrationConnection connection = connections.requireOwned(actor, link.connectionId()); IntegrationConnectionApplicationService.ConnectionCredentials credentials = connections.credentials(connection); Task task = tasks.findById(actor, taskId).orElseThrow(() -> new IllegalArgumentException("Task not found"));
         return records.findByTaskIdAndProjectLinkId(taskId, projectLinkId).orElseGet(() -> {
             String id, key, url, type;
-            if (link.provider() == IntegrationProvider.JIRA) { JiraCloudClient.PublishedIssue p = jira.publish(credentials.baseUrl(), credentials.accessToken(), link.externalProjectKey(), task.title(), task.taskType().name()); id = p.id(); key = p.key(); url = p.url(); type = "ISSUE"; }
+            if (link.provider() == IntegrationProvider.JIRA) { JiraCloudClient.PublishedIssue p = jira.publish(credentials.baseUrl(), credentials.accessToken(), link.externalProjectKey(), task.title(), task.taskType()); id = p.id(); key = p.key(); url = p.url(); type = "ISSUE"; }
             else if (link.provider() == IntegrationProvider.WIKI) { WikiClient.PublishedPage p = wiki.publish(credentials.baseUrl(), credentials.accessToken(), link.externalProjectKey(), task.title()); id = p.id(); key = p.key(); url = p.url(); type = "PAGE"; }
             else throw new IllegalArgumentException("Provider does not support publish");
             externalLinks.record(taskId, link.projectId(), link.provider(), type, id, key, url, "PUBLISHED", null);

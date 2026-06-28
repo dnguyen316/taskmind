@@ -18,4 +18,5 @@ export const DEFAULT_CREATE_TASK_FORM: Readonly<CreateTaskFormValues> = Object.f
   durationMinutes: null,
   dueAt: '',
   status: 'TODO',
+  taskType: 'TASK',
 })
