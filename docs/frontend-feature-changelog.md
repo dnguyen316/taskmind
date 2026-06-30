@@ -1,3 +1,15 @@
+## 2026-06-30 - Scheduler toolbar preview label
+
+### Changed
+
+- Replaced the internal `M04 Scheduler` toolbar tag with the user-facing `Preview` label to match the scheduler sidebar badge while keeping the compact toolbar footprint suitable for desktop and mobile layouts.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for this scheduler toolbar copy update.
+- Browser E2E proof was skipped because local services/browser orchestration were not started in this container.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-28 - Task type selection safeguards
 
 ### Changed
