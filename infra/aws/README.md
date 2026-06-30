@@ -44,3 +44,20 @@ A future environment root should instantiate the modules in this order:
 
 Pass outputs between modules explicitly, keep all secrets in AWS Secrets Manager or SSM
 Parameter Store, and never commit generated state files or plaintext secrets.
+
+
+## CI/CD pipelines
+
+The repository includes three GitHub Actions workflows for AWS deployment preparation:
+
+- `CI` (`.github/workflows/ci.yml`) runs `scripts/vibe-verify.sh` for pull requests and
+  pushes to `main`.
+- `AWS Infrastructure Plan` (`.github/workflows/infra-plan.yml`) validates the OpenTofu
+  modules in this directory and can manually plan a composed `infra/aws/envs/<environment>`
+  root once one is added.
+- `Deploy` (`.github/workflows/deploy.yml`) uses GitHub OIDC to build/push Core, Relay,
+  and Nova images to ECR, sync the Vue SPA to S3, invalidate CloudFront, and roll ECS
+  services with newly rendered task definitions.
+
+See [`docs/deployment/aws-cicd.md`](../../docs/deployment/aws-cicd.md) for the GitHub
+Environment variables, AWS bootstrap checklist, and staging-to-production promotion model.

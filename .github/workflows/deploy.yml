@@ -104,6 +104,26 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Validate deployment configuration
+        run: |
+          required=(
+            AWS_REGION CORE_ECR_REPOSITORY RELAY_ECR_REPOSITORY NOVA_ECR_REPOSITORY
+            ECS_CLUSTER CORE_ECS_SERVICE RELAY_ECS_SERVICE NOVA_ECS_SERVICE
+            CORE_TASK_DEFINITION RELAY_TASK_DEFINITION NOVA_TASK_DEFINITION
+            CORE_CONTAINER_NAME RELAY_CONTAINER_NAME NOVA_CONTAINER_NAME
+            FRONTEND_S3_BUCKET CLOUDFRONT_DISTRIBUTION_ID VITE_API_BASE_URL
+          )
+          missing=()
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub environment variables: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
       - name: Log in to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
