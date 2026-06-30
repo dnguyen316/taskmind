@@ -2,6 +2,7 @@ package com.taskmind.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.backend.ratelimit.RateLimitFilter;
+import com.taskmind.backend.security.internal.InternalServiceTokenFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -56,8 +57,10 @@ public class SecurityConfig implements WebMvcConfigurer {
             HttpSecurity http,
             JwtClaimAuthenticationConverter jwtConverter,
             ObjectMapper objectMapper,
-            ObjectProvider<RateLimitFilter> rateLimitFilter)
+            ObjectProvider<RateLimitFilter> rateLimitFilter,
+            InternalServiceTokenFilter internalServiceTokenFilter)
             throws Exception {
+        http.addFilterBefore(internalServiceTokenFilter, BearerTokenAuthenticationFilter.class);
         rateLimitFilter.ifAvailable(
                 filter -> http.addFilterAfter(filter, BearerTokenAuthenticationFilter.class));
 
@@ -71,7 +74,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                                         .permitAll()
                                         .requestMatchers(PUBLIC_AUTH_ROUTES)
                                         .permitAll()
-                                        .requestMatchers("/v1/**")
+                                        .requestMatchers("/v1/**", "/internal/**")
                                         .authenticated()
                                         .dispatcherTypeMatchers(
                                                 DispatcherType.ERROR, DispatcherType.FORWARD)
