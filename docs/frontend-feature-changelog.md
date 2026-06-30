@@ -1,3 +1,15 @@
+## 2026-06-30 - Scheduler task detail navigation
+
+### Changed
+
+- Added an Open task navigation affordance to scheduled block details in both drawer and inline modes, linking each block to its owning `/tasks/:id` detail route while preserving the shortened task id display.
+
+### Verification notes
+
+- Frontend format and typecheck passed for the scheduler drawer change.
+- Browser E2E was not run in this non-browser coding session; use the `/calendar` flow with the super-admin bypass when local services are available.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-30 - Scheduler toolbar preview label
 
 ### Changed

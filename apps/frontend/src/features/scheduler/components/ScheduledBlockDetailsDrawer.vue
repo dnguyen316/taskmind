@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { CheckCircleOutlined } from '@ant-design/icons-vue'
 import type { ScheduledBlock, UpdateScheduledBlockPayload } from '../types'
 import {
@@ -29,6 +30,9 @@ const emit = defineEmits<{
 const editValues = reactive({ startsAt: '', endsAt: '', rationale: '' })
 const validationMessage = ref('')
 const canEditBlock = computed(() => props.block?.status !== 'COMPLETED')
+const taskDetailRoute = computed(() =>
+  props.block ? { name: 'task-detail', params: { id: props.block.taskId } } : undefined,
+)
 const drawerOpen = computed({
   get: () => props.open,
   set: (value: boolean) => emit('update:open', value),
@@ -87,6 +91,12 @@ function completeBlock() {
     <div class="block-status-row">
       <a-tag :color="statusColor(block.status)">{{ statusLabel(block.status) }}</a-tag>
       <span>Block {{ block.id.slice(0, 8) }} · Version {{ block.version }}</span>
+    </div>
+    <div class="task-reference">
+      <span>Task {{ block.taskId.slice(0, 8) }}</span>
+      <RouterLink v-if="taskDetailRoute" :to="taskDetailRoute">
+        <a-button size="small">Open task</a-button>
+      </RouterLink>
     </div>
     <p v-if="block.rationale" class="rationale">{{ block.rationale }}</p>
 
@@ -154,7 +164,12 @@ function completeBlock() {
   >
     <div v-if="block" class="block-details">
       <a-tag :color="statusColor(block.status)">{{ statusLabel(block.status) }}</a-tag>
-      <h3>Task {{ block.taskId.slice(0, 8) }}</h3>
+      <div class="task-heading">
+        <h3>Task {{ block.taskId.slice(0, 8) }}</h3>
+        <RouterLink v-if="taskDetailRoute" :to="taskDetailRoute">
+          <a-button size="small">Open task</a-button>
+        </RouterLink>
+      </div>
       <p>{{ formatRange(block) }}</p>
       <p v-if="block.rationale" class="rationale">{{ block.rationale }}</p>
       <a-alert
@@ -225,7 +240,18 @@ function completeBlock() {
   flex-wrap: wrap;
   gap: 8px;
 }
+.task-reference,
+.task-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.task-heading h3 {
+  margin: 0;
+}
 .block-status-row span,
+.task-reference span,
 .rationale {
   color: #64748b;
   font-size: 12px;
