@@ -9,6 +9,10 @@
 - Applicable skills: none. Delegated agents: none.
 
 
+## 2026-06-28
+
+- M02 backend: task type definitions now carry validation metadata for default hierarchy level, allowed levels, child/container behavior, and nullable system kind; Core task create/update validates loaded type definitions so custom task types can opt into or out of hierarchy levels while inactive types remain unassignable.
+
 ## 2026-06-25 - Auth OTP attempt limit hardening
 
 - Added configurable Core OTP verification attempt limits with `taskmind.auth.otp.max-attempts` / `TASKMIND_AUTH_OTP_MAX_ATTEMPTS` defaulting to `5`.
@@ -749,7 +753,7 @@ This changelog tracks backend feature progress against the core implementation p
 
 ## Configurable task types
 
-- Added `V26__create_configurable_task_types.sql` to introduce `task_types`, seed system type definitions, and backfill `tasks.task_type_id` while preserving the legacy `tasks.task_type` key during the deprecation window.
+- Added `V27__create_configurable_task_types.sql` to introduce `task_types`, seed system type definitions, and backfill `tasks.task_type_id` while preserving the legacy `tasks.task_type` key during the deprecation window.
 - Added Core task type DDD module and `/v1/task-types` read/create/update endpoints; task create/update now resolve stable string task type keys through active configured definitions.
 
 ## 2026-06-28 - Nova task resolution capability

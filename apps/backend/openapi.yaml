@@ -3061,7 +3061,7 @@ components:
 
     TaskTypeDefinition:
       type: object
-      required: [id, key, name, system, active, createdAt, updatedAt]
+      required: [id, key, name, defaultTaskLevel, allowedTaskLevels, container, allowChildren, system, active, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
         version: {type: integer, format: int64, nullable: true}
@@ -3070,6 +3070,18 @@ components:
         name: {type: string, example: Task}
         color: {type: string, nullable: true}
         icon: {type: string, nullable: true}
+        defaultTaskLevel:
+          $ref: '#/components/schemas/TaskLevel'
+        allowedTaskLevels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskLevel'
+        container: {type: boolean}
+        allowChildren: {type: boolean}
+        systemKind:
+          type: string
+          nullable: true
+          enum: [EPIC, STORY, TASK, BUG, SUBTASK, MILESTONE]
         system: {type: boolean}
         active: {type: boolean}
         sortOrder: {type: integer, nullable: true}

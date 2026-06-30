@@ -7,6 +7,7 @@ import com.taskmind.backend.task.domain.*;
 import com.taskmind.backend.task.domain.model.*;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
 import com.taskmind.backend.tasktype.application.TaskTypeApplicationService;
+import com.taskmind.backend.tasktype.domain.model.TaskTypeDefinition;
 import java.time.*;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +51,11 @@ public class TaskApplicationService {
         UUID owner = requester.isPrivileged() ? c.userId() : requester.userId();
         memberships.validateMembership(c.projectId(), owner);
         if (c.assigneeId() != null) memberships.validateMembership(c.projectId(), c.assigneeId());
-        TaskLevel level = c.taskLevel() == null ? TaskLevel.TASK : c.taskLevel();
-        String type = c.taskType() == null ? "TASK" : c.taskType().trim().toUpperCase();
-        if (taskTypes != null) taskTypes.requireActiveByKey(c.projectId(), type);
-        TaskTypeRules.validate(type, level);
+        String requestedType = c.taskType() == null ? "TASK" : c.taskType();
+        TaskTypeDefinition typeDefinition = resolveActiveType(c.projectId(), requestedType);
+        TaskLevel level = c.taskLevel() == null ? typeDefinition.defaultTaskLevel() : c.taskLevel();
+        TaskTypeRules.validate(typeDefinition, level);
+        String type = typeDefinition.key();
         Instant now = Instant.now();
         Task task =
                 new Task(
@@ -128,8 +130,10 @@ public class TaskApplicationService {
                             memberships.validateMembership(project, e.userId());
                             if (c.assigneeId() != null)
                                 memberships.validateMembership(project, c.assigneeId());
-                            String resolvedType = c.taskType() != null ? c.taskType().trim().toUpperCase() : e.taskType();
-                            if (taskTypes != null) taskTypes.requireActiveByKey(project, resolvedType);
+                            TaskTypeDefinition typeDefinition = resolveActiveType(project, c.taskType() != null ? c.taskType() : e.taskType());
+                            TaskLevel resolvedLevel = c.taskLevel() != null ? c.taskLevel() : e.taskLevel();
+                            TaskTypeRules.validate(typeDefinition, resolvedLevel);
+                            String resolvedType = typeDefinition.key();
                             Task updated =
                                     new Task(
                                             e.id(),
@@ -143,7 +147,7 @@ public class TaskApplicationService {
                                             c.parentTaskId() != null
                                                     ? c.parentTaskId()
                                                     : e.parentTaskId(),
-                                            c.taskLevel() != null ? c.taskLevel() : e.taskLevel(),
+                                            resolvedLevel,
                                             resolvedType,
                                             c.storyPoints() != null
                                                     ? c.storyPoints()
@@ -191,6 +195,10 @@ public class TaskApplicationService {
     @Transactional
     public Optional<Task> archive(AuthenticatedUser r, UUID id) {
         return updateStatus(r, id, TaskStatus.ARCHIVED);
+    }
+
+    private TaskTypeDefinition resolveActiveType(UUID projectId, String key) {
+        return taskTypes != null ? taskTypes.requireActiveByKey(projectId, key) : TaskTypeRules.systemDefinition(key);
     }
 
     private void validateParent(Task t) {

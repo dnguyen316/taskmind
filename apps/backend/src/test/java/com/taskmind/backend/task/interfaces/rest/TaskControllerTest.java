@@ -9,8 +9,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.project.domain.model.Project;
+import com.taskmind.backend.project.domain.repository.ProjectRepository;
+import com.taskmind.backend.task.domain.model.TaskLevel;
+import com.taskmind.backend.tasktype.domain.model.TaskTypeDefinition;
+import com.taskmind.backend.tasktype.domain.repository.TaskTypeRepository;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +40,12 @@ class TaskControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private TaskTypeRepository taskTypes;
+
+    @Autowired
+    private ProjectRepository projects;
+
     @Test
     void createsTask() throws Exception {
         var payload = """
@@ -51,6 +65,103 @@ class TaskControllerTest {
             .andExpect(jsonPath("$.title").value("Write backend APIs"))
             .andExpect(jsonPath("$.status").value("TODO"))
             .andExpect(jsonPath("$.priority").value(2));
+    }
+
+
+    @Test
+    void preservesDefaultSystemTaskTypeBehavior() throws Exception {
+        var payload = """
+            {
+              "userId": "11111111-1111-1111-1111-111111111111",
+              "title": "Default type task",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """;
+
+        mockMvc.perform(post("/v1/tasks").with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.taskLevel").value("TASK"))
+            .andExpect(jsonPath("$.taskType").value("TASK"));
+    }
+
+    @Test
+    void acceptsCustomTaskTypeForAllowedNormalTaskLevel() throws Exception {
+        var owner = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        var project = createProject(owner, "CT" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        saveTaskType(project.id(), "CUSTOM_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), true, TaskLevel.TASK, Set.of(TaskLevel.TASK));
+        var type = taskTypes.findActive(project.id()).stream().filter(t -> t.key().startsWith("CUSTOM_")).findFirst().orElseThrow();
+        var payload = """
+            {
+              "userId": "%s",
+              "projectId": "%s",
+              "title": "Custom type task",
+              "taskType": "%s",
+              "taskLevel": "TASK",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """.formatted(owner, project.id(), type.key());
+
+        mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.taskType").value(type.key()))
+            .andExpect(jsonPath("$.taskLevel").value("TASK"));
+    }
+
+    @Test
+    void rejectsCustomTaskTypeWhenLevelRulesDisallowIt() throws Exception {
+        var owner = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        var project = createProject(owner, "DS" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        var type = "EPICONLY_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        saveTaskType(project.id(), type, true, TaskLevel.EPIC, Set.of(TaskLevel.EPIC));
+        var payload = """
+            {
+              "userId": "%s",
+              "projectId": "%s",
+              "title": "Invalid custom type task",
+              "taskType": "%s",
+              "taskLevel": "TASK",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """.formatted(owner, project.id(), type);
+
+        mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rejectsInactiveTaskTypeForNewTask() throws Exception {
+        var owner = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        var project = createProject(owner, "IN" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        var type = "INACTIVE_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        saveTaskType(project.id(), type, false, TaskLevel.TASK, Set.of(TaskLevel.TASK));
+        var payload = """
+            {
+              "userId": "%s",
+              "projectId": "%s",
+              "title": "Inactive custom type task",
+              "taskType": "%s",
+              "status": "TODO",
+              "priority": 2,
+              "source": "MANUAL"
+            }
+            """.formatted(owner, project.id(), type);
+
+        mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -494,4 +605,14 @@ class TaskControllerTest {
         return objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
     }
 
+
+    private Project createProject(UUID owner, String key) {
+        var now = Instant.now();
+        return projects.save(new Project(UUID.randomUUID(), null, key + " Project", key, null, owner, null, now, now));
+    }
+
+    private void saveTaskType(UUID projectId, String key, boolean active, TaskLevel defaultLevel, Set<TaskLevel> allowedLevels) {
+        var now = Instant.now();
+        taskTypes.save(new TaskTypeDefinition(UUID.randomUUID(), null, projectId, key, key, null, null, defaultLevel, allowedLevels, false, false, null, false, active, 100, now, now));
+    }
 }
