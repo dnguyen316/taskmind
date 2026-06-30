@@ -35,6 +35,8 @@ Rate limiting: `/v1/**` may return `429 Too Many Requests`.
 |---|---|---|
 | Core | `GET /internal/tasks`, `/internal/tasks/{id}`, comments, project members | Nova (`CoreReadClient`). |
 | Core | `GET /internal/projects/**` | Nova. |
+| Core | `GET /internal/integrations/github/repos/{linkId}/issues/{issueNumber}`, `GET /internal/integrations/github/repos/{linkId}/pulls/{pullNumber}` | Nova GitHub tools; requires service token plus `X-TaskMind-User-Id` and `X-TaskMind-Project-Id` job-scope headers. |
+| Core | `POST /internal/integrations/github/repos/{linkId}/comments`, `/branches`, `/pull-requests` | Nova GitHub mutations; also requires linked-repo operation flags and `Idempotency-Key`. |
 | Relay | `POST /internal/events` | Core HTTP fallback ingest. |
 | Relay | `GET /internal/context/users/{id}/weekly-review` | Nova. |
 | Relay | `GET /internal/context/users/{id}/dashboard-insights` | Nova. |

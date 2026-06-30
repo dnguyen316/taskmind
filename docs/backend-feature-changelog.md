@@ -761,3 +761,14 @@ This changelog tracks backend feature progress against the core implementation p
 - Added the `task-resolution-agent` Nova capability with structured validation for task, project, GitHub repository, workflow template, allowed tools, and approval policy inputs.
 - Added typed AI contract DTOs for task-resolution plans, action proposals, and Core-routed tool calls.
 - Extended Nova AI run audit metadata with prompt version and validation outcome fields.
+
+## 2026-06-28 - Core GitHub internal tools
+
+### Changed
+
+- Added service-token-protected Core internal GitHub tool endpoints for Nova to read issues and pull requests and to create comments, branches, and pull requests against linked repositories.
+- Enforced Nova job context scope headers, linked repository operation flags, required idempotency keys for mutations, and provider error mapping without returning integration secrets.
+
+### Tests
+
+- Added integration-controller coverage for missing service tokens, permission denial, unknown/out-of-scope repository links, provider failure problem details, and idempotent mutation retry behavior.
