@@ -3,6 +3,8 @@ package com.taskmind.backend.outbox;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.application.CreateProjectCommand;
 import com.taskmind.backend.project.application.ProjectApplicationService;
@@ -31,9 +33,10 @@ class TaskOutboxActivityIntegrationTest {
     @Autowired ProjectMembershipRepository memberships;
     @Autowired TaskApplicationService tasks;
     @Autowired JdbcTemplate jdbcTemplate;
+    @Autowired ObjectMapper objectMapper;
 
     @Test
-    void creatingTaskWritesActivityAndOutboxRowsInSameTransaction() {
+    void creatingTaskWritesActivityAndOutboxRowsInSameTransaction() throws Exception {
         UUID userId = UUID.randomUUID();
         Project project = projects.create(new CreateProjectCommand("Events", "EVT", "", userId));
         memberships.save(new ProjectMembership(project.id(), userId, ProjectMembershipRole.OWNER));
@@ -72,6 +75,11 @@ class TaskOutboxActivityIntegrationTest {
                         Integer.class);
         assertEquals(beforeTaskOutbox + 1, taskOutboxCount);
         assertEquals(beforeTaskActivity + 1, taskActivityCount);
+        String payload =
+                jdbcTemplate.queryForObject(
+                        "select payload from outbox_events where event_type=\'task.created\' order by created_at desc limit 1",
+                        String.class);
+        assertEquals("TASK", objectMapper.readTree(payload).path("payload").path("taskTypeKey").asText());
         Integer projectOutboxCount =
                 jdbcTemplate.queryForObject(
                         "select count(*) from outbox_events where event_type='project.created'",

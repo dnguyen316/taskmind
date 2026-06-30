@@ -25,6 +25,9 @@ public final class ActivityEventIndexMapping {
                   },
                   "status": {"type": "keyword", "normalizer": "lowercase_keyword"},
                   "statusKeyword": {"type": "keyword", "normalizer": "lowercase_keyword"},
+                  "taskTypeKey": {"type": "keyword", "normalizer": "lowercase_keyword"},
+                  "taskTypeName": {"type": "keyword", "normalizer": "lowercase_keyword"},
+                  "taskTypeColor": {"type": "keyword"},
                   "payloadText": {"type": "text"},
                   "payload": {"type": "object", "enabled": false},
                   "occurredAt": {"type": "date"}
