@@ -23,22 +23,25 @@ public class TaskProjectionHandler {
         UUID taskId = event.entity().id();
         String title = event.payload().path("title").asText("");
         String status = event.payload().path("status").asText("TODO");
+        String taskTypeKey = event.payload().path("taskTypeKey").asText(null);
         try {
             jdbcTemplate.update(
-                    "insert into analytics.task_projection (task_id, user_id, project_id, title, status, updated_at) values (?, ?, ?, ?, ?, ?)",
+                    "insert into analytics.task_projection (task_id, user_id, project_id, title, status, task_type_key, updated_at) values (?, ?, ?, ?, ?, ?, ?)",
                     taskId,
                     event.scope().userId(),
                     event.scope().projectId(),
                     title,
                     status,
+                    taskTypeKey,
                     RelayJdbcParameters.timestamp(event.occurredAt()));
         } catch (DuplicateKeyException ex) {
             jdbcTemplate.update(
-                    "update analytics.task_projection set user_id=?, project_id=?, title=?, status=?, updated_at=? where task_id=?",
+                    "update analytics.task_projection set user_id=?, project_id=?, title=?, status=?, task_type_key=?, updated_at=? where task_id=?",
                     event.scope().userId(),
                     event.scope().projectId(),
                     title,
                     status,
+                    taskTypeKey,
                     RelayJdbcParameters.timestamp(event.occurredAt()),
                     taskId);
         }

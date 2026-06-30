@@ -45,6 +45,26 @@ class ElasticsearchIndexerTest {
         assertEquals("task", repository.last.entityType());
     }
 
+    @Test
+    void mapsTaskTypeFieldsForActivitySearchDisplay() {
+        CapturingRepository repository = new CapturingRepository();
+        ElasticsearchIndexer indexer =
+                new ElasticsearchIndexer(Optional.of(repository), ElasticsearchIndexer.DEFAULT_RECOMMENDATION_ENTITY_TYPES);
+
+        indexer.index(event(
+                EventTypes.TASK_CREATED,
+                "task",
+                mapper.createObjectNode()
+                        .put("title", "Typed task")
+                        .put("taskTypeKey", "BUG")
+                        .put("taskTypeName", "Bug")
+                        .put("taskTypeColor", "#ef4444")));
+
+        assertEquals("BUG", repository.last.taskTypeKey());
+        assertEquals("Bug", repository.last.taskTypeName());
+        assertEquals("#ef4444", repository.last.taskTypeColor());
+    }
+
     private DomainEvent event(String eventType, String entityType, com.fasterxml.jackson.databind.JsonNode payload) {
         UUID userId = UUID.randomUUID();
         return new DomainEvent(

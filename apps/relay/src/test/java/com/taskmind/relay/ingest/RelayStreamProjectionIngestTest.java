@@ -44,7 +44,7 @@ class RelayStreamProjectionIngestTest {
                         userId,
                         new DomainEvent.Scope("default", userId, projectId),
                         new DomainEvent.EntityRef("task", taskId),
-                        objectMapper.createObjectNode().put("title", "Projection").put("status", "TODO"),
+                        objectMapper.createObjectNode().put("title", "Projection").put("status", "TODO").put("taskTypeKey", "BUG"),
                         objectMapper.createObjectNode());
         String raw = new DomainEventMapper().toJson(event);
 
@@ -53,9 +53,11 @@ class RelayStreamProjectionIngestTest {
 
         Integer eventCount = jdbcTemplate.queryForObject("select count(*) from analytics.event_store", Integer.class);
         Integer taskCount = jdbcTemplate.queryForObject("select count(*) from analytics.task_projection where task_id=?", Integer.class, taskId);
+        String taskTypeKey = jdbcTemplate.queryForObject("select task_type_key from analytics.task_projection where task_id=?", String.class, taskId);
         Integer metricCount = jdbcTemplate.queryForObject("select events_ingested from analytics.user_daily_metrics where user_id=?", Integer.class, userId);
         assertEquals(1, eventCount);
         assertEquals(1, taskCount);
+        assertEquals("BUG", taskTypeKey);
         assertEquals(1, metricCount);
     }
 

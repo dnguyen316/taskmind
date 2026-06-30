@@ -70,6 +70,9 @@ public class TaskDomainEventPublisher {
         payload.put("title", task.title());
         TaskStatus status = task.status();
         payload.put("status", status.name());
+        if (task.taskType() != null) {
+            payload.put("taskTypeKey", task.taskType());
+        }
         if (task.assigneeId() != null) {
             payload.put("assigneeId", task.assigneeId().toString());
         }
