@@ -139,6 +139,8 @@ export function getVisibleRange(date: Date, mode: CalendarViewMode) {
 }
 
 export function toSchedulerRangeParams(range: { from: Date; to: Date }) {
+  // Calendar pages compute visible boundaries in the user's local time zone, then send
+  // UTC instants because Core binds scheduler from/to as OffsetDateTime date-time windows.
   return {
     from: range.from.toISOString(),
     to: range.to.toISOString(),
