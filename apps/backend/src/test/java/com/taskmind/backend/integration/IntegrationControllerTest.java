@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +36,6 @@ class IntegrationControllerTest {
     private static final ConcurrentHashMap<String, AtomicInteger> WIKI_PUBLISH_COUNTS = new ConcurrentHashMap<>();
     private static final AtomicInteger GITHUB_COMMENT_COUNT = new AtomicInteger();
     private static volatile boolean GITHUB_FAIL_ISSUE = false;
-    private static final String NOVA_SERVICE_TOKEN = "test-only-nova-token";
 
     @TestConfiguration
     static class ProviderClientStubs {
@@ -110,7 +110,9 @@ class IntegrationControllerTest {
     }
     private static final String USER = "11111111-1111-1111-1111-111111111111";
     private static final String OTHER = "22222222-2222-2222-2222-222222222222";
-    @Autowired MockMvc mockMvc; @Autowired ObjectMapper mapper;
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper mapper;
+    @Value("${taskmind.nova.service-token}") String novaServiceToken;
 
     @Test void connectListLinkImportAndPublishWithoutReturningSecrets() throws Exception {
         JIRA_ISSUES.set(defaultJiraIssues("TM-FLOW"));
@@ -223,12 +225,12 @@ class IntegrationControllerTest {
         String linkId = createGitHubRepositoryLink(USER, projectId, connectionId, "READ_ISSUES");
 
         internalGetIssue(linkId, projectId, USER, null).andExpect(status().isUnauthorized());
-        internalGetIssue(linkId, projectId, USER, NOVA_SERVICE_TOKEN)
+        internalGetIssue(linkId, projectId, USER, novaServiceToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(7))
                 .andExpect(jsonPath("$.id").value("issue-node-7"));
         mockMvc.perform(post("/internal/integrations/github/repos/{linkId}/comments", linkId)
-                        .header("X-Service-Token", NOVA_SERVICE_TOKEN)
+                        .header("X-Service-Token", novaServiceToken)
                         .header("X-TaskMind-User-Id", USER)
                         .header("X-TaskMind-Project-Id", projectId)
                         .header("Idempotency-Key", "deny-comment")
@@ -240,12 +242,12 @@ class IntegrationControllerTest {
 
     @Test void internalGitHubEndpointRejectsUnknownRepoLinkAndOutOfScopeProject() throws Exception {
         String projectId = createProject(USER);
-        internalGetIssue(java.util.UUID.randomUUID().toString(), projectId, USER, NOVA_SERVICE_TOKEN)
+        internalGetIssue(java.util.UUID.randomUUID().toString(), projectId, USER, novaServiceToken)
                 .andExpect(status().isNotFound());
         String otherProject = createProject(USER);
         String connectionId = mapper.readTree(connect("GITHUB", USER).andReturn().getResponse().getContentAsString()).get("id").asText();
         String linkId = createGitHubRepositoryLink(USER, projectId, connectionId, "READ_ISSUES");
-        internalGetIssue(linkId, otherProject, USER, NOVA_SERVICE_TOKEN)
+        internalGetIssue(linkId, otherProject, USER, novaServiceToken)
                 .andExpect(status().isForbidden());
     }
 
@@ -254,7 +256,7 @@ class IntegrationControllerTest {
         String connectionId = mapper.readTree(connect("GITHUB", USER).andReturn().getResponse().getContentAsString()).get("id").asText();
         String linkId = createGitHubRepositoryLink(USER, projectId, connectionId, "READ_ISSUES");
         GITHUB_FAIL_ISSUE = true;
-        internalGetIssue(linkId, projectId, USER, NOVA_SERVICE_TOKEN)
+        internalGetIssue(linkId, projectId, USER, novaServiceToken)
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("PROVIDER_UNAVAILABLE"))
                 .andExpect(jsonPath("$.detail", not(containsString("secret-access"))));
@@ -269,7 +271,7 @@ class IntegrationControllerTest {
         String body = "{\"issueNumber\":7,\"body\":\"Done\"}";
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/internal/integrations/github/repos/{linkId}/comments", linkId)
-                            .header("X-Service-Token", NOVA_SERVICE_TOKEN)
+                            .header("X-Service-Token", novaServiceToken)
                             .header("X-TaskMind-User-Id", USER)
                             .header("X-TaskMind-Project-Id", projectId)
                             .header("Idempotency-Key", "same-key")
@@ -323,7 +325,16 @@ class IntegrationControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private String createGitHubRepositoryLink(String user, String projectId, String connectionId, String... operations) throws Exception { org.springframework.test.web.servlet.MvcResult res = mockMvc.perform(post("/v1/integrations/github/projects/{projectId}/repositories", projectId).with(jwt(user)).contentType(MediaType.APPLICATION_JSON).content("{\"connectionId\":\"" + connectionId + "\",\"owner\":\"taskmind\",\"repo\":\"core\",\"allowedOperations\":[" + java.util.Arrays.stream(operations).map(op -> "\"" + op + "\"").collect(java.util.stream.Collectors.joining(",")) + "]}" )).andExpect(status().isCreated()).andReturn(); return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText(); }
+    private String createGitHubRepositoryLink(String user, String projectId, String connectionId, String... operations) throws Exception {
+        com.fasterxml.jackson.databind.node.ObjectNode body = mapper.createObjectNode();
+        body.put("connectionId", connectionId);
+        body.put("owner", "taskmind");
+        body.put("repo", "core");
+        com.fasterxml.jackson.databind.node.ArrayNode allowedOperations = body.putArray("allowedOperations");
+        java.util.Arrays.stream(operations).forEach(allowedOperations::add);
+        org.springframework.test.web.servlet.MvcResult res = mockMvc.perform(post("/v1/integrations/github/projects/{projectId}/repositories", projectId).with(jwt(user)).contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(body))).andExpect(status().isCreated()).andReturn();
+        return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText();
+    }
     private org.springframework.test.web.servlet.ResultActions internalGetIssue(String linkId, String projectId, String userId, String token) throws Exception { var builder = get("/internal/integrations/github/repos/{linkId}/issues/{issueNumber}", linkId, 7).header("X-TaskMind-User-Id", userId).header("X-TaskMind-Project-Id", projectId); if (token != null) builder.header("X-Service-Token", token); return mockMvc.perform(builder); }
     private String createJiraProjectLink(String user, String key) throws Exception { String projectId = createProject(user); String connectionId = mapper.readTree(connect("JIRA", user).andReturn().getResponse().getContentAsString()).get("id").asText(); return createProjectLink(user, projectId, connectionId, key + "-project", key); }
     private String createProjectLink(String user, String projectId, String connectionId, String externalProjectId, String externalProjectKey) throws Exception { org.springframework.test.web.servlet.MvcResult res = mockMvc.perform(post("/v1/integrations/projects/{projectId}/links", projectId).with(jwt(user)).contentType(MediaType.APPLICATION_JSON).content("{\"connectionId\":\"" + connectionId + "\",\"externalProjectId\":\"" + externalProjectId + "\",\"externalProjectKey\":\"" + externalProjectKey + "\",\"externalProjectName\":\"TaskMind\"}" )).andExpect(status().isCreated()).andReturn(); return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText(); }
