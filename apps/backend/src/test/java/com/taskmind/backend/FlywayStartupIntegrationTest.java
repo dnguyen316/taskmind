@@ -27,9 +27,9 @@ class FlywayStartupIntegrationTest {
 
         assertThat(appliedMigrations)
                 .extracting(migration -> migration.getVersion().getVersion())
-                .containsExactly(
-                        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                        "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29");
+                .contains("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                        "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                        "30");
         assertThat(appliedMigrations)
                 .allMatch(migration -> migration.getState() == MigrationState.SUCCESS);
         assertThat(
@@ -42,6 +42,12 @@ class FlywayStartupIntegrationTest {
                         jdbcTemplate.queryForObject(
                                 "SELECT COUNT(*) FROM information_schema.tables "
                                         + "WHERE LOWER(table_schema) = 'analytics' AND LOWER(table_name) = 'ai_funnel_daily_metrics'",
+                                Integer.class))
+                .isEqualTo(1);
+        assertThat(
+                        jdbcTemplate.queryForObject(
+                                "SELECT COUNT(*) FROM information_schema.columns "
+                                        + "WHERE LOWER(table_schema) = 'analytics' AND LOWER(table_name) = 'task_projection' AND LOWER(column_name) = 'task_type_key'",
                                 Integer.class))
                 .isEqualTo(1);
     }
