@@ -1,0 +1,95 @@
+name: AWS Infrastructure Plan
+
+on:
+  pull_request:
+    paths:
+      - 'infra/aws/**'
+      - '.github/workflows/infra-plan.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub deployment environment to plan.
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+
+concurrency:
+  group: infra-plan-${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_IN_AUTOMATION: 'true'
+  TOFU_VERSION: 1.8.8
+
+jobs:
+  validate-modules:
+    name: Validate AWS modules
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - network
+          - data
+          - compute
+          - edge
+          - observability
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+
+      - name: Initialize module without backend
+        working-directory: infra/aws/${{ matrix.module }}
+        run: tofu init -backend=false
+
+      - name: Format check
+        working-directory: infra/aws/${{ matrix.module }}
+        run: tofu fmt -check -diff
+
+      - name: Validate module
+        working-directory: infra/aws/${{ matrix.module }}
+        run: tofu validate
+
+  plan-environment:
+    name: Plan composed environment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify environment root exists
+        run: test -d "infra/aws/envs/${{ inputs.environment }}"
+
+      - name: Initialize environment
+        working-directory: infra/aws/envs/${{ inputs.environment }}
+        run: tofu init
+
+      - name: Plan environment
+        working-directory: infra/aws/envs/${{ inputs.environment }}
+        run: tofu plan -input=false -out=tfplan
