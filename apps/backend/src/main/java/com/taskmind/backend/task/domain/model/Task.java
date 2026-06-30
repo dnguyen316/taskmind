@@ -15,7 +15,6 @@ public record Task(
 ) {
     public Task {
         if (title == null || title.isBlank()) throw new IllegalArgumentException("Task title is required");
-        TaskTypeRulesBridge.validate(taskType, taskLevel);
     }
 
 
@@ -50,11 +49,5 @@ public record Task(
                      String release, TaskStatus newStatus, Instant deleted, Instant time) {
         return new Task(id, version, userId, projectId, key, assignee, parentId, level, type, points, release, deleted,
             title, description, newStatus, priority, dueAt, durationMinutes, energyLevel, source, confidence, createdAt, time);
-    }
-
-    private static final class TaskTypeRulesBridge {
-        private static void validate(String type, TaskLevel level) {
-            com.taskmind.backend.task.domain.TaskTypeRules.validate(type, level);
-        }
     }
 }

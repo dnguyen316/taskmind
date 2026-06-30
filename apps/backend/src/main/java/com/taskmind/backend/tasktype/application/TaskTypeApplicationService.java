@@ -1,5 +1,6 @@
 package com.taskmind.backend.tasktype.application;
 
+import com.taskmind.backend.task.domain.model.TaskLevel;
 import com.taskmind.backend.tasktype.domain.model.TaskTypeDefinition;
 import com.taskmind.backend.tasktype.domain.repository.TaskTypeRepository;
 import java.time.Instant;
@@ -28,7 +29,7 @@ public class TaskTypeApplicationService {
     @Transactional
     public TaskTypeDefinition create(UUID projectId, String key, String name, String color, String icon, Integer sortOrder) {
         Instant now = Instant.now();
-        return taskTypes.save(new TaskTypeDefinition(UUID.randomUUID(), null, projectId, normalize(key), name, color, icon, false, true, sortOrder, now, now));
+        return taskTypes.save(new TaskTypeDefinition(UUID.randomUUID(), null, projectId, normalize(key), name, color, icon, TaskLevel.TASK, Set.of(TaskLevel.TASK), false, false, null, false, true, sortOrder, now, now));
     }
 
     @Transactional
@@ -38,6 +39,7 @@ public class TaskTypeApplicationService {
                 name != null ? name : existing.name(),
                 color != null ? color : existing.color(),
                 icon != null ? icon : existing.icon(),
+                existing.defaultTaskLevel(), existing.allowedTaskLevels(), existing.container(), existing.allowChildren(), existing.systemKind(),
                 existing.system(), active != null ? active : existing.active(),
                 sortOrder != null ? sortOrder : existing.sortOrder(), existing.createdAt(), Instant.now())));
     }
