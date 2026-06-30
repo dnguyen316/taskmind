@@ -50,7 +50,7 @@ function updateViewMode(value: string | number) {
     <div class="toolbar-copy">
       <div class="icon"><CalendarOutlined /></div>
       <div>
-        <a-tag color="purple">M04 Scheduler</a-tag>
+        <a-tag color="purple">Preview</a-tag>
         <h1>Calendar</h1>
         <p :title="`Selected date: ${selectedDateLabel}`">{{ props.periodLabel }}</p>
       </div>
