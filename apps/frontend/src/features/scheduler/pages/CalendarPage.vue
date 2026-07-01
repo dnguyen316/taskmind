@@ -165,41 +165,45 @@ function movePeriod(direction: 1 | -1) {
 
       <div class="scheduler-grid">
         <div class="main-column">
-          <CalendarDayView
-            v-if="viewMode === 'day'"
-            :date="selectedDate"
-            :blocks="dayBlocks"
-            :saving-block-ids="blocksState.savingBlockIds.value"
-            @complete="completeBlock"
-            @reschedule="rescheduleBlock"
-          />
-          <CalendarWeekView
-            v-else-if="viewMode === 'week'"
-            :days="visibleDays"
-            :blocks="visibleBlocks"
-            :saving-block-ids="blocksState.savingBlockIds.value"
-            @complete="completeBlock"
-            @reschedule="rescheduleBlock"
-          />
-          <CalendarMonthView
-            v-else
-            :date="selectedDate"
-            :blocks="visibleBlocks"
-            :saving-block-ids="blocksState.savingBlockIds.value"
-            @complete="completeBlock"
-            @reschedule="rescheduleBlock"
-          />
+          <a-spin :spinning="loading">
+            <div class="calendar-view-area">
+              <CalendarDayView
+                v-if="viewMode === 'day'"
+                :date="selectedDate"
+                :blocks="dayBlocks"
+                :saving-block-ids="blocksState.savingBlockIds.value"
+                @complete="completeBlock"
+                @reschedule="rescheduleBlock"
+              />
+              <CalendarWeekView
+                v-else-if="viewMode === 'week'"
+                :days="visibleDays"
+                :blocks="visibleBlocks"
+                :saving-block-ids="blocksState.savingBlockIds.value"
+                @complete="completeBlock"
+                @reschedule="rescheduleBlock"
+              />
+              <CalendarMonthView
+                v-else
+                :date="selectedDate"
+                :blocks="visibleBlocks"
+                :saving-block-ids="blocksState.savingBlockIds.value"
+                @complete="completeBlock"
+                @reschedule="rescheduleBlock"
+              />
 
-          <a-card v-if="hasEmptySchedule" class="empty-state tm-card-surface">
-            <a-empty description="Your calendar has no scheduler-owned blocks yet.">
-              <a-button
-                type="primary"
-                :loading="generationState.generating.value"
-                @click="generateSchedule"
-                >Generate my first schedule</a-button
-              >
-            </a-empty>
-          </a-card>
+              <a-card v-if="hasEmptySchedule" class="empty-state tm-card-surface">
+                <a-empty description="Your calendar has no scheduler-owned blocks yet.">
+                  <a-button
+                    type="primary"
+                    :loading="generationState.generating.value"
+                    @click="generateSchedule"
+                    >Generate my first schedule</a-button
+                  >
+                </a-empty>
+              </a-card>
+            </div>
+          </a-spin>
         </div>
 
         <aside class="side-column">
