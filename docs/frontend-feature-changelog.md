@@ -1,3 +1,17 @@
+## 2026-07-01 - AI workflow and GitHub resolution slices
+
+### Changed
+
+- Added GitHub repository-link management under project detail, including connected status, allowed-operation permission display, repository discovery, and recoverable partial-error messaging.
+- Added project-scoped AI workflow template management with typed Core clients, template create/edit form, allowed-tool selector, approval-policy editor, admin-only route guard, and loading/empty/error states.
+- Extended task detail with a Resolve with AI Agent panel for selecting a workflow template and linked repository, queueing task-resolution jobs, showing progress timeline entries, approving/rejecting proposals, and rendering final result links.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for the AI workflow, integration, and task detail slices.
+- Browser E2E happy path with mocked GitHub responses was not run because this repository currently has no browser E2E harness/package script; the UI includes stable controls for a future mocked GitHub flow.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-30 (AI approval review UI)
 
 ### Changed
@@ -7,6 +21,7 @@
 ### Verification
 
 - `cd apps/frontend && npm run typecheck`
+
 ## 2026-06-30 - Scheduler task detail navigation
 
 ### Changed
