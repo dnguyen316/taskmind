@@ -795,3 +795,13 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added task type controller coverage for non-member list/create/patch denial and owner/member/admin permitted paths.
+
+## 2026-07-01 - Global task type key uniqueness
+
+### Changed
+
+- Added a Core Flyway migration to enforce global task type key uniqueness with a partial unique index on `task_types(type_key)` for rows where `project_id IS NULL`, while retaining the existing `(project_id, type_key)` constraint for project-scoped uniqueness. This advances configurable task type hardening.
+
+### Tests
+
+- Expanded Flyway startup integration coverage to prove duplicate global task type keys are rejected after applying the migration chain.

@@ -9,9 +9,11 @@ import java.sql.Statement;
 import java.util.Map;
 
 /**
- * Adapts the two PostgreSQL partial indexes in the already-applied V5 migration for H2.
- * H2's unique indexes already permit multiple null values, so removing these predicates
- * preserves their behavior without changing the immutable production migration.
+ * Adapts PostgreSQL partial indexes in Flyway migrations for H2.
+ * H2's unique indexes already permit multiple null values, so removing the V5 predicates
+ * preserves their behavior without changing immutable production migrations. The global
+ * task type key index is narrowed to the key column for migration-backed tests because
+ * H2 does not support PostgreSQL partial index predicates.
  */
 public class PostgreSqlModeH2DataSource extends HikariDataSource {
 
@@ -19,7 +21,9 @@ public class PostgreSqlModeH2DataSource extends HikariDataSource {
         "CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email) WHERE primary_email IS NOT NULL",
         "CREATE UNIQUE INDEX ux_users_primary_email ON users (primary_email)",
         "CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone) WHERE primary_phone IS NOT NULL",
-        "CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone)"
+        "CREATE UNIQUE INDEX ux_users_primary_phone ON users (primary_phone)",
+        "CREATE UNIQUE INDEX ux_task_types_global_type_key ON task_types (type_key) WHERE project_id IS NULL",
+        "CREATE UNIQUE INDEX ux_task_types_global_type_key ON task_types (type_key)"
     );
 
     @Override
