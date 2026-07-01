@@ -16,6 +16,7 @@ import {
   TASK_TITLE_MAX_LENGTH,
 } from '../validation/taskFormValidation'
 import type { EnergyLevel, Task, TaskLevel, TaskStatus, TaskType } from '../types'
+import { findTaskTypeDefinition, isTaskTypeAllowedForLevel } from '../utils/taskTypeCompatibility'
 
 const ENERGY_LEVEL_OPTIONS: EnergyLevel[] = ['LOW', 'MEDIUM', 'HIGH']
 
@@ -28,7 +29,7 @@ const { loading, saving, errorMessage, fetchTaskById, updateTaskDetails } = useT
 const taskTypesStore = useTaskTypesStore()
 const taskTypeOptions = computed(() =>
   taskTypesStore.activeTaskTypes.filter((taskType) =>
-    isTaskTypeCompatibleWithLevel(taskType.key, formState.taskLevel),
+    isTaskTypeAllowedForLevel(taskType, formState.taskLevel),
   ),
 )
 
@@ -231,29 +232,13 @@ function normalizeTaskType(type: TaskType | null, level: TaskLevel | null): Task
     return null
   }
 
-  if (!isTaskTypeCompatibleWithLevel(normalizedType, level)) {
+  const taskType = findTaskTypeDefinition(taskTypesStore.activeTaskTypes, normalizedType)
+  if (!taskType || !isTaskTypeAllowedForLevel(taskType, level)) {
     errorMessage.value = 'Task type is not valid for its hierarchy level.'
     return null
   }
 
-  return normalizedType
-}
-
-function isTaskTypeCompatibleWithLevel(
-  type: string | null | undefined,
-  level: TaskLevel | null,
-): boolean {
-  if (!type || !level) {
-    return false
-  }
-
-  const normalizedType = type.trim().toUpperCase()
-  return (
-    (normalizedType !== 'EPIC' || level === 'EPIC') &&
-    (normalizedType !== 'STORY' || level === 'STORY') &&
-    (normalizedType !== 'SUBTASK' || level === 'SUBTASK') &&
-    (normalizedType !== 'MILESTONE' || level !== 'SUBTASK')
-  )
+  return taskType.key
 }
 
 function normalizeDurationMinutes(value: number | null): number | null | undefined {

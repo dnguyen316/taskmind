@@ -13,8 +13,9 @@ import {
   TASK_TITLE_MAX_LENGTH,
 } from '../validation/taskFormValidation'
 import type { Project } from '../../projects/types'
-import type { CreateTaskFormValues, CreateTaskPayload, TaskLevel } from '../types'
+import type { CreateTaskFormValues, CreateTaskPayload } from '../types'
 import { useTaskTypesStore } from '../stores/taskTypesStore'
+import { findTaskTypeDefinition, isTaskTypeAllowedForLevel } from '../utils/taskTypeCompatibility'
 
 type SubmitTaskPayload = Omit<CreateTaskPayload, 'userId' | 'source'>
 
@@ -69,9 +70,7 @@ const initialValues = computed<CreateTaskFormValues>(() => ({
 const hasProjectOptions = computed(() => props.projectOptions.length > 0)
 const taskTypesStore = useTaskTypesStore()
 const taskTypeOptions = computed(() =>
-  taskTypesStore.activeTaskTypes.filter((taskType) =>
-    isTaskTypeCompatibleWithLevel(taskType.key, 'TASK'),
-  ),
+  taskTypesStore.activeTaskTypes.filter((taskType) => isTaskTypeAllowedForLevel(taskType, 'TASK')),
 )
 const taskForm = ref<InstanceType<typeof VeeForm> | null>(null)
 
@@ -142,23 +141,12 @@ async function handleProjectChange(projectId: string, handleChange: (value: stri
 
 function normalizeTaskType(value: unknown): string {
   const type = stringValue(value).trim().toUpperCase()
-  return isTaskTypeCompatibleWithLevel(type, 'TASK')
-    ? type
-    : (DEFAULT_CREATE_TASK_FORM.taskType ?? 'TASK')
-}
-
-function isTaskTypeCompatibleWithLevel(type: string | null | undefined, level: TaskLevel): boolean {
-  if (!type) {
-    return false
+  const taskType = findTaskTypeDefinition(taskTypesStore.activeTaskTypes, type)
+  if (isTaskTypeAllowedForLevel(taskType, 'TASK') && taskType) {
+    return taskType.key
   }
 
-  const normalizedType = type.trim().toUpperCase()
-  return (
-    (normalizedType !== 'EPIC' || level === 'EPIC') &&
-    (normalizedType !== 'STORY' || level === 'STORY') &&
-    (normalizedType !== 'SUBTASK' || level === 'SUBTASK') &&
-    (normalizedType !== 'MILESTONE' || level !== 'SUBTASK')
-  )
+  return DEFAULT_CREATE_TASK_FORM.taskType ?? 'TASK'
 }
 
 function stringValue(value: unknown): string {
