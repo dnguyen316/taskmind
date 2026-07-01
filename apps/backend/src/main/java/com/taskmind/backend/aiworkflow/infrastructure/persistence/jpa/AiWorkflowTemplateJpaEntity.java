@@ -36,6 +36,12 @@ public class AiWorkflowTemplateJpaEntity {
     @Enumerated(EnumType.STRING)
     ApprovalPolicy approvalPolicy;
 
+    boolean autoApproveReadOnly;
+    boolean requireApprovalForComments;
+    boolean requireApprovalForBranch;
+    boolean requireApprovalForPullRequest;
+    boolean requireApprovalForTaskMutation;
+
     @Column(columnDefinition = "TEXT")
     String defaultModelPolicy;
 
@@ -56,6 +62,11 @@ public class AiWorkflowTemplateJpaEntity {
         entity.templateBody = template.templateBody();
         entity.allowedTools = template.allowedTools();
         entity.approvalPolicy = template.approvalPolicy();
+        entity.autoApproveReadOnly = template.autoApproveReadOnly();
+        entity.requireApprovalForComments = template.requireApprovalForComments();
+        entity.requireApprovalForBranch = template.requireApprovalForBranch();
+        entity.requireApprovalForPullRequest = template.requireApprovalForPullRequest();
+        entity.requireApprovalForTaskMutation = template.requireApprovalForTaskMutation();
         entity.defaultModelPolicy = template.defaultModelPolicy();
         entity.archivedAt = template.archivedAt();
         entity.createdAt = template.createdAt();
@@ -64,7 +75,24 @@ public class AiWorkflowTemplateJpaEntity {
     }
 
     AiWorkflowTemplate toDomain() {
-        return new AiWorkflowTemplate(id, version, projectId, name, description, workflowType, templateBody,
-                allowedTools, approvalPolicy, defaultModelPolicy, archivedAt, createdAt, updatedAt);
+        return new AiWorkflowTemplate(
+                id,
+                version,
+                projectId,
+                name,
+                description,
+                workflowType,
+                templateBody,
+                allowedTools,
+                approvalPolicy,
+                autoApproveReadOnly,
+                requireApprovalForComments,
+                requireApprovalForBranch,
+                requireApprovalForPullRequest,
+                requireApprovalForTaskMutation,
+                defaultModelPolicy,
+                archivedAt,
+                createdAt,
+                updatedAt);
     }
 }

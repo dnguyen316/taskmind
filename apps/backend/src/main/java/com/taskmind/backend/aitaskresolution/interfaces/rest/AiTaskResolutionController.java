@@ -11,28 +11,101 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class AiTaskResolutionController {
     private final AiTaskResolutionApplicationService service;
-    public AiTaskResolutionController(AiTaskResolutionApplicationService service) { this.service = service; }
+
+    public AiTaskResolutionController(AiTaskResolutionApplicationService service) {
+        this.service = service;
+    }
 
     @PostMapping("/v1/tasks/{taskId}/ai-resolution-jobs")
-    public ResponseEntity<AiTaskResolutionJobResponse> create(AuthenticatedUser user, @PathVariable UUID taskId, @RequestBody(required = false) AiTaskResolutionJobRequest request) {
-        AiTaskResolutionJobRequest r = request == null ? new AiTaskResolutionJobRequest(null, null, null) : request;
+    public ResponseEntity<AiTaskResolutionJobResponse> create(
+            AuthenticatedUser user,
+            @PathVariable UUID taskId,
+            @RequestBody(required = false) AiTaskResolutionJobRequest request) {
+        AiTaskResolutionJobRequest r =
+                request == null ? new AiTaskResolutionJobRequest(null, null, null) : request;
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(AiTaskResolutionJobResponse.from(service.create(user, taskId, new CreateAiTaskResolutionJobCommand(r.templateId(), r.githubProjectLinkId(), r.idempotencyKey()))));
-        } catch (NoSuchElementException e) { throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e); }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(
+                            AiTaskResolutionJobResponse.from(
+                                    service.create(
+                                            user,
+                                            taskId,
+                                            new CreateAiTaskResolutionJobCommand(
+                                                    r.templateId(),
+                                                    r.githubProjectLinkId(),
+                                                    r.idempotencyKey()))));
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 
     @GetMapping("/v1/tasks/{taskId}/ai-resolution-jobs")
-    public List<AiTaskResolutionJobResponse> list(AuthenticatedUser user, @PathVariable UUID taskId) {
-        try { return service.list(user, taskId).stream().map(AiTaskResolutionJobResponse::from).toList(); }
-        catch (NoSuchElementException e) { throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e); }
+    public List<AiTaskResolutionJobResponse> list(
+            AuthenticatedUser user, @PathVariable UUID taskId) {
+        try {
+            return service.list(user, taskId).stream()
+                    .map(AiTaskResolutionJobResponse::from)
+                    .toList();
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 
     @GetMapping("/v1/ai-resolution-jobs/{jobId}")
-    public ResponseEntity<AiTaskResolutionJobResponse> get(AuthenticatedUser user, @PathVariable UUID jobId) { return service.get(user, jobId).map(AiTaskResolutionJobResponse::from).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); }
+    public ResponseEntity<AiTaskResolutionJobResponse> get(
+            AuthenticatedUser user, @PathVariable UUID jobId) {
+        return service.get(user, jobId)
+                .map(AiTaskResolutionJobResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     @PostMapping("/v1/ai-resolution-jobs/{jobId}/cancel")
-    public ResponseEntity<AiTaskResolutionJobResponse> cancel(AuthenticatedUser user, @PathVariable UUID jobId) { return service.cancel(user, jobId).map(AiTaskResolutionJobResponse::from).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); }
+    public ResponseEntity<AiTaskResolutionJobResponse> cancel(
+            AuthenticatedUser user, @PathVariable UUID jobId) {
+        return service.cancel(user, jobId)
+                .map(AiTaskResolutionJobResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     @PostMapping("/v1/ai-resolution-jobs/{jobId}/approve")
-    public ResponseEntity<AiTaskResolutionJobResponse> approve(AuthenticatedUser user, @PathVariable UUID jobId) { return service.approve(user, jobId).map(AiTaskResolutionJobResponse::from).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); }
+    public ResponseEntity<AiTaskResolutionJobResponse> approve(
+            AuthenticatedUser user, @PathVariable UUID jobId) {
+        return service.approve(user, jobId)
+                .map(AiTaskResolutionJobResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/v1/ai-resolution-jobs/{jobId}/proposals")
+    public List<AiTaskResolutionActionProposalResponse> proposals(
+            AuthenticatedUser user, @PathVariable UUID jobId) {
+        return service.listProposals(user, jobId).stream()
+                .map(AiTaskResolutionActionProposalResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/v1/ai-resolution-jobs/{jobId}/proposals/{proposalId}/approve")
+    public ResponseEntity<AiTaskResolutionActionProposalResponse> approveProposal(
+            AuthenticatedUser user, @PathVariable UUID jobId, @PathVariable UUID proposalId) {
+        return service.approveProposal(user, jobId, proposalId)
+                .map(AiTaskResolutionActionProposalResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/v1/ai-resolution-jobs/{jobId}/proposals/{proposalId}/reject")
+    public ResponseEntity<AiTaskResolutionActionProposalResponse> rejectProposal(
+            AuthenticatedUser user, @PathVariable UUID jobId, @PathVariable UUID proposalId) {
+        return service.rejectProposal(user, jobId, proposalId)
+                .map(AiTaskResolutionActionProposalResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @ExceptionHandler(AiTaskResolutionForbiddenException.class)
+    ResponseEntity<Void> forbidden() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
 }

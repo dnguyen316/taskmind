@@ -167,7 +167,8 @@ public class MockAiProvider implements AiProvider {
                 var items = output.putArray("items");
                 ObjectNode item = items.addObject();
                 item.put("title", firstMeaningfulLine(text(input, "specText", "Spec item")));
-                item.putArray("acceptanceCriteria").add("User can review the generated draft before materialization.");
+                item.putArray("acceptanceCriteria")
+                        .add("User can review the generated draft before materialization.");
                 item.put("estimatePoints", 3);
                 output.putArray("risks").add("Validate assumptions with the product owner.");
                 output.putArray("labels").add("ai-generated").add("spec-breakdown");
@@ -190,25 +191,30 @@ public class MockAiProvider implements AiProvider {
                 output.putArray("warnings");
             }
             case "spec-breakdown-section" -> {
-                String section = firstMeaningfulLine(text(input, "sectionText", "Selected section"));
+                String section =
+                        firstMeaningfulLine(text(input, "sectionText", "Selected section"));
                 output.put("sectionTitle", section);
                 var items = output.putArray("items");
                 ObjectNode item = items.addObject();
                 item.put("level", "STORY");
                 item.put("title", "Story: " + section);
-                item.putArray("acceptanceCriteria").add("Section behavior is captured as reviewable work.");
+                item.putArray("acceptanceCriteria")
+                        .add("Section behavior is captured as reviewable work.");
                 output.putArray("warnings");
             }
             case "spec-merge" -> {
                 output.set("mergedTree", input.path("draftTree").deepCopy());
                 output.putArray("conflicts");
-                output.putArray("warnings").add("Merged deterministically; review before materializing tasks.");
+                output.putArray("warnings")
+                        .add("Merged deterministically; review before materializing tasks.");
             }
             case "spec-suggest-links" -> {
                 var links = output.putArray("links");
                 ObjectNode link = links.addObject();
                 link.put("type", "doc");
-                link.put("title", "Reference for " + firstMeaningfulLine(text(input, "specText", "spec")));
+                link.put(
+                        "title",
+                        "Reference for " + firstMeaningfulLine(text(input, "specText", "spec")));
                 link.put("confidence", 0.71d);
                 output.putArray("dependencies").add("Confirm upstream API availability.");
                 output.putArray("warnings");
@@ -216,12 +222,27 @@ public class MockAiProvider implements AiProvider {
 
             case "task-resolution-agent" -> {
                 output.put("taskId", text(input.path("task"), "id", "task-unknown"));
-                output.put("workflowTemplateId", text(input.path("workflowTemplate"), "id", "task-resolution-default"));
-                output.put("workflowTemplateVersion", text(input.path("workflowTemplate"), "version", "1"));
+                output.put(
+                        "workflowTemplateId",
+                        text(input.path("workflowTemplate"), "id", "task-resolution-default"));
+                output.put(
+                        "workflowTemplateVersion",
+                        text(input.path("workflowTemplate"), "version", "1"));
                 output.put("approvalPolicy", text(input, "approvalPolicy", "propose-only"));
+                var proposals = output.putArray("proposals");
+                ObjectNode proposal = proposals.addObject();
+                String policy = text(input, "approvalPolicy", "propose-only");
                 var toolCalls = output.putArray("toolCalls");
                 ObjectNode toolCall = toolCalls.addObject();
                 String toolId = input.path("allowedTools").path(0).asText("core.task.comment");
+                proposal.put("proposedActionType", toolId);
+                proposal.put("riskLevel", policy.equals("require-approval") ? "HIGH" : "LOW");
+                proposal.put(
+                        "rationale",
+                        "Approval gate blocks direct execution until Core records a decision.");
+                ObjectNode preview = proposal.putObject("payloadPreview");
+                preview.put("taskId", text(input.path("task"), "id", "task-unknown"));
+                preview.put("message", "Deterministic resolution proposal " + fingerprint);
                 toolCall.put("toolId", toolId);
                 toolCall.put("coreInternalEndpoint", coreEndpoint(toolId));
                 toolCall.put("method", "POST");
@@ -237,7 +258,9 @@ public class MockAiProvider implements AiProvider {
                 ObjectNode action = actions.addObject();
                 action.put("actionId", "propose-core-tool-call");
                 action.put("title", "Prepare " + toolId);
-                action.put("rationale", "Tool calls are routed back through Core for policy enforcement.");
+                action.put(
+                        "rationale",
+                        "Tool calls are routed back through Core for policy enforcement.");
                 action.set("toolCalls", toolCalls.deepCopy());
                 output.putArray("warnings");
             }
@@ -262,7 +285,8 @@ public class MockAiProvider implements AiProvider {
         return switch (toolId) {
             case "core.task.update" -> "/internal/v1/tasks/update";
             case "core.github.issue.comment" -> "/internal/v1/integrations/github/issues/comment";
-            case "core.github.pull-request.create" -> "/internal/v1/integrations/github/pull-requests";
+            case "core.github.pull-request.create" ->
+                    "/internal/v1/integrations/github/pull-requests";
             default -> "/internal/v1/tasks/comment";
         };
     }
