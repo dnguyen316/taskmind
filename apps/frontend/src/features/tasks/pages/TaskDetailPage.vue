@@ -5,6 +5,7 @@ import AppLayout from '../components/AppLayout.vue'
 import TaskAttachmentsPanel from '../components/TaskAttachmentsPanel.vue'
 import TaskDescriptionEditor from '../components/TaskDescriptionEditor.vue'
 import TaskStatusChip from '../components/TaskStatusChip.vue'
+import AiResolutionPanel from '../../aiResolution/components/AiResolutionPanel.vue'
 import { useTasks } from '../composables/useTasks'
 import { useTaskTypesStore } from '../stores/taskTypesStore'
 import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
@@ -473,6 +474,12 @@ function toDatetimeLocal(value: string | null) {
                 Save changes
               </a-button>
             </a-form>
+
+            <AiResolutionPanel
+              v-if="formState.id && formState.projectId"
+              :task-id="formState.id"
+              :project-id="formState.projectId"
+            />
 
             <TaskAttachmentsPanel v-if="formState.id" :task-id="formState.id" />
           </template>

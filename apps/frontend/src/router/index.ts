@@ -13,12 +13,19 @@ import CalendarPage from '../features/scheduler/pages/CalendarPage.vue'
 import TeamPage from '../features/team/pages/TeamPage.vue'
 import ReportsPage from '../features/reports/pages/ReportsPage.vue'
 import ActivitySearchPage from '../features/activity/pages/ActivitySearchPage.vue'
+import AiWorkflowTemplatesPage from '../features/aiWorkflows/pages/AiWorkflowTemplatesPage.vue'
+import { listProjectMembers } from '../features/projects/api/projectsApi'
 import { pinia } from '../stores/pinia'
 import { useAuthStore } from '../stores/auth'
 
 const publicMeta = { requiresAuth: false, guestOnly: false } as const
 const guestOnlyMeta = { requiresAuth: false, guestOnly: true } as const
 const protectedMeta = { requiresAuth: true, guestOnly: false } as const
+const projectAdminMeta = {
+  requiresAuth: true,
+  guestOnly: false,
+  requiresProjectAdmin: true,
+} as const
 
 const routes: RouteRecordRaw[] = [
   {
@@ -63,6 +70,13 @@ const routes: RouteRecordRaw[] = [
     component: TaskDetailPage,
     props: true,
     meta: protectedMeta,
+  },
+  {
+    path: '/projects/:projectId/ai-workflows',
+    name: 'project-ai-workflows',
+    component: AiWorkflowTemplatesPage,
+    props: true,
+    meta: projectAdminMeta,
   },
   {
     path: '/projects/:id',
@@ -147,6 +161,15 @@ router.beforeEach(async (to) => {
     return {
       path: '/login',
       query: { redirect: to.fullPath },
+    }
+  }
+
+  if (to.meta.requiresProjectAdmin === true) {
+    const projectId = String(to.params.projectId ?? to.params.id ?? '')
+    const members = await listProjectMembers(projectId)
+    const currentMembership = members.find((member) => member.userId === authStore.currentUserId)
+    if (!currentMembership || !['OWNER', 'ADMIN'].includes(currentMembership.role)) {
+      return { name: 'project-detail', params: { id: projectId } }
     }
   }
 

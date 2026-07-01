@@ -3,10 +3,13 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../tasks/components/AppLayout.vue'
 import ProjectMembersPanel from '../components/ProjectMembersPanel.vue'
+import GitHubRepositoryLinksPanel from '../../integrations/components/GitHubRepositoryLinksPanel.vue'
+import { useAuthStore } from '../../../stores/auth'
 import { useProjects } from '../composables/useProjects'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const projectId = computed(() => String(route.params.id ?? '').trim())
 const {
   selectedProject,
@@ -36,6 +39,13 @@ async function handleAddMember(payload: {
   await addMember(projectId.value, payload)
 }
 
+const canManageProject = computed(() => {
+  const currentMembership = members.value.find(
+    (member) => member.userId === authStore.currentUserId,
+  )
+  return currentMembership?.role === 'OWNER' || currentMembership?.role === 'ADMIN'
+})
+
 async function handleRemoveMember(memberId: string) {
   await removeMember(projectId.value, memberId)
 }
@@ -52,6 +62,9 @@ watch(projectId, loadProject)
           <a-space>
             <a-button @click="router.push({ name: 'projects-dashboard' })"
               >Back to projects</a-button
+            >
+            <a-button @click="router.push({ name: 'project-ai-workflows', params: { projectId } })"
+              >AI workflows</a-button
             >
             <span class="project-id" v-if="projectId">ID: {{ projectId }}</span>
           </a-space>
@@ -74,6 +87,12 @@ watch(projectId, loadProject)
               }}</a-descriptions-item>
             </a-descriptions>
           </a-spin>
+
+          <GitHubRepositoryLinksPanel
+            v-if="projectId"
+            :project-id="projectId"
+            :can-manage="canManageProject"
+          />
 
           <ProjectMembersPanel
             :members="members"
