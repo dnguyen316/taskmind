@@ -1,3 +1,15 @@
+## 2026-06-30 (AI approval gates)
+
+### Changed
+
+- Added workflow-template approval gate fields for read-only auto approval and comments, branch, pull-request, and task-mutation approval requirements.
+- Added Core AI task-resolution action proposal persistence and review endpoints for listing, approving, and rejecting proposed Nova actions.
+- Updated Nova mock task-resolution output to return reviewable action proposals rather than treating blocked tool calls as direct execution.
+
+### Tests
+
+- Ran targeted backend compile checks for Core and Nova while this focused slice was implemented.
+
 ## 2026-06-28 - Dashboard Relay JSON scalar coercion
 
 - Fixed Core dashboard aggregation to accept Relay REST JSON scalar values for task/project IDs and timestamps instead of assuming in-process UUID and OffsetDateTime instances.

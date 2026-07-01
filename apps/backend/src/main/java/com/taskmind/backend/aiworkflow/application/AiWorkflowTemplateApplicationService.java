@@ -36,13 +36,30 @@ public class AiWorkflowTemplateApplicationService {
     }
 
     @Transactional
-    public AiWorkflowTemplate create(AuthenticatedUser actor, UUID projectId, TemplateCommand command) {
+    public AiWorkflowTemplate create(
+            AuthenticatedUser actor, UUID projectId, TemplateCommand command) {
         assertProjectAdmin(actor, projectId);
         Instant now = Instant.now();
-        return templates.save(new AiWorkflowTemplate(UUID.randomUUID(), null, projectId, command.name().trim(),
-                command.description(), command.workflowType(), command.templateBody().trim(),
-                normalize(command.allowedTools(), DEFAULT_ALLOWED_TOOLS), command.approvalPolicy(),
-                normalize(command.defaultModelPolicy(), DEFAULT_MODEL_POLICY), null, now, now));
+        return templates.save(
+                new AiWorkflowTemplate(
+                        UUID.randomUUID(),
+                        null,
+                        projectId,
+                        command.name().trim(),
+                        command.description(),
+                        command.workflowType(),
+                        command.templateBody().trim(),
+                        normalize(command.allowedTools(), DEFAULT_ALLOWED_TOOLS),
+                        command.approvalPolicy(),
+                        command.autoApproveReadOnly(),
+                        command.requireApprovalForComments(),
+                        command.requireApprovalForBranch(),
+                        command.requireApprovalForPullRequest(),
+                        command.requireApprovalForTaskMutation(),
+                        normalize(command.defaultModelPolicy(), DEFAULT_MODEL_POLICY),
+                        null,
+                        now,
+                        now));
     }
 
     public List<AiWorkflowTemplate> list(AuthenticatedUser actor, UUID projectId) {
@@ -55,33 +72,77 @@ public class AiWorkflowTemplateApplicationService {
     }
 
     @Transactional
-    public Optional<AiWorkflowTemplate> update(AuthenticatedUser actor, UUID templateId, TemplateCommand command) {
-        return templates.findById(templateId).filter(template -> canAdmin(actor, template.projectId()))
+    public Optional<AiWorkflowTemplate> update(
+            AuthenticatedUser actor, UUID templateId, TemplateCommand command) {
+        return templates
+                .findById(templateId)
+                .filter(template -> canAdmin(actor, template.projectId()))
                 .filter(template -> !template.archived())
-                .map(existing -> {
-                    if (command.version() != null && !command.version().equals(existing.version())) {
-                        throw new org.springframework.dao.OptimisticLockingFailureException("Stale workflow template version");
-                    }
-                    return templates.save(new AiWorkflowTemplate(existing.id(), existing.version(),
-                        existing.projectId(), command.name().trim(), command.description(), command.workflowType(),
-                        command.templateBody().trim(), normalize(command.allowedTools(), existing.allowedTools()),
-                        command.approvalPolicy(), normalize(command.defaultModelPolicy(), existing.defaultModelPolicy()),
-                        existing.archivedAt(), existing.createdAt(), Instant.now()));
-                });
+                .map(
+                        existing -> {
+                            if (command.version() != null
+                                    && !command.version().equals(existing.version())) {
+                                throw new org.springframework.dao.OptimisticLockingFailureException(
+                                        "Stale workflow template version");
+                            }
+                            return templates.save(
+                                    new AiWorkflowTemplate(
+                                            existing.id(),
+                                            existing.version(),
+                                            existing.projectId(),
+                                            command.name().trim(),
+                                            command.description(),
+                                            command.workflowType(),
+                                            command.templateBody().trim(),
+                                            normalize(
+                                                    command.allowedTools(),
+                                                    existing.allowedTools()),
+                                            command.approvalPolicy(),
+                                            command.autoApproveReadOnly(),
+                                            command.requireApprovalForComments(),
+                                            command.requireApprovalForBranch(),
+                                            command.requireApprovalForPullRequest(),
+                                            command.requireApprovalForTaskMutation(),
+                                            normalize(
+                                                    command.defaultModelPolicy(),
+                                                    existing.defaultModelPolicy()),
+                                            existing.archivedAt(),
+                                            existing.createdAt(),
+                                            Instant.now()));
+                        });
     }
 
     @Transactional
     public boolean archive(AuthenticatedUser actor, UUID templateId) {
-        return templates.findById(templateId).filter(template -> canAdmin(actor, template.projectId()))
+        return templates
+                .findById(templateId)
+                .filter(template -> canAdmin(actor, template.projectId()))
                 .filter(template -> !template.archived())
-                .map(template -> {
-                    Instant now = Instant.now();
-                    templates.save(new AiWorkflowTemplate(template.id(), template.version(), template.projectId(),
-                            template.name(), template.description(), template.workflowType(), template.templateBody(),
-                            template.allowedTools(), template.approvalPolicy(), template.defaultModelPolicy(), now,
-                            template.createdAt(), now));
-                    return true;
-                })
+                .map(
+                        template -> {
+                            Instant now = Instant.now();
+                            templates.save(
+                                    new AiWorkflowTemplate(
+                                            template.id(),
+                                            template.version(),
+                                            template.projectId(),
+                                            template.name(),
+                                            template.description(),
+                                            template.workflowType(),
+                                            template.templateBody(),
+                                            template.allowedTools(),
+                                            template.approvalPolicy(),
+                                            template.autoApproveReadOnly(),
+                                            template.requireApprovalForComments(),
+                                            template.requireApprovalForBranch(),
+                                            template.requireApprovalForPullRequest(),
+                                            template.requireApprovalForTaskMutation(),
+                                            template.defaultModelPolicy(),
+                                            now,
+                                            template.createdAt(),
+                                            now));
+                            return true;
+                        })
                 .orElse(false);
     }
 
@@ -91,19 +152,23 @@ public class AiWorkflowTemplateApplicationService {
 
     private void assertProjectMember(AuthenticatedUser actor, UUID projectId) {
         if (!canMember(actor, projectId)) {
-            throw new AiWorkflowTemplateForbiddenException("Actor is not allowed to read workflow templates");
+            throw new AiWorkflowTemplateForbiddenException(
+                    "Actor is not allowed to read workflow templates");
         }
     }
 
     private void assertProjectAdmin(AuthenticatedUser actor, UUID projectId) {
         if (!canAdmin(actor, projectId)) {
-            throw new AiWorkflowTemplateForbiddenException("Actor is not allowed to manage workflow templates");
+            throw new AiWorkflowTemplateForbiddenException(
+                    "Actor is not allowed to manage workflow templates");
         }
     }
 
     private boolean canMember(AuthenticatedUser actor, UUID projectId) {
         return actor.isPrivileged()
-                || projects.findById(projectId).map(project -> project.ownerUserId().equals(actor.userId())).orElse(false)
+                || projects.findById(projectId)
+                        .map(project -> project.ownerUserId().equals(actor.userId()))
+                        .orElse(false)
                 || memberships.existsByProjectIdAndUserId(projectId, actor.userId());
     }
 
@@ -111,12 +176,18 @@ public class AiWorkflowTemplateApplicationService {
         if (actor.isPrivileged()) {
             return true;
         }
-        if (projects.findById(projectId).map(project -> project.ownerUserId().equals(actor.userId())).orElse(false)) {
+        if (projects.findById(projectId)
+                .map(project -> project.ownerUserId().equals(actor.userId()))
+                .orElse(false)) {
             return true;
         }
-        return memberships.findByProjectIdAndUserId(projectId, actor.userId())
+        return memberships
+                .findByProjectIdAndUserId(projectId, actor.userId())
                 .map(ProjectMembership::role)
-                .map(role -> role == ProjectMembershipRole.ADMIN || role == ProjectMembershipRole.OWNER)
+                .map(
+                        role ->
+                                role == ProjectMembershipRole.ADMIN
+                                        || role == ProjectMembershipRole.OWNER)
                 .orElse(false);
     }
 
@@ -124,6 +195,18 @@ public class AiWorkflowTemplateApplicationService {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    public record TemplateCommand(String name, String description, WorkflowType workflowType, String templateBody,
-            String allowedTools, ApprovalPolicy approvalPolicy, String defaultModelPolicy, Long version) {}
+    public record TemplateCommand(
+            String name,
+            String description,
+            WorkflowType workflowType,
+            String templateBody,
+            String allowedTools,
+            ApprovalPolicy approvalPolicy,
+            boolean autoApproveReadOnly,
+            boolean requireApprovalForComments,
+            boolean requireApprovalForBranch,
+            boolean requireApprovalForPullRequest,
+            boolean requireApprovalForTaskMutation,
+            String defaultModelPolicy,
+            Long version) {}
 }

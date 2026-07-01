@@ -13,10 +13,27 @@ public record AiWorkflowTemplateRequest(
         @NotBlank String templateBody,
         String allowedTools,
         @NotNull ApprovalPolicy approvalPolicy,
+        Boolean autoApproveReadOnly,
+        Boolean requireApprovalForComments,
+        Boolean requireApprovalForBranch,
+        Boolean requireApprovalForPullRequest,
+        Boolean requireApprovalForTaskMutation,
         String defaultModelPolicy,
         Long version) {
     public TemplateCommand toCommand() {
-        return new TemplateCommand(name, description, workflowType, templateBody, allowedTools, approvalPolicy,
-                defaultModelPolicy, version);
+        return new TemplateCommand(
+                name,
+                description,
+                workflowType,
+                templateBody,
+                allowedTools,
+                approvalPolicy,
+                Boolean.TRUE.equals(autoApproveReadOnly),
+                Boolean.TRUE.equals(requireApprovalForComments),
+                Boolean.TRUE.equals(requireApprovalForBranch),
+                Boolean.TRUE.equals(requireApprovalForPullRequest),
+                Boolean.TRUE.equals(requireApprovalForTaskMutation),
+                defaultModelPolicy,
+                version);
     }
 }

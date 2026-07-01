@@ -2057,6 +2057,58 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '404': {description: Job not found}
 
+  /v1/ai-resolution-jobs/{jobId}/proposals:
+    get:
+      summary: List AI task-resolution action proposals
+      operationId: listAiTaskResolutionActionProposals
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Action proposals awaiting or recording approval decisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/AiTaskResolutionActionProposalResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Job not found}
+  /v1/ai-resolution-jobs/{jobId}/proposals/{proposalId}/approve:
+    post:
+      summary: Approve an AI task-resolution action proposal
+      operationId: approveAiTaskResolutionActionProposal
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Approved action proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionActionProposalResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {description: Actor cannot decide this proposal}
+        '404': {description: Job or proposal not found}
+  /v1/ai-resolution-jobs/{jobId}/proposals/{proposalId}/reject:
+    post:
+      summary: Reject an AI task-resolution action proposal
+      operationId: rejectAiTaskResolutionActionProposal
+      tags: [AI Task Resolution]
+      parameters:
+        - {name: jobId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Rejected action proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiTaskResolutionActionProposalResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {description: Actor cannot decide this proposal}
+        '404': {description: Job or proposal not found}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2275,6 +2327,21 @@ components:
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
         completedAt: {type: string, format: date-time, nullable: true}
+    AiTaskResolutionActionProposalResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        jobId: {type: string, format: uuid}
+        proposedActionType: {type: string}
+        payloadPreview: {type: string, description: JSON preview of the blocked action payload}
+        riskLevel: {type: string}
+        rationale: {type: string, nullable: true}
+        status: {type: string, enum: [PENDING, APPROVED, REJECTED, EXECUTED, FAILED]}
+        decidedBy: {type: string, format: uuid, nullable: true}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        errorCode: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
     AiWorkflowTemplateRequest:
       type: object
       required: [name, workflowType, templateBody, approvalPolicy]
@@ -2285,6 +2352,11 @@ components:
         templateBody: {type: string}
         allowedTools: {type: string, description: JSON array of tool identifiers}
         approvalPolicy: {type: string, enum: [AUTO, MANUAL, ADMIN_ONLY]}
+        autoApproveReadOnly: {type: boolean}
+        requireApprovalForComments: {type: boolean}
+        requireApprovalForBranch: {type: boolean}
+        requireApprovalForPullRequest: {type: boolean}
+        requireApprovalForTaskMutation: {type: boolean}
         defaultModelPolicy: {type: string, description: JSON model policy object}
     AiWorkflowTemplate:
       allOf:

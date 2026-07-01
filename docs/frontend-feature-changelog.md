@@ -1,3 +1,12 @@
+## 2026-06-30 (AI approval review UI)
+
+### Changed
+
+- Added a typed frontend client for AI task-resolution action proposals and a reusable approval review card for high-impact pending actions.
+
+### Verification
+
+- `cd apps/frontend && npm run typecheck`
 ## 2026-06-30 - Scheduler task detail navigation
 
 ### Changed
