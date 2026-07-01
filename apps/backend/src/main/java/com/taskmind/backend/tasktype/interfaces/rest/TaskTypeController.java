@@ -56,6 +56,7 @@ public class TaskTypeController {
                             requester,
                             id,
                             request.name(),
+                            request.version(),
                             request.color(),
                             request.icon(),
                             request.active(),

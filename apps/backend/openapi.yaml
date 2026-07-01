@@ -687,6 +687,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           description: Task type not found
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /v1/tasks:
     post:
@@ -2193,6 +2195,13 @@ components:
             type: object
             additionalProperties: true
 
+    Conflict:
+      description: The resource version is stale or conflicts with the current state
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
     NovaFacadeError:
       description: Stable Core AI facade error that does not expose provider internals
       content:
@@ -3192,6 +3201,7 @@ components:
     UpdateTaskTypeRequest:
       type: object
       properties:
+        version: {type: integer, format: int64, nullable: true}
         name: {type: string}
         color: {type: string, nullable: true}
         icon: {type: string, nullable: true}
