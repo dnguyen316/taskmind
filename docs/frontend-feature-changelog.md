@@ -1,3 +1,17 @@
+## 2026-07-01 - Task type metadata-aware forms
+
+### Changed
+
+- Extended the frontend task type contract with server-provided hierarchy metadata and validation for default level, allowed levels, container behavior, and child behavior.
+- Updated create-task and task-detail type selection to filter and validate against `allowedTaskLevels` so custom task types can support non-`TASK` hierarchy levels without hard-coded key rules.
+- Kept legacy/system response fallbacks for older task type payloads that do not yet include the new metadata fields.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for the task type API, shared compatibility helper, and task form changes.
+- Browser E2E outcome: not run in this container; no browser automation was requested for this focused form metadata update.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-01 - AI workflow and GitHub resolution slices
 
 ### Changed

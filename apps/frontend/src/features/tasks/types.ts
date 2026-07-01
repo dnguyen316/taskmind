@@ -11,6 +11,10 @@ export interface TaskTypeDefinition {
   name: string
   color: string | null
   icon: string | null
+  defaultTaskLevel: TaskLevel
+  allowedTaskLevels: TaskLevel[]
+  container: boolean
+  allowChildren: boolean
   system: boolean
   active: boolean
   sortOrder: number | null
