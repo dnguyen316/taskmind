@@ -630,6 +630,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TaskTypeDefinition'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       summary: Create a configurable task type
       operationId: createTaskType
@@ -647,6 +651,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskTypeDefinition'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /v1/task-types/{id}:
     patch:
@@ -673,6 +681,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskTypeDefinition'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Task type not found
 
@@ -2163,6 +2175,12 @@ components:
   responses:
     Unauthorized:
       description: Authentication is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: The authenticated user is not allowed to access this resource
       content:
         application/problem+json:
           schema:

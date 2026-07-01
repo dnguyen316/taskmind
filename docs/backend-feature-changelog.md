@@ -784,3 +784,14 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added integration-controller coverage for missing service tokens, permission denial, unknown/out-of-scope repository links, provider failure problem details, and idempotent mutation retry behavior.
+
+## 2026-07-01 - Task type project access
+
+### Changed
+
+- Gated project-scoped task type listing and management through project ownership, membership, admin membership, or privileged roles while preserving global/system type visibility for non-members.
+- Updated the Core task type OpenAPI responses to document authentication and authorization failures.
+
+### Tests
+
+- Added task type controller coverage for non-member list/create/patch denial and owner/member/admin permitted paths.
