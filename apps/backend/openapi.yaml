@@ -694,6 +694,55 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /v1/onboarding/templates:
+    get:
+      summary: List onboarding workspace templates
+      operationId: listOnboardingTemplates
+      tags: [Onboarding]
+      responses:
+        '200':
+          description: Available onboarding templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingTemplate'
+
+  /v1/onboarding/complete:
+    post:
+      summary: Complete onboarding and create the initial workspace
+      operationId: completeOnboarding
+      tags: [Onboarding]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteOnboardingRequest'
+      responses:
+        '200':
+          description: Onboarding completion result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResult'
+
+  /v1/onboarding/demo/reset:
+    post:
+      summary: Reset and recreate the demo workspace for local/demo profiles
+      operationId: resetDemoWorkspace
+      tags: [Onboarding]
+      responses:
+        '200':
+          description: Demo workspace reset result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResult'
+        '404':
+          description: Demo reset is unavailable outside local/demo profiles
+
   /v1/task-types:
     get:
       summary: List active task type definitions
@@ -2865,11 +2914,36 @@ components:
         expiresInSeconds: {type: integer, format: int64}
     AuthUser:
       type: object
-      required: [userId, email, displayName]
+      required: [userId, email, displayName, onboardingCompleted]
       properties:
         userId: {type: string, format: uuid}
         email: {type: string, format: email}
         displayName: {type: string}
+        onboardingCompleted: {type: boolean}
+        onboardingWorkspaceType: {type: string, nullable: true}
+        onboardingPlanningStyle: {type: string, nullable: true}
+    CompleteOnboardingRequest:
+      type: object
+      required: [workspaceType, planningStyle, startMode]
+      properties:
+        workspaceType: {type: string, enum: [TEAM, SOLO, CLIENT]}
+        planningStyle: {type: string, enum: [SPRINT, KANBAN, TIME_BLOCKING]}
+        startMode: {type: string, enum: [BLANK, TEMPLATE, SPEC, GITHUB, JIRA, DEMO]}
+        templateKey: {type: string, nullable: true}
+    OnboardingResult:
+      type: object
+      required: [onboardingCompleted, projectId]
+      properties:
+        onboardingCompleted: {type: boolean}
+        projectId: {type: string, format: uuid}
+    OnboardingTemplate:
+      type: object
+      required: [key, name, description]
+      properties:
+        key: {type: string}
+        name: {type: string}
+        description: {type: string}
+
     AiActionProposal:
       type: object
       required: [id, userId, actionType, status, proposedPayload, preview, proposer, source, createdAt]

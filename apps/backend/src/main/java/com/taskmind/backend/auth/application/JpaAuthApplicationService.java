@@ -154,7 +154,13 @@ public class JpaAuthApplicationService implements AuthApplicationService {
         UserJpaEntity user =
                 users.findById(authenticatedUserId)
                         .orElseThrow(() -> failure(AuthFailureReason.USER_NOT_FOUND));
-        return new AuthUserView(user.getId(), user.getPrimaryEmail(), user.getDisplayName());
+        return new AuthUserView(
+                user.getId(),
+                user.getPrimaryEmail(),
+                user.getDisplayName(),
+                user.isOnboardingCompleted(),
+                user.getOnboardingWorkspaceType(),
+                user.getOnboardingPlanningStyle());
     }
 
     private AuthTokens issueSession(UserJpaEntity user) {

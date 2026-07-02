@@ -818,3 +818,8 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Expanded Flyway startup integration coverage to prove duplicate global task type keys are rejected after applying the migration chain.
+
+## Onboarding workspace setup
+
+- Added Core onboarding state on users, onboarding completion APIs, seeded workspace templates, and local/demo-only demo workspace reset with sample projects, tasks, schedule blocks, and activity events.
+- Added frontend onboarding routes and setup flow that redirects authenticated users until onboarding is complete.
