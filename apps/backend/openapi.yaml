@@ -9,6 +9,90 @@ servers:
 security:
   - bearerAuth: []
 paths:
+  /v1/ai/proposals/pending:
+    get:
+      summary: List pending AI action proposals awaiting Core approval
+      operationId: listPendingAiActionProposals
+      tags: [AI Proposals]
+      responses:
+        '200':
+          description: Pending AI action proposals
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/AiActionProposal'}
+
+  /v1/ai/proposals/{proposalId}/preview:
+    get:
+      summary: Preview AI proposal impact before user approval
+      operationId: previewAiActionProposal
+      tags: [AI Proposals]
+      parameters:
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Proposal impact preview
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiProposalImpactPreview'}
+        '404': {description: Pending proposal not found}
+
+  /v1/ai/proposals/{proposalId}/accept:
+    post:
+      summary: Accept an AI action proposal through Core approval logic
+      operationId: acceptAiActionProposal
+      tags: [AI Proposals]
+      parameters:
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Accepted proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiActionProposal'}
+        '404': {description: Pending proposal not found}
+
+  /v1/ai/proposals/{proposalId}/reject:
+    post:
+      summary: Reject an AI action proposal
+      operationId: rejectAiActionProposal
+      tags: [AI Proposals]
+      parameters:
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiActionProposalDecisionRequest'}
+      responses:
+        '200':
+          description: Rejected proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiActionProposal'}
+        '404': {description: Pending proposal not found}
+
+  /v1/ai/proposals/{proposalId}/accept-with-edits:
+    post:
+      summary: Accept an AI action proposal with user edits
+      operationId: acceptAiActionProposalWithEdits
+      tags: [AI Proposals]
+      parameters:
+        - {name: proposalId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AiActionProposalDecisionRequest'}
+      responses:
+        '200':
+          description: Edited and accepted proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AiActionProposal'}
+        '404': {description: Pending proposal not found}
+
   /api/health:
     get:
       summary: Check Core API health
@@ -2786,6 +2870,53 @@ components:
         userId: {type: string, format: uuid}
         email: {type: string, format: email}
         displayName: {type: string}
+    AiActionProposal:
+      type: object
+      required: [id, userId, actionType, status, proposedPayload, preview, proposer, source, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        userId: {type: string, format: uuid}
+        actionType: {$ref: '#/components/schemas/AiActionProposalType'}
+        status: {$ref: '#/components/schemas/AiActionProposalStatus'}
+        proposedPayload: {type: object, additionalProperties: true}
+        preview: {type: string}
+        rationale: {type: string, nullable: true}
+        proposer: {type: string}
+        provider: {type: string, nullable: true}
+        model: {type: string, nullable: true}
+        source: {$ref: '#/components/schemas/AiActionProposalSource'}
+        sourceContext: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+        expiresAt: {type: string, format: date-time, nullable: true}
+        acceptedAt: {type: string, format: date-time, nullable: true}
+        decidedBy: {type: string, format: uuid, nullable: true}
+        userDecision: {type: string, nullable: true}
+    AiActionProposalType:
+      type: string
+      enum: [CREATE_TASK, UPDATE_TASK, SCHEDULE_TASK, CREATE_PROJECT, ADD_SUBTASKS, ARCHIVE_TASK, ASSIGN_TASK]
+    AiActionProposalStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, EDITED, REJECTED, EXPIRED]
+    AiActionProposalSource:
+      type: string
+      enum: [AI_CAPTURE, GOAL_BREAKDOWN, SPEC_BREAKDOWN, SCHEDULER, NOVA_CHAT, TASK_RESOLUTION]
+    AiActionProposalDecisionRequest:
+      type: object
+      properties:
+        reason: {type: string, nullable: true}
+        editedPayload: {type: object, additionalProperties: true, nullable: true}
+    AiProposalImpactPreview:
+      type: object
+      required: [proposalId, actionType, summary, affectedResources, proposedPayload]
+      properties:
+        proposalId: {type: string, format: uuid}
+        actionType: {$ref: '#/components/schemas/AiActionProposalType'}
+        summary: {type: string}
+        affectedResources:
+          type: array
+          items: {type: string}
+        proposedPayload: {type: object, additionalProperties: true}
+
     ProblemDetail:
       type: object
       properties:
