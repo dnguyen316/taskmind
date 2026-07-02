@@ -136,6 +136,38 @@ class SpecBreakdownControllerTest {
         assertThat(child.storyPoints()).isNull();
     }
 
+
+    @Test
+    void rejectsInvalidHierarchyWithoutCreatingTasks() throws Exception {
+        drafts.replaceCandidateTree("""
+                {"nodes":[{"level":"INVALID","title":"Bad level"}]}
+                """);
+
+        mockMvc.perform(post("/v1/spec-breakdown/drafts/{id}/materialize", DRAFT_ID).with(jwt(USER_ID)))
+                .andExpect(status().isBadRequest());
+
+        assertThat(taskService.commands()).isEmpty();
+    }
+
+    @Test
+    void materializeIsIdempotentAfterDraftWasAlreadyMaterialized() throws Exception {
+        drafts.markMaterialized();
+
+        mockMvc.perform(post("/v1/spec-breakdown/drafts/{id}/materialize", DRAFT_ID).with(jwt(USER_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.taskIds.length()").value(0));
+
+        assertThat(taskService.commands()).isEmpty();
+    }
+
+    @Test
+    void hidesDraftsOwnedByOtherUsers() throws Exception {
+        drafts.replaceOwner(UUID.fromString("99999999-9999-9999-9999-999999999999"));
+
+        mockMvc.perform(get("/v1/spec-breakdown/drafts/{id}", DRAFT_ID).with(jwt(USER_ID)))
+                .andExpect(status().isNotFound());
+    }
+
     @TestConfiguration
     static class Fakes {
         static final UUID JOB_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
@@ -190,6 +222,14 @@ class SpecBreakdownControllerTest {
 
         void replaceCandidateTree(String candidateTree) {
             draft = new SpecBreakdownDraft(draft.id(), draft.version(), draft.projectId(), draft.ownerUserId(), draft.templateId(), draft.title(), draft.rawSpec(), draft.richContent(), candidateTree, draft.status(), draft.fixVersion(), draft.affectedVersion(), draft.sprint(), draft.issueType(), draft.publishKey(), draft.materializedAt(), draft.createdAt(), draft.updatedAt());
+        }
+
+        void markMaterialized() {
+            draft = new SpecBreakdownDraft(draft.id(), draft.version(), draft.projectId(), draft.ownerUserId(), draft.templateId(), draft.title(), draft.rawSpec(), draft.richContent(), draft.candidateTree(), SpecBreakdownStatus.MATERIALIZED, draft.fixVersion(), draft.affectedVersion(), draft.sprint(), draft.issueType(), draft.publishKey(), Instant.now(), draft.createdAt(), draft.updatedAt());
+        }
+
+        void replaceOwner(UUID ownerUserId) {
+            draft = new SpecBreakdownDraft(draft.id(), draft.version(), draft.projectId(), ownerUserId, draft.templateId(), draft.title(), draft.rawSpec(), draft.richContent(), draft.candidateTree(), draft.status(), draft.fixVersion(), draft.affectedVersion(), draft.sprint(), draft.issueType(), draft.publishKey(), draft.materializedAt(), draft.createdAt(), draft.updatedAt());
         }
 
         public SpecBreakdownDraft save(SpecBreakdownDraft d) {

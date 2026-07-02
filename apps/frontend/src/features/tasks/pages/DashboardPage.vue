@@ -85,6 +85,7 @@ onMounted(async () => {
       </div>
       <div class="live-actions">
         <RouterLink to="/tasks"><a-button type="primary">Review live tasks</a-button></RouterLink>
+        <RouterLink to="/spec-breakdown"><a-button>Break down a spec</a-button></RouterLink>
         <RouterLink to="/projects"><a-button>Open projects</a-button></RouterLink>
       </div>
     </section>

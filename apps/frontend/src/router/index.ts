@@ -14,6 +14,7 @@ import TeamPage from '../features/team/pages/TeamPage.vue'
 import ReportsPage from '../features/reports/pages/ReportsPage.vue'
 import ActivitySearchPage from '../features/activity/pages/ActivitySearchPage.vue'
 import AiWorkflowTemplatesPage from '../features/aiWorkflows/pages/AiWorkflowTemplatesPage.vue'
+import SpecBreakdownPage from '../features/specbreakdown/pages/SpecBreakdownPage.vue'
 import { listProjectMembers } from '../features/projects/api/projectsApi'
 import { pinia } from '../stores/pinia'
 import { useAuthStore } from '../stores/auth'
@@ -114,6 +115,12 @@ const routes: RouteRecordRaw[] = [
     path: '/activity',
     name: 'activity-search',
     component: ActivitySearchPage,
+    meta: protectedMeta,
+  },
+  {
+    path: '/spec-breakdown',
+    name: 'spec-breakdown',
+    component: SpecBreakdownPage,
     meta: protectedMeta,
   },
   {

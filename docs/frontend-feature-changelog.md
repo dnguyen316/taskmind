@@ -1,3 +1,17 @@
+## 2026-07-01 - Spec breakdown onboarding flow
+
+### Changed
+
+- Added a protected spec-breakdown workspace with the requested six-step flow: paste spec, choose output type, review an Epic → Story → Task → Subtask tree, edit/reorder/merge/reject nodes, create Core tasks, and continue into scheduling.
+- Added a dashboard CTA and route for the spec breakdown flow.
+- Added a typed frontend Core client for `/v1/spec-breakdown/**`; task creation remains behind Core materialization and does not call Nova directly.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for the new spec-breakdown page, route, API, and dashboard CTA.
+- Browser E2E outcome: not run in this container because there is currently no browser E2E harness/package script; the full happy-path controls are present for a future automated E2E.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-01 - Task type metadata-aware forms
 
 ### Changed
