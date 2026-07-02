@@ -518,6 +518,9 @@ public class SpecBreakdownApplicationService {
     @Transactional
     public List<UUID> materialize(AuthenticatedUser u, UUID id) {
         SpecBreakdownDraft d = require(u, id);
+        if (d.materializedAt() != null || d.status() == SpecBreakdownStatus.MATERIALIZED) {
+            return List.of();
+        }
         List<UUID> ids = new ArrayList<>();
         try {
             JsonNode nodes = mapper.readTree(d.candidateTree()).path("nodes");

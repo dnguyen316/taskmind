@@ -1,3 +1,16 @@
+## 2026-07-01 - Spec breakdown hierarchy materialization hardening
+
+### Changed
+
+- Made spec-breakdown materialization idempotent after a draft has already been materialized so repeated Core calls do not duplicate generated tasks.
+- Returned a client validation error for invalid candidate hierarchy payloads during materialization.
+- Added controller coverage for nested hierarchy creation, validation, idempotency, and user ownership filtering.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-30 (AI approval gates)
 
 ### Changed
