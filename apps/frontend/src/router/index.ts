@@ -14,6 +14,8 @@ import TeamPage from '../features/team/pages/TeamPage.vue'
 import ReportsPage from '../features/reports/pages/ReportsPage.vue'
 import ActivitySearchPage from '../features/activity/pages/ActivitySearchPage.vue'
 import AiWorkflowTemplatesPage from '../features/aiWorkflows/pages/AiWorkflowTemplatesPage.vue'
+import SpecBreakdownPage from '../features/specbreakdown/pages/SpecBreakdownPage.vue'
+import OnboardingPage from '../features/onboarding/pages/OnboardingPage.vue'
 import { listProjectMembers } from '../features/projects/api/projectsApi'
 import { pinia } from '../stores/pinia'
 import { useAuthStore } from '../stores/auth'
@@ -21,6 +23,11 @@ import { useAuthStore } from '../stores/auth'
 const publicMeta = { requiresAuth: false, guestOnly: false } as const
 const guestOnlyMeta = { requiresAuth: false, guestOnly: true } as const
 const protectedMeta = { requiresAuth: true, guestOnly: false } as const
+const onboardingMeta = {
+  requiresAuth: true,
+  guestOnly: false,
+  allowsIncompleteOnboarding: true,
+} as const
 const projectAdminMeta = {
   requiresAuth: true,
   guestOnly: false,
@@ -51,6 +58,12 @@ const routes: RouteRecordRaw[] = [
     name: 'forgot-password',
     component: ForgotPasswordPage,
     meta: publicMeta,
+  },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: OnboardingPage,
+    meta: onboardingMeta,
   },
   {
     path: '/dashboard',
@@ -117,6 +130,12 @@ const routes: RouteRecordRaw[] = [
     meta: protectedMeta,
   },
   {
+    path: '/spec-breakdown',
+    name: 'spec-breakdown',
+    component: SpecBreakdownPage,
+    meta: protectedMeta,
+  },
+  {
     path: '/tasks',
     name: 'tasks',
     component: TasksPage,
@@ -164,6 +183,22 @@ router.beforeEach(async (to) => {
     }
   }
 
+  if (
+    authStore.isAuthenticated &&
+    !authStore.currentUser?.onboardingCompleted &&
+    !to.meta.allowsIncompleteOnboarding
+  ) {
+    return { name: 'onboarding', query: { redirect: to.fullPath } }
+  }
+
+  if (
+    authStore.isAuthenticated &&
+    authStore.currentUser?.onboardingCompleted &&
+    to.name === 'onboarding'
+  ) {
+    return typeof to.query.redirect === 'string' ? to.query.redirect : '/dashboard'
+  }
+
   if (to.meta.requiresProjectAdmin === true) {
     const projectId = String(to.params.projectId ?? to.params.id ?? '')
     const members = await listProjectMembers(projectId)
@@ -174,7 +209,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return '/dashboard'
+    return authStore.currentUser?.onboardingCompleted ? '/dashboard' : '/onboarding'
   }
 
   return true

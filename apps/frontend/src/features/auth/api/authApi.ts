@@ -11,6 +11,9 @@ export interface AuthUserResponse {
   userId: string
   email: string
   displayName: string
+  onboardingCompleted: boolean
+  onboardingWorkspaceType: string | null
+  onboardingPlanningStyle: string | null
 }
 
 export interface LoginPayload {

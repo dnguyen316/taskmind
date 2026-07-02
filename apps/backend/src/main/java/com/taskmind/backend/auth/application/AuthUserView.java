@@ -5,6 +5,9 @@ import java.util.UUID;
 public record AuthUserView(
     UUID userId,
     String email,
-    String displayName
+    String displayName,
+    boolean onboardingCompleted,
+    String onboardingWorkspaceType,
+    String onboardingPlanningStyle
 ) {
 }

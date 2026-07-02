@@ -76,7 +76,11 @@ public class SpecBreakdownController {
 
     @PostMapping("/drafts/{id}/materialize")
     public Map<String, Object> materialize(AuthenticatedUser user, @PathVariable UUID id) {
-        return Map.of("taskIds", service.materialize(user, id));
+        try {
+            return Map.of("taskIds", service.materialize(user, id));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        }
     }
 
     public record CreateDraftRequest(

@@ -1,3 +1,16 @@
+## 2026-07-01 - Spec breakdown hierarchy materialization hardening
+
+### Changed
+
+- Made spec-breakdown materialization idempotent after a draft has already been materialized so repeated Core calls do not duplicate generated tasks.
+- Returned a client validation error for invalid candidate hierarchy payloads during materialization.
+- Added controller coverage for nested hierarchy creation, validation, idempotency, and user ownership filtering.
+
+### Verification notes
+
+- Targeted backend verification: `mvn -q -pl apps/backend -am -Dtest=SpecBreakdownControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-06-30 (AI approval gates)
 
 ### Changed
@@ -816,3 +829,7 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added controller coverage for matching-version task type updates and stale-version `409 Conflict` problem responses.
+## Onboarding workspace setup
+
+- Added Core onboarding state on users, onboarding completion APIs, seeded workspace templates, and local/demo-only demo workspace reset with sample projects, tasks, schedule blocks, and activity events.
+- Added frontend onboarding routes and setup flow that redirects authenticated users until onboarding is complete.
