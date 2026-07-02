@@ -10,6 +10,7 @@ import com.taskmind.backend.tasktype.domain.model.TaskTypeDefinition;
 import com.taskmind.backend.tasktype.domain.repository.TaskTypeRepository;
 import java.time.Instant;
 import java.util.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,12 +64,16 @@ public class TaskTypeApplicationService {
             AuthenticatedUser actor,
             UUID id,
             String name,
+            Long version,
             String color,
             String icon,
             Boolean active,
             Integer sortOrder) {
         return taskTypes.findById(id).map(existing -> {
             assertCanManageTaskType(actor, existing);
+            if (version != null && !version.equals(existing.version())) {
+                throw new ObjectOptimisticLockingFailureException(TaskTypeDefinition.class, id);
+            }
             return taskTypes.save(new TaskTypeDefinition(
                     existing.id(), existing.version(), existing.projectId(), existing.key(),
                     name != null ? name : existing.name(),

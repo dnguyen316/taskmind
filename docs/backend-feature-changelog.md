@@ -819,6 +819,16 @@ This changelog tracks backend feature progress against the core implementation p
 
 - Expanded Flyway startup integration coverage to prove duplicate global task type keys are rejected after applying the migration chain.
 
+## 2026-07-01 - Task type optimistic update contract
+
+### Changed
+
+- Added a `version` field to the Core task type update request contract and documented stale update conflicts for `PATCH /v1/task-types/{id}`.
+- Enforced optimistic version checks in the task type application service before saving task type edits.
+
+### Tests
+
+- Added controller coverage for matching-version task type updates and stale-version `409 Conflict` problem responses.
 ## Onboarding workspace setup
 
 - Added Core onboarding state on users, onboarding completion APIs, seeded workspace templates, and local/demo-only demo workspace reset with sample projects, tasks, schedule blocks, and activity events.

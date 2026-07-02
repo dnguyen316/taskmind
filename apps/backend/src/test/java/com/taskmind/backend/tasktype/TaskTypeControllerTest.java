@@ -146,6 +146,36 @@ class TaskTypeControllerTest {
                 .andExpect(status().isCreated());
     }
 
+    @Test
+    void ownerCanPatchProjectTaskTypeWithMatchingVersion() throws Exception {
+        when(taskTypes.findById(TASK_TYPE_ID)).thenReturn(Optional.of(projectType(7L)));
+        when(projects.findById(PROJECT_ID)).thenReturn(Optional.of(project()));
+        when(taskTypes.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(patch("/v1/task-types/{id}", TASK_TYPE_ID)
+                        .with(jwt(OWNER_ID.toString()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":7,\"name\":\"Updated Bug\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(7))
+                .andExpect(jsonPath("$.name").value("Updated Bug"));
+    }
+
+    @Test
+    void rejectsStaleProjectTaskTypeUpdateWithConflict() throws Exception {
+        when(taskTypes.findById(TASK_TYPE_ID)).thenReturn(Optional.of(projectType(8L)));
+        when(projects.findById(PROJECT_ID)).thenReturn(Optional.of(project()));
+
+        mockMvc.perform(patch("/v1/task-types/{id}", TASK_TYPE_ID)
+                        .with(jwt(OWNER_ID.toString()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":7,\"name\":\"Updated Bug\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Concurrent update conflict"));
+
+        verify(taskTypes, never()).save(any());
+    }
+
     private static Project project() {
         return new Project(PROJECT_ID, null, "Project", "PROJ", null, OWNER_ID, null, NOW, NOW);
     }
@@ -155,7 +185,11 @@ class TaskTypeControllerTest {
     }
 
     private static TaskTypeDefinition projectType() {
-        return new TaskTypeDefinition(TASK_TYPE_ID, null, PROJECT_ID, "BUG", "Bug", "#f00", "bug", TaskLevel.TASK, Set.of(TaskLevel.TASK), false, false, null, false, true, 2, NOW, NOW);
+        return projectType(null);
+    }
+
+    private static TaskTypeDefinition projectType(Long version) {
+        return new TaskTypeDefinition(TASK_TYPE_ID, version, PROJECT_ID, "BUG", "Bug", "#f00", "bug", TaskLevel.TASK, Set.of(TaskLevel.TASK), false, false, null, false, true, 2, NOW, NOW);
     }
 
     private static String createBody() {
