@@ -784,3 +784,7 @@
 
 - Replaced the fixed frontend task type union with dynamic task type DTOs, a task type API client, and a Pinia store used by create/detail task forms.
 - Task response adaptation now accepts unknown configured task type keys instead of rejecting responses outside the original built-in set.
+
+## Onboarding workspace setup
+
+- Added onboarding routes, step-based workspace/planning/start choices, template selection, demo data setup, and local/demo reset affordance.

@@ -42,6 +42,15 @@ public class UserJpaEntity {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    @Column(name = "onboarding_completed", nullable = false)
+    private boolean onboardingCompleted;
+
+    @Column(name = "onboarding_workspace_type", length = 40)
+    private String onboardingWorkspaceType;
+
+    @Column(name = "onboarding_planning_style", length = 40)
+    private String onboardingPlanningStyle;
+
     protected UserJpaEntity() {
     }
 
@@ -61,6 +70,11 @@ public class UserJpaEntity {
     public String getPrimaryEmail() { return primaryEmail; }
     public String getPasswordHash() { return passwordHash; }
     public String getDisplayName() { return displayName; }
+    public boolean isOnboardingCompleted() { return onboardingCompleted; }
+    public String getOnboardingWorkspaceType() { return onboardingWorkspaceType; }
+    public String getOnboardingPlanningStyle() { return onboardingPlanningStyle; }
+    public void completeOnboarding(String workspaceType, String planningStyle, Instant now) { this.onboardingCompleted = true; this.onboardingWorkspaceType = workspaceType; this.onboardingPlanningStyle = planningStyle; this.updatedAt = now; }
+    public void resetOnboarding(Instant now) { this.onboardingCompleted = false; this.onboardingWorkspaceType = null; this.onboardingPlanningStyle = null; this.updatedAt = now; }
     public void activate(Instant now) { this.status = AuthJpaEnums.UserStatus.ACTIVE; this.updatedAt = now; }
     public void recordLogin(Instant now) { this.lastLoginAt = now; this.updatedAt = now; }
 }

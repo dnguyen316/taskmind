@@ -56,7 +56,13 @@ public class AuthController {
     @GetMapping("/me")
     public AuthUserResponse me(Authentication authentication) {
         AuthUserView user = authApplicationService.me(UUID.fromString(authentication.getName()));
-        return new AuthUserResponse(user.userId(), user.email(), user.displayName());
+        return new AuthUserResponse(
+                user.userId(),
+                user.email(),
+                user.displayName(),
+                user.onboardingCompleted(),
+                user.onboardingWorkspaceType(),
+                user.onboardingPlanningStyle());
     }
 
     private AuthTokensResponse response(AuthTokens t) {
