@@ -863,6 +863,41 @@ paths:
             type: boolean
             default: false
         - in: query
+          name: dueToday
+          schema: { type: boolean, default: false }
+        - in: query
+          name: overdue
+          schema: { type: boolean, default: false }
+        - in: query
+          name: blocked
+          schema: { type: boolean, default: false }
+        - in: query
+          name: unassigned
+          schema: { type: boolean, default: false }
+        - in: query
+          name: noDueDate
+          schema: { type: boolean, default: false }
+        - in: query
+          name: stale
+          schema: { type: boolean, default: false }
+        - in: query
+          name: archived
+          schema: { type: boolean, default: false }
+        - in: query
+          name: priority
+          schema: { type: integer, minimum: 1, maximum: 4 }
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: assigneeId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [updatedAt, dueAt, priority, createdAt]
+        - in: query
           name: page
           schema:
             type: integer
@@ -2254,6 +2289,51 @@ paths:
         '403': {description: Actor cannot decide this proposal}
         '404': {description: Job or proposal not found}
 
+  /v1/task-saved-views:
+    get:
+      summary: List saved task views for the current user
+      operationId: listTaskSavedViews
+      tags: [Tasks]
+      responses:
+        '200':
+          description: Saved task views
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavedTaskView'
+    post:
+      summary: Create a saved task view
+      operationId: createTaskSavedView
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedTaskViewRequest'
+      responses:
+        '201':
+          description: Saved task view created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedTaskView'
+  /v1/task-saved-views/{id}:
+    delete:
+      summary: Delete a saved task view
+      operationId: deleteTaskSavedView
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted }
+        '404': { description: Saved task view not found }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2453,6 +2533,28 @@ components:
             reason: Block is overdue and should be moved
 
   schemas:
+    SavedTaskViewRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 80 }
+        filters:
+          type: object
+          additionalProperties: true
+    SavedTaskView:
+      type: object
+      required: [id, userId, name, filters, builtIn, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer, format: int64, nullable: true }
+        userId: { type: string, format: uuid }
+        name: { type: string }
+        filters:
+          type: object
+          additionalProperties: true
+        builtIn: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     AiTaskResolutionJobRequest:
       type: object
@@ -3987,3 +4089,5 @@ components:
     TeamMemberResponse:
       type: object
       properties: {userId: {type: string, format: uuid}, displayName: {type: string}, email: {type: string}, openTasks: {type: integer}}
+
+# Saved task view schemas

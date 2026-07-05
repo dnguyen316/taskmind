@@ -1,3 +1,15 @@
+## 2026-07-02 - Task saved views and health indicators
+
+### Changed
+
+- Added built-in task views for Today, Upcoming, Overdue, Blocked, Unplanned, Assigned to me, and AI suggested.
+- Added saved-view creation/application controls to task filters and wired task list loading to Core-side rich filters.
+- Added visual task health indicators in the task list and task detail surfaces.
+
+### Verification
+
+- `cd apps/frontend && npm run typecheck`
+
 ## 2026-07-01 - Spec breakdown onboarding flow
 
 ### Changed
