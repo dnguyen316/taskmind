@@ -6,17 +6,21 @@ import type {
   TaskLevel,
   TaskStatus,
   UpdateTaskPayload,
+  SavedTaskView,
+  TaskFilters,
 } from '../types'
 
 export async function listTasks({
   userId,
   status,
   overdueOnly = false,
+  filters,
   size = 50,
 }: {
   userId: string
   status?: TaskStatus
   overdueOnly?: boolean
+  filters?: Partial<TaskFilters>
   size?: number
 }) {
   const response = await apiClient.get<unknown>('/v1/tasks', {
@@ -24,6 +28,16 @@ export async function listTasks({
       userId,
       status,
       overdueOnly,
+      dueToday: filters?.dueToday,
+      blocked: filters?.blocked,
+      unassigned: filters?.unassigned,
+      noDueDate: filters?.noDueDate,
+      stale: filters?.stale,
+      archived: filters?.archived,
+      priority: filters?.priority,
+      projectId: filters?.projectId,
+      assigneeId: filters?.assigneeId,
+      sort: filters?.sortBy,
       size,
     },
   })
@@ -80,7 +94,6 @@ function adaptTaskResponse(data: unknown): Task {
   if (taskLevel !== null && !isTaskLevel(taskLevel)) {
     throw new Error('Invalid task level response.')
   }
-
 
   return {
     id: readRequiredString(data, 'id', 'task'),
@@ -171,4 +184,30 @@ function isEnergyLevel(energyLevel: string): energyLevel is EnergyLevel {
 
 function isTaskLevel(taskLevel: string): taskLevel is TaskLevel {
   return ['EPIC', 'STORY', 'TASK', 'SUBTASK'].includes(taskLevel)
+}
+
+export async function listSavedTaskViews() {
+  const response = await apiClient.get<unknown>('/v1/task-saved-views')
+  if (!Array.isArray(response.data)) throw new Error('Invalid saved views response.')
+  return response.data.map(adaptSavedTaskView)
+}
+
+export async function createSavedTaskView(name: string, filters: Partial<TaskFilters>) {
+  const response = await apiClient.post<unknown>('/v1/task-saved-views', { name, filters })
+  return adaptSavedTaskView(response.data)
+}
+
+function adaptSavedTaskView(data: unknown): SavedTaskView {
+  if (!isObject(data)) throw new Error('Invalid saved view response.')
+  const filters = isObject(data.filters) ? (data.filters as Partial<TaskFilters>) : {}
+  return {
+    id: readRequiredString(data, 'id', 'saved view'),
+    version: readNullableNumber(data, 'version'),
+    userId: readRequiredString(data, 'userId', 'saved view'),
+    name: readRequiredString(data, 'name', 'saved view'),
+    filters,
+    builtIn: Boolean(data.builtIn),
+    createdAt: readRequiredString(data, 'createdAt', 'saved view'),
+    updatedAt: readRequiredString(data, 'updatedAt', 'saved view'),
+  }
 }

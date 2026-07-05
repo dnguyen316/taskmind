@@ -3,6 +3,7 @@ package com.taskmind.backend.task.interfaces.rest;
 import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.task.application.CreateTaskCommand;
 import com.taskmind.backend.task.application.TaskApplicationService;
+import com.taskmind.backend.task.application.TaskQuery;
 import com.taskmind.backend.task.application.UpdateTaskCommand;
 import com.taskmind.backend.task.domain.model.Task;
 import com.taskmind.backend.task.domain.model.TaskStatus;
@@ -14,7 +15,6 @@ import com.taskmind.backend.task.interfaces.rest.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,16 +77,39 @@ public class TaskController {
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(defaultValue = "false") boolean overdueOnly,
+            @RequestParam(defaultValue = "false") boolean dueToday,
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(defaultValue = "false") boolean blocked,
+            @RequestParam(defaultValue = "false") boolean unassigned,
+            @RequestParam(defaultValue = "false") boolean noDueDate,
+            @RequestParam(defaultValue = "false") boolean stale,
+            @RequestParam(defaultValue = "false") boolean archived,
+            @RequestParam(required = false) Integer priority,
+            @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) UUID assigneeId,
+            @RequestParam(defaultValue = "updatedAt") String sort,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
+        boolean overdueFilter = overdue != null ? overdue : overdueOnly;
         return taskApplicationService
                 .list(
                         requester,
-                        Optional.ofNullable(userId),
-                        Optional.ofNullable(status),
-                        overdueOnly,
-                        page,
-                        size)
+                        new TaskQuery(
+                                userId,
+                                status,
+                                dueToday,
+                                overdueFilter,
+                                blocked,
+                                unassigned,
+                                noDueDate,
+                                stale,
+                                archived,
+                                priority,
+                                projectId,
+                                assigneeId,
+                                sort,
+                                page,
+                                size))
                 .stream()
                 .map(TaskResponse::from)
                 .toList();

@@ -4,6 +4,7 @@ import TaskStatusChip from './TaskStatusChip.vue'
 import { TASK_STATUS_SELECT_OPTIONS } from '../constants/taskPresentation'
 import { formatDateTime, isTaskOverdue, toTimestamp } from '../utils/taskDates'
 import { taskDetailRoute as buildTaskDetailRoute } from '../utils/taskRoutes'
+import { taskHealth, taskHealthColor, taskHealthLabel } from '../utils/taskHealth'
 import type { Task, TaskStatus } from '../types'
 
 const props = defineProps<{
@@ -17,8 +18,8 @@ const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>
 
 interface TaskTableColumn {
   title: string
-  dataIndex: keyof Task | 'key'
-  key: keyof Task | 'key'
+  dataIndex: keyof Task | 'key' | 'health'
+  key: keyof Task | 'key' | 'health'
   width?: number
   ellipsis?: boolean
 }
@@ -28,6 +29,7 @@ interface TaskTableRecord extends Task {
 }
 
 const columns: TaskTableColumn[] = [
+  { title: 'HEALTH', dataIndex: 'status', key: 'health', width: 110 },
   { title: 'TASK', dataIndex: 'title', key: 'title', width: 360, ellipsis: true },
   { title: 'PROJECT', dataIndex: 'projectId', key: 'projectId', width: 180, ellipsis: true },
   { title: 'OWNER', dataIndex: 'userId', key: 'userId', width: 180, ellipsis: true },
@@ -103,7 +105,12 @@ function dueLabel(task: Task) {
       />
     </template>
     <template #bodyCell="{ column, record }: { column: TaskTableColumn; record: TaskTableRecord }">
-      <template v-if="column.key === 'title'">
+      <template v-if="column.key === 'health'">
+        <a-tag :color="taskHealthColor(taskHealth(record))">{{
+          taskHealthLabel(taskHealth(record))
+        }}</a-tag>
+      </template>
+      <template v-else-if="column.key === 'title'">
         <div class="task-title-cell">
           <router-link :to="taskDetailRoute(record)" class="task-link" :title="record.title">
             {{ record.title }}

@@ -17,6 +17,7 @@ import {
 } from '../validation/taskFormValidation'
 import type { EnergyLevel, Task, TaskLevel, TaskStatus, TaskType } from '../types'
 import { findTaskTypeDefinition, isTaskTypeAllowedForLevel } from '../utils/taskTypeCompatibility'
+import { taskHealth, taskHealthColor, taskHealthLabel } from '../utils/taskHealth'
 
 const ENERGY_LEVEL_OPTIONS: EnergyLevel[] = ['LOW', 'MEDIUM', 'HIGH']
 
@@ -81,6 +82,31 @@ const isValidId = computed(() =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId.value),
 )
 const isEmptyState = computed(() => !loading.value && !errorMessage.value && taskNotFound.value)
+const healthTask = computed<Task>(() => ({
+  id: formState.id,
+  version: formState.version,
+  projectId: formState.projectId,
+  userId: '',
+  taskKey: formState.taskKey,
+  assigneeId: formState.assigneeId,
+  parentTaskId: formState.parentTaskId,
+  taskLevel: formState.taskLevel,
+  taskType: formState.taskType,
+  storyPoints: formState.storyPoints,
+  releaseVersion: formState.releaseVersion,
+  deletedAt: formState.deletedAt,
+  title: formState.title,
+  description: formState.description,
+  status: formState.status,
+  priority: formState.priority,
+  dueAt: formState.dueAt || null,
+  durationMinutes: formState.durationMinutes,
+  energyLevel: formState.energyLevel ?? null,
+  source: 'MANUAL',
+  confidence: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}))
 
 onMounted(() => {
   void loadTask()
@@ -327,6 +353,11 @@ function toDatetimeLocal(value: string | null) {
           <template v-else>
             <a-descriptions bordered :column="2" size="small" title="Task metadata">
               <a-descriptions-item label="ID">{{ formState.id }}</a-descriptions-item>
+              <a-descriptions-item label="Health"
+                ><a-tag :color="taskHealthColor(taskHealth(healthTask))">{{
+                  taskHealthLabel(taskHealth(healthTask))
+                }}</a-tag></a-descriptions-item
+              >
               <a-descriptions-item label="Task key">{{
                 formState.taskKey || '—'
               }}</a-descriptions-item>
