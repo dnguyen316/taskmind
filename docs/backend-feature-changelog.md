@@ -1,3 +1,13 @@
+## 2026-07-05 - Nova AI run timestamp binding hardening
+
+### Changed
+
+- Converted Nova AI run audit `Instant` values to UTC `OffsetDateTime` values before binding `TIMESTAMP WITH TIME ZONE` JDBC parameters so PostgreSQL can persist start, success, and failure timestamps without driver cast errors.
+
+### Verification notes
+
+- Exact verification commands for this slice: `mvn -q -pl apps/ai -am -Dtest=AiRunAuditRepositoryTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Applicable skills: none. Delegated agents: none.
 ## 2026-07-02 - Rich task filters and saved views
 
 ### Changed

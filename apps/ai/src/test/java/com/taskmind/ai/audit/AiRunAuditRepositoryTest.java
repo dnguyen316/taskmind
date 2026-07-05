@@ -8,7 +8,7 @@ import com.taskmind.ai.contracts.AiProviderId;
 import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
 import java.sql.Types;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +22,7 @@ class AiRunAuditRepositoryTest {
     private final AiRunAuditRepository repository = new AiRunAuditRepository(jdbcTemplate, objectMapper);
 
     @Test
-    void startBindsInstantsWithExplicitTimestampWithTimezoneType() throws Exception {
+    void startBindsInstantsAsOffsetDateTimesWithExplicitTimestampWithTimezoneType() throws Exception {
         AiRunRecord record =
                 new AiRunRecord(
                         UUID.randomUUID(),
@@ -49,7 +49,7 @@ class AiRunAuditRepositoryTest {
         assertThat(bindings)
                 .filteredOn(binding -> binding.sqlType() == Types.TIMESTAMP_WITH_TIMEZONE)
                 .extracting(TypedObjectBinding::value)
-                .allSatisfy(value -> assertThat(value).isInstanceOf(Instant.class));
+                .allSatisfy(value -> assertThat(value).isInstanceOf(OffsetDateTime.class));
     }
 
     private PreparedStatement capturingPreparedStatement(List<TypedObjectBinding> bindings) {

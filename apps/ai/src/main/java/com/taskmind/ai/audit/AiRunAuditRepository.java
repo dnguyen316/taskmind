@@ -11,6 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -126,7 +128,7 @@ public class AiRunAuditRepository {
 
     private void setInstant(PreparedStatement ps, int parameterIndex, Instant instant)
             throws SQLException {
-        ps.setObject(parameterIndex, instant, Types.TIMESTAMP_WITH_TIMEZONE);
+        ps.setObject(parameterIndex, OffsetDateTime.ofInstant(instant, ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
     }
 
     private String toJson(JsonNode node) {
