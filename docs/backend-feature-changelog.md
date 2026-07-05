@@ -8,6 +8,17 @@
 
 - Exact verification commands for this slice: `mvn -q -pl apps/ai -am -Dtest=AiRunAuditRepositoryTest -Dsurefire.failIfNoSpecifiedTests=false test`.
 - Applicable skills: none. Delegated agents: none.
+## 2026-07-02 - Rich task filters and saved views
+
+### Changed
+
+- Extended Core task listing with richer filters for due-today, overdue, blocked, unassigned, no-due-date, stale, archived, priority, project, assignee, pagination, and sorting.
+- Added per-user saved task view persistence and REST endpoints backed by Flyway-owned `task_saved_views`.
+- Updated the OpenAPI task query and saved-view contracts.
+
+### Tests
+
+- Added saved-view ownership coverage and ran task controller/OpenAPI contract coverage for the touched API surface.
 
 ## 2026-07-01 - Spec breakdown hierarchy materialization hardening
 

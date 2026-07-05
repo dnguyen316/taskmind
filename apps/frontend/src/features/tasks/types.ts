@@ -97,14 +97,33 @@ export interface ActivitySearchDocument {
   occurredAt: string
 }
 
-export type TaskSortBy = 'updatedAt' | 'dueAt' | 'priority'
+export type TaskSortBy = 'updatedAt' | 'dueAt' | 'priority' | 'createdAt'
 
 export interface TaskFilters {
   status?: TaskStatus
   overdueOnly: boolean
+  dueToday?: boolean
+  blocked?: boolean
+  unassigned?: boolean
+  noDueDate?: boolean
+  stale?: boolean
+  archived?: boolean
+  priority?: number
+  assigneeId?: string
   searchText: string
   projectId?: string
   sortBy?: TaskSortBy
+}
+
+export interface SavedTaskView {
+  id: string
+  version: number | null
+  userId: string
+  name: string
+  filters: Partial<TaskFilters>
+  builtIn: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CreateTaskPayload {

@@ -18,9 +18,13 @@ const {
   visibleTasks,
   filters,
   projects,
+  savedViews,
   activeProjectId,
   fetchTasks,
   fetchProjects,
+  fetchSavedViews,
+  saveCurrentView,
+  applySavedView,
   submitTask,
   changeStatus,
 } = useTasks()
@@ -43,6 +47,7 @@ async function handleChangeStatus(taskId: string, status: TaskStatus) {
 
 onMounted(async () => {
   await fetchProjects()
+  await fetchSavedViews()
   await fetchTasks()
 })
 </script>
@@ -67,7 +72,19 @@ onMounted(async () => {
     </header>
 
     <section class="tasks-content">
-      <TaskFilters :filters="filters" :projects="projects" @refresh="fetchTasks" />
+      <TaskFilters
+        :filters="filters"
+        :projects="projects"
+        :saved-views="savedViews"
+        @refresh="fetchTasks"
+        @apply-saved-view="
+          (view) => {
+            applySavedView(view)
+            fetchTasks()
+          }
+        "
+        @save-view="saveCurrentView"
+      />
       <a-alert
         v-if="errorMessage"
         type="error"

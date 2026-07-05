@@ -1,5 +1,6 @@
 package com.taskmind.backend.task.infrastructure.persistence.jpa;
 
+import com.taskmind.backend.task.application.TaskQuery;
 import com.taskmind.backend.task.domain.model.*;
 import com.taskmind.backend.task.domain.repository.TaskRepository;
 import java.time.OffsetDateTime;
@@ -68,4 +69,33 @@ public class JpaTaskRepository implements TaskRepository {
                 .map(TaskJpaEntity::toDomain)
                 .toList();
     }
+
+    public List<Task> findFiltered(TaskQuery q, OffsetDateTime now, OffsetDateTime todayStart, OffsetDateTime tomorrowStart, java.time.Instant staleBefore) {
+        return repo
+                .findRichFiltered(
+                        q.userId(),
+                        q.status(),
+                        q.priority(),
+                        q.projectId(),
+                        q.assigneeId(),
+                        Boolean.TRUE.equals(q.dueToday()),
+                        Boolean.TRUE.equals(q.overdue()),
+                        Boolean.TRUE.equals(q.blocked()),
+                        Boolean.TRUE.equals(q.unassigned()),
+                        Boolean.TRUE.equals(q.noDueDate()),
+                        Boolean.TRUE.equals(q.stale()),
+                        Boolean.TRUE.equals(q.archived()),
+                        now,
+                        todayStart,
+                        tomorrowStart,
+                        staleBefore,
+                        TaskStatus.DONE,
+                        TaskStatus.ARCHIVED,
+                        q.sort() == null ? "updatedAt" : q.sort(),
+                        PageRequest.of(q.page(), q.size()))
+                .stream()
+                .map(TaskJpaEntity::toDomain)
+                .toList();
+    }
+
 }

@@ -1,9 +1,24 @@
 import { computed, reactive, ref } from 'vue'
 import { useCurrentUserId } from '../../../composables/useCurrentUserId'
 import { useProjectsStore } from '../../../stores/projects'
-import { createTask, getTaskById, listTasks, updateTask, updateTaskStatus } from '../api/tasksApi'
+import {
+  createSavedTaskView,
+  createTask,
+  getTaskById,
+  listSavedTaskViews,
+  listTasks,
+  updateTask,
+  updateTaskStatus,
+} from '../api/tasksApi'
 import type { Project } from '../../projects/types'
-import type { CreateTaskPayload, Task, TaskFilters, TaskStatus, UpdateTaskPayload } from '../types'
+import type {
+  CreateTaskPayload,
+  SavedTaskView,
+  Task,
+  TaskFilters,
+  TaskStatus,
+  UpdateTaskPayload,
+} from '../types'
 import { toTimestamp } from '../utils/taskDates'
 
 export function useTasks() {
@@ -12,6 +27,7 @@ export function useTasks() {
   const errorMessage = ref('')
   const pendingStatusTaskIds = ref<string[]>([])
   const tasks = ref<Task[]>([])
+  const savedViews = ref<SavedTaskView[]>([])
   const projectsStore = useProjectsStore()
   const { requireCurrentUserId } = useCurrentUserId()
   const projects = computed<Project[]>(() =>
@@ -26,6 +42,81 @@ export function useTasks() {
     projectId: undefined,
     sortBy: undefined,
   })
+
+  const builtInViews: SavedTaskView[] = [
+    {
+      id: 'builtin-today',
+      version: null,
+      userId: '',
+      name: 'Today',
+      filters: { dueToday: true },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-upcoming',
+      version: null,
+      userId: '',
+      name: 'Upcoming',
+      filters: { sortBy: 'dueAt' },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-overdue',
+      version: null,
+      userId: '',
+      name: 'Overdue',
+      filters: { overdueOnly: true },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-blocked',
+      version: null,
+      userId: '',
+      name: 'Blocked',
+      filters: { blocked: true },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-unplanned',
+      version: null,
+      userId: '',
+      name: 'Unplanned',
+      filters: { noDueDate: true, unassigned: true },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-assigned-me',
+      version: null,
+      userId: '',
+      name: 'Assigned to me',
+      filters: { assigneeId: requireCurrentUserId() },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+    {
+      id: 'builtin-ai',
+      version: null,
+      userId: '',
+      name: 'AI suggested',
+      filters: { sortBy: 'priority' },
+      builtIn: true,
+      createdAt: '',
+      updatedAt: '',
+    },
+  ]
+
+  const allSavedViews = computed(() => [...builtInViews, ...savedViews.value])
 
   const visibleTasks = computed(() => {
     const filteredTasks = tasks.value.filter((task) => {
@@ -62,12 +153,44 @@ export function useTasks() {
         userId: requireCurrentUserId(),
         status: filters.status,
         overdueOnly: filters.overdueOnly,
+        filters,
       })
     } catch (error: unknown) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load tasks.'
     } finally {
       loading.value = false
     }
+  }
+
+  async function fetchSavedViews() {
+    try {
+      savedViews.value = await listSavedTaskViews()
+    } catch (error: unknown) {
+      errorMessage.value = error instanceof Error ? error.message : 'Failed to load saved views.'
+    }
+  }
+
+  async function saveCurrentView(name: string) {
+    const saved = await createSavedTaskView(name, { ...filters })
+    savedViews.value = [...savedViews.value, saved]
+  }
+
+  function applySavedView(view: SavedTaskView) {
+    Object.assign(filters, {
+      status: undefined,
+      overdueOnly: false,
+      dueToday: false,
+      blocked: false,
+      unassigned: false,
+      noDueDate: false,
+      stale: false,
+      archived: false,
+      priority: undefined,
+      assigneeId: undefined,
+      projectId: undefined,
+      sortBy: undefined,
+      ...view.filters,
+    })
   }
 
   async function fetchProjects() {
@@ -169,10 +292,14 @@ export function useTasks() {
     pendingStatusTaskIds,
     filters,
     visibleTasks,
+    savedViews: allSavedViews,
     projects,
     activeProjectId,
     fetchTasks,
     fetchProjects,
+    fetchSavedViews,
+    saveCurrentView,
+    applySavedView,
     submitTask,
     changeStatus,
     fetchTaskById,

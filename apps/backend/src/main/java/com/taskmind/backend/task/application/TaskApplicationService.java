@@ -95,8 +95,53 @@ public class TaskApplicationService {
             boolean o,
             int p,
             int z) {
+        return list(
+                r,
+                new TaskQuery(
+                        (r.isPrivileged() ? u : Optional.of(r.userId())).orElse(null),
+                        s.orElse(null),
+                        false,
+                        o,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        null,
+                        null,
+                        null,
+                        "updatedAt",
+                        p,
+                        z));
+    }
+
+    public List<Task> list(AuthenticatedUser r, TaskQuery q) {
+        UUID user = r.isPrivileged() ? q.userId() : r.userId();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime todayStart = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime tomorrowStart = todayStart.plusDays(1);
+        Instant staleBefore = now.toInstant().minus(Duration.ofDays(14));
         return tasks.findFiltered(
-                r.isPrivileged() ? u : Optional.of(r.userId()), s, o, OffsetDateTime.now(), p, z);
+                new TaskQuery(
+                        user,
+                        q.status(),
+                        q.dueToday(),
+                        q.overdue(),
+                        q.blocked(),
+                        q.unassigned(),
+                        q.noDueDate(),
+                        q.stale(),
+                        q.archived(),
+                        q.priority(),
+                        q.projectId(),
+                        q.assigneeId(),
+                        q.sort(),
+                        q.page(),
+                        q.size()),
+                now,
+                todayStart,
+                tomorrowStart,
+                staleBefore);
     }
 
     public Optional<Task> findById(UUID id) {
