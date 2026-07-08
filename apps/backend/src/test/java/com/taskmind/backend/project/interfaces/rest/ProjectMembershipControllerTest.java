@@ -26,6 +26,7 @@ class ProjectMembershipControllerTest {
     private static final String OWNER_ID = "11111111-1111-1111-1111-111111111111";
     private static final String ADMIN_ID = "33333333-3333-3333-3333-333333333333";
     private static final String MEMBER_ID = "22222222-2222-2222-2222-222222222222";
+    private static final String VIEWER_ID = "55555555-5555-5555-5555-555555555555";
     private static final String NON_MEMBER_ID = "44444444-4444-4444-4444-444444444444";
     private static final String PRIVILEGED_ADMIN_ID = "77777777-7777-7777-7777-777777777777";
     private static final String PRIVILEGED_MANAGER_ID = "88888888-8888-8888-8888-888888888888";
@@ -71,6 +72,15 @@ class ProjectMembershipControllerTest {
         mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, "66666666-6666-6666-6666-666666666666")
                 .with(jwt(OWNER_ID)))
             .andExpect(status().isNoContent());
+    }
+
+
+    @Test
+    void projectRoleCapabilityMatrixControlsListAndManageMembers() throws Exception {
+        assertMemberCapabilities(OWNER_ID, null, true, true);
+        assertMemberCapabilities(ADMIN_ID, "ADMIN", true, true);
+        assertMemberCapabilities(MEMBER_ID, "MEMBER", true, false);
+        assertMemberCapabilities(VIEWER_ID, "VIEWER", true, false);
     }
 
     @Test
@@ -167,6 +177,32 @@ class ProjectMembershipControllerTest {
                     {"userId": "55555555-5555-5555-5555-555555555555", "role": "MEMBER"}
                     """))
             .andExpect(status().isForbidden());
+    }
+
+
+    private void assertMemberCapabilities(String actorId, String role, boolean canList, boolean canManage)
+            throws Exception {
+        var projectId = createProject();
+        if (role != null) {
+            addMemberAsOwner(projectId, actorId, role);
+        }
+        var addedUserId = java.util.UUID.randomUUID().toString();
+
+        mockMvc.perform(get("/v1/projects/{projectId}/members", projectId).with(jwt(actorId)))
+                .andExpect(canList ? status().isOk() : status().isForbidden());
+
+        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId)
+                        .with(jwt(actorId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"userId": "%s", "role": "MEMBER"}
+                            """.formatted(addedUserId)))
+                .andExpect(canManage ? status().isCreated() : status().isForbidden());
+
+        var userIdToRemove = canManage ? addedUserId : actorId;
+        mockMvc.perform(delete("/v1/projects/{projectId}/members/{userId}", projectId, userIdToRemove)
+                        .with(jwt(actorId)))
+                .andExpect(canManage ? status().isNoContent() : status().isForbidden());
     }
 
     private String createProject() throws Exception {

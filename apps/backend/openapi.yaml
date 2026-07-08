@@ -1186,6 +1186,7 @@ paths:
           description: Project not found
     patch:
       summary: Update mutable project fields
+      description: Project OWNER and project ADMIN roles can mutate project settings; MEMBER and VIEWER roles can read but cannot update settings.
       operationId: updateProject
       tags: [Projects]
       parameters:
@@ -1205,6 +1206,8 @@ paths:
                 $ref: '#/components/schemas/Project'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Requester is not a project owner or admin
         '404':
           description: Project not found
         '409':
@@ -1230,6 +1233,7 @@ paths:
   /v1/projects/{projectId}/members:
     post:
       summary: Add project member
+      description: Project OWNER and project ADMIN roles can manage members; MEMBER and VIEWER roles cannot add members.
       operationId: addProjectMember
       tags: [Projects]
       parameters:
@@ -1249,10 +1253,13 @@ paths:
                 $ref: '#/components/schemas/ProjectMembership'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Requester is not a project owner or admin
         '409':
           description: Membership already exists
     get:
       summary: List project members
+      description: Project OWNER, ADMIN, MEMBER, and VIEWER roles can list project members.
       operationId: listProjectMembers
       tags: [Projects]
       parameters:
@@ -1266,10 +1273,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ProjectMembership'
+        '403':
+          description: Requester does not have a project role
 
   /v1/projects/{projectId}/members/{userId}:
     delete:
       summary: Remove project member
+      description: Project OWNER and project ADMIN roles can manage members; MEMBER and VIEWER roles cannot remove members.
       operationId: removeProjectMember
       tags: [Projects]
       parameters:
@@ -1278,10 +1288,13 @@ paths:
       responses:
         '204':
           description: Member removed
+        '403':
+          description: Requester is not a project owner or admin
 
   /v1/projects/{id}/archive:
     patch:
       summary: Archive project
+      description: Project OWNER and project ADMIN roles can archive projects; MEMBER and VIEWER roles can read but cannot archive.
       operationId: archiveProject
       tags: [Projects]
       parameters:
@@ -1293,6 +1306,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
+        '403':
+          description: Requester is not a project owner or admin
         '404':
           description: Project not found
 

@@ -4,7 +4,7 @@ import com.taskmind.backend.auth.AuthenticatedUser;
 import com.taskmind.backend.project.application.ArchiveProjectCommand;
 import com.taskmind.backend.project.application.CreateProjectCommand;
 import com.taskmind.backend.project.application.ProjectApplicationService;
-import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
+import com.taskmind.backend.project.application.ProjectAuthorizationService;
 import com.taskmind.backend.project.application.UpdateProjectCommand;
 import com.taskmind.backend.project.application.health.ProjectHealthApplicationService;
 import com.taskmind.backend.project.application.health.ProjectHealthResponse;
@@ -33,15 +33,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class ProjectController {
 
     private final ProjectApplicationService projectApplicationService;
-    private final ProjectMembershipApplicationService projectMembershipApplicationService;
+    private final ProjectAuthorizationService projectAuthorizationService;
     private final ProjectHealthApplicationService projectHealthApplicationService;
 
     public ProjectController(
             ProjectApplicationService projectApplicationService,
-            ProjectMembershipApplicationService projectMembershipApplicationService,
+            ProjectAuthorizationService projectAuthorizationService,
             ProjectHealthApplicationService projectHealthApplicationService) {
         this.projectApplicationService = projectApplicationService;
-        this.projectMembershipApplicationService = projectMembershipApplicationService;
+        this.projectAuthorizationService = projectAuthorizationService;
         this.projectHealthApplicationService = projectHealthApplicationService;
     }
 
@@ -99,7 +99,7 @@ public class ProjectController {
             AuthenticatedUser requester,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProjectRequest request) {
-        authorizeOwner(requester, id);
+        authorizeProjectUpdate(requester, id);
         try {
             return projectApplicationService
                     .update(
@@ -116,7 +116,7 @@ public class ProjectController {
     @PatchMapping("/{id}/archive")
     public ResponseEntity<Project> archiveProject(
             AuthenticatedUser requester, @PathVariable UUID id) {
-        authorizeOwner(requester, id);
+        authorizeProjectArchive(requester, id);
         return projectApplicationService
                 .archive(new ArchiveProjectCommand(id))
                 .map(ResponseEntity::ok)
@@ -124,16 +124,22 @@ public class ProjectController {
     }
 
     private boolean canRead(AuthenticatedUser requester, Project project) {
-        return requester.isPrivileged()
-                || project.ownerUserId().equals(requester.userId())
-                || projectMembershipApplicationService.isMember(project.id(), requester.userId());
+        return projectAuthorizationService.canReadProject(requester, project);
     }
 
-    private void authorizeOwner(AuthenticatedUser requester, UUID projectId) {
+    private void authorizeProjectUpdate(AuthenticatedUser requester, UUID projectId) {
         Project project = projectApplicationService.findById(projectId).orElseThrow();
-        if (!requester.isPrivileged() && !project.ownerUserId().equals(requester.userId())) {
+        if (!projectAuthorizationService.canUpdateProject(requester, project)) {
             throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Only the project owner can mutate the project");
+                    HttpStatus.FORBIDDEN, "Only project owners and admins can update the project");
+        }
+    }
+
+    private void authorizeProjectArchive(AuthenticatedUser requester, UUID projectId) {
+        Project project = projectApplicationService.findById(projectId).orElseThrow();
+        if (!projectAuthorizationService.canArchiveProject(requester, project)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only project owners and admins can archive the project");
         }
     }
 }
