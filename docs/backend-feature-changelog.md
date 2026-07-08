@@ -855,3 +855,14 @@ This changelog tracks backend feature progress against the core implementation p
 
 - Added Core onboarding state on users, onboarding completion APIs, seeded workspace templates, and local/demo-only demo workspace reset with sample projects, tasks, schedule blocks, and activity events.
 - Added frontend onboarding routes and setup flow that redirects authenticated users until onboarding is complete.
+
+## 2026-07-05 - Project health facade
+
+### Changed
+
+- Added a Core project health facade endpoint that calculates deterministic task metrics for visible projects, including completion, overdue, blocked, unassigned, stale, deadline-risk, workload, and a generated narrative once metrics exist.
+- Updated the Core OpenAPI contract with the project health response schema.
+
+### Tests
+
+- Added project health metric accuracy, empty-project behavior, and project health access-control coverage.

@@ -800,3 +800,16 @@
 ## Onboarding workspace setup
 
 - Added onboarding routes, step-based workspace/planning/start choices, template selection, demo data setup, and local/demo reset affordance.
+
+## 2026-07-05 - Project health dashboard cards
+
+### Summary
+
+- Added project detail health cards for deterministic Core health signals and workload by assignee.
+- Linked each health signal to the task list with matching route query filters.
+- Applied task route query filters on initial task list load for project health drill-downs.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/projects/pages/ProjectDetailPage.vue src/features/projects/api/projectsApi.ts src/features/projects/types.ts src/features/tasks/pages/TasksPage.vue`
+- `cd apps/frontend && npm run typecheck`

@@ -1,6 +1,7 @@
 package com.taskmind.backend.project.interfaces.rest;
 
 import static com.taskmind.backend.security.TestJwtSupport.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,6 +69,27 @@ class ProjectControllerTest {
                     """.formatted(projectKey(), REQUESTED_OWNER_ID)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.ownerUserId").value(REQUESTED_OWNER_ID));
+    }
+
+
+    @Test
+    void hidesProjectHealthFromNonMember() throws Exception {
+        var projectKey = projectKey();
+        var result = mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "name": "Private project",
+                              "key": "%s"
+                            }
+                            """.formatted(projectKey)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        var projectId = com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.id").toString();
+
+        mockMvc.perform(get("/v1/projects/{id}/health", projectId).with(jwt(REQUESTED_OWNER_ID)))
+                .andExpect(status().isNotFound());
     }
 
     private String projectKey() {
