@@ -40,7 +40,7 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
-    public AuthTokens issue(UUID userId, String email, Set<String> roles) {
+    public AuthTokens issue(UUID userId, String email, Set<String> roles, Set<String> permissions) {
         Instant now = Instant.now();
         org.springframework.security.oauth2.jwt.JwtClaimsSet claims =
                 JwtClaimsSet.builder()
@@ -51,6 +51,8 @@ public class JwtTokenService implements TokenService {
                         .subject(userId.toString())
                         .claim("email", email)
                         .claim("roles", roles)
+                        .claim("permissions", permissions)
+                        .claim("authorities", permissions)
                         .build();
         String access =
                 encoder.encode(

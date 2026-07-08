@@ -136,7 +136,11 @@ public class JpaAuthApplicationService implements AuthApplicationService {
 
         UserJpaEntity user = session.getUser();
         AuthTokens tokens =
-                tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
+                tokenService.issue(
+                        user.getId(),
+                        user.getPrimaryEmail(),
+                        roleNames(user.getId()),
+                        permissionNames(user.getId()));
         session.rotate(tokenService.hashRefreshToken(tokens.refreshToken()), now.plus(refreshTtl));
         return tokens;
     }
@@ -165,7 +169,11 @@ public class JpaAuthApplicationService implements AuthApplicationService {
 
     private AuthTokens issueSession(UserJpaEntity user) {
         AuthTokens tokens =
-                tokenService.issue(user.getId(), user.getPrimaryEmail(), roleNames(user.getId()));
+                tokenService.issue(
+                        user.getId(),
+                        user.getPrimaryEmail(),
+                        roleNames(user.getId()),
+                        permissionNames(user.getId()));
         Instant now = Instant.now();
         sessions.save(
                 new SessionJpaEntity(
@@ -181,6 +189,10 @@ public class JpaAuthApplicationService implements AuthApplicationService {
         return userRoles.findByIdUserId(userId).stream()
                 .map(userRole -> userRole.getRole().getName())
                 .collect(Collectors.toSet());
+    }
+
+    private Set<String> permissionNames(UUID userId) {
+        return userRoles.findPermissionNamesByUserId(userId).stream().collect(Collectors.toSet());
     }
 
     private String normalize(String email) {
