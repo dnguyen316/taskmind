@@ -44,13 +44,18 @@ public class AuthenticatedUserResolver implements HandlerMethodArgumentResolver 
     public AuthenticatedUser resolve(Authentication authentication) {
         UUID userId = UUID.fromString(subject(authentication));
         Set<String> roles = new LinkedHashSet<>();
+        Set<String> permissions = new LinkedHashSet<>();
         authentication.getAuthorities().forEach(authority -> {
             String value = authority.getAuthority();
             if (value != null && !value.isBlank()) {
-                roles.add(value.startsWith("ROLE_") ? value.substring("ROLE_".length()) : value);
+                if (value.startsWith("ROLE_")) {
+                    roles.add(value.substring("ROLE_".length()));
+                } else if (!value.startsWith("SCOPE_")) {
+                    permissions.add(value.startsWith("PERMISSION_") ? value.substring("PERMISSION_".length()) : value);
+                }
             }
         });
-        return new AuthenticatedUser(userId, Set.copyOf(roles));
+        return new AuthenticatedUser(userId, Set.copyOf(roles), Set.copyOf(permissions));
     }
 
     private String subject(Authentication authentication) {

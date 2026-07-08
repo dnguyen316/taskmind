@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class AuthIntegrationTest {
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired UserJpaRepository users;
     @Autowired UserIdentityJpaRepository identities; @Autowired OtpChallengeJpaRepository challenges; @Autowired SessionJpaRepository sessions;
-    @Autowired OtpService otpService; @Autowired JwtEncoder jwtEncoder;
+    @Autowired OtpService otpService; @Autowired JwtEncoder jwtEncoder; @Autowired JwtDecoder jwtDecoder;
 
     @Test
     void testProfileE2eBypassSeedsWorkingSuperAdminLogin() throws Exception {
@@ -52,6 +53,10 @@ class AuthIntegrationTest {
 
         var tokens=verify(email,"1");
         assertThat(tokens.path("accessToken").asText()).isNotBlank();
+        var accessJwt = jwtDecoder.decode(tokens.path("accessToken").asText());
+        assertThat(accessJwt.getClaimAsStringList("roles")).containsExactly("MEMBER");
+        assertThat(accessJwt.getClaimAsStringList("permissions")).containsExactlyInAnyOrder("project.read", "project.create");
+        assertThat(accessJwt.getClaimAsStringList("authorities")).containsExactlyInAnyOrder("project.read", "project.create");
         assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.ACTIVE);
         assertThat(identities.findByTypeAndValue(AuthJpaEnums.IdentityType.EMAIL,email).orElseThrow().isVerified()).isTrue();
         assertThat(sessions.findByUser_Id(user.getId())).singleElement().satisfies(s -> assertThat(s.getRefreshTokenHash()).doesNotContain(tokens.path("refreshToken").asText()));

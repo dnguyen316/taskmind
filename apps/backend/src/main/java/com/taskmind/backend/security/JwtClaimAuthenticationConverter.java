@@ -37,6 +37,13 @@ public class JwtClaimAuthenticationConverter
                         .collect(Collectors.toSet()));
 
         authorities.addAll(
+                readStringListClaim(jwt, "permissions").stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(permission -> !permission.isBlank())
+                        .collect(Collectors.toSet()));
+
+        authorities.addAll(
                 readStringListClaim(jwt, "authorities").stream()
                         .filter(Objects::nonNull)
                         .map(String::trim)
