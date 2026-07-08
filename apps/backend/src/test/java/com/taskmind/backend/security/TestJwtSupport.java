@@ -32,19 +32,29 @@ public final class TestJwtSupport {
 
     public static RequestPostProcessor jwt(String subject, String... roles) {
         return request -> {
-            request.addHeader("Authorization", "Bearer " + token(subject, roles));
+            request.addHeader("Authorization", "Bearer " + token(subject, List.copyOf(Arrays.asList(roles)), List.of()));
             return request;
         };
     }
 
-    private static String token(String subject, String... roles) {
+    public static RequestPostProcessor jwtWithPermissions(String subject, List<String> permissions, String... roles) {
+        return request -> {
+            request.addHeader("Authorization", "Bearer " + token(subject, List.copyOf(Arrays.asList(roles)), permissions));
+            return request;
+        };
+    }
+
+    private static String token(String subject, List<String> roles, List<String> permissions) {
         Instant now = Instant.now();
         JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
             .subject(subject)
             .issuedAt(now)
             .expiresAt(now.plusSeconds(300));
-        if (roles.length > 0) {
-            claims.claim("roles", List.copyOf(Arrays.asList(roles)));
+        if (!roles.isEmpty()) {
+            claims.claim("roles", roles);
+        }
+        if (!permissions.isEmpty()) {
+            claims.claim("permissions", permissions);
         }
         return JWT_ENCODER.encode(JwtEncoderParameters.from(
             JwsHeader.with(SignatureAlgorithm.RS256).build(),

@@ -35,6 +35,15 @@ public class ProjectMembershipApplicationService {
         }
     }
 
+
+    public ProjectMembership changeMemberRole(AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
+        assertProjectExists(projectId);
+        assertCanManageMembers(actor, projectId);
+        projectMembershipRepository.findByProjectIdAndUserId(projectId, userId)
+            .orElseThrow(() -> new ProjectMembershipNotFoundException("Membership not found"));
+        return projectMembershipRepository.save(new ProjectMembership(projectId, userId, role));
+    }
+
     public void removeMember(AuthenticatedUser actor, UUID projectId, UUID userId) {
         assertProjectExists(projectId);
         assertCanManageMembers(actor, projectId);
