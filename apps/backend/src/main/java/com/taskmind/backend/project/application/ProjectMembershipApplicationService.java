@@ -16,16 +16,19 @@ public class ProjectMembershipApplicationService {
 
     private final ProjectMembershipRepository projectMembershipRepository;
     private final ProjectRepository projectRepository;
+    private final ProjectAuthorizationService projectAuthorizationService;
 
     public ProjectMembershipApplicationService(
-        ProjectMembershipRepository projectMembershipRepository,
-        ProjectRepository projectRepository
-    ) {
+            ProjectMembershipRepository projectMembershipRepository,
+            ProjectRepository projectRepository,
+            ProjectAuthorizationService projectAuthorizationService) {
         this.projectMembershipRepository = projectMembershipRepository;
         this.projectRepository = projectRepository;
+        this.projectAuthorizationService = projectAuthorizationService;
     }
 
-    public ProjectMembership addMember(AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
+    public ProjectMembership addMember(
+            AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
         assertProjectExists(projectId);
         assertCanManageMembers(actor, projectId);
         try {
@@ -35,12 +38,13 @@ public class ProjectMembershipApplicationService {
         }
     }
 
-
-    public ProjectMembership changeMemberRole(AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
+    public ProjectMembership changeMemberRole(
+            AuthenticatedUser actor, UUID projectId, UUID userId, ProjectMembershipRole role) {
         assertProjectExists(projectId);
         assertCanManageMembers(actor, projectId);
-        projectMembershipRepository.findByProjectIdAndUserId(projectId, userId)
-            .orElseThrow(() -> new ProjectMembershipNotFoundException("Membership not found"));
+        projectMembershipRepository
+                .findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new ProjectMembershipNotFoundException("Membership not found"));
         return projectMembershipRepository.save(new ProjectMembership(projectId, userId, role));
     }
 
@@ -54,8 +58,8 @@ public class ProjectMembershipApplicationService {
         assertProjectExists(projectId);
         assertCanListMembers(actor, projectId);
         return projectMembershipRepository.findByProjectId(projectId).stream()
-            .sorted(Comparator.comparing(ProjectMembership::userId))
-            .toList();
+                .sorted(Comparator.comparing(ProjectMembership::userId))
+                .toList();
     }
 
     public boolean isMember(UUID projectId, UUID userId) {
@@ -63,9 +67,15 @@ public class ProjectMembershipApplicationService {
     }
 
     public void validateMembership(UUID projectId, UUID userId) {
-        if (projectId != null && !isMember(projectId, userId) && !isOwner(userId, projectId)) {
+        if (projectId != null && !isMember(projectId, userId) && !isProjectOwner(userId, projectId)) {
             throw new IllegalArgumentException("User is not a member of the project");
         }
+    }
+
+    private boolean isProjectOwner(UUID userId, UUID projectId) {
+        return projectRepository.findById(projectId)
+                .map(project -> project.ownerUserId().equals(userId))
+                .orElse(false);
     }
 
     private void assertProjectExists(UUID projectId) {
@@ -75,33 +85,14 @@ public class ProjectMembershipApplicationService {
     }
 
     private void assertCanManageMembers(AuthenticatedUser actor, UUID projectId) {
-        if (actor.isPrivileged()) {
-            return;
-        }
-        if (!isOwner(actor.userId(), projectId) && !isAdmin(actor.userId(), projectId)) {
+        if (!projectAuthorizationService.canManageMembers(actor, projectId)) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to manage project members");
         }
     }
 
     private void assertCanListMembers(AuthenticatedUser actor, UUID projectId) {
-        if (actor.isPrivileged()) {
-            return;
-        }
-        if (!isMember(projectId, actor.userId())) {
+        if (!projectAuthorizationService.canListMembers(actor, projectId)) {
             throw new ProjectMembershipForbiddenException("Actor is not allowed to list project members");
         }
-    }
-
-    private boolean isOwner(UUID actorUserId, UUID projectId) {
-        return projectRepository.findById(projectId)
-            .map(project -> project.ownerUserId().equals(actorUserId))
-            .orElse(false);
-    }
-
-    private boolean isAdmin(UUID actorUserId, UUID projectId) {
-        return projectMembershipRepository.findByProjectIdAndUserId(projectId, actorUserId)
-            .map(ProjectMembership::role)
-            .map(role -> role == ProjectMembershipRole.ADMIN)
-            .orElse(false);
     }
 }

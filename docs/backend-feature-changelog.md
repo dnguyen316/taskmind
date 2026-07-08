@@ -878,3 +878,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added Team controller coverage for permitted project assignment/change/removal and forbidden project/global role management attempts.
+
+## 2026-07-08 - Project role capability matrix
+
+### Changed
+
+- Documented the project membership role capability matrix in Core and centralized project read, mutation, member listing, and member management checks through an application-level authorization service.
+- Allowed project `ADMIN` memberships to update and archive project settings alongside project owners, while keeping `MEMBER` and `VIEWER` access read/list-only.
+- Updated the Core OpenAPI contract for project mutation and membership endpoints to describe role-based authorization outcomes.
+
+### Tests
+
+- Added project and project-membership controller coverage for `OWNER`, `ADMIN`, `MEMBER`, and `VIEWER` read, mutation, list, and member-management capabilities.
