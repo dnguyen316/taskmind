@@ -35,3 +35,23 @@ export interface AddProjectMemberPayload {
   userId: string
   role: ProjectMembershipRole
 }
+
+export interface ProjectHealthAssigneeWorkload {
+  assigneeId: string
+  activeTaskCount: number
+}
+
+export interface ProjectHealth {
+  projectId: string
+  totalTaskCount: number
+  completedTaskCount: number
+  completionPercentage: number
+  overdueTaskCount: number
+  blockedTaskCount: number
+  unassignedTaskCount: number
+  staleTaskCount: number
+  upcomingDeadlineRiskCount: number
+  workloadByAssignee: ProjectHealthAssigneeWorkload[]
+  narrative: string
+  calculatedAt: string
+}

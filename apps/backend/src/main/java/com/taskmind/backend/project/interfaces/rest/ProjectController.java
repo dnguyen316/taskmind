@@ -6,6 +6,8 @@ import com.taskmind.backend.project.application.CreateProjectCommand;
 import com.taskmind.backend.project.application.ProjectApplicationService;
 import com.taskmind.backend.project.application.ProjectMembershipApplicationService;
 import com.taskmind.backend.project.application.UpdateProjectCommand;
+import com.taskmind.backend.project.application.health.ProjectHealthApplicationService;
+import com.taskmind.backend.project.application.health.ProjectHealthResponse;
 import com.taskmind.backend.project.domain.model.Project;
 import com.taskmind.backend.project.interfaces.rest.dto.CreateProjectRequest;
 import com.taskmind.backend.project.interfaces.rest.dto.UpdateProjectRequest;
@@ -32,12 +34,15 @@ public class ProjectController {
 
     private final ProjectApplicationService projectApplicationService;
     private final ProjectMembershipApplicationService projectMembershipApplicationService;
+    private final ProjectHealthApplicationService projectHealthApplicationService;
 
     public ProjectController(
             ProjectApplicationService projectApplicationService,
-            ProjectMembershipApplicationService projectMembershipApplicationService) {
+            ProjectMembershipApplicationService projectMembershipApplicationService,
+            ProjectHealthApplicationService projectHealthApplicationService) {
         this.projectApplicationService = projectApplicationService;
         this.projectMembershipApplicationService = projectMembershipApplicationService;
+        this.projectHealthApplicationService = projectHealthApplicationService;
     }
 
     @PostMapping
@@ -76,6 +81,16 @@ public class ProjectController {
                 .findById(id)
                 .filter(project -> canRead(requester, project))
                 .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/health")
+    public ResponseEntity<ProjectHealthResponse> getProjectHealth(
+            AuthenticatedUser requester, @PathVariable UUID id) {
+        return projectApplicationService
+                .findById(id)
+                .filter(project -> canRead(requester, project))
+                .map(project -> ResponseEntity.ok(projectHealthApplicationService.calculate(project.id())))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

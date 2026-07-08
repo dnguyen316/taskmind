@@ -4,6 +4,8 @@ import type {
   CreateProjectPayload,
   Project,
   ProjectMembership,
+  ProjectHealth,
+  ProjectHealthAssigneeWorkload,
   ProjectMembershipRole,
   UpdateProjectPayload,
 } from '../types'
@@ -23,6 +25,11 @@ export async function listProjects({ includeArchived = false }: FetchProjectsOpt
 export async function getProject(projectId: string) {
   const response = await apiClient.get<unknown>(`/v1/projects/${projectId}`)
   return adaptProjectResponse(response.data)
+}
+
+export async function getProjectHealth(projectId: string) {
+  const response = await apiClient.get<unknown>(`/v1/projects/${projectId}/health`)
+  return adaptProjectHealthResponse(response.data)
 }
 
 export async function createProject(payload: CreateProjectPayload) {
@@ -86,6 +93,44 @@ function adaptProjectResponse(data: unknown): Project {
   }
 }
 
+function adaptProjectHealthResponse(data: unknown): ProjectHealth {
+  if (!isObject(data)) {
+    throw new Error('Invalid project health response.')
+  }
+
+  return {
+    projectId: readRequiredString(data, 'projectId', 'project health'),
+    totalTaskCount: readRequiredNumber(data, 'totalTaskCount'),
+    completedTaskCount: readRequiredNumber(data, 'completedTaskCount'),
+    completionPercentage: readRequiredNumber(data, 'completionPercentage'),
+    overdueTaskCount: readRequiredNumber(data, 'overdueTaskCount'),
+    blockedTaskCount: readRequiredNumber(data, 'blockedTaskCount'),
+    unassignedTaskCount: readRequiredNumber(data, 'unassignedTaskCount'),
+    staleTaskCount: readRequiredNumber(data, 'staleTaskCount'),
+    upcomingDeadlineRiskCount: readRequiredNumber(data, 'upcomingDeadlineRiskCount'),
+    workloadByAssignee: adaptWorkloadList(data.workloadByAssignee),
+    narrative: readRequiredString(data, 'narrative', 'project health'),
+    calculatedAt: readRequiredString(data, 'calculatedAt', 'project health'),
+  }
+}
+
+function adaptWorkloadList(data: unknown): ProjectHealthAssigneeWorkload[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid project health workload response.')
+  }
+
+  return data.map((item) => {
+    if (!isObject(item)) {
+      throw new Error('Invalid project health workload response.')
+    }
+
+    return {
+      assigneeId: readRequiredString(item, 'assigneeId', 'project health workload'),
+      activeTaskCount: readRequiredNumber(item, 'activeTaskCount'),
+    }
+  })
+}
+
 function adaptProjectMembershipListResponse(data: unknown): ProjectMembership[] {
   if (!Array.isArray(data)) {
     throw new Error('Invalid project membership list response.')
@@ -121,6 +166,16 @@ function readRequiredString(data: Record<string, unknown>, key: string, resource
 
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`Invalid ${resourceName} response: missing ${key}.`)
+  }
+
+  return value
+}
+
+function readRequiredNumber(data: Record<string, unknown>, key: string) {
+  const value = data[key]
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid response: ${key} must be a number.`)
   }
 
   return value

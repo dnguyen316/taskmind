@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import '../task-list-views.css'
 import AppLayout from '../components/AppLayout.vue'
 import TaskFilters from '../components/TaskFilters.vue'
@@ -8,7 +9,9 @@ import TaskList from '../components/TaskList.vue'
 import TaskKanbanView from '../components/TaskKanbanView.vue'
 import TaskBacklogView from '../components/TaskBacklogView.vue'
 import { useTasks } from '../composables/useTasks'
-import type { TaskStatus } from '../types'
+import type { TaskSortBy, TaskStatus } from '../types'
+
+const route = useRoute()
 
 const {
   loading,
@@ -36,6 +39,24 @@ async function handleCreateTask(payload: Parameters<typeof submitTask>[0]) {
   await submitTask(payload)
   isCreateTaskModalOpen.value = false
 }
+function applyRouteFilters() {
+  const query = route.query
+
+  filters.projectId = typeof query.projectId === 'string' ? query.projectId : undefined
+  filters.assigneeId = typeof query.assigneeId === 'string' ? query.assigneeId : undefined
+  filters.overdueOnly = query.overdueOnly === 'true'
+  filters.blocked = query.blocked === 'true'
+  filters.unassigned = query.unassigned === 'true'
+  filters.stale = query.stale === 'true'
+  filters.sortBy = isTaskSortBy(query.sortBy) ? query.sortBy : undefined
+}
+
+function isTaskSortBy(value: unknown): value is TaskSortBy {
+  return (
+    typeof value === 'string' && ['updatedAt', 'dueAt', 'priority', 'createdAt'].includes(value)
+  )
+}
+
 function handleCreateTaskModalCancel() {
   if (!saving.value) {
     isCreateTaskModalOpen.value = false
@@ -46,6 +67,7 @@ async function handleChangeStatus(taskId: string, status: TaskStatus) {
 }
 
 onMounted(async () => {
+  applyRouteFilters()
   await fetchProjects()
   await fetchSavedViews()
   await fetchTasks()
