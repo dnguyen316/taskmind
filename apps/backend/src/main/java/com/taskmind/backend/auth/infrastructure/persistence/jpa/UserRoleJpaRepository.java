@@ -10,6 +10,8 @@ public interface UserRoleJpaRepository extends JpaRepository<UserRoleJpaEntity, 
 
     List<UserRoleJpaEntity> findByIdUserId(UUID userId);
 
+    void deleteByIdUserId(UUID userId);
+
     @Query("""
             select distinct permission.name
             from UserRoleJpaEntity userRole

@@ -160,6 +160,108 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+
+  /v1/team/members/{userId}/projects/{projectId}:
+    post:
+      summary: Assign a team member to a project
+      operationId: assignTeamProjectMember
+      tags: [Team]
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignProjectMemberRequest'
+      responses:
+        '201':
+          description: Project membership assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Project not found
+        '409':
+          description: Membership already exists
+    delete:
+      summary: Remove a team member from a project
+      operationId: removeTeamProjectMember
+      tags: [Team]
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+      responses:
+        '204':
+          description: Project membership removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Project not found
+
+  /v1/team/members/{userId}/projects/{projectId}/role:
+    patch:
+      summary: Change a team member project role
+      operationId: changeTeamProjectMemberRole
+      tags: [Team]
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+        - $ref: '#/components/parameters/ProjectIdPathAsProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeProjectMemberRoleRequest'
+      responses:
+        '200':
+          description: Project membership role changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Project or membership not found
+
+  /v1/team/members/{userId}/roles:
+    patch:
+      summary: Change a team member global role
+      operationId: changeTeamMemberGlobalRole
+      tags: [Team]
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeGlobalRoleRequest'
+      responses:
+        '200':
+          description: Global role changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalRoleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: User or role not found
+
   /v1/nova/chat:
     post:
       summary: Send an authenticated chat turn to Nova through Core
@@ -3290,6 +3392,44 @@ components:
           format: uuid
         role:
           $ref: '#/components/schemas/ProjectMembershipRole'
+
+
+    AssignProjectMemberRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          $ref: '#/components/schemas/ProjectMembershipRole'
+
+    ChangeProjectMemberRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          $ref: '#/components/schemas/ProjectMembershipRole'
+
+    ChangeGlobalRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          example: MANAGER
+
+    GlobalRoleResponse:
+      type: object
+      required:
+        - userId
+        - role
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
 
     ProjectMembership:
       type: object

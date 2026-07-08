@@ -866,3 +866,15 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added project health metric accuracy, empty-project behavior, and project health access-control coverage.
+
+## 2026-07-08 - Team membership management
+
+### Changed
+
+- Added Team-owned project membership management commands, REST DTOs, and Core endpoints for assigning project members, changing project roles, removing project members, and delegating global role changes to an auth-owned service.
+- Enforced `team.manage` / `project.members.manage` for Team project membership writes and `rbac.roles.manage` for global role changes, while reusing the project membership application service for project-scoped persistence.
+- Updated the Core OpenAPI contract for the new Team management endpoints.
+
+### Tests
+
+- Added Team controller coverage for permitted project assignment/change/removal and forbidden project/global role management attempts.
