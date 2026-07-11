@@ -79,6 +79,12 @@ variable "relay_task_role_arns" {
   type        = list(string)
 }
 
+variable "cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN allowed to read frontend artifacts through OAC. Leave null until an edge module/root wires the distribution."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -215,14 +217,18 @@ class SchedulerControllerTest {
                     """))
                 .andExpect(status().isCreated());
 
+        OffsetDateTime windowStart = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2).withHour(8).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime windowEnd = windowStart.plusDays(1).withHour(18);
+
         mockMvc.perform(
                         post("/v1/scheduler/generate")
                                 .with(jwt(userId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
-                    {"from":"2026-06-01T08:00:00Z","to":"2026-06-02T18:00:00Z"}
-                    """))
+                    {"from":"%s","to":"%s"}
+                    """
+                                                .formatted(windowStart, windowEnd)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.blocks.length()").value(1))
                 .andExpect(jsonPath("$.proposals.length()").value(1))
@@ -231,8 +237,8 @@ class SchedulerControllerTest {
         mockMvc.perform(
                         get("/v1/scheduler/blocks")
                                 .with(jwt(userId))
-                                .queryParam("from", "2026-06-01T00:00:00Z")
-                                .queryParam("to", "2026-06-03T00:00:00Z"))
+                                .queryParam("from", windowStart.minusDays(1).toString())
+                                .queryParam("to", windowEnd.plusDays(1).toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("MISSED"));
     }
