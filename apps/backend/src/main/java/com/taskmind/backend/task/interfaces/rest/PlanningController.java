@@ -77,7 +77,7 @@ public class PlanningController {
                                 draft.source(),
                                 draft.confidence()))
                         .toList(),
-                result.clarificationQuestion());
+                result.clarificationQuestion(), result.source(), result.degraded());
     }
 
 
@@ -137,7 +137,7 @@ public class PlanningController {
         com.taskmind.backend.ai.application.DescribeTaskResult result =
                 aiFacadeApplicationService.describe(
                         requester.userId(), request.title(), request.notes());
-        return new DescribeTaskResponse(result.description(), result.rationale());
+        return new DescribeTaskResponse(result.description(), result.rationale(), result.source(), result.degraded());
     }
 
     @PostMapping("/ai/tasks/describe/autocomplete")
@@ -146,7 +146,7 @@ public class PlanningController {
             @Valid @RequestBody DescribeTaskAutocompleteRequest request) {
         com.taskmind.backend.ai.application.DescribeTaskAutocompleteResult result =
                 aiFacadeApplicationService.autocomplete(requester.userId(), request.text());
-        return new DescribeTaskAutocompleteResponse(result.suggestions());
+        return new DescribeTaskAutocompleteResponse(result.suggestions(), result.source(), result.degraded());
     }
 
     @PostMapping("/ai/tasks/translate")
@@ -155,7 +155,7 @@ public class PlanningController {
         com.taskmind.backend.ai.application.TranslateTaskResult result =
                 aiFacadeApplicationService.translate(
                         requester.userId(), request.text(), request.targetLanguage());
-        return new TranslateTaskResponse(result.translatedText(), result.targetLanguage());
+        return new TranslateTaskResponse(result.translatedText(), result.targetLanguage(), result.source(), result.degraded());
     }
 
     @PostMapping("/ai/goals/{goalId}/breakdown")
@@ -174,7 +174,7 @@ public class PlanningController {
                 result.tasks().stream()
                         .map(task -> new GoalDraftTask(task.title(), task.status(), task.dueAt(), task.rationale(), task.dependencies()))
                         .toList(),
-                result.riskNotes());
+                result.riskNotes(), result.source(), result.degraded());
     }
 
     @PostMapping("/planner/daily/generate")
@@ -281,7 +281,7 @@ public class PlanningController {
                 result.summary(),
                 result.slippageInsights(),
                 result.recommendations(),
-                result.nextWeekPriorities());
+                result.nextWeekPriorities(), result.source(), result.degraded());
     }
 
     public record CaptureRequest(@NotBlank String text) {}
@@ -294,7 +294,7 @@ public class PlanningController {
             String source,
             double confidence) {}
 
-    public record CaptureResponse(List<CapturedTaskDraft> drafts, String clarificationQuestion) {}
+    public record CaptureResponse(List<CapturedTaskDraft> drafts, String clarificationQuestion, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
 
     public record CaptureAcceptRequest(
@@ -320,15 +320,15 @@ public class PlanningController {
 
     public record DescribeTaskRequest(@NotBlank String title, String notes) {}
 
-    public record DescribeTaskResponse(String description, String rationale) {}
+    public record DescribeTaskResponse(String description, String rationale, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
     public record DescribeTaskAutocompleteRequest(@NotBlank String text) {}
 
-    public record DescribeTaskAutocompleteResponse(List<String> suggestions) {}
+    public record DescribeTaskAutocompleteResponse(List<String> suggestions, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
     public record TranslateTaskRequest(@NotBlank String text, @NotBlank String targetLanguage) {}
 
-    public record TranslateTaskResponse(String translatedText, String targetLanguage) {}
+    public record TranslateTaskResponse(String translatedText, String targetLanguage, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
     public record GoalBreakdownRequest(
             OffsetDateTime deadline, @Min(0) @Max(10080) Integer weeklyAvailabilityMinutes) {}
@@ -346,7 +346,7 @@ public class PlanningController {
             UUID goalId,
             List<GoalMilestone> milestones,
             List<GoalDraftTask> tasks,
-            List<String> riskNotes) {}
+            List<String> riskNotes, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
     public record DailyPlanRequest(
             @NotNull UUID userId,
@@ -375,5 +375,5 @@ public class PlanningController {
             String summary,
             List<String> slippageInsights,
             List<String> recommendations,
-            List<String> nextWeekPriorities) {}
+            List<String> nextWeekPriorities, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 }

@@ -26,7 +26,7 @@ public class SchedulerAiController {
             AuthenticatedUser requester, @Valid @RequestBody DurationEstimateRequest request) {
         DurationEstimateResult result =
                 aiFacade.durationEstimate(requester.userId(), request.title(), request.description());
-        return new DurationEstimateResponse(result.durationMinutes(), result.rationale(), result.confidence());
+        return new DurationEstimateResponse(result.durationMinutes(), result.rationale(), result.confidence(), result.source(), result.degraded());
     }
 
     @PostMapping("/rationale-phrase")
@@ -34,14 +34,14 @@ public class SchedulerAiController {
             AuthenticatedUser requester, @Valid @RequestBody RationalePhraseRequest request) {
         RationalePhraseResult result =
                 aiFacade.rationalePhrase(requester.userId(), request.title(), request.context());
-        return new RationalePhraseResponse(request.blockId(), result.rationale());
+        return new RationalePhraseResponse(request.blockId(), result.rationale(), result.source(), result.degraded());
     }
 
     public record DurationEstimateRequest(@NotBlank String title, String description) {}
 
-    public record DurationEstimateResponse(int durationMinutes, String rationale, double confidence) {}
+    public record DurationEstimateResponse(int durationMinutes, String rationale, double confidence, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 
     public record RationalePhraseRequest(UUID blockId, @NotBlank String title, String context) {}
 
-    public record RationalePhraseResponse(UUID blockId, String rationale) {}
+    public record RationalePhraseResponse(UUID blockId, String rationale, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {}
 }

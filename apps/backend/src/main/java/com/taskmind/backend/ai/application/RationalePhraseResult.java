@@ -1,3 +1,3 @@
 package com.taskmind.backend.ai.application;
 
-public record RationalePhraseResult(String rationale) {}
+public record RationalePhraseResult(String rationale, AiResponseSource source, boolean degraded) {}

@@ -3799,6 +3799,10 @@ components:
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
 
+    AiResponseSource:
+      type: string
+      enum: [NOVA, LOCAL_FALLBACK]
+
     AiCaptureRequest:
       type: object
       required: [text]
@@ -3807,8 +3811,11 @@ components:
 
     AiCaptureResponse:
       type: object
-      required: [drafts]
+      required: [drafts, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         drafts:
           type: array
           items:
@@ -3879,8 +3886,11 @@ components:
 
     AiDescribeTaskResponse:
       type: object
-      required: [description, rationale]
+      required: [description, rationale, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         description: {type: string}
         rationale: {type: string}
 
@@ -3892,8 +3902,11 @@ components:
 
     AiDescribeTaskAutocompleteResponse:
       type: object
-      required: [suggestions]
+      required: [suggestions, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         suggestions:
           type: array
           items: {type: string}
@@ -3907,8 +3920,11 @@ components:
 
     AiTranslateTaskResponse:
       type: object
-      required: [translatedText, targetLanguage]
+      required: [translatedText, targetLanguage, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         translatedText: {type: string}
         targetLanguage: {type: string}
 
@@ -3921,8 +3937,11 @@ components:
 
     AiGoalBreakdownResponse:
       type: object
-      required: [goalId, milestones, tasks, riskNotes]
+      required: [goalId, milestones, tasks, riskNotes, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         goalId: {type: string, format: uuid}
         milestones:
           type: array
@@ -4029,8 +4048,11 @@ components:
 
     AiWeeklyReviewResponse:
       type: object
-      required: [userId, summary, slippageInsights, recommendations, nextWeekPriorities]
+      required: [userId, summary, slippageInsights, recommendations, nextWeekPriorities, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         userId: {type: string, format: uuid}
         summary: {type: string}
         slippageInsights:
@@ -4045,8 +4067,11 @@ components:
 
     AiProjectBriefResponse:
       type: object
-      required: [projectId, summary, currentFocus, risks, suggestedNextSteps]
+      required: [projectId, summary, currentFocus, risks, suggestedNextSteps, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         projectId: {type: string, format: uuid}
         summary: {type: string}
         currentFocus:
@@ -4068,8 +4093,11 @@ components:
 
     AiDurationEstimateResponse:
       type: object
-      required: [durationMinutes, rationale, confidence]
+      required: [durationMinutes, rationale, confidence, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         durationMinutes: {type: integer}
         rationale: {type: string}
         confidence: {type: number, format: double}
@@ -4084,8 +4112,11 @@ components:
 
     AiRationalePhraseResponse:
       type: object
-      required: [rationale]
+      required: [rationale, source, degraded]
       properties:
+        source:
+          $ref: '#/components/schemas/AiResponseSource'
+        degraded: {type: boolean}
         blockId: {type: string, format: uuid, nullable: true}
         rationale: {type: string}
 

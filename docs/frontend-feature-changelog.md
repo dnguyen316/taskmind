@@ -1,3 +1,16 @@
+
+## 2026-07-11 - AI degraded-mode indicators
+
+### Changed
+
+- Preserved Core AI response provenance metadata in frontend AI composable types.
+- Added subtle warning alerts to capture, goal breakdown, and weekly review panels when Core reports local fallback-generated output.
+
+### Verification notes
+
+- Frontend coverage for this slice is through `vue-tsc --noEmit`.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-11 - Searchable entity selectors for ID fields
 
 ### Changed

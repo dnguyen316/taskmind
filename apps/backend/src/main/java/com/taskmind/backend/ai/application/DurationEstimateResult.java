@@ -1,3 +1,3 @@
 package com.taskmind.backend.ai.application;
 
-public record DurationEstimateResult(int durationMinutes, String rationale, double confidence) {}
+public record DurationEstimateResult(int durationMinutes, String rationale, double confidence, AiResponseSource source, boolean degraded) {}

@@ -1,5 +1,12 @@
 import type { TaskStatus } from '../../tasks/types'
 
+export type AiResponseSource = 'NOVA' | 'LOCAL_FALLBACK'
+
+export interface AiResponseMetadata {
+  source: AiResponseSource
+  degraded: boolean
+}
+
 export interface CapturedTaskDraft {
   title: string
   status: TaskStatus
@@ -8,7 +15,7 @@ export interface CapturedTaskDraft {
   source: string
   confidence: number
 }
-export interface CaptureResponse {
+export interface CaptureResponse extends AiResponseMetadata {
   drafts: CapturedTaskDraft[]
   clarificationQuestion: string | null
 }
@@ -30,7 +37,7 @@ export interface CaptureRejectRequest {
 export interface CaptureRejectResponse {
   rejected: boolean
 }
-export interface GoalBreakdownResponse {
+export interface GoalBreakdownResponse extends AiResponseMetadata {
   goalId: string
   milestones: Array<{ title: string; targetDate: string | null; notes: string[] }>
   tasks: Array<{
@@ -42,21 +49,21 @@ export interface GoalBreakdownResponse {
   }>
   riskNotes: string[]
 }
-export interface WeeklyReviewResponse {
+export interface WeeklyReviewResponse extends AiResponseMetadata {
   userId: string
   summary: string
   slippageInsights: string[]
   recommendations: string[]
   nextWeekPriorities: string[]
 }
-export interface DescribeTaskResponse {
+export interface DescribeTaskResponse extends AiResponseMetadata {
   description: string
   rationale: string
 }
-export interface AutocompleteResponse {
+export interface AutocompleteResponse extends AiResponseMetadata {
   suggestions: string[]
 }
-export interface TranslateTaskResponse {
+export interface TranslateTaskResponse extends AiResponseMetadata {
   translatedText: string
   targetLanguage: string
 }

@@ -2,6 +2,7 @@ package com.taskmind.backend.ai.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.taskmind.ai.contracts.AiCapabilityId;
 import com.taskmind.ai.contracts.capability.CapabilityRequest;
 import com.taskmind.backend.ai.NovaClient;
@@ -152,14 +153,25 @@ public class AiFacadeApplicationService {
                                             capabilityId, userId, "default", node, null, null))
                             .output();
             if (!hasExpectedShape(output, type)) {
-                return fallback.get();
+                return localFallback(type, fallback);
             }
-            return objectMapper.treeToValue(output, type);
+            return withMetadata(output, type, AiResponseSource.NOVA, false);
         } catch (NovaClientException | IllegalArgumentException ex) {
-            return fallback.get();
+            return localFallback(type, fallback);
         } catch (Exception ex) {
-            return fallback.get();
+            return localFallback(type, fallback);
         }
+    }
+
+    private <T> T localFallback(Class<T> type, Fallback<T> fallback) {
+        return withMetadata(objectMapper.valueToTree(fallback.get()), type, AiResponseSource.LOCAL_FALLBACK, true);
+    }
+
+    private <T> T withMetadata(JsonNode output, Class<T> type, AiResponseSource source, boolean degraded) {
+        ObjectNode object = output.deepCopy();
+        object.put("source", source.name());
+        object.put("degraded", degraded);
+        return objectMapper.convertValue(object, type);
     }
 
     private boolean hasExpectedShape(JsonNode output, Class<?> type) {

@@ -4,4 +4,4 @@ import java.util.List;
 import java.util.UUID;
 
 public record ProjectBriefResult(
-        UUID projectId, String summary, List<String> currentFocus, List<String> risks, List<String> suggestedNextSteps) {}
+        UUID projectId, String summary, List<String> currentFocus, List<String> risks, List<String> suggestedNextSteps, AiResponseSource source, boolean degraded) {}
