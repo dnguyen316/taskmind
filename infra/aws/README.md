@@ -49,6 +49,18 @@ A future environment root should instantiate the modules in this order:
 Pass outputs between modules explicitly, keep all secrets in AWS Secrets Manager or SSM
 Parameter Store, and never commit generated state files or plaintext secrets.
 
+## CloudWatch log encryption
+
+The compute module keeps ECS service log retention configurable with `log_retention_days`
+and accepts an optional `cloudwatch_logs_kms_key_id` for encrypting the Core, Relay, and
+Nova CloudWatch log groups with a customer managed KMS key. Production environments should
+provide a regional customer managed key instead of relying on the default CloudWatch Logs
+encryption. The key policy must permit the CloudWatch Logs service principal for the target
+region, `logs.<region>.amazonaws.com`, to use the key for the log group ARNs, including
+`kms:Encrypt`, `kms:Decrypt`, `kms:ReEncrypt*`, `kms:GenerateDataKey*`, and
+`kms:Describe*`. Scope the policy with an encryption-context condition such as
+`kms:EncryptionContext:aws:logs:arn = arn:aws:logs:<region>:<account-id>:log-group:/taskmind/<environment>/*`
+so only the TaskMind log groups can use the key.
 
 ## CI/CD pipelines
 
