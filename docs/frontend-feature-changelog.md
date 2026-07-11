@@ -821,3 +821,5 @@
 - Managers can assign members to projects, update project membership roles, and remove project allocations from the member table and allocation modal.
 - Users with global RBAC management permission can see and update global roles; users without that permission do not see global role controls.
 - Route guards and conditional UI derive permissions from the auth store's JWT role/permission claims.
+
+- SPA auth now keeps access tokens in memory, refreshes via Core's cookie-backed session, initializes by asking Core for the current user, and broadcasts logout/session changes without storing tokens in localStorage.

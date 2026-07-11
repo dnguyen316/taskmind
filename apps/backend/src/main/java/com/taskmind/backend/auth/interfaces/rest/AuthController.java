@@ -3,21 +3,26 @@ package com.taskmind.backend.auth.interfaces.rest;
 import com.taskmind.backend.auth.application.*;
 import com.taskmind.backend.auth.interfaces.rest.dto.*;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1/auth")
 @Validated
 public class AuthController {
     private final AuthApplicationService authApplicationService;
+    private final AuthCookieSupport authCookieSupport;
 
-    public AuthController(AuthApplicationService authApplicationService) {
+    public AuthController(AuthApplicationService authApplicationService, AuthCookieSupport authCookieSupport) {
         this.authApplicationService = authApplicationService;
+        this.authCookieSupport = authCookieSupport;
     }
 
     @PostMapping("/signup/email")
@@ -28,29 +33,41 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    public AuthTokensResponse verify(@Valid @RequestBody VerifyOtpRequest request) {
+    public ResponseEntity<AuthTokensResponse> verify(@Valid @RequestBody VerifyOtpRequest request) {
         return response(
                 authApplicationService.verifyOtp(
                         new VerifyOtpCommand(request.email(), request.otp())));
     }
 
     @PostMapping("/login")
-    public AuthTokensResponse login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthTokensResponse> login(@Valid @RequestBody LoginRequest request) {
         return response(
                 authApplicationService.login(
                         new LoginCommand(request.email(), request.password())));
     }
 
     @PostMapping("/token/refresh")
-    public AuthTokensResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return response(
-                authApplicationService.refresh(new RefreshTokenCommand(request.refreshToken())));
+    public ResponseEntity<AuthTokensResponse> refresh(
+            @RequestBody(required = false) RefreshTokenRequest request,
+            @CookieValue(name = AuthCookieSupport.REFRESH_COOKIE, required = false) String refreshCookie) {
+        String refreshToken = Optional.ofNullable(refreshCookie).orElseGet(() -> request == null ? null : request.refreshToken());
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing refresh session.");
+        }
+        return response(authApplicationService.refresh(new RefreshTokenCommand(refreshToken)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
-        authApplicationService.logout(new LogoutCommand(request.refreshToken()));
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout(
+            @RequestBody(required = false) LogoutRequest request,
+            @CookieValue(name = AuthCookieSupport.REFRESH_COOKIE, required = false) String refreshCookie) {
+        String refreshToken = Optional.ofNullable(refreshCookie).orElseGet(() -> request == null ? null : request.refreshToken());
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            authApplicationService.logout(new LogoutCommand(refreshToken));
+        }
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, authCookieSupport.clearRefreshCookie().toString())
+                .build();
     }
 
     @GetMapping("/me")
@@ -65,8 +82,9 @@ public class AuthController {
                 user.onboardingPlanningStyle());
     }
 
-    private AuthTokensResponse response(AuthTokens t) {
-        return new AuthTokensResponse(
-                t.accessToken(), t.refreshToken(), t.tokenType(), t.expiresInSeconds());
+    private ResponseEntity<AuthTokensResponse> response(AuthTokens t) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookieSupport.refreshCookie(t).toString())
+                .body(new AuthTokensResponse(t.accessToken(), t.tokenType(), t.expiresInSeconds()));
     }
 }

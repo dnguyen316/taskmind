@@ -1,135 +1,93 @@
-const ACCESS_TOKEN_KEY = 'taskmind.accessToken'
-const REFRESH_TOKEN_KEY = 'taskmind.refreshToken'
-const TOKEN_TYPE_KEY = 'taskmind.tokenType'
-const TOKEN_EXPIRES_AT_KEY = 'taskmind.tokenExpiresAt'
 const TOKEN_EXPIRY_SKEW_MS = 30_000
+const SESSION_EVENT_KEY = 'taskmind.authSessionEvent'
 
 export interface StoredAuthTokens {
   accessToken: string
-  refreshToken: string
   tokenType: string
   expiresInSeconds: number
 }
 
 export interface StoredAuthSession {
   accessToken: string
-  refreshToken: string
   tokenType: string
   expiresAt: number
 }
+
+let accessToken: string | null = null
+let tokenType = 'Bearer'
+let expiresAt: number | null = null
 
 function storageAvailable() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
-function safeStorageRead(key: string) {
-  if (!storageAvailable()) {
-    return null
-  }
-
+function broadcastSessionEvent(type: 'authenticated' | 'refreshed' | 'cleared') {
+  if (!storageAvailable()) return
   try {
-    return window.localStorage.getItem(key)
+    window.localStorage.setItem(SESSION_EVENT_KEY, JSON.stringify({ type, at: Date.now() }))
   } catch {
-    return null
-  }
-}
-
-function safeStorageWrite(key: string, value: string) {
-  if (!storageAvailable()) {
-    return
-  }
-
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    clearAuthTokens()
-  }
-}
-
-function safeStorageRemove(key: string) {
-  if (!storageAvailable()) {
-    return
-  }
-
-  try {
-    window.localStorage.removeItem(key)
-  } catch {
-    // Ignore storage failures so logout/session-expiry cleanup stays best-effort.
+    // Ignore broadcast failures; auth state is still updated in this tab.
   }
 }
 
 export function saveAuthTokens(tokens: StoredAuthTokens) {
-  const tokenType = tokens.tokenType || 'Bearer'
-  const expiresAt = Date.now() + tokens.expiresInSeconds * 1000
-
-  safeStorageWrite(ACCESS_TOKEN_KEY, tokens.accessToken)
-  safeStorageWrite(REFRESH_TOKEN_KEY, tokens.refreshToken)
-  safeStorageWrite(TOKEN_TYPE_KEY, tokenType)
-  safeStorageWrite(TOKEN_EXPIRES_AT_KEY, String(expiresAt))
+  tokenType = tokens.tokenType || 'Bearer'
+  accessToken = tokens.accessToken
+  expiresAt = Date.now() + tokens.expiresInSeconds * 1000
+  broadcastSessionEvent('authenticated')
 }
 
 export function clearAuthTokens() {
-  safeStorageRemove(ACCESS_TOKEN_KEY)
-  safeStorageRemove(REFRESH_TOKEN_KEY)
-  safeStorageRemove(TOKEN_TYPE_KEY)
-  safeStorageRemove(TOKEN_EXPIRES_AT_KEY)
+  accessToken = null
+  tokenType = 'Bearer'
+  expiresAt = null
+  broadcastSessionEvent('cleared')
 }
 
 export function getAccessToken() {
-  return safeStorageRead(ACCESS_TOKEN_KEY)
-}
-
-export function getRefreshToken() {
-  return safeStorageRead(REFRESH_TOKEN_KEY)
+  return accessToken
 }
 
 export function getTokenExpiresAt() {
-  const expiresAt = safeStorageRead(TOKEN_EXPIRES_AT_KEY)
-
-  if (!expiresAt) {
-    return null
-  }
-
-  const parsedExpiresAt = Number(expiresAt)
-  return Number.isFinite(parsedExpiresAt) ? parsedExpiresAt : null
+  return expiresAt
 }
 
 export function isAccessTokenExpired(now = Date.now()) {
-  const expiresAt = getTokenExpiresAt()
   return expiresAt !== null && expiresAt <= now
 }
 
 export function isAccessTokenExpiringSoon(now = Date.now(), skewMs = TOKEN_EXPIRY_SKEW_MS) {
-  const expiresAt = getTokenExpiresAt()
   return expiresAt !== null && expiresAt <= now + skewMs
 }
 
 export function getAuthorizationHeader() {
-  const accessToken = getAccessToken()
-
-  if (!accessToken) {
-    return null
-  }
-
-  const tokenType = safeStorageRead(TOKEN_TYPE_KEY) || 'Bearer'
+  if (!accessToken) return null
   return `${tokenType} ${accessToken}`
 }
 
 export function getStoredAuthSession(): StoredAuthSession | null {
-  const accessToken = getAccessToken()
-  const refreshToken = getRefreshToken()
-  const tokenType = safeStorageRead(TOKEN_TYPE_KEY) || 'Bearer'
-  const expiresAt = getTokenExpiresAt()
-
-  if (!accessToken || !refreshToken || !expiresAt || expiresAt <= Date.now()) {
+  if (!accessToken || !expiresAt || expiresAt <= Date.now()) {
     clearAuthTokens()
     return null
   }
+  return { accessToken, tokenType, expiresAt }
+}
 
-  return {
-    accessToken,
-    refreshToken,
-    tokenType,
-    expiresAt,
+export function markTokensRefreshed() {
+  broadcastSessionEvent('refreshed')
+}
+
+export function onAuthSessionStorageEvent(handler: (type: string) => void) {
+  if (typeof window === 'undefined') return () => {}
+  const listener = (event: StorageEvent) => {
+    if (event.key !== SESSION_EVENT_KEY || !event.newValue) return
+    try {
+      const payload = JSON.parse(event.newValue) as { type?: string }
+      if (payload.type) handler(payload.type)
+    } catch {
+      // Ignore malformed session broadcasts.
+    }
   }
+  window.addEventListener('storage', listener)
+  return () => window.removeEventListener('storage', listener)
 }

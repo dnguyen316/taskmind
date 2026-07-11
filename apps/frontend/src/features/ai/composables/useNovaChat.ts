@@ -56,6 +56,7 @@ export function useNovaChat() {
           Accept: 'text/event-stream',
           ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ message, sessionId: sessionId.value }),
       })
     })

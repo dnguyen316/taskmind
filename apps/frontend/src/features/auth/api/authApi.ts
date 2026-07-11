@@ -2,7 +2,6 @@ import { apiClient } from '../../../lib/apiClient'
 
 export interface AuthTokensResponse {
   accessToken: string
-  refreshToken: string
   tokenType: string
   expiresInSeconds: number
 }
@@ -28,10 +27,6 @@ export interface SignupEmailPayload extends LoginPayload {
 export interface VerifyOtpPayload {
   email: string
   otp: string
-}
-
-export interface LogoutPayload {
-  refreshToken: string
 }
 
 export type PasswordRecoveryFlow = 'reset-request' | 'reset-complete'
@@ -77,8 +72,8 @@ export async function completePasswordReset(payload: PasswordResetCompletePayloa
   await runPasswordFlow('reset-complete', payload)
 }
 
-export async function logout(payload: LogoutPayload) {
-  await apiClient.post<void>('/v1/auth/logout', payload)
+export async function logout() {
+  await apiClient.post<void>('/v1/auth/logout', {})
 }
 
 export async function getCurrentUser() {
