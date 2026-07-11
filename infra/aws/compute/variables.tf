@@ -22,8 +22,32 @@ variable "attachments_bucket_arn" {
 variable "opensearch_domain_arn" {
   type = string
 }
-variable "secret_arns" {
-  type = list(string)
+variable "core_secret_arns" {
+  type        = list(string)
+  description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Core task role."
+
+  validation {
+    condition     = alltrue([for arn in var.core_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
+    error_message = "core_secret_arns must not contain empty strings or '*'."
+  }
+}
+variable "relay_secret_arns" {
+  type        = list(string)
+  description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Relay task role."
+
+  validation {
+    condition     = alltrue([for arn in var.relay_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
+    error_message = "relay_secret_arns must not contain empty strings or '*'."
+  }
+}
+variable "nova_secret_arns" {
+  type        = list(string)
+  description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Nova task role."
+
+  validation {
+    condition     = alltrue([for arn in var.nova_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
+    error_message = "nova_secret_arns must not contain empty strings or '*'."
+  }
 }
 variable "service_images" {
   type = map(string)
