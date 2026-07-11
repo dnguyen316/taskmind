@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { RobotOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import ActivitySearchAutocomplete from './ActivitySearchAutocomplete.vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
+import { listProjects } from '../../projects/api/projectsApi'
+import type { Project } from '../../projects/types'
 import type { ActivitySearchDocument } from '../../tasks/types'
 
 const route = useRoute()
+const projects = ref<Project[]>([])
+const loadingProjects = ref(false)
+const projectSelectorError = ref('')
+const projectPermissionDenied = ref(false)
+const activeProjects = computed(() => projects.value.filter((project) => !project.archivedAt))
 const {
   query,
   size,
@@ -37,6 +44,7 @@ function applyRouteQuery() {
 
 onMounted(() => {
   applyRouteQuery()
+  void fetchProjectOptions()
   void runSearch()
 })
 
@@ -56,6 +64,24 @@ const searchFilters = computed(() => ({
   to: to.value ? new Date(to.value).toISOString() : undefined,
   eventType: eventType.value,
 }))
+
+async function fetchProjectOptions() {
+  loadingProjects.value = true
+  projectSelectorError.value = ''
+  projectPermissionDenied.value = false
+
+  try {
+    projects.value = await listProjects()
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load projects.'
+    projectPermissionDenied.value = /403|forbidden|permission|not authorized/i.test(message)
+    projectSelectorError.value = projectPermissionDenied.value
+      ? 'You do not have permission to browse projects.'
+      : message
+  } finally {
+    loadingProjects.value = false
+  }
+}
 
 function submitSearch() {
   void runSearch()
@@ -143,12 +169,28 @@ function payloadPreview(document: ActivitySearchDocument) {
           />
         </a-form-item>
         <a-form-item label="Project">
-          <a-input
+          <a-select
             v-model:value="projectId"
+            show-search
             allow-clear
-            placeholder="Project UUID"
+            option-filter-prop="label"
+            placeholder="Any project"
             style="width: 220px"
-          />
+            :loading="loadingProjects"
+            :disabled="loadingProjects || projectPermissionDenied"
+            :options="
+              activeProjects.map((project) => ({
+                value: project.id,
+                label: `${project.name} (${project.key})`,
+              }))
+            "
+          >
+            <template #notFoundContent>
+              <a-spin v-if="loadingProjects" size="small" />
+              <span v-else-if="projectPermissionDenied">Permission denied.</span>
+              <span v-else>No projects available.</span>
+            </template>
+          </a-select>
         </a-form-item>
         <a-form-item label="From">
           <a-input v-model:value="from" type="datetime-local" style="width: 190px" />
@@ -169,6 +211,13 @@ function payloadPreview(document: ActivitySearchDocument) {
         </a-button>
         <a-button :disabled="loading && !query" @click="clearSearch">Clear</a-button>
       </a-form>
+
+      <a-alert
+        v-if="projectSelectorError"
+        :type="projectPermissionDenied ? 'warning' : 'error'"
+        show-icon
+        :message="projectSelectorError"
+      />
 
       <a-alert v-if="aiErrorMessage" type="error" show-icon :message="aiErrorMessage" />
 

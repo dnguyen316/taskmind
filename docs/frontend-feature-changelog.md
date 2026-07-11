@@ -1,3 +1,17 @@
+## 2026-07-11 - Searchable entity selectors for ID fields
+
+### Changed
+
+- Replaced raw UUID inputs in AI goal breakdown, AI capture, activity search, and project member management with searchable selectors backed by existing Core task, project, and team directory APIs.
+- Added loading, empty, and permission-denied feedback to each selector so unavailable entities explain their state instead of exposing opaque IDs.
+- Kept AI capture advanced ID readouts available only in local developer/debug mode.
+
+### Verification notes
+
+- Frontend formatting and typecheck were run for the touched selector components.
+- Browser E2E was not run because local services/browser orchestration were not started in this container.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-02 - Task saved views and health indicators
 
 ### Changed

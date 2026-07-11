@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useProjects } from '../../projects/composables/useProjects'
+import { useCurrentUserId } from '../../../composables/useCurrentUserId'
+import { getTeamDirectory } from '../../team/api/teamApi'
+import type { TeamMember } from '../../team/types'
+import { listTasks } from '../../tasks/api/tasksApi'
 import { TASK_STATUS_OPTIONS } from '../../tasks/constants/taskConstants'
+import type { Task } from '../../tasks/types'
+import { useProjects } from '../../projects/composables/useProjects'
 import { useCapture } from '../composables/useCapture'
 import type { CapturedTaskDraft } from '../composables/types'
 
@@ -20,14 +25,28 @@ interface DraftReviewState {
 const text = ref('')
 const draftStates = reactive<Record<string, DraftReviewState>>({})
 const rejectReason = ref('Not useful')
+const { requireCurrentUserId } = useCurrentUserId()
 const { loading, result, capture, acceptDraft, rejectDraft } = useCapture()
 const { projects, loading: loadingProjects, fetchProjects } = useProjects()
+const teamMembers = ref<TeamMember[]>([])
+const parentTasks = ref<Task[]>([])
+const loadingTeamMembers = ref(false)
+const loadingParentTasks = ref(false)
+const teamSelectorError = ref('')
+const taskSelectorError = ref('')
+const teamPermissionDenied = ref(false)
+const taskPermissionDenied = ref(false)
+const showAdvancedIds = computed(
+  () => import.meta.env.DEV || import.meta.env.VITE_TASKMIND_DEBUG === 'true',
+)
 
 const activeProjects = computed(() => projects.value.filter((project) => !project.archivedAt))
 const hasProjectOptions = computed(() => activeProjects.value.length > 0)
 
 onMounted(() => {
   void fetchProjects()
+  void fetchTeamMembers()
+  void fetchParentTasks()
 })
 
 watch(activeProjects, (nextProjects) => {
@@ -41,6 +60,46 @@ watch(activeProjects, (nextProjects) => {
     }
   }
 })
+
+async function fetchTeamMembers() {
+  loadingTeamMembers.value = true
+  teamSelectorError.value = ''
+  teamPermissionDenied.value = false
+
+  try {
+    teamMembers.value = (await getTeamDirectory()).members
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load team members.'
+    teamPermissionDenied.value = /403|forbidden|permission|not authorized/i.test(message)
+    teamSelectorError.value = teamPermissionDenied.value
+      ? 'You do not have permission to browse team members.'
+      : message
+  } finally {
+    loadingTeamMembers.value = false
+  }
+}
+
+async function fetchParentTasks() {
+  loadingParentTasks.value = true
+  taskSelectorError.value = ''
+  taskPermissionDenied.value = false
+
+  try {
+    parentTasks.value = await listTasks({
+      userId: requireCurrentUserId(),
+      filters: { overdueOnly: false, searchText: '' },
+      size: 100,
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load parent tasks.'
+    taskPermissionDenied.value = /403|forbidden|permission|not authorized/i.test(message)
+    taskSelectorError.value = taskPermissionDenied.value
+      ? 'You do not have permission to browse tasks.'
+      : message
+  } finally {
+    loadingParentTasks.value = false
+  }
+}
 
 function draftKey(draft: CapturedTaskDraft, index: number) {
   return `${index}:${draft.title}`
@@ -246,23 +305,84 @@ async function reject(draft: CapturedTaskDraft, index: number) {
 
                 <a-row :gutter="12">
                   <a-col :xs="24" :md="12">
-                    <a-form-item label="Assignee ID (optional)">
-                      <a-input
-                        v-model:value="reviewState(item, index).assigneeId"
-                        placeholder="User UUID"
+                    <a-form-item label="Assignee (optional)">
+                      <a-alert
+                        v-if="teamSelectorError"
+                        :type="teamPermissionDenied ? 'warning' : 'error'"
+                        show-icon
+                        :message="teamSelectorError"
+                        class="selector-feedback"
                       />
+                      <a-select
+                        v-model:value="reviewState(item, index).assigneeId"
+                        show-search
+                        allow-clear
+                        option-filter-prop="label"
+                        placeholder="Search team members"
+                        :loading="loadingTeamMembers"
+                        :disabled="loadingTeamMembers || teamPermissionDenied"
+                        :options="
+                          teamMembers.map((member) => ({
+                            value: member.userId,
+                            label: `${member.displayName} · ${member.email}`,
+                          }))
+                        "
+                      >
+                        <template #notFoundContent>
+                          <a-spin v-if="loadingTeamMembers" size="small" />
+                          <span v-else-if="teamPermissionDenied">Permission denied.</span>
+                          <span v-else>No team members available.</span>
+                        </template>
+                      </a-select>
                     </a-form-item>
                   </a-col>
 
                   <a-col :xs="24" :md="12">
-                    <a-form-item label="Parent task ID (optional)">
-                      <a-input
-                        v-model:value="reviewState(item, index).parentTaskId"
-                        placeholder="Task UUID"
+                    <a-form-item label="Parent task (optional)">
+                      <a-alert
+                        v-if="taskSelectorError"
+                        :type="taskPermissionDenied ? 'warning' : 'error'"
+                        show-icon
+                        :message="taskSelectorError"
+                        class="selector-feedback"
                       />
+                      <a-select
+                        v-model:value="reviewState(item, index).parentTaskId"
+                        show-search
+                        allow-clear
+                        option-filter-prop="label"
+                        placeholder="Search parent tasks"
+                        :loading="loadingParentTasks"
+                        :disabled="loadingParentTasks || taskPermissionDenied"
+                        :options="
+                          parentTasks.map((task) => ({
+                            value: task.id,
+                            label: `${task.title} · ${task.status}`,
+                          }))
+                        "
+                      >
+                        <template #notFoundContent>
+                          <a-spin v-if="loadingParentTasks" size="small" />
+                          <span v-else-if="taskPermissionDenied">Permission denied.</span>
+                          <span v-else>No parent tasks available.</span>
+                        </template>
+                      </a-select>
                     </a-form-item>
                   </a-col>
                 </a-row>
+
+                <a-collapse v-if="showAdvancedIds" ghost>
+                  <a-collapse-panel key="ids" header="Advanced IDs">
+                    <a-descriptions size="small" :column="1">
+                      <a-descriptions-item label="Assignee ID">{{
+                        reviewState(item, index).assigneeId || 'None'
+                      }}</a-descriptions-item>
+                      <a-descriptions-item label="Parent task ID">{{
+                        reviewState(item, index).parentTaskId || 'None'
+                      }}</a-descriptions-item>
+                    </a-descriptions>
+                  </a-collapse-panel>
+                </a-collapse>
 
                 <a-alert
                   v-if="unsupportedDraftStatusMessage(item)"
@@ -316,5 +436,9 @@ async function reject(draft: CapturedTaskDraft, index: number) {
 .capture-feedback,
 .capture-drafts {
   margin-top: 16px;
+}
+
+.selector-feedback {
+  margin-bottom: 8px;
 }
 </style>
