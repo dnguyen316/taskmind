@@ -44,6 +44,23 @@ variable "deletion_protection" {
   default = true
 }
 
+variable "skip_final_snapshot" {
+  description = "Whether to skip creating a final RDS snapshot when the database instance is deleted. Defaults to false so destructive changes preserve a final recovery point."
+  type        = bool
+  default     = false
+}
+
+variable "final_snapshot_identifier_prefix" {
+  description = "Prefix used when naming the final RDS snapshot. The environment is appended automatically."
+  type        = string
+  default     = "taskmind-final-snapshot"
+
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]{0,190}$", var.final_snapshot_identifier_prefix)) && !endswith(var.final_snapshot_identifier_prefix, "-")
+    error_message = "final_snapshot_identifier_prefix must start with a letter, contain only letters, numbers, or hyphens, must not end with a hyphen, and must leave room for the environment suffix."
+  }
+}
+
 variable "redis_node_type" {
   type    = string
   default = "cache.t4g.small"
