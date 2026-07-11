@@ -81,6 +81,14 @@ async function loadGoalOptions() {
         Break down
       </a-button>
     </a-space>
+    <a-alert
+      v-if="result?.degraded"
+      class="ai-fallback-warning"
+      type="warning"
+      show-icon
+      message="Generated in degraded mode"
+      description="Nova was unavailable or returned an unexpected response, so TaskMind used a local fallback breakdown."
+    />
     <ul v-if="result">
       <li v-for="task in result.tasks" :key="task.title">
         {{ task.title }} — {{ task.rationale }}

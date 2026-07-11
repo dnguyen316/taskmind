@@ -56,14 +56,14 @@ public class ProjectBriefController {
             String summary,
             List<String> currentFocus,
             List<String> risks,
-            List<String> suggestedNextSteps) {
+            List<String> suggestedNextSteps, com.taskmind.backend.ai.application.AiResponseSource source, boolean degraded) {
         static ProjectBriefResponse fromResult(ProjectBriefResult result) {
             return new ProjectBriefResponse(
                     result.projectId(),
                     result.summary(),
                     result.currentFocus(),
                     result.risks(),
-                    result.suggestedNextSteps());
+                    result.suggestedNextSteps(), result.source(), result.degraded());
         }
     }
 }

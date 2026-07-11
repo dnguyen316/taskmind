@@ -1,3 +1,15 @@
+
+## 2026-07-11 - AI facade provenance metadata
+
+### Changed
+
+- Added `source` and `degraded` provenance metadata to Core AI facade responses so clients can distinguish Nova-generated results from local fallback output.
+- Updated the Core OpenAPI AI response schemas for capture, goal breakdown, weekly review, task describe/autocomplete/translate, project brief, scheduler duration estimates, and rationale phrases.
+
+### Tests
+
+- Added AI facade service coverage for Nova success, Nova unavailability, invalid Nova output shape, and degraded local fallback metadata.
+
 ## 2026-07-05 - Nova AI run timestamp binding hardening
 
 ### Changed

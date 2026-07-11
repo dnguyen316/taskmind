@@ -235,6 +235,15 @@ async function reject(draft: CapturedTaskDraft, index: number) {
     </a-space>
 
     <a-alert
+      v-if="result?.degraded"
+      class="capture-feedback"
+      type="warning"
+      show-icon
+      message="Generated in degraded mode"
+      description="Nova was unavailable or returned an unexpected response, so TaskMind used local fallback drafting."
+    />
+
+    <a-alert
       v-if="result?.clarificationQuestion"
       class="capture-feedback"
       type="info"

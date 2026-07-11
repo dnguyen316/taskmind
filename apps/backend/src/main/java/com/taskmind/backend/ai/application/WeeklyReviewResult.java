@@ -8,4 +8,6 @@ public record WeeklyReviewResult(
         String summary,
         List<String> slippageInsights,
         List<String> recommendations,
-        List<String> nextWeekPriorities) {}
+        List<String> nextWeekPriorities,
+        AiResponseSource source,
+        boolean degraded) {}
