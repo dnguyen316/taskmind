@@ -37,6 +37,16 @@ Create `staging` and `production` GitHub Environments with these variables:
 | `CLOUDFRONT_DISTRIBUTION_ID` | Deploy | CloudFront distribution to invalidate after SPA upload. |
 | `VITE_API_BASE_URL` | Deploy | Build-time API base URL for the frontend. |
 
+## ALB certificate requirement
+
+The AWS edge module requires `alb_certificate_arn` for every non-local environment so
+Core API traffic is served through HTTPS. Configure or import an ACM certificate in the
+same region as the Core ALB before planning staging or production, then pass its ARN into
+the edge module. With a certificate, port 80 only redirects to port 443 and the HTTPS
+listener is the only listener that forwards to the Core target group. Without a
+certificate, the module keeps port 80 from reaching Core by returning a fixed `426`
+response; this fallback is intended for local/non-production composition only.
+
 ## AWS bootstrap checklist
 
 1. Create the remote state S3 bucket and DynamoDB lock table per environment before using
