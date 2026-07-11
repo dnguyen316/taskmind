@@ -66,6 +66,44 @@ resource "aws_opensearch_domain" "activity" {
   tags = local.tags
 }
 
+data "aws_iam_policy_document" "opensearch_activity" {
+  statement {
+    sid     = "CoreActivitySearchRead"
+    effect  = "Allow"
+    actions = ["es:ESHttpGet", "es:ESHttpPost"]
+
+    principals {
+      type        = "AWS"
+      identifiers = var.core_task_role_arns
+    }
+
+    resources = ["${aws_opensearch_domain.activity.arn}/*"]
+  }
+
+  statement {
+    sid    = "RelayActivityIndexWrite"
+    effect = "Allow"
+    actions = [
+      "es:ESHttpDelete",
+      "es:ESHttpGet",
+      "es:ESHttpPost",
+      "es:ESHttpPut",
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = var.relay_task_role_arns
+    }
+
+    resources = ["${aws_opensearch_domain.activity.arn}/*"]
+  }
+}
+
+resource "aws_opensearch_domain_policy" "activity" {
+  domain_name     = aws_opensearch_domain.activity.domain_name
+  access_policies = data.aws_iam_policy_document.opensearch_activity.json
+}
+
 resource "aws_s3_bucket" "attachments" { bucket = "taskmind-attachments-${var.environment}-${var.account_suffix}" tags = local.tags }
 resource "aws_s3_bucket_versioning" "attachments" { bucket = aws_s3_bucket.attachments.id versioning_configuration { status = "Enabled" } }
 resource "aws_s3_bucket_public_access_block" "attachments" { bucket = aws_s3_bucket.attachments.id block_public_acls = true block_public_policy = true ignore_public_acls = true restrict_public_buckets = true }

@@ -69,6 +69,16 @@ variable "opensearch_volume_size" {
   default = 20
 }
 
+variable "core_task_role_arns" {
+  description = "ECS task role ARNs allowed to search the activity OpenSearch domain."
+  type        = list(string)
+}
+
+variable "relay_task_role_arns" {
+  description = "ECS task role ARNs allowed to ingest, update, and delete activity OpenSearch documents."
+  type        = list(string)
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

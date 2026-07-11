@@ -1,3 +1,8 @@
+## 2026-07-11 - OpenSearch domain access policy
+
+- Added AWS data-plane IaC for an explicit OpenSearch domain access policy that scopes activity-search access to Core and Relay ECS task roles without wildcard principals.
+- Exposed compute task role ARNs for composed Terraform/OpenTofu roots and documented the OpenSearch role-scoped policy expectations.
+
 
 ## 2026-07-11 - AI facade provenance metadata
 
