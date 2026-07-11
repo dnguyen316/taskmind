@@ -27,14 +27,27 @@ resource "aws_db_instance" "postgres" {
   port = 5432
   multi_az = var.rds_multi_az
   backup_retention_period = var.backup_retention_days
-  deletion_protection = var.deletion_protection
-  skip_final_snapshot = !var.deletion_protection
+  deletion_protection       = var.deletion_protection
+  skip_final_snapshot       = var.skip_final_snapshot
+  final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.final_snapshot_identifier_prefix}-${var.environment}"
   db_subnet_group_name = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   performance_insights_enabled = true
   auto_minor_version_upgrade = true
   storage_encrypted = true
   tags = local.tags
+
+  lifecycle {
+    precondition {
+      condition     = !contains(["prod", "production"], lower(var.environment)) || var.deletion_protection || !var.skip_final_snapshot
+      error_message = "Production RDS instances must keep deletion protection enabled or require a final snapshot on deletion."
+    }
+
+    precondition {
+      condition     = var.skip_final_snapshot || length(trimspace(var.final_snapshot_identifier_prefix)) > 0
+      error_message = "final_snapshot_identifier_prefix must be non-empty when skip_final_snapshot is false."
+    }
+  }
 }
 
 resource "aws_elasticache_subnet_group" "this" { name = "${local.name}-redis" subnet_ids = var.private_subnet_ids tags = local.tags }
