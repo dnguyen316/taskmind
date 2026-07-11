@@ -67,3 +67,21 @@ response; this fallback is intended for local/non-production composition only.
 - Merges to `main` deploy to `staging` by default.
 - Production deploys are manual through `workflow_dispatch` and should be protected by
   GitHub Environment reviewers.
+
+## ECS service secret inputs
+
+The AWS compute module grants each ECS task role access only to the secrets listed for
+that service. Do not use wildcard secret ARNs. Keep every `service_secrets` entry aligned
+with the matching service-specific IAM input so a task definition never injects a secret
+that the task role cannot read:
+
+| Service | Compute module input | Expected secret names |
+| --- | --- | --- |
+| Core API | `core_secret_arns` | `taskmind/<environment>/core/jwt`, `taskmind/<environment>/core/database`, `taskmind/<environment>/core/redis`, `taskmind/<environment>/core/s3`, and any Core-only OAuth, SMTP, or webhook secrets. |
+| Relay | `relay_secret_arns` | `taskmind/<environment>/relay/database`, `taskmind/<environment>/relay/redis`, `taskmind/<environment>/relay/opensearch`, and Relay-only analytics integration secrets. |
+| Nova AI | `nova_secret_arns` | `taskmind/<environment>/nova/database`, `taskmind/<environment>/nova/redis`, `taskmind/<environment>/nova/opensearch`, and LLM provider credentials such as `taskmind/<environment>/nova/openai`. |
+
+Use the full Secrets Manager or SSM Parameter ARN in both the appropriate
+`<service>_secret_arns` list and the corresponding `service_secrets["<service>"].valueFrom`
+entry. If a secret is shared intentionally, list its ARN in each service-specific input
+for every task that injects it.
