@@ -813,3 +813,11 @@
 
 - `cd apps/frontend && npm run format -- src/features/projects/pages/ProjectDetailPage.vue src/features/projects/api/projectsApi.ts src/features/projects/types.ts src/features/tasks/pages/TasksPage.vue`
 - `cd apps/frontend && npm run typecheck`
+
+## Team/RBAC management UI
+
+- Added the `/team` management workspace for authenticated users with team-read permissions, backed only by Core API endpoints.
+- The page now caches the team directory, active projects, project membership allocations, project role mutation state, and global role mutation state in a dedicated Pinia team store.
+- Managers can assign members to projects, update project membership roles, and remove project allocations from the member table and allocation modal.
+- Users with global RBAC management permission can see and update global roles; users without that permission do not see global role controls.
+- Route guards and conditional UI derive permissions from the auth store's JWT role/permission claims.
