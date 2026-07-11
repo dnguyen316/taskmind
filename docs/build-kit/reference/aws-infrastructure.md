@@ -53,6 +53,12 @@ Relay, plus Core's activity-search read API, target OpenSearch:
 - **Auth**: use AWS SigV4 request signing, or fine-grained access control with a master
   user inside a VPC. Add an OpenSearch/SigV4 request interceptor to the Elasticsearch REST
   client.
+- Domain access policy: keep the Amazon OpenSearch Service domain resource policy explicit
+  and role-scoped. Grant Core task roles only read/search HTTP methods (`ESHttpGet` and
+  `ESHttpPost` for `_search`), grant Relay task roles document ingest/update/delete methods,
+  and do not include Nova task roles unless a future Nova feature directly requires search.
+  Scope resources to the domain subresources (`<domain-arn>/*`) and avoid wildcard
+  principals.
 - Index: `activity-events`; documents: `ActivityEventDocument`.
 - Relay ingest keeps event-store/projection writes atomic with activity indexing. An
   OpenSearch indexing exception is DLQ'd and counted, but the event-store insert is
