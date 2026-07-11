@@ -76,6 +76,11 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+variable "cloudwatch_logs_kms_key_id" {
+  description = "Optional KMS key ARN or ID used to encrypt ECS service CloudWatch log groups."
+  type        = string
+  default     = null
+}
 variable "enable_execute_command" {
   type    = bool
   default = false
