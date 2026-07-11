@@ -69,6 +69,12 @@ variable "opensearch_volume_size" {
   default = 20
 }
 
+variable "cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN allowed to read frontend artifacts through OAC. Leave null until an edge module/root wires the distribution."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

@@ -10,6 +10,10 @@ output "core_target_group_arn" {
 output "cloudfront_distribution_id" {
   value = aws_cloudfront_distribution.spa.id
 }
+
+output "cloudfront_distribution_arn" {
+  value = aws_cloudfront_distribution.spa.arn
+}
 output "cloudfront_domain_name" {
   value = aws_cloudfront_distribution.spa.domain_name
 }
