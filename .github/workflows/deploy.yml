@@ -63,6 +63,7 @@ jobs:
     needs: verify
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
     env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       CORE_ECR_REPOSITORY: ${{ vars.CORE_ECR_REPOSITORY }}
       RELAY_ECR_REPOSITORY: ${{ vars.RELAY_ECR_REPOSITORY }}
@@ -98,16 +99,10 @@ jobs:
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
 
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.AWS_REGION }}
-
       - name: Validate deployment configuration
         run: |
           required=(
-            AWS_REGION CORE_ECR_REPOSITORY RELAY_ECR_REPOSITORY NOVA_ECR_REPOSITORY
+            AWS_ACCOUNT_ID AWS_REGION CORE_ECR_REPOSITORY RELAY_ECR_REPOSITORY NOVA_ECR_REPOSITORY
             ECS_CLUSTER CORE_ECS_SERVICE RELAY_ECS_SERVICE NOVA_ECS_SERVICE
             CORE_TASK_DEFINITION RELAY_TASK_DEFINITION NOVA_TASK_DEFINITION
             CORE_CONTAINER_NAME RELAY_CONTAINER_NAME NOVA_CONTAINER_NAME
@@ -121,6 +116,25 @@ jobs:
           done
           if [ "${#missing[@]}" -gt 0 ]; then
             printf 'Missing required GitHub environment variables: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Validate AWS account and protected production source
+        run: |
+          actual_account_id="$(aws sts get-caller-identity --query Account --output text)"
+          if [ "$actual_account_id" != "$AWS_ACCOUNT_ID" ]; then
+            printf 'AWS account mismatch: expected %s but authenticated as %s.\n' "$AWS_ACCOUNT_ID" "$actual_account_id" >&2
+            exit 1
+          fi
+
+          if [ "$DEPLOY_ENVIRONMENT" = "production" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            printf 'Production deployments must run from refs/heads/main; got %s.\n' "$GITHUB_REF" >&2
             exit 1
           fi
 
