@@ -19,6 +19,7 @@ Create `staging` and `production` GitHub Environments with these variables:
 | Variable | Used by | Description |
 | --- | --- | --- |
 | `AWS_ROLE_TO_ASSUME` | Deploy and infra plan | IAM role trusted by GitHub OIDC. |
+| `AWS_ACCOUNT_ID` | Deploy | Expected AWS account ID. Deploy preflight fails if the OIDC role authenticates into a different account. |
 | `AWS_REGION` | Deploy and infra plan | AWS region for ECR, ECS, S3, CloudFront invalidation calls, and OpenTofu. |
 | `CORE_ECR_REPOSITORY` | Deploy | ECR repository name for Core API. |
 | `RELAY_ECR_REPOSITORY` | Deploy | ECR repository name for Relay. |
@@ -65,5 +66,8 @@ response; this fallback is intended for local/non-production composition only.
 
 - Pull requests run `CI` and OpenTofu module validation.
 - Merges to `main` deploy to `staging` by default.
-- Production deploys are manual through `workflow_dispatch` and should be protected by
-  GitHub Environment reviewers.
+- Production deploys are manual through `workflow_dispatch`, must run from
+  `refs/heads/main`, and must be protected by required reviewers on the `production`
+  GitHub Environment in repository settings. Keep those Environment reviewer rules
+  enabled so production releases require human approval before deployment jobs receive
+  production variables and credentials.
