@@ -16,6 +16,11 @@ import type {
 } from '../features/auth/api/authApi'
 import type { StoredAuthSession } from '../lib/authToken'
 
+interface JwtClaims {
+  roles?: unknown
+  permissions?: unknown
+}
+
 export const E2E_AUTH_CREDENTIALS = {
   email: 'superadmin@taskmind.local',
   password: '1',
@@ -54,9 +59,42 @@ export const useAuthStore = defineStore('auth', {
     currentUserId: (state) => state.currentUser?.userId ?? '',
     currentUserDisplayName: (state) =>
       state.currentUser?.displayName || state.currentUser?.email || 'TaskMind user',
+    roles: (state) => readTokenStringList(state.session?.accessToken, 'roles'),
+    permissions: (state) => readTokenStringList(state.session?.accessToken, 'permissions'),
+    canReadTeam(): boolean {
+      return (
+        hasAny(this.permissions, ['team.read', 'team.manage']) ||
+        hasAnyRole(this.roles, ['ADMIN', 'MANAGER'])
+      )
+    },
+    canManageTeam(): boolean {
+      return (
+        hasAny(this.permissions, ['team.manage', 'project.members.manage']) ||
+        hasAnyRole(this.roles, ['ADMIN', 'MANAGER'])
+      )
+    },
+    canManageGlobalRoles(): boolean {
+      return hasAny(this.permissions, ['rbac.roles.manage']) || hasAnyRole(this.roles, ['ADMIN'])
+    },
   },
 
   actions: {
+    hasPermission(permission: string) {
+      return this.permissions.includes(permission)
+    },
+
+    hasAnyPermission(permissions: string[]) {
+      return permissions.some((permission) => this.hasPermission(permission))
+    },
+
+    hasRole(role: string) {
+      return this.roles.some((existingRole) => existingRole.toUpperCase() === role.toUpperCase())
+    },
+
+    hasAnyRole(roles: string[]) {
+      return roles.some((role) => this.hasRole(role))
+    },
+
     initializeSession() {
       this.session = getStoredAuthSession()
       this.currentUser = this.session ? this.currentUser : null
@@ -205,3 +243,43 @@ export const useAuthStore = defineStore('auth', {
     },
   },
 })
+
+function readTokenStringList(token: string | undefined, claim: keyof JwtClaims) {
+  const claims = decodeJwtClaims(token)
+  const value = claims?.[claim]
+
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function decodeJwtClaims(token: string | undefined): JwtClaims | null {
+  const payload = token?.split('.')[1]
+
+  if (!payload) {
+    return null
+  }
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      '=',
+    )
+    return JSON.parse(window.atob(paddedPayload)) as JwtClaims
+  } catch {
+    return null
+  }
+}
+
+function hasAny(values: string[], expected: string[]) {
+  return expected.some((item) => values.includes(item))
+}
+
+function hasAnyRole(values: string[], expected: string[]) {
+  return expected.some((role) =>
+    values.some((existingRole) => existingRole.toUpperCase() === role.toUpperCase()),
+  )
+}

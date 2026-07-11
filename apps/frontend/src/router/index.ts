@@ -23,6 +23,7 @@ import { useAuthStore } from '../stores/auth'
 const publicMeta = { requiresAuth: false, guestOnly: false } as const
 const guestOnlyMeta = { requiresAuth: false, guestOnly: true } as const
 const protectedMeta = { requiresAuth: true, guestOnly: false } as const
+const teamMeta = { requiresAuth: true, guestOnly: false, requiresTeamRead: true } as const
 const onboardingMeta = {
   requiresAuth: true,
   guestOnly: false,
@@ -115,7 +116,7 @@ const routes: RouteRecordRaw[] = [
     path: '/team',
     name: 'team',
     component: TeamPage,
-    meta: protectedMeta,
+    meta: teamMeta,
   },
   {
     path: '/reports',
@@ -197,6 +198,10 @@ router.beforeEach(async (to) => {
     to.name === 'onboarding'
   ) {
     return typeof to.query.redirect === 'string' ? to.query.redirect : '/dashboard'
+  }
+
+  if (to.meta.requiresTeamRead === true && !authStore.canReadTeam) {
+    return { name: 'dashboard' }
   }
 
   if (to.meta.requiresProjectAdmin === true) {
