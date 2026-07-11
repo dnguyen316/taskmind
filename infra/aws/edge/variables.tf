@@ -13,6 +13,11 @@ variable "frontend_bucket_regional_domain_name" {
 variable "alb_certificate_arn" {
   type    = string
   default = null
+
+  validation {
+    condition     = var.alb_certificate_arn == null || can(regex("^arn:aws:acm:", var.alb_certificate_arn))
+    error_message = "alb_certificate_arn must be an AWS ACM certificate ARN when provided."
+  }
 }
 variable "cloudfront_certificate_arn" {
   type    = string
