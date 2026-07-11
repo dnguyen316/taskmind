@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia'
-import { clearAuthTokens, getStoredAuthSession, saveAuthTokens } from '../lib/authToken'
+import {
+  clearAuthTokens,
+  getStoredAuthSession,
+  onAuthSessionStorageEvent,
+  saveAuthTokens,
+} from '../lib/authToken'
 import {
   getCurrentUser,
   login,
@@ -15,6 +20,7 @@ import type {
   VerifyOtpPayload,
 } from '../features/auth/api/authApi'
 import type { StoredAuthSession } from '../lib/authToken'
+import { refreshAccessToken } from '../lib/apiClient'
 
 interface JwtClaims {
   roles?: unknown
@@ -95,16 +101,32 @@ export const useAuthStore = defineStore('auth', {
       return roles.some((role) => this.hasRole(role))
     },
 
-    initializeSession() {
+    async initializeSession() {
       this.session = getStoredAuthSession()
-      this.currentUser = this.session ? this.currentUser : null
+
+      if (!this.session) {
+        try {
+          const tokens = await refreshAccessToken()
+          this.applyTokens(tokens)
+        } catch {
+          this.markUnauthenticated()
+          return null
+        }
+      }
+
+      try {
+        await this.fetchCurrentUser({ silent: true })
+      } catch {
+        return null
+      }
+
       this.initialized = true
       return this.session
     },
 
     async ensureInitialized() {
       if (!this.initialized) {
-        this.initializeSession()
+        await this.initializeSession()
       }
 
       if (this.session && !this.currentUser) {
@@ -201,11 +223,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const refreshToken = this.session?.refreshToken
-
       try {
-        if (refreshToken) {
-          await logoutSession({ refreshToken })
+        if (this.session) {
+          await logoutSession()
         }
       } finally {
         clearAuthTokens()
@@ -218,7 +238,6 @@ export const useAuthStore = defineStore('auth', {
       saveAuthTokens(tokens)
       this.session = {
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
         tokenType: tokens.tokenType || 'Bearer',
         expiresAt: Date.now() + tokens.expiresInSeconds * 1000,
       }
@@ -232,7 +251,19 @@ export const useAuthStore = defineStore('auth', {
     },
 
     markAuthenticated() {
-      this.applyStoredSession()
+      this.session = getStoredAuthSession()
+      this.currentUser = this.session ? this.currentUser : null
+      this.initialized = true
+    },
+
+    watchSessionBroadcasts() {
+      return onAuthSessionStorageEvent((type) => {
+        if (type === 'cleared') {
+          this.markUnauthenticated()
+        } else {
+          void this.initializeSession()
+        }
+      })
     },
 
     markUnauthenticated() {

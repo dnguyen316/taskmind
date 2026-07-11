@@ -4,7 +4,7 @@ import { notifySessionExpired, notifyTokensRefreshed } from './authSession'
 import {
   clearAuthTokens,
   getAuthorizationHeader,
-  getRefreshToken,
+  markTokensRefreshed,
   saveAuthTokens,
 } from './authToken'
 
@@ -13,7 +13,6 @@ const REFRESH_TOKEN_PATH = '/v1/auth/token/refresh'
 
 interface AuthTokensResponse {
   accessToken: string
-  refreshToken: string
   tokenType: string
   expiresInSeconds: number
 }
@@ -48,6 +47,7 @@ let refreshPromise: Promise<AuthTokensResponse> | null = null
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   timeout: 10_000,
   headers: {
     'Content-Type': 'application/json',
@@ -100,18 +100,13 @@ function shouldRefresh(
 
 export async function refreshAccessToken() {
   if (!refreshPromise) {
-    const refreshToken = getRefreshToken()
-
-    if (!refreshToken) {
-      return Promise.reject(new Error('Missing refresh token.'))
-    }
-
     refreshPromise = axios
       .post<AuthTokensResponse>(
         `${API_BASE_URL}${REFRESH_TOKEN_PATH}`,
-        { refreshToken },
+        {},
         {
           timeout: 10_000,
+          withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -119,6 +114,7 @@ export async function refreshAccessToken() {
       )
       .then((response) => {
         saveAuthTokens(response.data)
+        markTokensRefreshed()
         notifyTokensRefreshed()
         return response.data
       })

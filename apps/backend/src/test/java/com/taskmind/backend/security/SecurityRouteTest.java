@@ -22,7 +22,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AuthController.class)
-@Import({SecurityConfig.class, JwtClaimAuthenticationConverter.class})
+@Import({SecurityConfig.class, JwtClaimAuthenticationConverter.class, com.taskmind.backend.auth.interfaces.rest.AuthCookieSupport.class})
 @TestPropertySource(properties = "taskmind.cors.allowed-origins=http://localhost:5173")
 class SecurityRouteTest {
 
@@ -60,12 +60,12 @@ class SecurityRouteTest {
                         post("/v1/auth/token/refresh")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(
                         post("/v1/auth/logout")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -80,7 +80,8 @@ class SecurityRouteTest {
                 .andExpect(
                         header().string(
                                         HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
-                                        "http://localhost:5173"));
+                                        "http://localhost:5173"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
     }
 
     @Test

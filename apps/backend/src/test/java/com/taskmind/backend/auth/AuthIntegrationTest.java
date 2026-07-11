@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import jakarta.servlet.http.Cookie;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -39,6 +40,7 @@ class AuthIntegrationTest {
                 .content("{\"email\":\"superadmin@taskmind.local\",\"password\":\"1\"}"))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString()).path("accessToken").asText()).isNotBlank();
+        assertThat(result.getResponse().getCookie("taskmind_refresh")).isNotNull();
     }
 
     @Test
@@ -59,7 +61,7 @@ class AuthIntegrationTest {
         assertThat(accessJwt.getClaimAsStringList("authorities")).containsExactlyInAnyOrder("project.read", "project.create");
         assertThat(users.findByPrimaryEmail(email).orElseThrow().getStatus()).isEqualTo(AuthJpaEnums.UserStatus.ACTIVE);
         assertThat(identities.findByTypeAndValue(AuthJpaEnums.IdentityType.EMAIL,email).orElseThrow().isVerified()).isTrue();
-        assertThat(sessions.findByUser_Id(user.getId())).singleElement().satisfies(s -> assertThat(s.getRefreshTokenHash()).doesNotContain(tokens.path("refreshToken").asText()));
+        assertThat(sessions.findByUser_Id(user.getId())).singleElement().satisfies(s -> assertThat(s.getRefreshTokenHash()).isNotBlank());
     }
 
     @Test
@@ -154,22 +156,24 @@ class AuthIntegrationTest {
 
     @Test
     void refreshRotatesPersistentTokenAndInvalidatesPreviousToken() throws Exception {
-        var email=email(); var old=signupAndVerify(email); var oldRefresh=old.path("refreshToken").asText();
-        var result=mvc.perform(post("/v1/auth/token/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\""+oldRefresh+"\"}"))
-                .andExpect(status().isOk()).andReturn(); var rotated=json.readTree(result.getResponse().getContentAsString());
-        assertThat(rotated.path("refreshToken").asText()).isNotEqualTo(oldRefresh);
-        mvc.perform(post("/v1/auth/token/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\""+oldRefresh+"\"}"))
+        var email=email(); var old=signupAndVerifyResult(email); var oldRefresh=old.getResponse().getCookie("taskmind_refresh").getValue();
+        var result=mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", oldRefresh)))
+                .andExpect(status().isOk()).andReturn();
+        var rotatedRefresh = result.getResponse().getCookie("taskmind_refresh").getValue();
+        assertThat(rotatedRefresh).isNotEqualTo(oldRefresh);
+        mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", oldRefresh)))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void logoutRevokesPersistentSession() throws Exception {
-        var tokens=signupAndVerify(email()); var refresh=tokens.path("refreshToken").asText();
-        mvc.perform(post("/v1/auth/logout").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\""+refresh+"\"}")) .andExpect(status().isNoContent());
-        mvc.perform(post("/v1/auth/token/refresh").contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\":\""+refresh+"\"}")) .andExpect(status().isUnauthorized());
+        var result=signupAndVerifyResult(email()); var refresh=result.getResponse().getCookie("taskmind_refresh").getValue();
+        mvc.perform(post("/v1/auth/logout").cookie(new Cookie("taskmind_refresh", refresh))) .andExpect(status().isNoContent()).andExpect(cookie().maxAge("taskmind_refresh", 0));
+        mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", refresh))) .andExpect(status().isUnauthorized());
     }
 
-    private JsonNode signupAndVerify(String email) throws Exception { mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email))).andExpect(status().isAccepted()); return verify(email,"1"); }
+    private JsonNode signupAndVerify(String email) throws Exception { return json.readTree(signupAndVerifyResult(email).getResponse().getContentAsString()); }
+    private org.springframework.test.web.servlet.MvcResult signupAndVerifyResult(String email) throws Exception { mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email))).andExpect(status().isAccepted()); return mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"otp\":\"1\"}" )).andExpect(status().isOk()).andReturn(); }
     private JsonNode verify(String email,String otp) throws Exception { var r=mvc.perform(post("/v1/auth/verify").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"otp\":\""+otp+"\"}" )).andExpect(status().isOk()).andReturn(); return json.readTree(r.getResponse().getContentAsString()); }
     private JsonNode login(String email) throws Exception { var r=mvc.perform(post("/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"password\":\"correct horse battery staple\"}" )).andExpect(status().isOk()).andReturn(); return json.readTree(r.getResponse().getContentAsString()); }
     private String signedToken(String issuer, List<String> audience) {

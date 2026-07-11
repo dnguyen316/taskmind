@@ -890,3 +890,5 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added project and project-membership controller coverage for `OWNER`, `ADMIN`, `MEMBER`, and `VIEWER` read, mutation, list, and member-management capabilities.
+
+- Auth refresh sessions now rotate through an HttpOnly SameSite cookie (`taskmind_refresh`) on login, signup verification, token refresh, and logout; legacy refresh-token request bodies remain accepted as a fallback.

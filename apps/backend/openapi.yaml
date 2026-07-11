@@ -750,7 +750,7 @@ paths:
       tags: [Auth]
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -772,7 +772,7 @@ paths:
       tags: [Auth]
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -3140,20 +3140,17 @@ components:
         password: {type: string, format: password}
     RefreshTokenRequest:
       type: object
-      required: [refreshToken]
       properties:
-        refreshToken: {type: string}
+        refreshToken: {type: string, deprecated: true, description: Legacy fallback; browsers use the HttpOnly taskmind_refresh cookie.}
     LogoutRequest:
       type: object
-      required: [refreshToken]
       properties:
-        refreshToken: {type: string}
+        refreshToken: {type: string, deprecated: true, description: Legacy fallback; browsers use the HttpOnly taskmind_refresh cookie.}
     AuthTokens:
       type: object
-      required: [accessToken, refreshToken, tokenType, expiresInSeconds]
+      required: [accessToken, tokenType, expiresInSeconds]
       properties:
         accessToken: {type: string}
-        refreshToken: {type: string}
         tokenType: {type: string, example: Bearer}
         expiresInSeconds: {type: integer, format: int64}
     AuthUser:
