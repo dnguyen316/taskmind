@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,12 +18,17 @@ public class JpaNotificationRepository implements NotificationRepository {
     }
 
     public Notification save(Notification n) {
-        if (findById(n.id()).isPresent())
-            jdbc.update(
-                    "update notifications set read_at=?, version=version+1 where id=?",
-                    n.readAt() == null ? null : Timestamp.from(n.readAt()),
-                    n.id());
-        else
+        if (findById(n.id()).isPresent()) {
+            int updated =
+                    jdbc.update(
+                            "update notifications set read_at=?, version=version+1 where id=? and version=?",
+                            n.readAt() == null ? null : Timestamp.from(n.readAt()),
+                            n.id(),
+                            n.version());
+            if (updated == 0) {
+                throw new ObjectOptimisticLockingFailureException(Notification.class, n.id());
+            }
+        } else
             jdbc.update(
                     "insert into notifications(id,recipient_user_id,type,title,body,task_id,action_url,read_at,created_at,version) values (?,?,?,?,?,?,?,?,?,0)",
                     n.id(),
@@ -60,6 +66,10 @@ public class JpaNotificationRepository implements NotificationRepository {
         return c == null ? 0 : c;
     }
 
+    /**
+     * Bulk idempotent read operation. It intentionally bypasses per-row optimistic locking so
+     * repeated read-all requests can safely converge every unread notification for the user.
+     */
     public int markAllRead(UUID u, Instant now) {
         return jdbc.update(
                 "update notifications set read_at=?, version=version+1 where recipient_user_id=? and read_at is null",

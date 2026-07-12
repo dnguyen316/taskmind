@@ -1,3 +1,16 @@
+## 2026-07-12 - Notification optimistic locking hardening
+
+### Changed
+
+- Hardened single-notification repository updates with a compare-and-swap version predicate so stale read-state writes fail with the shared 409 conflict mapping.
+- Documented that notification read-all remains an idempotent bulk operation that intentionally bypasses per-row optimistic locking.
+
+### Verification notes
+
+- Added repository integration coverage for stale single-notification updates.
+- Advanced primary milestone: M11 Notifications.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-12 - Notification preference concurrency hardening
 
 ### Changed
