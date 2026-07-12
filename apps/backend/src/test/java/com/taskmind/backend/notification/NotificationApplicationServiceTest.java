@@ -17,7 +17,7 @@ class NotificationApplicationServiceTest {
         InMemoryPrefs prefs = new InMemoryPrefs();
         NotificationApplicationService app = new NotificationApplicationService(repo, prefs);
         NotificationService svc =
-                new NotificationService(repo, prefs, new NotificationSseHub(), (n, p) -> {}, new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
+                new NotificationService(repo, prefs, new NotificationSseHub(), new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
         UUID u1 = UUID.randomUUID(), u2 = UUID.randomUUID();
         Notification n1 =
                 svc.notify(
@@ -61,6 +61,7 @@ class NotificationApplicationServiceTest {
         Map<UUID, Notification> data = new LinkedHashMap<>();
         List<DeliveryAttempt> attempts = new ArrayList<>();
         Set<String> reminders = new HashSet<>();
+        Set<UUID> claimed = new HashSet<>();
 
         public Notification save(Notification n) {
             data.put(n.id(), n);
@@ -105,6 +106,47 @@ class NotificationApplicationServiceTest {
             return attempts.stream()
                     .filter(a -> a.notificationId().equals(notificationId) && a.channel() == channel)
                     .reduce((first, second) -> second);
+        }
+
+        public List<DeliveryAttempt> claimPendingDeliveries(Instant now, int limit) {
+            List<DeliveryAttempt> claimed =
+                    attempts.stream()
+                            .filter(
+                                    a ->
+                                            a.status() == DeliveryStatus.PENDING
+                                                    && !a.attemptedAt().isAfter(now)
+                                                    && !this.claimed.contains(a.id()))
+                            .limit(limit)
+                            .toList();
+            claimed.forEach(a -> this.claimed.add(a.id()));
+            return claimed;
+        }
+
+        public void markDeliverySent(UUID deliveryAttemptId, Instant now) {
+            updateDelivery(deliveryAttemptId, DeliveryStatus.SENT, null, now);
+        }
+
+        public void markDeliveryFailed(UUID deliveryAttemptId, String errorMessage, Instant retryAt) {
+            updateDelivery(deliveryAttemptId, DeliveryStatus.FAILED, errorMessage, retryAt);
+        }
+
+        private void updateDelivery(UUID deliveryAttemptId, DeliveryStatus status, String error, Instant at) {
+            for (int i = 0; i < attempts.size(); i++) {
+                DeliveryAttempt current = attempts.get(i);
+                if (current.id().equals(deliveryAttemptId)) {
+                    attempts.set(
+                            i,
+                            new DeliveryAttempt(
+                                    current.id(),
+                                    current.notificationId(),
+                                    current.userId(),
+                                    current.channel(),
+                                    status,
+                                    error,
+                                    at));
+                    return;
+                }
+            }
         }
 
         public boolean reminderExists(UUID t, UUID u) {

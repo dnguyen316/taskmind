@@ -1003,5 +1003,19 @@ This changelog tracks backend feature progress against the core implementation p
 ### Closeout notes
 
 - Primary milestone: task concurrency hardening.
+## 2026-07-12 - Asynchronous notification delivery queue
+
+### Changed
+
+- Changed Core notification creation so `NotificationService.notify()` only persists in-app notifications and enqueues durable `PENDING` delivery attempts for asynchronous Slack delivery.
+- Added a scheduled notification delivery worker protected by ShedLock and row-level pending delivery claims; the worker sends Slack/email deliveries, records success or failure, and stores retry backoff timestamps without rolling back the in-app notification.
+
+### Tests
+
+- Added notification service and worker coverage proving notify does not call Slack directly, successful sends are recorded, failures are backed off for retry, pending attempts wait for backoff expiry, and duplicate workers do not process the same attempt twice.
+
+### Closeout notes
+
+- Primary milestone: M09 notifications reliability.
 - Skills used: none.
 - Agent delegation: none.

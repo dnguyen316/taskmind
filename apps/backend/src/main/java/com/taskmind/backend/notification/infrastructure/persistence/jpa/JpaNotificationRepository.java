@@ -107,6 +107,30 @@ public class JpaNotificationRepository implements NotificationRepository {
                 .findFirst();
     }
 
+
+    public List<DeliveryAttempt> claimPendingDeliveries(Instant now, int limit) {
+        return jdbc.query(
+                "select * from notification_delivery_attempts where status='PENDING' and attempted_at <= ? order by attempted_at limit ? for update skip locked",
+                this::mapAttempt,
+                Timestamp.from(now),
+                limit);
+    }
+
+    public void markDeliverySent(UUID deliveryAttemptId, Instant now) {
+        jdbc.update(
+                "update notification_delivery_attempts set status='SENT', error_message=null, attempted_at=? where id=?",
+                Timestamp.from(now),
+                deliveryAttemptId);
+    }
+
+    public void markDeliveryFailed(UUID deliveryAttemptId, String errorMessage, Instant retryAt) {
+        jdbc.update(
+                "update notification_delivery_attempts set status='FAILED', error_message=?, attempted_at=? where id=?",
+                errorMessage,
+                Timestamp.from(retryAt),
+                deliveryAttemptId);
+    }
+
     public boolean reminderExists(UUID t, UUID u) {
         Boolean b =
                 jdbc.queryForObject(

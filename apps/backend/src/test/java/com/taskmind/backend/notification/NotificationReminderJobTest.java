@@ -22,7 +22,7 @@ class NotificationReminderJobTest {
                     }
                 };
         var prefs = new InMemoryPrefs();
-        var service = new NotificationService(repo, prefs, new NotificationSseHub(), (n, p) -> {}, new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
+        var service = new NotificationService(repo, prefs, new NotificationSseHub(), new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
         new NotificationReminderJob(repo, service, true).run();
         new NotificationReminderJob(repo, service, true).run();
         assertThat(repo.data).hasSize(1);
