@@ -11,7 +11,7 @@ flowchart LR
   Tx["Core txn: state change + outbox insert"] --> OB[(outbox_events)]
   OB --> Poller["OutboxPollerJob"]
   Poller --> Stream["Redis Stream taskmind.events"]
-  Stream --> Consumer["Relay StreamEventConsumerJob (group relay-workers)"]
+  Stream --> Consumer["Relay StreamEventConsumerJob (group taskmind-relay)"]
   HTTP["POST /internal/events (fallback)"] --> Ingest
   Consumer --> Ingest["IngestApplicationService"]
   Ingest --> Router["SinkRouter (idempotent on eventId)"]
@@ -27,9 +27,9 @@ flowchart LR
 ## Semantics
 
 - **Transactional outbox**: Core inserts an `outbox_events` row in the **same transaction** as the business state change. No event is lost if the transaction commits; no event leaks if the transaction rolls back.
-- **At-least-once delivery**: the poller publishes to Redis Streams. Relay may see an event more than once, so Relay **deduplicates on `eventId`** via `analytics.relay_processed_events`.
+- **At-least-once delivery**: the poller publishes to Redis Streams. Relay uses the `taskmind-relay` Redis consumer group with per-instance consumer names, acknowledges successful records with `XACK`, and may intentionally redeliver stale pending entries. Relay may see an event more than once, so Relay **deduplicates on `eventId`** via `analytics.relay_processed_events`.
 - **Backpressure**: outbox publishing pauses when the stream length exceeds a configured threshold (`taskmind.outbox.backpressure-stream-length`, default `10000`).
-- **DLQ**: events that fail projection go to `analytics.relay_dlq`.
+- **DLQ**: events that fail projection go to `analytics.relay_dlq`; Redis stream records that exceed the pending-entry retry ceiling are also copied to `taskmind.events.dlq` and acknowledged so the group can continue.
 - **Transport abstraction**: `libs/events/transport/EventTransport.java` abstracts Redis Streams (active) vs. Kafka (planned).
 
 ## Envelope (`DomainEvent`)
@@ -70,8 +70,12 @@ The envelope is validated against `libs/events/.../schema/domain-event-v1.json` 
 | `taskmind.outbox.enabled` | enable outbox poller | `true` (local) |
 | `taskmind.outbox.backpressure-stream-length` | Redis stream length pause threshold | `10000` |
 | `taskmind.relay.stream-key` | Redis stream key | `taskmind.events` |
-| `taskmind.relay.consumer-group` | Relay consumer group | `relay-workers` |
+| `taskmind.relay.consumer-group` | Relay consumer group | `taskmind-relay` |
 | `taskmind.relay.poll-interval-ms` | Relay poll interval | `1000` |
+| `taskmind.relay.consumer-name` | Stable per-instance Relay consumer name | host-derived UUID when unset |
+| `taskmind.relay.batch-size` | Max records read/claimed per poll | `100` |
+| `taskmind.relay.max-delivery-attempts` | Pending-entry retry ceiling before Redis DLQ | `5` |
+| `taskmind.relay.pending-idle-timeout-ms` | Minimum idle time before claiming pending records | `30000` |
 | `taskmind.relay.worker-threads` / `max-in-flight` | Relay concurrency / backpressure | `-` |
 
 ## Rebuild guidance
