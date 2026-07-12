@@ -140,6 +140,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsResponse'
+        '400':
+          description: Invalid reports range. Allowed values are `week`, `month`, and `quarter`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Invalid reports range
+                status: 400
+                detail: 'Reports range must be one of: week, month, quarter'
+                allowedValues: [week, month, quarter]
         '401':
           $ref: '#/components/responses/Unauthorized'
 
