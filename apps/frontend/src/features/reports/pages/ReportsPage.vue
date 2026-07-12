@@ -22,6 +22,15 @@ const statusRows = computed(() => report.value?.statusSegments ?? [])
 const projectRows = computed(() => report.value?.projectThroughput ?? [])
 const trendRows = computed(() => report.value?.trends ?? [])
 const workloadRows = computed(() => report.value?.assigneeWorkload ?? [])
+const unavailableMessage = 'Not enough data yet'
+const comingSoonMessage = 'Coming soon'
+const isMetricAvailable = (metric: string) =>
+  report.value?.availableMetrics.includes(metric) ?? false
+const hasPrioritySegments = computed(() => isMetricAvailable('prioritySegments'))
+const hasProjectThroughput = computed(() => isMetricAvailable('projectThroughput'))
+const hasAssigneeThroughput = computed(() => isMetricAvailable('assigneeThroughput'))
+const hasAssigneeWorkload = computed(() => isMetricAvailable('assigneeWorkload'))
+const hasTeamWorkload = computed(() => isMetricAvailable('teamWorkload'))
 
 const statusColumns = [
   { title: 'Status', dataIndex: 'status', key: 'status' },
@@ -88,9 +97,19 @@ onMounted(() => {
       <template v-else>
         <a-empty v-if="!hasReportData" description="No report activity is available yet." />
 
+        <a-alert
+          v-if="report?.dataFreshness"
+          type="info"
+          show-icon
+          :message="report.dataFreshness"
+        />
+
         <div class="kpi-grid">
           <a-card><a-statistic title="Created" :value="kpis?.tasksCreated ?? 0" /></a-card>
           <a-card><a-statistic title="Completed" :value="kpis?.tasksCompleted ?? 0" /></a-card>
+          <a-card
+            ><a-statistic title="Projects created" :value="kpis?.projectsCreated ?? 0"
+          /></a-card>
           <a-card><a-statistic title="Events" :value="kpis?.eventsIngested ?? 0" /></a-card>
           <a-card
             ><a-statistic title="Completion rate" :value="completionRate" suffix="%"
@@ -102,7 +121,11 @@ onMounted(() => {
             <ThroughputChart :trends="trendRows" />
           </a-card>
           <a-card title="Workload balance">
-            <WorkloadChart :rows="workloadRows" />
+            <a-empty
+              v-if="!hasAssigneeWorkload || workloadRows.length === 0"
+              :description="unavailableMessage"
+            />
+            <WorkloadChart v-else :rows="workloadRows" />
           </a-card>
         </div>
 
@@ -116,8 +139,16 @@ onMounted(() => {
               size="small"
             />
           </a-card>
+          <a-card title="Priority segments">
+            <a-empty v-if="!hasPrioritySegments" :description="comingSoonMessage" />
+          </a-card>
           <a-card title="Project throughput">
+            <a-empty
+              v-if="!hasProjectThroughput || projectRows.length === 0"
+              :description="unavailableMessage"
+            />
             <a-table
+              v-else
               :columns="projectColumns"
               :data-source="projectRows"
               :pagination="false"
@@ -125,8 +156,19 @@ onMounted(() => {
               size="small"
             />
           </a-card>
+          <a-card title="Assignee throughput">
+            <a-empty
+              v-if="!hasAssigneeThroughput || (report?.assigneeThroughput.length ?? 0) === 0"
+              :description="unavailableMessage"
+            />
+          </a-card>
           <a-card title="Assignee workload">
+            <a-empty
+              v-if="!hasAssigneeWorkload || workloadRows.length === 0"
+              :description="unavailableMessage"
+            />
             <a-table
+              v-else
               :columns="workloadColumns"
               :data-source="workloadRows"
               :pagination="false"
@@ -135,8 +177,14 @@ onMounted(() => {
             />
           </a-card>
           <a-card title="Team workload">
-            <a-statistic title="Members" :value="report?.teamWorkload.members ?? 0" />
-            <a-statistic title="Open tasks" :value="report?.teamWorkload.openTasks ?? 0" />
+            <a-empty
+              v-if="!hasTeamWorkload || !report?.teamWorkload.members"
+              :description="unavailableMessage"
+            />
+            <template v-else>
+              <a-statistic title="Members" :value="report.teamWorkload.members" />
+              <a-statistic title="Open tasks" :value="report.teamWorkload.openTasks" />
+            </template>
           </a-card>
         </div>
       </template>

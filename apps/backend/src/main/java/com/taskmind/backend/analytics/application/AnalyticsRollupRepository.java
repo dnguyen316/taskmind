@@ -9,6 +9,10 @@ public interface AnalyticsRollupRepository {
 
     List<ReportsProjectThroughput> projectThroughput(LocalDate start);
 
+    int projectsCreated(UUID userId, LocalDate start);
+
+    List<ReportsAssigneeThroughput> assigneeThroughput(LocalDate start);
+
     List<ReportsStatusSegment> statusSegments(UUID userId);
 
     List<ReportsAssigneeWorkload> assigneeWorkload();

@@ -40,6 +40,23 @@ public class JdbcAnalyticsRollupRepository implements AnalyticsRollupRepository 
                 start);
     }
 
+    public int projectsCreated(UUID userId, LocalDate start) {
+        Integer value =
+                jdbcTemplate.queryForObject(
+                        "select coalesce(sum(projects_created),0) from analytics.user_daily_metrics where user_id=? and metric_date>=?",
+                        Integer.class,
+                        userId,
+                        start);
+        return value == null ? 0 : value;
+    }
+
+    public List<ReportsAssigneeThroughput> assigneeThroughput(LocalDate start) {
+        return jdbcTemplate.query(
+                "select user_id, sum(tasks_created), sum(tasks_completed) from analytics.user_daily_metrics where metric_date>=? group by user_id order by sum(tasks_completed) desc, sum(tasks_created) desc limit 20",
+                (rs, i) -> new ReportsAssigneeThroughput((UUID) rs.getObject(1), rs.getInt(2), rs.getInt(3)),
+                start);
+    }
+
     public List<ReportsStatusSegment> statusSegments(UUID userId) {
         return jdbcTemplate.query(
                 "select status,count(*) from analytics.task_projection where user_id=? group by status order by status",

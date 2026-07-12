@@ -1,3 +1,16 @@
+## 2026-07-12 - Reports rollup availability metadata
+
+### Changed
+
+- Added real Core reports values for projects-created and assignee throughput from existing analytics rollups.
+- Added reports availability/freshness metadata so clients can distinguish live rollups from metrics that are not projected yet, including priority segments.
+- Updated the Core OpenAPI reports response contract.
+
+### Verification notes
+
+- Added backend coverage for populated reports rollups and empty/unavailable metric metadata.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-11 - OpenSearch domain access policy
 
 - Added AWS data-plane IaC for an explicit OpenSearch domain access policy that scopes activity-search access to Core and Relay ECS task roles without wildcard principals.
