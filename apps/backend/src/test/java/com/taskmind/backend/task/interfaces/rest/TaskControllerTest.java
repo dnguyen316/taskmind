@@ -523,6 +523,26 @@ class TaskControllerTest {
     }
 
     @Test
+    void rejectsStaleTaskStatusUpdateWithConflict() throws Exception {
+        var created = mockMvc.perform(post("/v1/tasks")
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"userId":"11111111-1111-1111-1111-111111111111","title":"Versioned status","status":"TODO","priority":2,"source":"MANUAL"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.version").isNumber())
+            .andReturn();
+        var id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(patch("/v1/tasks/{id}/status", id)
+                .with(jwt("11111111-1111-1111-1111-111111111111"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"DONE\",\"version\":999}"))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
     void projectMembersCanCreateListAndDeleteTaskLinksButUnrelatedUsersCannot() throws Exception {
         var ownerId = "12121212-1212-1212-1212-121212121212";
         var taskOwnerId = "23232323-2323-2323-2323-232323232323";

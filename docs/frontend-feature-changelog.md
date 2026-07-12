@@ -875,3 +875,14 @@
 
 - `cd apps/frontend && npm run format -- src/components/AiAssistantWidget.vue src/components/AiAssistantWidget.scoped-chat.story.ts src/features/ai/composables/useNovaChat.ts`
 - `cd apps/frontend && npm run typecheck`
+
+## 2026-07-12 - Task status version submission
+
+### Summary
+
+- Updated task list, kanban, and backlog status-change flows to send each task's current version with status-only mutations.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/tasks/api/tasksApi.ts src/features/tasks/composables/useTasks.ts src/features/tasks/pages/TasksPage.vue src/features/tasks/components/TaskList.vue src/features/tasks/components/TaskKanbanView.vue src/features/tasks/components/TaskBacklogView.vue`
+- `cd apps/frontend && npm run typecheck`

@@ -3708,6 +3708,10 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/TaskStatus'
+        version:
+          type: integer
+          format: int64
+          nullable: true
 
     TaskCompletionResponse:
       type: object

@@ -12,7 +12,9 @@ const props = defineProps<{
   loading?: boolean
   projectId?: string
 }>()
-const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
+const emit = defineEmits<{
+  changeStatus: [taskId: string, status: TaskStatus, version: number | null]
+}>()
 
 const pendingStatusTaskIds = computed(() => new Set(props.pendingStatusTaskIds ?? []))
 const prioritizedTasks = computed(() =>
@@ -33,7 +35,7 @@ function isStatusPending(taskId: string) {
 
 function handleStatusChange(task: Task, nextStatus: TaskStatus) {
   if (nextStatus !== task.status) {
-    emit('changeStatus', task.id, nextStatus)
+    emit('changeStatus', task.id, nextStatus, task.version)
   }
 }
 
