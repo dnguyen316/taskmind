@@ -73,6 +73,16 @@ update the committed backend block before planning. Production requires the prot
 final snapshots. Keep all secrets in AWS Secrets Manager or SSM Parameter Store, and never
 commit generated state files or plaintext secrets.
 
+### RDS final snapshots and disposable previews
+
+The shared data module defaults `skip_final_snapshot` to `false`, and the staging and
+production roots pass `deletion_protection = true` with `skip_final_snapshot = false` so
+managed RDS databases retain a final recovery point if deletion is ever approved.
+Disposable preview stacks may intentionally set `deletion_protection = false` and
+`skip_final_snapshot = true` only when their data is ephemeral, reproducible, and not
+needed for incident response or rollback. Keep that preview-specific behavior in the
+preview root or its variable files rather than weakening staging or production defaults.
+
 ## CloudWatch log encryption
 
 The compute module keeps ECS service log retention configurable with `log_retention_days`

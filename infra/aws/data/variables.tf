@@ -61,7 +61,7 @@ variable "skip_final_snapshot" {
 }
 
 variable "final_snapshot_identifier_prefix" {
-  description = "Prefix used when naming the final RDS snapshot. The environment is appended automatically."
+  description = "Prefix used when naming the final RDS snapshot. The environment is appended automatically for a deterministic per-environment snapshot identifier."
   type        = string
   default     = "taskmind-final-snapshot"
 
