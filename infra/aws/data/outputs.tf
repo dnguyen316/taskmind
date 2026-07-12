@@ -26,10 +26,6 @@ output "opensearch_domain_name" {
   value = aws_opensearch_domain.activity.domain_name
 }
 
-output "opensearch_domain_arn" {
-  value = aws_opensearch_domain.activity.arn
-}
-
 output "attachments_bucket_name" {
   value = aws_s3_bucket.attachments.bucket
 }
