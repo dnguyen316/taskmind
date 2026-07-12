@@ -1,6 +1,5 @@
 package com.taskmind.backend.notification.application;
 
-import com.taskmind.backend.common.SlackNotifier;
 import com.taskmind.backend.notification.domain.model.*;
 import com.taskmind.backend.notification.domain.repository.*;
 import java.time.Instant;
@@ -13,19 +12,16 @@ public class NotificationService {
     private final NotificationRepository notifications;
     private final NotificationPreferenceRepository preferences;
     private final NotificationSseHub hub;
-    private final SlackNotifier slack;
     private final NotificationDeliveryCoordinator delivery;
 
     public NotificationService(
             NotificationRepository n,
             NotificationPreferenceRepository p,
             NotificationSseHub h,
-            SlackNotifier s,
             NotificationDeliveryCoordinator d) {
         notifications = n;
         preferences = p;
         hub = h;
-        slack = s;
         delivery = d;
     }
 
@@ -64,15 +60,7 @@ public class NotificationService {
             hub.publish(saved);
         }
         if (pref.slackEnabled() && saved != null) {
-            Instant attemptedAt = Instant.now();
-            if (delivery.shouldAttempt(saved, NotificationChannel.SLACK, attemptedAt)) {
-                try {
-                    slack.send(saved, pref);
-                    delivery.recordSuccess(saved, NotificationChannel.SLACK, Instant.now());
-                } catch (RuntimeException ex) {
-                    delivery.recordFailure(saved, NotificationChannel.SLACK, ex, Instant.now());
-                }
-            }
+            delivery.enqueue(saved, NotificationChannel.SLACK, now);
         }
         return saved;
     }

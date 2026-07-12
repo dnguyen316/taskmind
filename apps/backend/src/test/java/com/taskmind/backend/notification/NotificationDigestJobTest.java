@@ -223,6 +223,21 @@ class NotificationDigestJobTest {
         }
 
         @Override
+        public List<DeliveryAttempt> claimPendingDeliveries(Instant now, int limit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void markDeliverySent(UUID deliveryAttemptId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void markDeliveryFailed(UUID deliveryAttemptId, String errorMessage, Instant retryAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public boolean reminderExists(UUID taskId, UUID userId) {
             throw new UnsupportedOperationException();
         }

@@ -27,8 +27,22 @@ public class NotificationDeliveryCoordinator {
                 .orElse(true);
     }
 
+    public boolean shouldAttempt(DeliveryAttempt attempt, Instant now) {
+        return attempt.status() == DeliveryStatus.PENDING && !attempt.attemptedAt().isAfter(now);
+    }
+
+    public void enqueue(Notification notification, NotificationChannel channel, Instant now) {
+        if (shouldAttempt(notification, channel, now)) {
+            notifications.recordDelivery(attempt(notification, channel, DeliveryStatus.PENDING, null, now));
+        }
+    }
+
     public void recordSuccess(Notification notification, NotificationChannel channel, Instant now) {
         notifications.recordDelivery(attempt(notification, channel, DeliveryStatus.SENT, null, now));
+    }
+
+    public void recordSuccess(DeliveryAttempt attempt, Instant now) {
+        notifications.markDeliverySent(attempt.id(), now);
     }
 
     public void recordFailure(
@@ -37,11 +51,15 @@ public class NotificationDeliveryCoordinator {
                 attempt(notification, channel, DeliveryStatus.FAILED, safeMessage(exception), now));
     }
 
+    public void recordFailure(DeliveryAttempt attempt, RuntimeException exception, Instant now) {
+        notifications.markDeliveryFailed(attempt.id(), safeMessage(exception), now.plus(backoff));
+    }
+
     private boolean shouldRetry(DeliveryAttempt last, Instant now) {
-        if (last.status() == DeliveryStatus.SENT) {
+        if (last.status() == DeliveryStatus.SENT || last.status() == DeliveryStatus.PENDING) {
             return false;
         }
-        return !last.attemptedAt().plus(backoff).isAfter(now);
+        return !last.attemptedAt().isAfter(now);
     }
 
     private static DeliveryAttempt attempt(
