@@ -1,5 +1,6 @@
 package com.taskmind.relay.context;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,5 +35,13 @@ class RelayContextSecurityTest {
                         get("/internal/context/users/" + UUID.randomUUID() + "/tasks")
                                 .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void prometheusScrapeIsPublicButOtherActuatorEndpointsRemainDenied() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/actuator/info")).andExpect(status().isForbidden());
     }
 }

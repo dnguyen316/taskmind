@@ -26,7 +26,7 @@ class RelayProdProfileConfigurationTest {
         assertThat(properties.getProperty("taskmind.relay.stream-key"))
                 .isEqualTo("${TASKMIND_RELAY_STREAM_KEY}");
         assertThat(properties.getProperty("management.endpoints.web.exposure.include"))
-                .isEqualTo("health,info");
+                .isEqualTo("health,info,prometheus");
         assertThat(properties.getProperty("logging.level.com.taskmind.relay")).isEqualTo("INFO");
     }
 
