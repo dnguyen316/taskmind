@@ -11,6 +11,7 @@ import com.taskmind.ai.contracts.AiRunStatus;
 import com.taskmind.ai.contracts.capability.CapabilityError;
 import com.taskmind.ai.contracts.capability.CapabilityRequest;
 import com.taskmind.ai.contracts.capability.CapabilityResponse;
+import com.taskmind.ai.observability.AiRuntimeMetrics;
 import com.taskmind.ai.provider.AiProvider;
 import com.taskmind.ai.provider.ProviderRequest;
 import com.taskmind.ai.provider.ProviderResponse;
@@ -30,16 +31,19 @@ public class AiAgentRuntime {
     private final ProviderRouter providerRouter;
     private final AiRunAuditRepository auditRepository;
     private final ObjectMapper objectMapper;
+    private final AiRuntimeMetrics metrics;
 
     public AiAgentRuntime(
             CapabilityRegistry capabilityRegistry,
             ProviderRouter providerRouter,
             AiRunAuditRepository auditRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AiRuntimeMetrics metrics) {
         this.capabilityRegistry = capabilityRegistry;
         this.providerRouter = providerRouter;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
+        this.metrics = metrics;
     }
 
     public CapabilityResponse execute(CapabilityRequest request) {
@@ -76,17 +80,28 @@ public class AiAgentRuntime {
                                     promptVersion(providerInput),
                                     List.of(),
                                     request.correlationId()));
+            long latencyMs = elapsed(started, providerResponse.latencyMs());
             auditRepository.succeed(
                     runId,
                     providerResponse.output(),
                     providerResponse.promptTokens(),
                     providerResponse.completionTokens(),
                     providerResponse.totalTokens(),
-                    elapsed(started, providerResponse.latencyMs()));
+                    latencyMs);
+            metrics.recordSuccess(
+                    provider.id(),
+                    provider.modelId(),
+                    capability.id(),
+                    providerResponse.promptTokens(),
+                    providerResponse.completionTokens(),
+                    providerResponse.totalTokens(),
+                    latencyMs);
             return new CapabilityResponse(
                     runId, AiRunStatus.SUCCEEDED, providerResponse.output(), List.of(), null);
         } catch (RuntimeException ex) {
-            auditRepository.fail(runId, "PROVIDER_ERROR", ex.getMessage(), elapsed(started, 0L));
+            long latencyMs = elapsed(started, 0L);
+            auditRepository.fail(runId, "PROVIDER_ERROR", ex.getMessage(), latencyMs);
+            metrics.recordFailure(provider.id(), provider.modelId(), capability.id(), latencyMs);
             return new CapabilityResponse(
                     runId,
                     AiRunStatus.FAILED,

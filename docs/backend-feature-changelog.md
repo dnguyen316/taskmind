@@ -1019,3 +1019,19 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M09 notifications reliability.
 - Skills used: none.
 - Agent delegation: none.
+## 2026-07-12 - Nova runtime provider metrics
+
+### Changed
+
+- Added Nova runtime metrics for provider prompt/completion/total tokens, response latency, and run totals using only bounded provider, model, capability, and status tags.
+- Recorded success and failure metrics from the AI agent runtime without high-cardinality or sensitive user, workspace, run, prompt, or correlation identifiers.
+
+### Tests
+
+- Added AI agent runtime coverage with `SimpleMeterRegistry` for successful provider token/latency counters and failed provider latency/run metrics.
+
+### Closeout notes
+
+- Primary milestone: M13 observability hardening.
+- Skills used: none.
+- Agent delegation: none.

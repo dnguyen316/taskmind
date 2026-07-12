@@ -12,6 +12,7 @@ import com.taskmind.ai.audit.AiRunRecord;
 import com.taskmind.ai.contracts.AiProviderId;
 import com.taskmind.ai.contracts.AiRunStatus;
 import com.taskmind.ai.contracts.capability.CapabilityRequest;
+import com.taskmind.ai.observability.AiRuntimeMetrics;
 import com.taskmind.ai.provider.AiProvider;
 import com.taskmind.ai.provider.MockAiProvider;
 import com.taskmind.ai.provider.ProviderRequest;
@@ -19,6 +20,8 @@ import com.taskmind.ai.provider.ProviderResponse;
 import com.taskmind.ai.provider.ProviderRouter;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 class TaskResolutionAgentCapabilityTest {
@@ -66,6 +69,69 @@ class TaskResolutionAgentCapabilityTest {
         assertThat(first.path("toolCalls").path(0).path("coreInternalEndpoint").asText()).startsWith("/internal/v1/");
     }
 
+
+    @Test
+    void providerSuccessRecordsTokenCountersRunCounterAndLatencyTimer() {
+        ObjectNode providerOutput = objectMapper.createObjectNode().put("result", "ok");
+        AiProvider successfulProvider = new AiProvider() {
+            @Override
+            public AiProviderId id() {
+                return new AiProviderId("metrics-provider");
+            }
+
+            @Override
+            public String modelId() {
+                return "metrics-model";
+            }
+
+            @Override
+            public ProviderResponse complete(ProviderRequest request) {
+                return new ProviderResponse("done", providerOutput, 11, 13, 24, 42L);
+            }
+        };
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        AiAgentRuntime runtime = new AiAgentRuntime(
+                new CapabilityRegistry(List.of(capability)),
+                new ProviderRouter("metrics-provider", List.of(successfulProvider)),
+                new RecordingAuditRepository(),
+                objectMapper,
+                new AiRuntimeMetrics(meterRegistry));
+
+        var response = runtime.execute(new CapabilityRequest(capability.id(), UUID.randomUUID(), "workspace", validInput(), "corr-1", "idem"));
+
+        assertThat(response.status()).isEqualTo(AiRunStatus.SUCCEEDED);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.PROMPT_TOKENS)
+                        .tags("provider", "metrics-provider", "model", "metrics-model", "capability", capability.id().value(), "status", "success")
+                        .counter()
+                        .count())
+                .isEqualTo(11.0d);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.COMPLETION_TOKENS)
+                        .tags("provider", "metrics-provider", "model", "metrics-model", "capability", capability.id().value(), "status", "success")
+                        .counter()
+                        .count())
+                .isEqualTo(13.0d);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.TOTAL_TOKENS)
+                        .tags("provider", "metrics-provider", "model", "metrics-model", "capability", capability.id().value(), "status", "success")
+                        .counter()
+                        .count())
+                .isEqualTo(24.0d);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.RUNS_TOTAL)
+                        .tags("provider", "metrics-provider", "model", "metrics-model", "capability", capability.id().value(), "status", "success")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0d);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.RESPONSE_DURATION)
+                        .tags("provider", "metrics-provider", "model", "metrics-model", "capability", capability.id().value(), "status", "success")
+                        .timer()
+                        .totalTime(TimeUnit.MILLISECONDS))
+                .isGreaterThanOrEqualTo(42.0d);
+    }
+
     @Test
     void providerFailureReturnsFailedCapabilityResponse() {
         AiProvider failingProvider = new AiProvider() {
@@ -85,11 +151,13 @@ class TaskResolutionAgentCapabilityTest {
             }
         };
         RecordingAuditRepository auditRepository = new RecordingAuditRepository();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         AiAgentRuntime runtime = new AiAgentRuntime(
                 new CapabilityRegistry(List.of(capability)),
                 new ProviderRouter("failing", List.of(failingProvider)),
                 auditRepository,
-                objectMapper);
+                objectMapper,
+                new AiRuntimeMetrics(meterRegistry));
 
         var response = runtime.execute(new CapabilityRequest(capability.id(), UUID.randomUUID(), "workspace", validInput(), "corr-2", "idem"));
 
@@ -98,6 +166,18 @@ class TaskResolutionAgentCapabilityTest {
         assertThat(auditRepository.started.promptVersion()).isEqualTo(TaskResolutionAgentCapability.PROMPT_VERSION);
         assertThat(auditRepository.started.validationOutcome()).isEqualTo("VALID");
         assertThat(auditRepository.failed).isTrue();
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.RUNS_TOTAL)
+                        .tags("provider", "failing", "model", "failing-model", "capability", capability.id().value(), "status", "failure")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0d);
+        assertThat(meterRegistry
+                        .get(AiRuntimeMetrics.RESPONSE_DURATION)
+                        .tags("provider", "failing", "model", "failing-model", "capability", capability.id().value(), "status", "failure")
+                        .timer()
+                        .count())
+                .isEqualTo(1L);
     }
 
     private ObjectNode validInput() {
@@ -122,6 +202,7 @@ class TaskResolutionAgentCapabilityTest {
     private static class RecordingAuditRepository extends AiRunAuditRepository {
         private AiRunRecord started;
         private boolean failed;
+        private boolean succeeded;
 
         RecordingAuditRepository() {
             super(null, new ObjectMapper());
@@ -131,6 +212,11 @@ class TaskResolutionAgentCapabilityTest {
         public UUID start(AiRunRecord record) {
             this.started = record;
             return UUID.randomUUID();
+        }
+
+        @Override
+        public void succeed(UUID runId, JsonNode output, int promptTokens, int completionTokens, int totalTokens, long latencyMs) {
+            this.succeeded = true;
         }
 
         @Override
