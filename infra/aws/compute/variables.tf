@@ -10,8 +10,9 @@ variable "vpc_id" {
 variable "private_subnet_ids" {
   type = list(string)
 }
-variable "alb_security_group_id" {
-  type = string
+variable "ecs_security_group_id" {
+  description = "Security group applied to ECS tasks. Created by the shared security module so data can authorize it without depending on compute."
+  type        = string
 }
 variable "core_target_group_arn" {
   type = string
