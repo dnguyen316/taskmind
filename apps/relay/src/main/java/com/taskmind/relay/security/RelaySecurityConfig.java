@@ -24,7 +24,14 @@ public class RelaySecurityConfig {
     SecurityFilterChain relaySecurityFilterChain(HttpSecurity http, ServiceTokenFilter serviceTokenFilter) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/internal/**").authenticated().anyRequest().denyAll())
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/actuator/prometheus")
+                                        .permitAll()
+                                        .requestMatchers("/internal/**")
+                                        .authenticated()
+                                        .anyRequest()
+                                        .denyAll())
                 .addFilterBefore(serviceTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)

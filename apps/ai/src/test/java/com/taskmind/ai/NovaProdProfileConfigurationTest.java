@@ -26,7 +26,7 @@ class NovaProdProfileConfigurationTest {
         assertThat(properties.getProperty("taskmind.ai.service-token"))
                 .isEqualTo("${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN}}");
         assertThat(properties.getProperty("management.endpoints.web.exposure.include"))
-                .isEqualTo("health,info");
+                .isEqualTo("health,info,prometheus");
         assertThat(properties.getProperty("logging.level.com.taskmind.ai")).isEqualTo("INFO");
     }
 

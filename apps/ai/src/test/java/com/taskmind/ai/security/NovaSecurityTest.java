@@ -1,5 +1,6 @@
 package com.taskmind.ai.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,5 +32,13 @@ class NovaSecurityTest {
         mockMvc.perform(get("/internal/ai/capabilities").header("Authorization", "Bearer test-ai-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.capabilities").isArray());
+    }
+
+    @Test
+    void prometheusScrapeIsPublicButOtherActuatorEndpointsRemainDenied() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/actuator/info")).andExpect(status().isForbidden());
     }
 }
