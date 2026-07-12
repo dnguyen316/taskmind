@@ -11,6 +11,7 @@ import com.taskmind.backend.outbox.infrastructure.OutboxEventJpaRepository;
 import com.taskmind.events.DomainEvent;
 import com.taskmind.events.EventTypes;
 import com.taskmind.events.transport.EventTransport;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -58,7 +59,12 @@ class OutboxEventPollerTest {
         writer.append(event);
         CountingTransport transport = new CountingTransport();
         OutboxPollerJob poller =
-                new OutboxPollerJob(repository, transport, new OutboxPipelineMetrics(), 10, 100);
+                new OutboxPollerJob(
+                        repository,
+                        transport,
+                        new OutboxPipelineMetrics(new SimpleMeterRegistry(), repository),
+                        10,
+                        100);
 
         poller.publishPending();
 
@@ -90,9 +96,19 @@ class OutboxEventPollerTest {
 
         CountingTransport transport = new CountingTransport();
         OutboxPollerJob first =
-                new OutboxPollerJob(repository, transport, new OutboxPipelineMetrics(), 10, 100);
+                new OutboxPollerJob(
+                        repository,
+                        transport,
+                        new OutboxPipelineMetrics(new SimpleMeterRegistry(), repository),
+                        10,
+                        100);
         OutboxPollerJob second =
-                new OutboxPollerJob(repository, transport, new OutboxPipelineMetrics(), 10, 100);
+                new OutboxPollerJob(
+                        repository,
+                        transport,
+                        new OutboxPipelineMetrics(new SimpleMeterRegistry(), repository),
+                        10,
+                        100);
         CountDownLatch start = new CountDownLatch(1);
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
@@ -112,6 +128,51 @@ class OutboxEventPollerTest {
         assertEquals(0, repository.unpublishedCount());
     }
 
+    @Test
+    void metricsRecordPublishSuccessFailureAndPendingLag() {
+        jdbcTemplate.update("delete from outbox_events");
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        OutboxPipelineMetrics metrics = new OutboxPipelineMetrics(meterRegistry, repository);
+
+        writer.append(domainEvent("Metric success"));
+        assertEquals(1.0, meterRegistry.get(OutboxPipelineMetrics.LAG_GAUGE).gauge().value());
+
+        OutboxPollerJob successPoller =
+                new OutboxPollerJob(repository, new CountingTransport(), metrics, 10, 100);
+        successPoller.publishPending();
+
+        assertEquals(1, metrics.publishedCount());
+        assertEquals(0, metrics.failedCount());
+        assertEquals(0.0, meterRegistry.get(OutboxPipelineMetrics.LAG_GAUGE).gauge().value());
+
+        writer.append(domainEvent("Metric failure"));
+        assertEquals(1.0, meterRegistry.get(OutboxPipelineMetrics.LAG_GAUGE).gauge().value());
+
+        OutboxPollerJob failingPoller =
+                new OutboxPollerJob(repository, new FailingTransport(), metrics, 10, 100);
+        failingPoller.publishPending();
+
+        assertEquals(1, metrics.publishedCount());
+        assertEquals(1, metrics.failedCount());
+        assertEquals(1.0, meterRegistry.get(OutboxPipelineMetrics.LAG_GAUGE).gauge().value());
+    }
+
+    private DomainEvent domainEvent(String title) {
+        UUID userId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        ObjectMapper objectMapper = new ObjectMapper();
+        return new DomainEvent(
+                UUID.randomUUID(),
+                1,
+                EventTypes.TASK_CREATED,
+                Instant.now(),
+                userId,
+                new DomainEvent.Scope("default", userId, projectId),
+                new DomainEvent.EntityRef("task", UUID.randomUUID()),
+                objectMapper.createObjectNode().put("title", title).put("status", "TODO"),
+                objectMapper.createObjectNode());
+    }
+
     private static void publishAfter(CountDownLatch start, OutboxPollerJob poller) {
         try {
             assertTrue(start.await(5, TimeUnit.SECONDS));
@@ -120,6 +181,18 @@ class OutboxEventPollerTest {
             throw new AssertionError(ex);
         }
         poller.publishPending();
+    }
+
+    private static class FailingTransport implements EventTransport {
+        @Override
+        public String publish(String streamKey, DomainEvent event) {
+            throw new IllegalStateException("relay unavailable");
+        }
+
+        @Override
+        public long streamLength(String streamKey) {
+            return 0;
+        }
     }
 
     private static class CountingTransport implements EventTransport {
