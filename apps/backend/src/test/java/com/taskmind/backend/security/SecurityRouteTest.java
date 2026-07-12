@@ -17,12 +17,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = AuthController.class)
-@Import({SecurityConfig.class, JwtClaimAuthenticationConverter.class, com.taskmind.backend.auth.interfaces.rest.AuthCookieSupport.class})
+@WebMvcTest(controllers = {AuthController.class, SecurityRouteTest.ActuatorProbeController.class})
+@Import({SecurityConfig.class, JwtClaimAuthenticationConverter.class, com.taskmind.backend.auth.interfaces.rest.AuthCookieSupport.class, SecurityRouteTest.ActuatorProbeController.class})
 @TestPropertySource(properties = "taskmind.cors.allowed-origins=http://localhost:5173")
 class SecurityRouteTest {
 
@@ -98,8 +100,35 @@ class SecurityRouteTest {
         mockMvc.perform(get("/v1/projects")).andExpect(status().isUnauthorized());
     }
 
+
+    @Test
+    void allowsUnauthenticatedPrometheusScrapes() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("# HELP taskmind_test_metric Test metric\n"));
+    }
+
+    @Test
+    void blocksNonPrometheusActuatorEndpoints() throws Exception {
+        mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
+    }
+
     @Test
     void deniesUnknownRoutes() throws Exception {
         mockMvc.perform(get("/unknown")).andExpect(status().isUnauthorized());
+    }
+
+    @RestController
+    static class ActuatorProbeController {
+
+        @GetMapping("/actuator/prometheus")
+        String prometheus() {
+            return "# HELP taskmind_test_metric Test metric\n";
+        }
+
+        @GetMapping("/actuator/env")
+        String env() {
+            return "secret";
+        }
     }
 }
