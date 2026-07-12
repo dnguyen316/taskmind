@@ -30,4 +30,8 @@ public class OutboxEventJpaRepository {
     public long unpublishedCount() {
         return repository.countByPublishedAtIsNull();
     }
+
+    public long pendingCount() {
+        return repository.countByPublishedAtIsNullAndClaimedAtIsNull();
+    }
 }
