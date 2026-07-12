@@ -6,6 +6,7 @@ terraform {
 locals {
   name = "taskmind-${var.environment}"
   tags = merge(var.tags, { Project = "taskmind", Environment = var.environment, ManagedBy = "opentofu" })
+  final_snapshot_identifier = "${var.final_snapshot_identifier_prefix}-${var.environment}"
 }
 
 
@@ -26,7 +27,7 @@ resource "aws_db_instance" "postgres" {
   backup_retention_period = var.backup_retention_days
   deletion_protection       = var.deletion_protection
   skip_final_snapshot       = var.skip_final_snapshot
-  final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.final_snapshot_identifier_prefix}-${var.environment}"
+  final_snapshot_identifier = var.skip_final_snapshot ? null : local.final_snapshot_identifier
   db_subnet_group_name = aws_db_subnet_group.this.name
   vpc_security_group_ids = var.rds_security_group_ids
   performance_insights_enabled = true
@@ -36,8 +37,8 @@ resource "aws_db_instance" "postgres" {
 
   lifecycle {
     precondition {
-      condition     = !contains(["prod", "production"], lower(var.environment)) || var.deletion_protection || !var.skip_final_snapshot
-      error_message = "Production RDS instances must keep deletion protection enabled or require a final snapshot on deletion."
+      condition     = !contains(["prod", "production"], lower(var.environment)) || (var.deletion_protection && !var.skip_final_snapshot)
+      error_message = "Production RDS instances must keep deletion protection enabled and require a final snapshot on deletion."
     }
 
     precondition {
