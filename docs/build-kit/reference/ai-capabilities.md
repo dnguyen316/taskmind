@@ -123,7 +123,9 @@ Use these patterns consistently across AI endpoints and DTOs:
 - M12 consumes Relay projections for analytics/dashboard context used by insights and
   project-health narratives.
 - M13 hardens the full AI surface with rate limiting, observability, production profile
-  controls, and AWS deployment configuration.
+  controls, and AWS deployment configuration. Nova runtime observability records provider
+  token counters, run counts, and LLM response latency with bounded `provider`, `model`,
+  `capability`, and `status` tags only.
 
 ## Verification expectations
 

@@ -123,6 +123,9 @@ clear and update this file list with the final location.
   contents, or LLM prompt payloads.
 - Expose Spring Boot Actuator `health`, `info`, `metrics`, and `prometheus` endpoints as
   appropriate for each environment.
+- Record Nova provider tokens, run counts, and LLM response latency with bounded tags only
+  (`provider`, `model`, `capability`, and `status`); never tag user/workspace/run IDs,
+  prompt text, or correlation IDs.
 - Add an OTLP tracing toggle. Tracing must be safe to disable locally and enable in
   staging/production.
 
