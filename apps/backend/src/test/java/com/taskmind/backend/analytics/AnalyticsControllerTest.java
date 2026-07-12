@@ -10,6 +10,7 @@ import com.taskmind.backend.analytics.application.*;
 import com.taskmind.backend.analytics.application.AnalyticsRollupRepository;
 import java.time.LocalDate;
 import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,14 +28,20 @@ class AnalyticsControllerTest {
     @Autowired MockMvc mockMvc;
     @MockBean AnalyticsRollupRepository repo;
 
+    @BeforeEach
+    void setUp() {
+        when(repo.statusSegments(any())).thenReturn(List.of());
+        when(repo.projectThroughput(any())).thenReturn(List.of());
+        when(repo.assigneeWorkload()).thenReturn(List.of());
+    }
+
     @Test
-    void returnsReportsShape() throws Exception {
+    void returnsReportsShapeForValidLowercaseRange() throws Exception {
         when(repo.userTrends(any(), any()))
                 .thenReturn(List.of(new ReportsTrend(LocalDate.parse("2026-01-01"), 3, 2, 5)));
         when(repo.statusSegments(any())).thenReturn(List.of(new ReportsStatusSegment("TODO", 1)));
         when(repo.projectThroughput(any()))
                 .thenReturn(List.of(new ReportsProjectThroughput(UUID.randomUUID(), "Core", 3, 2)));
-        when(repo.assigneeWorkload()).thenReturn(List.of());
         mockMvc.perform(
                         get("/v1/reports?range=month")
                                 .with(jwt("11111111-1111-1111-1111-111111111111")))
@@ -44,6 +51,46 @@ class AnalyticsControllerTest {
                 .andExpect(jsonPath("$.sparklines.tasksCompleted[0]").value(2))
                 .andExpect(jsonPath("$.statusSegments[0].status").value("TODO"))
                 .andExpect(jsonPath("$.projectThroughput[0].name").value("Core"));
+    }
+
+    @Test
+    void acceptsValidUppercaseRange() throws Exception {
+        mockMvc.perform(
+                        get("/v1/reports?range=QUARTER")
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.range").value("QUARTER"));
+    }
+
+    @Test
+    void defaultsBlankRangeToWeek() throws Exception {
+        mockMvc.perform(
+                        get("/v1/reports?range=")
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.range").value("WEEK"));
+    }
+
+    @Test
+    void defaultsMissingRangeToWeek() throws Exception {
+        mockMvc.perform(
+                        get("/v1/reports")
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.range").value("WEEK"));
+    }
+
+    @Test
+    void rejectsInvalidRangeWithAllowedValues() throws Exception {
+        mockMvc.perform(
+                        get("/v1/reports?range=year")
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid reports range"))
+                .andExpect(jsonPath("$.allowedValues[0]").value("week"))
+                .andExpect(jsonPath("$.allowedValues[1]").value("month"))
+                .andExpect(jsonPath("$.allowedValues[2]").value("quarter"))
+                .andExpect(jsonPath("$.invalidValue").value("year"));
     }
 
     @Test
