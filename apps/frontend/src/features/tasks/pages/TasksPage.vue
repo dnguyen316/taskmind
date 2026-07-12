@@ -62,8 +62,8 @@ function handleCreateTaskModalCancel() {
     isCreateTaskModalOpen.value = false
   }
 }
-async function handleChangeStatus(taskId: string, status: TaskStatus) {
-  await changeStatus(taskId, status)
+async function handleChangeStatus(taskId: string, status: TaskStatus, version: number | null) {
+  await changeStatus(taskId, status, version)
 }
 
 onMounted(async () => {

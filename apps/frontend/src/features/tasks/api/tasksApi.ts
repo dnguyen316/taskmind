@@ -60,8 +60,11 @@ export async function getTaskById(taskId: string) {
   return adaptTaskResponse(response.data)
 }
 
-export async function updateTaskStatus(taskId: string, status: TaskStatus) {
-  const response = await apiClient.patch<unknown>(`/v1/tasks/${taskId}/status`, { status })
+export async function updateTaskStatus(taskId: string, status: TaskStatus, version: number | null) {
+  const response = await apiClient.patch<unknown>(`/v1/tasks/${taskId}/status`, {
+    status,
+    version,
+  })
   return adaptTaskResponse(response.data)
 }
 

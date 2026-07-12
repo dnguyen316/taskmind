@@ -233,12 +233,12 @@ export function useTasks() {
     }
   }
 
-  async function changeStatus(taskId: string, status: TaskStatus) {
+  async function changeStatus(taskId: string, status: TaskStatus, version: number | null) {
     errorMessage.value = ''
     pendingStatusTaskIds.value = [...pendingStatusTaskIds.value, taskId]
 
     try {
-      const updatedTask = await updateTaskStatus(taskId, status)
+      const updatedTask = await updateTaskStatus(taskId, status, version)
 
       if (filters.status && updatedTask.status !== filters.status) {
         await fetchTasks()

@@ -12,7 +12,9 @@ const props = defineProps<{
   loading?: boolean
   projectId?: string
 }>()
-const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
+const emit = defineEmits<{
+  changeStatus: [taskId: string, status: TaskStatus, version: number | null]
+}>()
 
 const statuses: Array<{ value: TaskStatus; label: string; className: string }> = [
   { value: 'TODO', label: 'To do', className: 'todo' },
@@ -35,7 +37,7 @@ function isStatusPending(taskId: string) {
 
 function handleStatusChange(task: Task, nextStatus: TaskStatus) {
   if (nextStatus !== task.status) {
-    emit('changeStatus', task.id, nextStatus)
+    emit('changeStatus', task.id, nextStatus, task.version)
   }
 }
 

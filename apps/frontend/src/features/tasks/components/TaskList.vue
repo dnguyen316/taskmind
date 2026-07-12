@@ -14,7 +14,9 @@ const props = defineProps<{
   errorMessage?: string
   projectId?: string
 }>()
-const emit = defineEmits<{ changeStatus: [taskId: string, status: TaskStatus] }>()
+const emit = defineEmits<{
+  changeStatus: [taskId: string, status: TaskStatus, version: number | null]
+}>()
 
 interface TaskTableColumn {
   title: string
@@ -58,7 +60,7 @@ function taskDetailRoute(task: TaskTableRecord) {
 
 function handleStatusChange(task: TaskTableRecord, nextStatus: TaskStatus) {
   if (nextStatus !== task.status) {
-    emit('changeStatus', task.id, nextStatus)
+    emit('changeStatus', task.id, nextStatus, task.version)
   }
 }
 

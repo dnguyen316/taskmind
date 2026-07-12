@@ -195,7 +195,7 @@ public class TaskController {
             @Valid @RequestBody UpdateTaskStatusRequest request) {
         try {
             return taskApplicationService
-                    .updateStatus(requester, id, request.status())
+                    .updateStatus(requester, id, request.status(), request.version())
                     .map(TaskResponse::from)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());

@@ -226,11 +226,14 @@ public class TaskApplicationService {
     }
 
     @Transactional
-    public Optional<Task> updateStatus(AuthenticatedUser r, UUID id, TaskStatus s) {
+    public Optional<Task> updateStatus(AuthenticatedUser r, UUID id, TaskStatus s, Long version) {
         return tasks.findByIdForUpdate(id)
                 .map(
                         e -> {
                             validateCanMutate(r, e);
+                            if (version != null && !version.equals(e.version()))
+                                throw new org.springframework.orm
+                                        .ObjectOptimisticLockingFailureException(Task.class, id);
                             Task saved = tasks.save(e.withStatus(s, Instant.now()));
                             events.taskUpdated(e, saved, r.userId());
                             return saved;
@@ -239,7 +242,7 @@ public class TaskApplicationService {
 
     @Transactional
     public Optional<Task> archive(AuthenticatedUser r, UUID id) {
-        return updateStatus(r, id, TaskStatus.ARCHIVED);
+        return updateStatus(r, id, TaskStatus.ARCHIVED, null);
     }
 
     private TaskTypeDefinition resolveActiveType(UUID projectId, String key) {

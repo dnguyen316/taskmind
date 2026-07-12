@@ -4,6 +4,7 @@ import com.taskmind.backend.task.domain.model.TaskStatus;
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateTaskStatusRequest(
-    @NotNull TaskStatus status
+    @NotNull TaskStatus status,
+    Long version
 ) {
 }

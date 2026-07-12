@@ -989,6 +989,20 @@ This changelog tracks backend feature progress against the core implementation p
 - Skills used: none.
 - Agent delegation: none.
 
+## 2026-07-12 - Task status optimistic locking
+
+### Changed
+
+- Added status-only task update version checks so stale status mutations return the existing optimistic-lock conflict response before saving.
+- Updated the Core OpenAPI status update request contract to include the task version sent by clients.
+
+### Tests
+
+- Added task controller coverage for stale status-only updates returning `409 Conflict`.
+
+### Closeout notes
+
+- Primary milestone: task concurrency hardening.
 ## 2026-07-12 - Asynchronous notification delivery queue
 
 ### Changed
