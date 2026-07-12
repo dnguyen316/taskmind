@@ -35,7 +35,7 @@ class NotificationApplicationServiceTest {
         assertThat(app.markRead(user(u1), n1.id())).isPresent();
         assertThat(app.unreadCount(user(u1))).isZero();
         var updated =
-                app.updatePreferences(user(u1), false, true, true, "https://hooks.example", "#ops");
+                app.updatePreferences(user(u1), null, false, true, true, "https://hooks.example", "#ops");
         assertThat(updated.inAppEnabled()).isFalse();
         assertThat(updated.slackEnabled()).isTrue();
     }

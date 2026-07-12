@@ -2209,6 +2209,7 @@ paths:
       responses:
         '200': {description: Updated preferences, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationPreference'}}}}
         '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /v1/notifications/stream:
     get:
       summary: Subscribe to current-user notification SSE events
@@ -2823,6 +2824,7 @@ components:
       type: object
       required: [inAppEnabled, emailDigestEnabled, slackEnabled]
       properties:
+        version: {type: integer, format: int64, nullable: true}
         inAppEnabled: {type: boolean}
         emailDigestEnabled: {type: boolean}
         slackEnabled: {type: boolean}
