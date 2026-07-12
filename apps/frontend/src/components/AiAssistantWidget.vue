@@ -1,11 +1,55 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { CloseOutlined, SendOutlined } from '@ant-design/icons-vue'
-import { useNovaChat } from '../features/ai/composables/useNovaChat'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { CloseOutlined, ReloadOutlined, SendOutlined } from '@ant-design/icons-vue'
+import {
+  describeNovaContext,
+  type NovaChatContext,
+  type NovaChatScope,
+  useNovaChat,
+} from '../features/ai/composables/useNovaChat'
 
 const text = ref('')
 const open = ref(false)
-const { messages, loading, errorMessage, send } = useNovaChat()
+const route = useRoute()
+const selectedScope = ref<NovaChatScope>('none')
+
+const routeProjectId = computed(() =>
+  readRouteValue(route.params.projectId ?? route.params.id ?? route.query.projectId),
+)
+const routeTaskId = computed(() =>
+  readRouteValue(route.params.taskId ?? route.params.id ?? route.query.taskId),
+)
+const hasProjectContext = computed(() => Boolean(routeProjectId.value))
+const hasTaskContext = computed(() => Boolean(routeTaskId.value && isTaskRoute.value))
+const isTaskRoute = computed(() => String(route.name ?? '').includes('task'))
+const hasWorkspaceContext = computed(() => hasProjectContext.value || hasTaskContext.value)
+
+const context = computed<NovaChatContext>(() => {
+  if (selectedScope.value === 'none') {
+    return { scope: 'none' }
+  }
+  if (selectedScope.value === 'task' && hasTaskContext.value) {
+    return { scope: 'task', projectId: routeProjectId.value, taskId: routeTaskId.value }
+  }
+  if (selectedScope.value === 'project' && hasProjectContext.value) {
+    return { scope: 'project', projectId: routeProjectId.value }
+  }
+  if (selectedScope.value === 'visible' && hasWorkspaceContext.value) {
+    return { scope: 'visible', projectId: routeProjectId.value, taskId: routeTaskId.value }
+  }
+  return { scope: 'none' }
+})
+
+const scopeOptions = computed(() => [
+  { label: 'Current task', value: 'task', disabled: !hasTaskContext.value },
+  { label: 'Current project', value: 'project', disabled: !hasProjectContext.value },
+  { label: 'All visible work', value: 'visible', disabled: !hasWorkspaceContext.value },
+  { label: 'No workspace context', value: 'none' },
+])
+
+const contextDisclosure = computed(() => describeNovaContext(context.value))
+const { messages, loading, errorMessage, resetChat, send } = useNovaChat(context)
 
 async function submit() {
   if (text.value.trim()) {
@@ -13,6 +57,13 @@ async function submit() {
     text.value = ''
     await send(message)
   }
+}
+
+function readRouteValue(value: unknown) {
+  if (Array.isArray(value)) {
+    return String(value[0] ?? '').trim() || undefined
+  }
+  return String(value ?? '').trim() || undefined
 }
 </script>
 
@@ -23,19 +74,41 @@ async function submit() {
         <div class="ai-panel__header">
           <div>
             <span>TaskMind AI</span>
-            <p>Ask about your tasks</p>
+            <p>{{ contextDisclosure }}</p>
           </div>
-          <a-button
-            aria-label="Close Nova assistant"
-            shape="circle"
-            size="small"
-            type="text"
-            @click="open = false"
-          >
-            <template #icon><CloseOutlined /></template>
-          </a-button>
+          <div class="ai-panel__actions">
+            <a-button
+              aria-label="Start a new Nova chat"
+              shape="circle"
+              size="small"
+              type="text"
+              @click="resetChat"
+            >
+              <template #icon><ReloadOutlined /></template>
+            </a-button>
+            <a-button
+              aria-label="Close Nova assistant"
+              shape="circle"
+              size="small"
+              type="text"
+              @click="open = false"
+            >
+              <template #icon><CloseOutlined /></template>
+            </a-button>
+          </div>
         </div>
       </template>
+
+      <div class="ai-context-control">
+        <label for="nova-context-scope">Context Nova can use</label>
+        <a-select
+          id="nova-context-scope"
+          v-model:value="selectedScope"
+          :options="scopeOptions"
+          size="small"
+          aria-label="Choose Nova workspace context scope"
+        />
+      </div>
 
       <div class="messages" aria-live="polite">
         <p v-if="messages.length === 0" class="empty-state">Ask Nova about your tasks.</p>
@@ -136,6 +209,11 @@ async function submit() {
   justify-content: space-between;
 }
 
+.ai-panel__actions {
+  display: flex;
+  gap: 4px;
+}
+
 .ai-panel__header span {
   display: block;
   font-size: 15px;
@@ -144,14 +222,33 @@ async function submit() {
 }
 
 .ai-panel__header p {
+  max-width: 260px;
   margin: 2px 0 0;
   color: rgba(255, 255, 255, 0.74);
   font-size: 12px;
   font-weight: 500;
+  white-space: normal;
 }
 
 .ai-panel__header .ant-btn {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-context-control {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(79, 70, 229, 0.16);
+  border-radius: 16px;
+}
+
+.ai-context-control label {
+  color: var(--tm-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .messages {

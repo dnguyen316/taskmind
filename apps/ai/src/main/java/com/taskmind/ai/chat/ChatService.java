@@ -59,8 +59,8 @@ public class ChatService {
                                 AiCapabilityId.CHAT,
                                 provider.id(),
                                 provider.modelId(),
-                                requestHash(sessionId, request.message()),
-                                objectMapper.createObjectNode().put("message", request.message()),
+                                requestHash(sessionId, request),
+                                chatInput(request),
                                 "chat.v1",
                                 "VALID",
                                 request.correlationId()));
@@ -68,7 +68,7 @@ public class ChatService {
                 provider.complete(
                         new ProviderRequest(
                                 AiCapabilityId.CHAT,
-                                objectMapper.createObjectNode().put("message", request.message()),
+                                chatInput(request),
                                 "chat.v1",
                                 contents(messages),
                                 request.correlationId()));
@@ -84,15 +84,40 @@ public class ChatService {
         return new ChatResponse(sessionId, providerResponse.message(), runId, List.of());
     }
 
+    private com.fasterxml.jackson.databind.node.ObjectNode chatInput(ChatRequest request) {
+        com.fasterxml.jackson.databind.node.ObjectNode input =
+                objectMapper.createObjectNode().put("message", request.message());
+        if (StringUtils.hasText(request.projectId())) {
+            input.put("projectId", request.projectId());
+        }
+        if (StringUtils.hasText(request.taskId())) {
+            input.put("taskId", request.taskId());
+        }
+        if (StringUtils.hasText(request.scope())) {
+            input.put("scope", request.scope());
+        }
+        return input;
+    }
+
     private List<String> contents(List<ChatMessage> messages) {
         return messages.stream().map(message -> message.role() + ":" + message.content()).toList();
     }
 
-    private String requestHash(String sessionId, String message) {
+    private String requestHash(String sessionId, ChatRequest request) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash =
-                    digest.digest((sessionId + ":" + message).getBytes(StandardCharsets.UTF_8));
+                    digest.digest(
+                            (sessionId
+                                            + ":"
+                                            + request.message()
+                                            + ":"
+                                            + request.projectId()
+                                            + ":"
+                                            + request.taskId()
+                                            + ":"
+                                            + request.scope())
+                                    .getBytes(StandardCharsets.UTF_8));
             StringBuilder builder = new StringBuilder();
             for (byte b : hash) {
                 builder.append(String.format("%02x", b));
