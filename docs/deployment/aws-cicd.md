@@ -71,10 +71,11 @@ response; this fallback is intended for local/non-production composition only.
 
 ## ECS service secret inputs
 
-The AWS compute module grants each ECS task role access only to the secrets listed for
-that service. Do not use wildcard secret ARNs. Keep every `service_secrets` entry aligned
-with the matching service-specific IAM input so a task definition never injects a secret
-that the task role cannot read:
+The AWS compute module expects three separate secret groups: Core (`core_secret_arns`),
+Relay (`relay_secret_arns`), and Nova (`nova_secret_arns`). Each ECS task role can read
+only the secrets listed for that service. Do not use wildcard secret ARNs. Keep every
+`service_secrets` entry aligned with the matching service-specific IAM input so a task
+definition never injects a secret that the task role cannot read:
 
 | Service | Compute module input | Expected secret names |
 | --- | --- | --- |
