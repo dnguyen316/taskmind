@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1/tasks/{taskId}/links")
@@ -29,11 +28,7 @@ public class TaskLinkController {
 
     @GetMapping
     public List<TaskLink> list(AuthenticatedUser requester, @PathVariable UUID taskId) {
-        try {
-            return taskLinkApplicationService.list(requester, taskId);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        return taskLinkApplicationService.list(requester, taskId);
     }
 
     @PostMapping
@@ -42,16 +37,9 @@ public class TaskLinkController {
         @PathVariable UUID taskId,
         @Valid @RequestBody CreateTaskLinkRequest request
     ) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(
-                            taskLinkApplicationService.create(
-                                    requester,
-                                    taskId,
-                                    request.targetTaskId(),
-                                    request.linkType()));
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(
+                        taskLinkApplicationService.create(
+                                requester, taskId, request.targetTaskId(), request.linkType()));
     }
 }

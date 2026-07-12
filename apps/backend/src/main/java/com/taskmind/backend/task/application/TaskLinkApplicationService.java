@@ -27,7 +27,7 @@ public class TaskLinkApplicationService {
         Task s = authorizedToMutateLink(u, source);
         Task t = authorizedToMutateLink(u, target);
         if (s.projectId() == null || !s.projectId().equals(t.projectId()))
-            throw new IllegalArgumentException("Linked tasks must belong to the same project");
+            throw new TaskValidationException("Linked tasks must belong to the same project");
         return links.save(
                 new TaskLink(
                         UUID.randomUUID(), null, source, target, type, u.userId(), Instant.now()));
@@ -40,20 +40,20 @@ public class TaskLinkApplicationService {
 
     @Transactional
     public void delete(AuthenticatedUser u, UUID id) {
-        TaskLink l = links.findById(id).orElseThrow();
+        TaskLink l = links.findById(id).orElseThrow(() -> new TaskNotFoundException("Task link not found"));
         authorizedToMutateLink(u, l.sourceTaskId());
         links.deleteById(id);
     }
 
     private Task authorizedToRead(AuthenticatedUser u, UUID id) {
-        Task t = tasks.findById(id).orElseThrow();
-        if (!canRead(u, t)) throw new IllegalArgumentException("Access denied");
+        Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
+        if (!canRead(u, t)) throw new TaskAccessDeniedException("Task access denied");
         return t;
     }
 
     private Task authorizedToMutateLink(AuthenticatedUser u, UUID id) {
-        Task t = tasks.findById(id).orElseThrow();
-        if (!canMutateLink(u, t)) throw new IllegalArgumentException("Access denied");
+        Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
+        if (!canMutateLink(u, t)) throw new TaskAccessDeniedException("Task access denied");
         return t;
     }
 

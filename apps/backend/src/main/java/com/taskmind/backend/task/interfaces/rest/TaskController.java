@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1/tasks")
@@ -43,32 +42,28 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(
             AuthenticatedUser requester, @Valid @RequestBody CreateTaskRequest request) {
-        try {
-            Task created =
-                    taskApplicationService.create(
-                            requester,
-                            new CreateTaskCommand(
-                                    request.userId(),
-                                    request.projectId(),
-                                    request.assigneeId(),
-                                    request.parentTaskId(),
-                                    request.taskLevel(),
-                                    request.taskType(),
-                                    request.storyPoints(),
-                                    request.releaseVersion(),
-                                    request.title(),
-                                    request.description(),
-                                    request.status(),
-                                    request.priority(),
-                                    request.dueAt(),
-                                    request.durationMinutes(),
-                                    request.energyLevel(),
-                                    request.source(),
-                                    request.confidence()));
-            return ResponseEntity.status(HttpStatus.CREATED).body(TaskResponse.from(created));
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        Task created =
+                taskApplicationService.create(
+                        requester,
+                        new CreateTaskCommand(
+                                request.userId(),
+                                request.projectId(),
+                                request.assigneeId(),
+                                request.parentTaskId(),
+                                request.taskLevel(),
+                                request.taskType(),
+                                request.storyPoints(),
+                                request.releaseVersion(),
+                                request.title(),
+                                request.description(),
+                                request.status(),
+                                request.priority(),
+                                request.dueAt(),
+                                request.durationMinutes(),
+                                request.energyLevel(),
+                                request.source(),
+                                request.confidence()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(TaskResponse.from(created));
     }
 
     @GetMapping
@@ -159,33 +154,29 @@ public class TaskController {
             AuthenticatedUser requester,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTaskRequest request) {
-        try {
-            return taskApplicationService
-                    .update(
-                            requester,
-                            id,
-                            new UpdateTaskCommand(
-                                    request.version(),
-                                    request.projectId(),
-                                    request.assigneeId(),
-                                    request.parentTaskId(),
-                                    request.taskLevel(),
-                                    request.taskType(),
-                                    request.storyPoints(),
-                                    request.releaseVersion(),
-                                    request.title(),
-                                    request.description(),
-                                    request.status(),
-                                    request.priority(),
-                                    request.dueAt(),
-                                    request.durationMinutes(),
-                                    request.energyLevel()))
-                    .map(TaskResponse::from)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        return taskApplicationService
+                .update(
+                        requester,
+                        id,
+                        new UpdateTaskCommand(
+                                request.version(),
+                                request.projectId(),
+                                request.assigneeId(),
+                                request.parentTaskId(),
+                                request.taskLevel(),
+                                request.taskType(),
+                                request.storyPoints(),
+                                request.releaseVersion(),
+                                request.title(),
+                                request.description(),
+                                request.status(),
+                                request.priority(),
+                                request.dueAt(),
+                                request.durationMinutes(),
+                                request.energyLevel()))
+                .map(TaskResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/status")
@@ -193,27 +184,19 @@ public class TaskController {
             AuthenticatedUser requester,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTaskStatusRequest request) {
-        try {
-            return taskApplicationService
-                    .updateStatus(requester, id, request.status(), request.version())
-                    .map(TaskResponse::from)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        return taskApplicationService
+                .updateStatus(requester, id, request.status(), request.version())
+                .map(TaskResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/archive")
     public ResponseEntity<TaskResponse> archiveTask(AuthenticatedUser requester, @PathVariable UUID id) {
-        try {
-            return taskApplicationService
-                    .archive(requester, id)
-                    .map(TaskResponse::from)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
-        }
+        return taskApplicationService
+                .archive(requester, id)
+                .map(TaskResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

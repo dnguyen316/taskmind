@@ -1019,3 +1019,21 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M09 notifications reliability.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-12 - Task global exception handling
+
+### Changed
+
+- Added typed task and task-type application exceptions for validation, access-denied, and not-found cases, then centralized their HTTP `ProblemDetail` mappings in the global Core API exception handler.
+- Removed task/task-link/task-type controller-local exception translation so REST endpoints now let typed application exceptions flow to the shared handler.
+- Updated task type validation outcomes to return bad-request semantics while project membership and mutation authorization failures remain forbidden.
+
+### Tests
+
+- Updated task controller coverage for invalid task type level and inactive custom task type validation responses.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/error handling hardening.
+- Skills used: none.
+- Agent delegation: none.
