@@ -53,6 +53,7 @@ public class NotificationApplicationService {
     @Transactional
     public NotificationPreference updatePreferences(
             AuthenticatedUser user,
+            Long expectedVersion,
             boolean inApp,
             boolean email,
             boolean slack,
@@ -60,10 +61,11 @@ public class NotificationApplicationService {
             String channel) {
         Instant now = Instant.now();
         NotificationPreference existing = preferences(user);
+        Long version = expectedVersion != null ? expectedVersion : existing.version();
         return preferences.save(
                 new NotificationPreference(
                         user.userId(),
-                        existing.version(),
+                        version,
                         inApp,
                         email,
                         slack,

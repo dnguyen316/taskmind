@@ -4,7 +4,9 @@ import com.taskmind.backend.notification.domain.model.NotificationPreference;
 import com.taskmind.backend.notification.domain.repository.NotificationPreferenceRepository;
 import java.sql.Timestamp;
 import java.util.*;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -36,17 +38,26 @@ public class JpaNotificationPreferenceRepository implements NotificationPreferen
     }
 
     public NotificationPreference save(NotificationPreference p) {
-        if (findByUserId(p.userId()).isPresent())
-            jdbc.update(
-                    "update notification_preferences set in_app_enabled=?,email_digest_enabled=?,slack_enabled=?,slack_webhook_url=?,slack_channel=?,updated_at=?,version=version+1 where user_id=?",
-                    p.inAppEnabled(),
-                    p.emailDigestEnabled(),
-                    p.slackEnabled(),
-                    p.slackWebhookUrl(),
-                    p.slackChannel(),
-                    Timestamp.from(p.updatedAt()),
-                    p.userId());
-        else
+        if (p.version() != null) {
+            int updated =
+                    jdbc.update(
+                            "update notification_preferences set in_app_enabled=?,email_digest_enabled=?,slack_enabled=?,slack_webhook_url=?,slack_channel=?,updated_at=?,version=version+1 where user_id=? and version=?",
+                            p.inAppEnabled(),
+                            p.emailDigestEnabled(),
+                            p.slackEnabled(),
+                            p.slackWebhookUrl(),
+                            p.slackChannel(),
+                            Timestamp.from(p.updatedAt()),
+                            p.userId(),
+                            p.version());
+            if (updated == 1) return findByUserId(p.userId()).orElseThrow();
+            if (findByUserId(p.userId()).isPresent()) {
+                throw new ObjectOptimisticLockingFailureException(
+                        NotificationPreference.class, p.userId());
+            }
+        }
+
+        try {
             jdbc.update(
                     "insert into notification_preferences(user_id,in_app_enabled,email_digest_enabled,slack_enabled,slack_webhook_url,slack_channel,created_at,updated_at,version) values (?,?,?,?,?,?,?,?,0)",
                     p.userId(),
@@ -57,6 +68,9 @@ public class JpaNotificationPreferenceRepository implements NotificationPreferen
                     p.slackChannel(),
                     Timestamp.from(p.createdAt()),
                     Timestamp.from(p.updatedAt()));
+        } catch (DuplicateKeyException e) {
+            return findByUserId(p.userId()).orElseThrow();
+        }
         return findByUserId(p.userId()).orElseThrow();
     }
 }

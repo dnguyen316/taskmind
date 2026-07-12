@@ -24,6 +24,7 @@ public class NotificationPreferenceController {
             AuthenticatedUser u, @RequestBody UpdateNotificationPreferencesRequest r) {
         return service.updatePreferences(
                 u,
+                r.version(),
                 r.inAppEnabled(),
                 r.emailDigestEnabled(),
                 r.slackEnabled(),
@@ -32,6 +33,7 @@ public class NotificationPreferenceController {
     }
 
     public record UpdateNotificationPreferencesRequest(
+            Long version,
             boolean inAppEnabled,
             boolean emailDigestEnabled,
             boolean slackEnabled,

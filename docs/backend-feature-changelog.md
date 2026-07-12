@@ -1,3 +1,15 @@
+## 2026-07-12 - Notification preference concurrency hardening
+
+### Changed
+
+- Hardened notification preference creation so concurrent first-time writes for a user converge on one row instead of surfacing duplicate-key failures.
+- Added compare-and-swap version checks to notification preference updates and documented the optional request version in Core OpenAPI.
+
+### Verification notes
+
+- Added backend coverage for concurrent first-time preference writes and stale update rejection through both service and REST flows.
+- Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-12 - Reports rollup availability metadata
 
 ### Changed
