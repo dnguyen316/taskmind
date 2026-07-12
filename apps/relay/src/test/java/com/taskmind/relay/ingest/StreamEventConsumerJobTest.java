@@ -7,6 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.taskmind.relay.observability.RelayPipelineMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,9 @@ class StreamEventConsumerJobTest {
     void consumerGroupReadGivesNewStreamEntryToOnlyOneConsumerBeforeRedelivery() {
         StreamOperations<String, String, String> streams = mock(StreamOperations.class);
         StringRedisTemplate redis = redis(streams);
-        TestIngestApplicationService ingest = new TestIngestApplicationService(true);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        RelayPipelineMetrics metrics = new RelayPipelineMetrics(registry, redis, STREAM, GROUP);
+        TestIngestApplicationService ingest = new TestIngestApplicationService(true, metrics);
         MapRecord<String, String, String> record = record("1-0", "payload-1");
         when(streams.pending(eq(STREAM), eq(GROUP), any(Range.class), eq(10L))).thenReturn(emptyPending());
         when(streams.read(eq(Consumer.from(GROUP, "relay-1")), any(StreamReadOptions.class), any(StreamOffset.class)))
@@ -48,12 +52,14 @@ class StreamEventConsumerJobTest {
         when(streams.read(eq(Consumer.from(GROUP, "relay-2")), any(StreamReadOptions.class), any(StreamOffset.class)))
                 .thenReturn(List.of());
 
-        job(redis, ingest, "relay-1").consumeAvailable();
+        new StreamEventConsumerJob(redis, ingest, metrics, STREAM, GROUP, "relay-1", 10, 5, 30_000).consumeAvailable();
         job(redis, ingest, "relay-2").consumeAvailable();
 
         org.assertj.core.api.Assertions.assertThat(ingest.ingestedPayloads()).containsExactly("payload-1");
         verify(streams).acknowledge(STREAM, GROUP, RecordId.of("1-0"));
         verify(streams, never()).delete(eq(STREAM), any(RecordId[].class));
+        org.assertj.core.api.Assertions.assertThat(registry.find("taskmind.relay.events.ingested").counter().count()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(registry.find("taskmind.relay.stream.processing.duration").tag("result", "ingested").timer().count()).isEqualTo(1);
     }
 
     @Test
@@ -80,6 +86,7 @@ class StreamEventConsumerJobTest {
     void deadLettersPendingEntryAfterRepeatedFailures() {
         StreamOperations<String, String, String> streams = mock(StreamOperations.class);
         StringRedisTemplate redis = redis(streams);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
         PendingMessage pending = new PendingMessage(RecordId.of("3-0"), Consumer.from(GROUP, "relay-1"), java.time.Duration.ofMinutes(2), 5);
         MapRecord<String, String, String> record = record("3-0", "payload-3");
         when(streams.pending(eq(STREAM), eq(GROUP), any(Range.class), eq(10L)))
@@ -89,24 +96,35 @@ class StreamEventConsumerJobTest {
         when(streams.read(eq(Consumer.from(GROUP, "relay-2")), any(StreamReadOptions.class), any(StreamOffset.class)))
                 .thenReturn(List.of());
 
-        job(redis, "relay-2").consumeAvailable();
+        job(redis, new TestIngestApplicationService(true), "relay-2", 5, 30_000, registry).consumeAvailable();
 
         verify(streams).add(eq(STREAM + ".dlq"), any(Map.class));
         verify(streams).acknowledge(STREAM, GROUP, RecordId.of("3-0"));
+        org.assertj.core.api.Assertions.assertThat(registry.find("taskmind.relay.events.dead_letters").counter().count()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(registry.find("taskmind.relay.stream.processing.duration").tag("result", "dead_letter").timer().count()).isEqualTo(1);
     }
 
     private static final class TestIngestApplicationService extends IngestApplicationService {
         private final boolean result;
+        private final RelayPipelineMetrics metrics;
         private final java.util.List<String> ingestedPayloads = new java.util.ArrayList<>();
 
         private TestIngestApplicationService(boolean result) {
+            this(result, null);
+        }
+
+        private TestIngestApplicationService(boolean result, RelayPipelineMetrics metrics) {
             super(null, null, null, null, null, null, null, null);
             this.result = result;
+            this.metrics = metrics;
         }
 
         @Override
         public boolean ingest(String rawPayload) {
             ingestedPayloads.add(rawPayload);
+            if (metrics != null && result) {
+                metrics.recordIngested();
+            }
             return result;
         }
 
@@ -130,11 +148,20 @@ class StreamEventConsumerJobTest {
     }
 
     private static StreamEventConsumerJob job(StringRedisTemplate redis, IngestApplicationService ingest, String consumerName) {
-        return job(redis, ingest, consumerName, 5, 30_000);
+        return job(redis, ingest, consumerName, new SimpleMeterRegistry());
+    }
+
+    private static StreamEventConsumerJob job(StringRedisTemplate redis, IngestApplicationService ingest, String consumerName, SimpleMeterRegistry registry) {
+        return job(redis, ingest, consumerName, 5, 30_000, registry);
     }
 
     private static StreamEventConsumerJob job(StringRedisTemplate redis, IngestApplicationService ingest, String consumerName, int maxAttempts, long pendingIdleMs) {
-        return new StreamEventConsumerJob(redis, ingest, STREAM, GROUP, consumerName, 10, maxAttempts, pendingIdleMs);
+        return job(redis, ingest, consumerName, maxAttempts, pendingIdleMs, new SimpleMeterRegistry());
+    }
+
+    private static StreamEventConsumerJob job(StringRedisTemplate redis, IngestApplicationService ingest, String consumerName, int maxAttempts, long pendingIdleMs, SimpleMeterRegistry registry) {
+        RelayPipelineMetrics metrics = new RelayPipelineMetrics(registry, redis, STREAM, GROUP);
+        return new StreamEventConsumerJob(redis, ingest, metrics, STREAM, GROUP, consumerName, 10, maxAttempts, pendingIdleMs);
     }
 
     private static MapRecord<String, String, String> record(String id, String payload) {

@@ -1,5 +1,6 @@
 package com.taskmind.relay.ingest;
 
+import com.taskmind.relay.observability.RelayPipelineMetrics;
 import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,6 +35,7 @@ public class StreamEventConsumerJob {
 
     private final StringRedisTemplate redisTemplate;
     private final IngestApplicationService ingestApplicationService;
+    private final RelayPipelineMetrics metrics;
     private final String streamKey;
     private final String groupName;
     private final String consumerName;
@@ -44,6 +46,7 @@ public class StreamEventConsumerJob {
     public StreamEventConsumerJob(
             StringRedisTemplate redisTemplate,
             IngestApplicationService ingestApplicationService,
+            RelayPipelineMetrics metrics,
             @Value("${taskmind.relay.stream-key:taskmind.events}") String streamKey,
             @Value("${taskmind.relay.consumer-group:taskmind-relay}") String groupName,
             @Value("${taskmind.relay.consumer-name:#{null}}") String consumerName,
@@ -52,6 +55,7 @@ public class StreamEventConsumerJob {
             @Value("${taskmind.relay.pending-idle-timeout-ms:30000}") long pendingIdleTimeoutMs) {
         this.redisTemplate = redisTemplate;
         this.ingestApplicationService = ingestApplicationService;
+        this.metrics = metrics;
         this.streamKey = streamKey;
         this.groupName = groupName;
         this.consumerName = consumerName == null || consumerName.isBlank() ? defaultConsumerName() : consumerName;
@@ -123,15 +127,21 @@ public class StreamEventConsumerJob {
     }
 
     private void processRecord(StreamOperations<String, String, String> streams, MapRecord<String, String, String> record) {
+        metrics.recordStreamProcessing(() -> processRecordInternal(streams, record));
+    }
+
+    private String processRecordInternal(StreamOperations<String, String, String> streams, MapRecord<String, String, String> record) {
         String event = record.getValue().get(EVENT_FIELD);
         if (event == null) {
             deadLetter(streams, record, "missing event field");
             acknowledge(streams, record);
-            return;
+            return RelayPipelineMetrics.RESULT_DEAD_LETTER;
         }
         if (ingestApplicationService.ingest(event)) {
             acknowledge(streams, record);
+            return RelayPipelineMetrics.RESULT_INGESTED;
         }
+        return RelayPipelineMetrics.RESULT_FAILED;
     }
 
     private void deadLetterPending(StreamOperations<String, String, String> streams, PendingMessage message) {
@@ -142,8 +152,11 @@ public class StreamEventConsumerJob {
             return;
         }
         for (MapRecord<String, String, String> record : claimed) {
-            deadLetter(streams, record, "delivery attempts exceeded");
-            acknowledge(streams, record);
+            metrics.recordStreamProcessing(() -> {
+                deadLetter(streams, record, "delivery attempts exceeded");
+                acknowledge(streams, record);
+                return RelayPipelineMetrics.RESULT_DEAD_LETTER;
+            });
         }
     }
 
@@ -153,6 +166,7 @@ public class StreamEventConsumerJob {
                 "sourceId", record.getId().getValue(),
                 "reason", reason,
                 "event", record.getValue().getOrDefault(EVENT_FIELD, "")));
+        metrics.recordDeadLetter();
         log.warn("Moved Redis stream record {} to dead-letter stream: {}", record.getId(), reason);
     }
 

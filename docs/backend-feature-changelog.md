@@ -1019,3 +1019,20 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M09 notifications reliability.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-12 - Relay ingest Micrometer metrics
+
+### Changed
+
+- Replaced Relay's in-memory ingest counters with Micrometer counters and added Redis stream processing timers tagged by result.
+- Added Relay Redis stream pending and length gauges backed by `StringRedisTemplate` stream operations.
+
+### Tests
+
+- Updated Relay stream consumer coverage to use `SimpleMeterRegistry` and assert success/dead-letter counter and timer metrics.
+
+### Closeout notes
+
+- Primary milestone: Relay observability hardening.
+- Skills used: none.
+- Agent delegation: none.
