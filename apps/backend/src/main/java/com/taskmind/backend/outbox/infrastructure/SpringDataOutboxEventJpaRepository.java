@@ -35,7 +35,10 @@ public interface SpringDataOutboxEventJpaRepository
             @Param("claimedAt") Instant claimedAt,
             @Param("limit") int limit);
 
-    List<OutboxEventJpaEntity> findByClaimedByAndPublishedAtIsNullOrderByOccurredAtAsc(String claimedBy);
+    List<OutboxEventJpaEntity> findByClaimedByAndPublishedAtIsNullOrderByOccurredAtAsc(
+            String claimedBy);
 
     long countByPublishedAtIsNull();
+
+    long countByPublishedAtIsNullAndClaimedAtIsNull();
 }
