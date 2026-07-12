@@ -14,9 +14,19 @@ variable "private_subnet_ids" {
   type = list(string)
 }
 
-variable "ecs_security_group_ids" {
-  type    = list(string)
-  default = []
+variable "rds_security_group_ids" {
+  description = "Security group IDs to attach to the RDS instance."
+  type        = list(string)
+}
+
+variable "redis_security_group_ids" {
+  description = "Security group IDs to attach to the ElastiCache replication group."
+  type        = list(string)
+}
+
+variable "opensearch_security_group_ids" {
+  description = "Security group IDs to attach to the OpenSearch domain."
+  type        = list(string)
 }
 
 variable "db_username" {
@@ -86,21 +96,6 @@ variable "opensearch_volume_size" {
   default = 20
 }
 
-variable "core_task_role_arns" {
-  description = "ECS task role ARNs allowed to search the activity OpenSearch domain."
-  type        = list(string)
-}
-
-variable "relay_task_role_arns" {
-  description = "ECS task role ARNs allowed to ingest, update, and delete activity OpenSearch documents."
-  type        = list(string)
-}
-
-variable "cloudfront_distribution_arn" {
-  description = "CloudFront distribution ARN allowed to read frontend artifacts through OAC. Leave null until an edge module/root wires the distribution."
-  type        = string
-  default     = null
-}
 
 variable "tags" {
   type    = map(string)

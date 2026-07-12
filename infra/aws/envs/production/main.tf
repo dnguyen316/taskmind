@@ -17,6 +17,14 @@ module "network" {
   tags               = local.tags
 }
 
+module "security" {
+  source = "../../security"
+
+  environment           = var.environment
+  vpc_id                = module.network.vpc_id
+  tags                  = local.tags
+}
+
 module "data" {
   source = "../../data"
 
@@ -24,10 +32,9 @@ module "data" {
   account_suffix                   = var.account_suffix
   vpc_id                           = module.network.vpc_id
   private_subnet_ids               = module.network.private_subnet_ids
-  ecs_security_group_ids           = [module.compute.ecs_security_group_id]
-  core_task_role_arns              = [module.compute.core_task_role_arn]
-  relay_task_role_arns             = [module.compute.relay_task_role_arn]
-  cloudfront_distribution_arn      = module.edge.cloudfront_distribution_arn
+  rds_security_group_ids           = [module.security.rds_security_group_id]
+  redis_security_group_ids         = [module.security.redis_security_group_id]
+  opensearch_security_group_ids    = [module.security.opensearch_security_group_id]
   deletion_protection              = true
   skip_final_snapshot              = false
   final_snapshot_identifier_prefix = "taskmind-production-final-snapshot"
@@ -47,6 +54,41 @@ module "edge" {
   tags                                 = local.tags
 }
 
+resource "aws_s3_bucket_policy" "frontend" {
+  bucket = module.data.frontend_bucket_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontReadFrontendArtifacts"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${module.data.frontend_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.edge.cloudfront_distribution_arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+
+resource "aws_security_group_rule" "alb_to_ecs_core" {
+  type                     = "ingress"
+  description              = "Core from ALB"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = module.security.ecs_security_group_id
+  source_security_group_id = module.edge.alb_security_group_id
+}
+
 module "compute" {
   source = "../../compute"
 
@@ -54,7 +96,7 @@ module "compute" {
   aws_region             = var.aws_region
   vpc_id                 = module.network.vpc_id
   private_subnet_ids     = module.network.private_subnet_ids
-  alb_security_group_id  = module.edge.alb_security_group_id
+  ecs_security_group_id  = module.security.ecs_security_group_id
   core_target_group_arn  = module.edge.core_target_group_arn
   attachments_bucket_arn = module.data.attachments_bucket_arn
   opensearch_domain_arn  = module.data.opensearch_domain_arn
@@ -70,6 +112,44 @@ module "compute" {
   log_retention_days     = 90
   enable_execute_command = false
   tags                   = local.tags
+}
+
+data "aws_iam_policy_document" "opensearch_activity" {
+  statement {
+    sid     = "CoreActivitySearchRead"
+    effect  = "Allow"
+    actions = ["es:ESHttpGet", "es:ESHttpPost"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [module.compute.core_task_role_arn]
+    }
+
+    resources = ["${module.data.opensearch_domain_arn}/*"]
+  }
+
+  statement {
+    sid    = "RelayActivityIndexWrite"
+    effect = "Allow"
+    actions = [
+      "es:ESHttpDelete",
+      "es:ESHttpGet",
+      "es:ESHttpPost",
+      "es:ESHttpPut",
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = [module.compute.relay_task_role_arn]
+    }
+
+    resources = ["${module.data.opensearch_domain_arn}/*"]
+  }
+}
+
+resource "aws_opensearch_domain_policy" "activity" {
+  domain_name     = module.data.opensearch_domain_name
+  access_policies = data.aws_iam_policy_document.opensearch_activity.json
 }
 
 module "observability" {
