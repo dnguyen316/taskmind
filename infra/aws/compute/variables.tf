@@ -28,8 +28,13 @@ variable "core_secret_arns" {
   description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Core task role."
 
   validation {
-    condition     = alltrue([for arn in var.core_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
-    error_message = "core_secret_arns must not contain empty strings or '*'."
+    condition = alltrue([for arn in var.core_secret_arns :
+      trimspace(arn) == arn
+      && arn != ""
+      && !strcontains(arn, "*")
+      && can(regex("^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[^\\s*]+$|^arn:(aws|aws-us-gov|aws-cn):ssm:[a-z0-9-]+:[0-9]{12}:parameter/[^\\s*]+$", arn))
+    ])
+    error_message = "core_secret_arns must contain only full Secrets Manager secret ARNs or SSM parameter ARNs; empty strings, '*', wildcard-only values, and malformed ARNs are not allowed."
   }
 }
 variable "relay_secret_arns" {
@@ -37,8 +42,13 @@ variable "relay_secret_arns" {
   description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Relay task role."
 
   validation {
-    condition     = alltrue([for arn in var.relay_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
-    error_message = "relay_secret_arns must not contain empty strings or '*'."
+    condition = alltrue([for arn in var.relay_secret_arns :
+      trimspace(arn) == arn
+      && arn != ""
+      && !strcontains(arn, "*")
+      && can(regex("^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[^\\s*]+$|^arn:(aws|aws-us-gov|aws-cn):ssm:[a-z0-9-]+:[0-9]{12}:parameter/[^\\s*]+$", arn))
+    ])
+    error_message = "relay_secret_arns must contain only full Secrets Manager secret ARNs or SSM parameter ARNs; empty strings, '*', wildcard-only values, and malformed ARNs are not allowed."
   }
 }
 variable "nova_secret_arns" {
@@ -46,8 +56,13 @@ variable "nova_secret_arns" {
   description = "Secrets Manager secret ARNs and SSM parameter ARNs readable by the Nova task role."
 
   validation {
-    condition     = alltrue([for arn in var.nova_secret_arns : trimspace(arn) != "" && trimspace(arn) != "*"])
-    error_message = "nova_secret_arns must not contain empty strings or '*'."
+    condition = alltrue([for arn in var.nova_secret_arns :
+      trimspace(arn) == arn
+      && arn != ""
+      && !strcontains(arn, "*")
+      && can(regex("^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[^\\s*]+$|^arn:(aws|aws-us-gov|aws-cn):ssm:[a-z0-9-]+:[0-9]{12}:parameter/[^\\s*]+$", arn))
+    ])
+    error_message = "nova_secret_arns must contain only full Secrets Manager secret ARNs or SSM parameter ARNs; empty strings, '*', wildcard-only values, and malformed ARNs are not allowed."
   }
 }
 variable "service_images" {
