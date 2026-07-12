@@ -57,6 +57,11 @@ module "edge" {
 resource "aws_s3_bucket_policy" "frontend" {
   bucket = module.data.frontend_bucket_name
 
+  depends_on = [
+    module.data,
+    module.edge,
+  ]
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
