@@ -32,7 +32,10 @@ class AiContractsSerializationTest {
                         "Plan my day",
                         "America/New_York",
                         "en-US",
-                        "corr-1");
+                        "corr-1",
+                        "project-1",
+                        "task-1",
+                        "task");
         ChatResponse response =
                 new ChatResponse(
                         "session-1",
@@ -49,7 +52,7 @@ class AiContractsSerializationTest {
 
         assertThat(requestJson)
                 .isEqualTo(
-                        "{\"sessionId\":\"session-1\",\"message\":\"Plan my day\",\"timezone\":\"America/New_York\",\"locale\":\"en-US\",\"correlationId\":\"corr-1\"}");
+                        "{\"sessionId\":\"session-1\",\"message\":\"Plan my day\",\"timezone\":\"America/New_York\",\"locale\":\"en-US\",\"correlationId\":\"corr-1\",\"projectId\":\"project-1\",\"taskId\":\"task-1\",\"scope\":\"task\"}");
         assertThat(responseJson)
                 .isEqualTo(
                         "{\"sessionId\":\"session-1\",\"message\":\"Here is a deterministic plan.\",\"runId\":\"00000000-0000-0000-0000-000000000001\",\"actions\":[{\"type\":\"proposal\",\"payload\":{\"kind\":\"task-plan\",\"count\":2}}]}");

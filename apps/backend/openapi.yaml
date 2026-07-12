@@ -3035,6 +3035,19 @@ components:
         correlationId:
           type: string
           nullable: true
+        projectId:
+          type: string
+          nullable: true
+          description: Current project identifier when the selected Nova context scope includes it.
+        taskId:
+          type: string
+          nullable: true
+          description: Current task identifier when the selected Nova context scope includes it.
+        scope:
+          type: string
+          nullable: true
+          enum: [task, project, visible, none]
+          description: Workspace context scope the user allowed for this chat turn.
 
     NovaChatStreamChunk:
       type: object

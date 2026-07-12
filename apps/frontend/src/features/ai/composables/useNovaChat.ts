@@ -1,7 +1,15 @@
-import { ref } from 'vue'
+import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { apiClient, fetchWithAuthRetry } from '../../../lib/apiClient'
 import { isApiError } from '../../../lib/apiError'
 import { getAuthorizationHeader } from '../../../lib/authToken'
+
+export type NovaChatScope = 'task' | 'project' | 'visible' | 'none'
+
+export interface NovaChatContext {
+  projectId?: string | null
+  taskId?: string | null
+  scope?: NovaChatScope
+}
 
 export interface NovaChatMessage {
   role: 'user' | 'assistant'
@@ -14,11 +22,28 @@ interface NovaChatStreamChunk {
   done?: boolean
 }
 
-export function useNovaChat() {
+export function describeNovaContext(context: NovaChatContext) {
+  if (context.scope === 'none') {
+    return 'Nova will only use messages in this chat. No workspace IDs are sent.'
+  }
+  if (context.scope === 'task' && context.taskId) {
+    return 'Nova can use this chat, the current task, and its project context.'
+  }
+  if (context.scope === 'project' && context.projectId) {
+    return 'Nova can use this chat and the current project workspace.'
+  }
+  if (context.scope === 'visible') {
+    return 'Nova can use this chat and the work visible on this page.'
+  }
+  return 'No workspace context is available on this page. Nova will only use this chat.'
+}
+
+export function useNovaChat(context: MaybeRefOrGetter<NovaChatContext> = {}) {
   const messages = ref<NovaChatMessage[]>([])
   const loading = ref(false)
   const errorMessage = ref<string | null>(null)
   const sessionId = ref<string | null>(null)
+  const activeContext = computed(() => normalizeContext(toValue(context)))
 
   async function send(message: string) {
     messages.value.push({ role: 'user', content: message })
@@ -45,6 +70,12 @@ export function useNovaChat() {
     }
   }
 
+  function resetChat() {
+    messages.value = []
+    sessionId.value = null
+    errorMessage.value = null
+  }
+
   async function streamChat(message: string, assistantMessage: NovaChatMessage) {
     const response = await fetchWithAuthRetry(() => {
       const authorizationHeader = getAuthorizationHeader()
@@ -57,7 +88,7 @@ export function useNovaChat() {
           ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),
         },
         credentials: 'include',
-        body: JSON.stringify({ message, sessionId: sessionId.value }),
+        body: JSON.stringify({ message, sessionId: sessionId.value, ...activeContext.value }),
       })
     })
 
@@ -128,5 +159,17 @@ export function useNovaChat() {
     }
   }
 
-  return { messages, loading, errorMessage, sessionId, send }
+  return { messages, loading, errorMessage, sessionId, activeContext, resetChat, send }
+}
+
+function normalizeContext(context: NovaChatContext): NovaChatContext {
+  const scope = context.scope ?? 'none'
+  if (scope === 'none') {
+    return { scope: 'none' }
+  }
+  return {
+    scope,
+    ...(context.projectId ? { projectId: context.projectId } : {}),
+    ...(context.taskId ? { taskId: context.taskId } : {}),
+  }
 }

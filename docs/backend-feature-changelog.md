@@ -16,7 +16,6 @@
 - Added AWS data-plane IaC for an explicit OpenSearch domain access policy that scopes activity-search access to Core and Relay ECS task roles without wildcard principals.
 - Exposed compute task role ARNs for composed Terraform/OpenTofu roots and documented the OpenSearch role-scoped policy expectations.
 
-
 ## 2026-07-11 - AI facade provenance metadata
 
 ### Changed
@@ -38,6 +37,7 @@
 
 - Exact verification commands for this slice: `mvn -q -pl apps/ai -am -Dtest=AiRunAuditRepositoryTest -Dsurefire.failIfNoSpecifiedTests=false test`.
 - Applicable skills: none. Delegated agents: none.
+
 ## 2026-07-02 - Rich task filters and saved views
 
 ### Changed
@@ -85,7 +85,6 @@
 - Exact verification commands for this slice: `mvn -q -pl apps/backend -am -Dtest=DashboardControllerTest#acceptsRelayJsonScalarValues -Dsurefire.failIfNoSpecifiedTests=false test`; `mvn -q -pl apps/backend -am -Dtest=DashboardControllerTest -Dsurefire.failIfNoSpecifiedTests=false test`; `make vibe-verify`.
 - Applicable skills: none. Delegated agents: none.
 
-
 ## 2026-06-28
 
 - M02 backend: task type definitions now carry validation metadata for default hierarchy level, allowed levels, child/container behavior, and nullable system kind; Core task create/update validates loaded type definitions so custom task types can opt into or out of hierarchy levels while inactive types remain unassignable.
@@ -129,6 +128,7 @@
 - Added Core `GET /v1/activity/search/recommendations` for typed recommendation items while keeping `/suggest` as the legacy string endpoint.
 - Mapped OpenSearch activity hits to recommendation metadata including label, entity type/id, event type, status, title, occurred time, and route name.
 - Updated Core OpenAPI with the typed recommendation schema.
+
 ## 2026-06-21 (Nova AI Run Timestamp Binding)
 
 ### Changed
@@ -724,7 +724,6 @@ This changelog tracks backend feature progress against the core implementation p
 - Added per-service Logback configuration with readable local/test console output and JSON console output under the `prod` profile.
 - Added focused servlet filter tests covering generated and inbound correlation IDs, response header emission, and MDC cleanup.
 
-
 ## 2026-06-19 (Integration Credential Storage Hardening)
 
 - Replaced the integrations token XOR obfuscation with AES-GCM authenticated encryption, storing ciphertext as `enc:v2:gcm:<key-version>:<nonce>:<ciphertext>` so credentials carry key-version and nonce metadata.
@@ -881,6 +880,7 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Added controller coverage for matching-version task type updates and stale-version `409 Conflict` problem responses.
+
 ## Onboarding workspace setup
 
 - Added Core onboarding state on users, onboarding completion APIs, seeded workspace templates, and local/demo-only demo workspace reset with sample projects, tasks, schedule blocks, and activity events.
@@ -922,3 +922,14 @@ This changelog tracks backend feature progress against the core implementation p
 - Added project and project-membership controller coverage for `OWNER`, `ADMIN`, `MEMBER`, and `VIEWER` read, mutation, list, and member-management capabilities.
 
 - Auth refresh sessions now rotate through an HttpOnly SameSite cookie (`taskmind_refresh`) on login, signup verification, token refresh, and logout; legacy refresh-token request bodies remain accepted as a fallback.
+
+## 2026-07-12 - Scoped Nova chat context contract
+
+### Changed
+
+- Extended the shared Nova chat request contract and Core OpenAPI schema with optional `projectId`, `taskId`, and `scope` fields so clients can send user-selected workspace context boundaries.
+- Included scoped chat context in Nova provider input and chat request hashing for auditability.
+
+### Tests
+
+- Updated AI contract serialization coverage for scoped chat requests.

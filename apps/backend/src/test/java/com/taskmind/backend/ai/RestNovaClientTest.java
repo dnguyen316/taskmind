@@ -56,7 +56,7 @@ class RestNovaClientTest {
                                                 .formatted(runId),
                                         MediaType.APPLICATION_JSON));
 
-        var response = client.chat(new ChatRequest(null, "Hello", "UTC", "en-US", "corr-1"));
+        var response = client.chat(new ChatRequest(null, "Hello", "UTC", "en-US", "corr-1", "project-1", "task-1", "task"));
 
         assertThat(response.runId()).isEqualTo(runId);
         assertThat(response.message()).isEqualTo("mock response");

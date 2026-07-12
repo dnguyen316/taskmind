@@ -11,7 +11,6 @@
 - Browser E2E was not run in this container because local frontend/backend services were not started.
 - Applicable skills: none. Delegated agents: none.
 
-
 ## 2026-07-11 - AI degraded-mode indicators
 
 ### Changed
@@ -863,3 +862,16 @@
 - Route guards and conditional UI derive permissions from the auth store's JWT role/permission claims.
 
 - SPA auth now keeps access tokens in memory, refreshes via Core's cookie-backed session, initializes by asking Core for the current user, and broadcasts logout/session changes without storing tokens in localStorage.
+
+## 2026-07-12 - Scoped Nova assistant context controls
+
+### Summary
+
+- Added global Nova assistant context controls for current task, current project, all visible work, or no workspace context.
+- Added a visible assistant disclosure describing which workspace context Nova can use and a New chat action that clears the local conversation and session.
+- Added frontend scoped-chat story states covering scoped payloads, reset-chat behavior, and unavailable-context disclosure.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/components/AiAssistantWidget.vue src/components/AiAssistantWidget.scoped-chat.story.ts src/features/ai/composables/useNovaChat.ts`
+- `cd apps/frontend && npm run typecheck`
