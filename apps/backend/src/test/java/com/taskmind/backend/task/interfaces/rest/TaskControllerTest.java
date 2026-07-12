@@ -137,7 +137,7 @@ class TaskControllerTest {
         mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -161,7 +161,7 @@ class TaskControllerTest {
         mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isBadRequest());
     }
 
     @Test

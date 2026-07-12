@@ -49,12 +49,12 @@ public class TaskApplicationService {
     @Transactional
     public Task create(AuthenticatedUser requester, CreateTaskCommand c) {
         UUID owner = requester.isPrivileged() ? c.userId() : requester.userId();
-        memberships.validateMembership(c.projectId(), owner);
-        if (c.assigneeId() != null) memberships.validateMembership(c.projectId(), c.assigneeId());
+        validateMembership(c.projectId(), owner);
+        if (c.assigneeId() != null) validateMembership(c.projectId(), c.assigneeId());
         String requestedType = c.taskType() == null ? "TASK" : c.taskType();
         TaskTypeDefinition typeDefinition = resolveActiveType(c.projectId(), requestedType);
         TaskLevel level = c.taskLevel() == null ? typeDefinition.defaultTaskLevel() : c.taskLevel();
-        TaskTypeRules.validate(typeDefinition, level);
+        validateTaskType(typeDefinition, level);
         String type = typeDefinition.key();
         Instant now = Instant.now();
         Task task =
@@ -172,12 +172,11 @@ public class TaskApplicationService {
                                 throw new org.springframework.orm
                                         .ObjectOptimisticLockingFailureException(Task.class, id);
                             UUID project = c.projectId() != null ? c.projectId() : e.projectId();
-                            memberships.validateMembership(project, e.userId());
-                            if (c.assigneeId() != null)
-                                memberships.validateMembership(project, c.assigneeId());
+                            validateMembership(project, e.userId());
+                            if (c.assigneeId() != null) validateMembership(project, c.assigneeId());
                             TaskTypeDefinition typeDefinition = resolveActiveType(project, c.taskType() != null ? c.taskType() : e.taskType());
                             TaskLevel resolvedLevel = c.taskLevel() != null ? c.taskLevel() : e.taskLevel();
-                            TaskTypeRules.validate(typeDefinition, resolvedLevel);
+                            validateTaskType(typeDefinition, resolvedLevel);
                             String resolvedType = typeDefinition.key();
                             Task updated =
                                     new Task(
@@ -254,14 +253,25 @@ public class TaskApplicationService {
             Task p =
                     tasks.findById(t.parentTaskId())
                             .orElseThrow(
-                                    () -> new IllegalArgumentException("Parent task not found"));
-            TaskHierarchyRules.validateParent(t, p, tasks.findAncestors(p.id()));
+                                    () -> new TaskNotFoundException("Parent task not found"));
+            try {
+                TaskHierarchyRules.validateParent(t, p, tasks.findAncestors(p.id()));
+            } catch (IllegalArgumentException e) {
+                throw new TaskValidationException(e.getMessage(), e);
+            }
         }
     }
 
     private Task authorized(AuthenticatedUser r, UUID id) {
-        return findById(r, id)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found or access denied"));
+        return tasks.findById(id)
+                .map(
+                        task -> {
+                            if (!canRead(r, task)) {
+                                throw new TaskAccessDeniedException("Task access denied");
+                            }
+                            return task;
+                        })
+                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
     private boolean canRead(AuthenticatedUser r, Task t) {
@@ -272,6 +282,22 @@ public class TaskApplicationService {
 
     private void validateCanMutate(AuthenticatedUser r, Task t) {
         if (!r.isPrivileged() && !r.userId().equals(t.userId()))
-            throw new IllegalArgumentException("Cannot modify another user's task");
+            throw new TaskAccessDeniedException("Cannot modify another user's task");
+    }
+
+    private void validateTaskType(TaskTypeDefinition definition, TaskLevel level) {
+        try {
+            TaskTypeRules.validate(definition, level);
+        } catch (IllegalArgumentException e) {
+            throw new TaskValidationException(e.getMessage(), e);
+        }
+    }
+
+    private void validateMembership(UUID projectId, UUID userId) {
+        try {
+            memberships.validateMembership(projectId, userId);
+        } catch (IllegalArgumentException e) {
+            throw new TaskAccessDeniedException(e.getMessage());
+        }
     }
 }

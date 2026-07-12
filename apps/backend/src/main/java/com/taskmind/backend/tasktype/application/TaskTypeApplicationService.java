@@ -39,7 +39,7 @@ public class TaskTypeApplicationService {
 
     public TaskTypeDefinition requireActiveByKey(UUID projectId, String key) {
         return taskTypes.findActiveByKey(projectId, normalize(key))
-                .orElseThrow(() -> new IllegalArgumentException("Unknown task type"));
+                .orElseThrow(() -> new TaskTypeValidationException("Unknown task type"));
     }
 
     @Transactional
@@ -52,9 +52,10 @@ public class TaskTypeApplicationService {
             String icon,
             Integer sortOrder) {
         if (projectId == null) {
-            throw new IllegalArgumentException("Project id is required");
+            throw new TaskTypeValidationException("Project id is required");
         }
         assertCanManageProjectTypes(actor, projectId);
+        validateName(name);
         Instant now = Instant.now();
         return taskTypes.save(new TaskTypeDefinition(UUID.randomUUID(), null, projectId, normalize(key), name, color, icon, TaskLevel.TASK, Set.of(TaskLevel.TASK), false, false, null, false, true, sortOrder, now, now));
     }
@@ -73,6 +74,9 @@ public class TaskTypeApplicationService {
             assertCanManageTaskType(actor, existing);
             if (version != null && !version.equals(existing.version())) {
                 throw new ObjectOptimisticLockingFailureException(TaskTypeDefinition.class, id);
+            }
+            if (name != null) {
+                validateName(name);
             }
             return taskTypes.save(new TaskTypeDefinition(
                     existing.id(), existing.version(), existing.projectId(), existing.key(),
@@ -126,7 +130,11 @@ public class TaskTypeApplicationService {
     }
 
     private String normalize(String key) {
-        if (key == null || key.isBlank()) throw new IllegalArgumentException("Task type key is required");
+        if (key == null || key.isBlank()) throw new TaskTypeValidationException("Task type key is required");
         return key.trim().toUpperCase();
+    }
+
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) throw new TaskTypeValidationException("Task type name is required");
     }
 }
