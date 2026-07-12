@@ -22,6 +22,9 @@ infra/aws/
   compute/        # ECS cluster, task definitions/services, task roles/policies
   edge/           # ALB/WAF for Core, CloudFront for the SPA, ACM/Route53 hooks
   observability/  # CloudWatch logs/alarms/dashboards and X-Ray sampling
+  envs/
+    staging/      # Composed staging root with S3 state + DynamoDB locking
+    production/   # Composed protected production root with stricter defaults
 ```
 
 ## Deployment model
@@ -38,16 +41,22 @@ so client-side routing works on deep links.
 
 ## Example composition
 
-A future environment root should instantiate the modules in this order:
+Environment roots live under `infra/aws/envs/<environment>` and instantiate the modules in
+this dependency order:
 
 1. `network`
-2. `data`
-3. `compute`
-4. `edge`
-5. `observability`
+2. `edge` and `compute`, explicitly wiring the edge ALB security group/target group into
+   ECS and the compute ECS security group/task role ARNs back into data access policies
+3. `data`
+4. `observability`
 
-Pass outputs between modules explicitly, keep all secrets in AWS Secrets Manager or SSM
-Parameter Store, and never commit generated state files or plaintext secrets.
+The roots pass module outputs explicitly instead of reconstructing ARNs. They use S3 remote
+state and DynamoDB locking in each `backend.tf`; if an AWS account uses different bootstrap
+bucket or lock table names, pass OpenTofu `-backend-config` overrides during `tofu init` or
+update the committed backend block before planning. Production requires the protected
+`production` GitHub Environment, an ALB HTTPS certificate ARN, RDS deletion protection, and
+final snapshots. Keep all secrets in AWS Secrets Manager or SSM Parameter Store, and never
+commit generated state files or plaintext secrets.
 
 ## CloudWatch log encryption
 
