@@ -6,6 +6,7 @@ import com.taskmind.events.DomainEvent;
 import com.taskmind.events.DomainEventMapper;
 import com.taskmind.events.transport.EventTransport;
 import java.time.Instant;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +25,7 @@ public class OutboxPollerJob {
     private final OutboxPipelineMetrics metrics;
     private final int batchSize;
     private final long backpressureLength;
+    private final String pollerId = UUID.randomUUID().toString();
 
     public OutboxPollerJob(
             OutboxEventJpaRepository repository,
@@ -41,7 +43,7 @@ public class OutboxPollerJob {
     @Scheduled(fixedDelayString = "${taskmind.outbox.poll-interval-ms:1000}")
     @Transactional
     public void publishPending() {
-        for (OutboxEventJpaEntity row : repository.findUnpublished(batchSize)) {
+        for (OutboxEventJpaEntity row : repository.claimPending(pollerId, Instant.now(), batchSize)) {
             if (transport.streamLength(row.streamKey()) >= backpressureLength) {
                 return;
             }

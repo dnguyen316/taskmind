@@ -933,3 +933,19 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Updated AI contract serialization coverage for scoped chat requests.
+
+## 2026-07-12 - Outbox row-level publisher claiming
+
+### Changed
+
+- Added Core outbox claim metadata and row-level claiming before publication so concurrent pollers only publish rows claimed by their own poller instance while preserving Relay idempotency as a downstream safety net. This advances the backend eventing/outbox reliability path.
+
+### Tests
+
+- Added OutboxPollerJob concurrency coverage proving simultaneous pollers do not publish the same outbox event.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/eventing reliability.
+- Skills used: none.
+- Agent delegation: none.

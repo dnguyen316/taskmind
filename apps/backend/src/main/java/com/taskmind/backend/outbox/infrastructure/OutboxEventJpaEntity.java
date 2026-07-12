@@ -36,6 +36,12 @@ public class OutboxEventJpaEntity {
     @Column(name = "last_error", columnDefinition = "TEXT")
     private String lastError;
 
+    @Column(name = "claimed_at")
+    private Instant claimedAt;
+
+    @Column(name = "claimed_by")
+    private String claimedBy;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -97,12 +103,16 @@ public class OutboxEventJpaEntity {
     public void markPublished(Instant time) {
         this.publishedAt = time;
         this.lastError = null;
+        this.claimedAt = null;
+        this.claimedBy = null;
         this.updatedAt = time;
     }
 
     public void markPublishFailed(String error, Instant time) {
         this.publishAttempts++;
         this.lastError = error;
+        this.claimedAt = null;
+        this.claimedBy = null;
         this.updatedAt = time;
     }
 }
