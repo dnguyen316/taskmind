@@ -1,8 +1,9 @@
 package com.taskmind.backend.outbox.infrastructure;
 
+import java.time.Instant;
 import java.util.List;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class OutboxEventJpaRepository {
@@ -16,8 +17,14 @@ public class OutboxEventJpaRepository {
         return repository.save(event);
     }
 
-    public List<OutboxEventJpaEntity> findUnpublished(int limit) {
-        return repository.findByPublishedAtIsNullOrderByOccurredAtAsc(PageRequest.of(0, limit));
+    public List<OutboxEventJpaEntity> findClaimedBy(String pollerId) {
+        return repository.findByClaimedByAndPublishedAtIsNullOrderByOccurredAtAsc(pollerId);
+    }
+
+    @Transactional
+    public List<OutboxEventJpaEntity> claimPending(String pollerId, Instant claimedAt, int limit) {
+        repository.claimPending(pollerId, claimedAt, limit);
+        return findClaimedBy(pollerId);
     }
 
     public long unpublishedCount() {

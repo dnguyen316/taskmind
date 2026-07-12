@@ -88,6 +88,9 @@ jobs:
 
       - name: Initialize environment
         working-directory: infra/aws/envs/${{ inputs.environment }}
+        # Environment roots use S3 remote state and DynamoDB locking declared in backend.tf.
+        # Override backend values here with -backend-config flags if an account uses different
+        # bootstrap bucket or lock table names than the committed defaults.
         run: tofu init
 
       - name: Plan environment

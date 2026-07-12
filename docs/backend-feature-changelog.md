@@ -9,6 +9,20 @@
 
 - Added backend coverage for concurrent first-time preference writes and stale update rejection through both service and REST flows.
 - Applicable skills: none. Delegated agents: none.
+# Backend Feature Changelog
+
+## 2026-07-12 (M05 Relay Redis Stream Consumer Groups)
+
+### Changed
+
+- Updated Relay Redis stream ingestion to create/verify the `taskmind-relay` consumer group at startup, read new records through Redis consumer-group semantics, acknowledge successes with `XACK`, and keep event-store idempotency as the redelivery guard.
+- Added bounded pending-entry retry handling that claims stale records for intentional redelivery and moves repeatedly failed pending records to the Redis stream dead-letter key before acknowledgement.
+- Added focused Relay consumer job tests covering group creation, non-overlapping new-entry delivery across two consumers, intentional pending redelivery, and retry-ceiling dead-letter acknowledgement.
+
+### Verification Notes
+
+- Advanced primary milestone: M05 Eventing + Relay hardening.
+- Backend-only change; no frontend UI E2E, Codex skill, or delegated sub-agent was used.
 
 ## 2026-07-12 - Reports rollup availability metadata
 
@@ -945,3 +959,19 @@ This changelog tracks backend feature progress against the core implementation p
 ### Tests
 
 - Updated AI contract serialization coverage for scoped chat requests.
+
+## 2026-07-12 - Outbox row-level publisher claiming
+
+### Changed
+
+- Added Core outbox claim metadata and row-level claiming before publication so concurrent pollers only publish rows claimed by their own poller instance while preserving Relay idempotency as a downstream safety net. This advances the backend eventing/outbox reliability path.
+
+### Tests
+
+- Added OutboxPollerJob concurrency coverage proving simultaneous pollers do not publish the same outbox event.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/eventing reliability.
+- Skills used: none.
+- Agent delegation: none.
