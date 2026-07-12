@@ -1,3 +1,18 @@
+# Backend Feature Changelog
+
+## 2026-07-12 (M05 Relay Redis Stream Consumer Groups)
+
+### Changed
+
+- Updated Relay Redis stream ingestion to create/verify the `taskmind-relay` consumer group at startup, read new records through Redis consumer-group semantics, acknowledge successes with `XACK`, and keep event-store idempotency as the redelivery guard.
+- Added bounded pending-entry retry handling that claims stale records for intentional redelivery and moves repeatedly failed pending records to the Redis stream dead-letter key before acknowledgement.
+- Added focused Relay consumer job tests covering group creation, non-overlapping new-entry delivery across two consumers, intentional pending redelivery, and retry-ceiling dead-letter acknowledgement.
+
+### Verification Notes
+
+- Advanced primary milestone: M05 Eventing + Relay hardening.
+- Backend-only change; no frontend UI E2E, Codex skill, or delegated sub-agent was used.
+
 ## 2026-07-12 - Reports rollup availability metadata
 
 ### Changed
