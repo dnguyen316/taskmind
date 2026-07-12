@@ -21,6 +21,12 @@ public interface NotificationRepository {
 
     Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, NotificationChannel channel);
 
+    List<DeliveryAttempt> claimPendingDeliveries(Instant now, int limit);
+
+    void markDeliverySent(UUID deliveryAttemptId, Instant now);
+
+    void markDeliveryFailed(UUID deliveryAttemptId, String errorMessage, Instant retryAt);
+
     boolean reminderExists(UUID taskId, UUID userId);
 
     void recordReminder(ReminderState state);

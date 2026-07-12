@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class NotificationProviderFailureTest {
     @Test
-    void persistsInAppAndRecordsSlackFailure() {
+    void persistsInAppAndQueuesSlackWithoutCallingProvider() {
         var repo = new InMemoryNotifications();
         var prefs = new InMemoryPrefs();
         UUID user = UUID.randomUUID();
@@ -24,9 +24,6 @@ class NotificationProviderFailureTest {
                         repo,
                         prefs,
                         new NotificationSseHub(),
-                        (n, p) -> {
-                            throw new IllegalStateException("boom");
-                        },
                         new NotificationDeliveryCoordinator(repo, java.time.Duration.ZERO));
         var n =
                 service.notify(
@@ -38,7 +35,7 @@ class NotificationProviderFailureTest {
                         "/tasks/t");
         assertThat(n).isNotNull();
         assertThat(repo.attempts).hasSize(1);
-        assertThat(repo.attempts.get(0).status()).isEqualTo(DeliveryStatus.FAILED);
+        assertThat(repo.attempts.get(0).status()).isEqualTo(DeliveryStatus.PENDING);
     }
 
     @Test
@@ -66,7 +63,7 @@ class NotificationProviderFailureTest {
                         NotificationChannel.SLACK,
                         DeliveryStatus.FAILED,
                         "boom",
-                        Instant.parse("2026-06-19T10:00:00Z")));
+                        Instant.parse("2026-06-19T10:15:00Z")));
         var delivery = new NotificationDeliveryCoordinator(repo, Duration.ofMinutes(15));
 
         assertThat(
