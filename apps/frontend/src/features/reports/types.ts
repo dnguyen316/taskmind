@@ -63,6 +63,8 @@ export interface ReportsTeamWorkload {
 
 export interface ReportsResponse {
   range: ReportsRangeResponse
+  availableMetrics: string[]
+  dataFreshness: string
   kpis: ReportsKpis
   deltas: ReportsDeltas
   sparklines: ReportsSparklines

@@ -4332,11 +4332,14 @@ components:
       type: object
       properties:
         range: {type: string, enum: [WEEK, MONTH, QUARTER]}
+        availableMetrics: {type: array, items: {type: string}}
+        dataFreshness: {type: string}
         kpis: {$ref: '#/components/schemas/ReportsKpis'}
         trends: {type: array, items: {$ref: '#/components/schemas/ReportsTrend'}}
         statusSegments: {type: array, items: {$ref: '#/components/schemas/ReportsStatusSegment'}}
         prioritySegments: {type: array, items: {$ref: '#/components/schemas/ReportsPrioritySegment'}}
         projectThroughput: {type: array, items: {$ref: '#/components/schemas/ReportsProjectThroughput'}}
+        assigneeThroughput: {type: array, items: {$ref: '#/components/schemas/ReportsAssigneeThroughput'}}
         assigneeWorkload: {type: array, items: {$ref: '#/components/schemas/ReportsAssigneeWorkload'}}
         teamWorkload: {$ref: '#/components/schemas/ReportsTeamWorkload'}
     ReportsKpis:
@@ -4363,6 +4366,9 @@ components:
     ReportsProjectThroughput:
       type: object
       properties: {projectId: {type: string, format: uuid}, name: {type: string}, tasksCreated: {type: integer}, tasksCompleted: {type: integer}}
+    ReportsAssigneeThroughput:
+      type: object
+      properties: {userId: {type: string, format: uuid}, tasksCreated: {type: integer}, tasksCompleted: {type: integer}}
     ReportsAssigneeWorkload:
       type: object
       properties: {userId: {type: string, format: uuid}, openTasks: {type: integer}}

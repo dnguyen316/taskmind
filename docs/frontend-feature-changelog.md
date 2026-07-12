@@ -1,3 +1,16 @@
+## 2026-07-12 - Reports unavailable metric states
+
+### Changed
+
+- Added reports availability/freshness metadata to frontend types and response adaptation.
+- Updated the Reports page to show informational freshness copy plus “Coming soon” or “Not enough data yet” states instead of presenting unavailable rollups as live zero values.
+
+### Verification notes
+
+- Added Playwright coverage for unavailable reports metrics using a mocked empty Core reports response.
+- Browser E2E was not run in this container because local frontend/backend services were not started.
+- Applicable skills: none. Delegated agents: none.
+
 
 ## 2026-07-11 - AI degraded-mode indicators
 

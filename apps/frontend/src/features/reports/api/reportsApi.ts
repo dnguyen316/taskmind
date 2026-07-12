@@ -28,6 +28,8 @@ function adaptReportsResponse(data: unknown): ReportsResponse {
   if (!isReportsRangeResponse(range)) throw new Error('Invalid reports response: unknown range.')
   return {
     range,
+    availableMetrics: readStringArray(data.availableMetrics, 'reports available metrics'),
+    dataFreshness: readRequiredString(data, 'dataFreshness', 'reports'),
     kpis: adaptKpis(data.kpis),
     deltas: adaptDeltas(data.deltas),
     sparklines: adaptSparklines(data.sparklines),
@@ -158,6 +160,13 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function readArray<T>(data: unknown, adapt: (item: unknown) => T, resourceName: string) {
   if (!Array.isArray(data)) throw new Error(`Invalid ${resourceName} response.`)
   return data.map(adapt)
+}
+
+function readStringArray(data: unknown, resourceName: string) {
+  if (!Array.isArray(data) || data.some((item) => typeof item !== 'string' || item.length === 0)) {
+    throw new Error(`Invalid ${resourceName} response.`)
+  }
+  return data
 }
 
 function readNumberArray(data: unknown, resourceName: string) {

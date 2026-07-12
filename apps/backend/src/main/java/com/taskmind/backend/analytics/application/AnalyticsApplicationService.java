@@ -17,20 +17,34 @@ public class AnalyticsApplicationService {
     }
 
     public ReportsResponse reports(AuthenticatedUser requester, ReportsRange range) {
-        List<ReportsTrend> trends =
-                repository.userTrends(requester.userId(), range.start(LocalDate.now(clock)));
+        LocalDate start = range.start(LocalDate.now(clock));
+        List<ReportsTrend> trends = repository.userTrends(requester.userId(), start);
+        List<ReportsAssigneeWorkload> assigneeWorkload = repository.assigneeWorkload();
         int created = trends.stream().mapToInt(ReportsTrend::tasksCreated).sum();
         int completed = trends.stream().mapToInt(ReportsTrend::tasksCompleted).sum();
         int events = trends.stream().mapToInt(ReportsTrend::eventsIngested).sum();
+        int projectsCreated = repository.projectsCreated(requester.userId(), start);
         ReportsKpis kpis =
                 new ReportsKpis(
                         created,
                         completed,
-                        0,
+                        projectsCreated,
                         events,
                         created == 0 ? 0.0 : (double) completed / created);
         return new ReportsResponse(
                 range,
+                List.of(
+                        "tasksCreated",
+                        "tasksCompleted",
+                        "projectsCreated",
+                        "eventsIngested",
+                        "completionRate",
+                        "statusSegments",
+                        "projectThroughput",
+                        "assigneeThroughput",
+                        "assigneeWorkload",
+                        "teamWorkload"),
+                "Analytics rollups reflect Relay projections available in Core; priority segments are coming soon because task priority is not projected yet.",
                 kpis,
                 new ReportsDeltas(created, completed, events),
                 new ReportsSparklines(
@@ -40,13 +54,11 @@ public class AnalyticsApplicationService {
                 trends,
                 repository.statusSegments(requester.userId()),
                 List.of(),
-                repository.projectThroughput(range.start(LocalDate.now(clock))),
-                List.of(new ReportsAssigneeThroughput(requester.userId(), created, completed)),
-                repository.assigneeWorkload(),
+                repository.projectThroughput(start),
+                repository.assigneeThroughput(start),
+                assigneeWorkload,
                 new ReportsTeamWorkload(
-                        repository.assigneeWorkload().size(),
-                        repository.assigneeWorkload().stream()
-                                .mapToInt(ReportsAssigneeWorkload::openTasks)
-                                .sum()));
+                        assigneeWorkload.size(),
+                        assigneeWorkload.stream().mapToInt(ReportsAssigneeWorkload::openTasks).sum()));
     }
 }

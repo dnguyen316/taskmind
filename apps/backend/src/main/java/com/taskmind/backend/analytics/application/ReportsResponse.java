@@ -4,6 +4,8 @@ import java.util.List;
 
 public record ReportsResponse(
         ReportsRange range,
+        List<String> availableMetrics,
+        String dataFreshness,
         ReportsKpis kpis,
         ReportsDeltas deltas,
         ReportsSparklines sparklines,

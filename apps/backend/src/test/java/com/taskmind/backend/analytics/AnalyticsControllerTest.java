@@ -32,6 +32,8 @@ class AnalyticsControllerTest {
     void setUp() {
         when(repo.statusSegments(any())).thenReturn(List.of());
         when(repo.projectThroughput(any())).thenReturn(List.of());
+        when(repo.projectsCreated(any(), any())).thenReturn(0);
+        when(repo.assigneeThroughput(any())).thenReturn(List.of());
         when(repo.assigneeWorkload()).thenReturn(List.of());
     }
 
@@ -42,15 +44,41 @@ class AnalyticsControllerTest {
         when(repo.statusSegments(any())).thenReturn(List.of(new ReportsStatusSegment("TODO", 1)));
         when(repo.projectThroughput(any()))
                 .thenReturn(List.of(new ReportsProjectThroughput(UUID.randomUUID(), "Core", 3, 2)));
+        when(repo.projectsCreated(any(), any())).thenReturn(1);
+        when(repo.assigneeThroughput(any()))
+                .thenReturn(
+                        List.of(
+                                new ReportsAssigneeThroughput(
+                                        UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                                        4,
+                                        3)));
         mockMvc.perform(
                         get("/v1/reports?range=month")
                                 .with(jwt("11111111-1111-1111-1111-111111111111")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.range").value("MONTH"))
+                .andExpect(jsonPath("$.availableMetrics[0]").value("tasksCreated"))
+                .andExpect(jsonPath("$.dataFreshness").value(org.hamcrest.Matchers.containsString("priority segments are coming soon")))
                 .andExpect(jsonPath("$.kpis.tasksCreated").value(3))
+                .andExpect(jsonPath("$.kpis.projectsCreated").value(1))
                 .andExpect(jsonPath("$.sparklines.tasksCompleted[0]").value(2))
                 .andExpect(jsonPath("$.statusSegments[0].status").value("TODO"))
-                .andExpect(jsonPath("$.projectThroughput[0].name").value("Core"));
+                .andExpect(jsonPath("$.prioritySegments").isEmpty())
+                .andExpect(jsonPath("$.projectThroughput[0].name").value("Core"))
+                .andExpect(jsonPath("$.assigneeThroughput[0].tasksCompleted").value(3));
+    }
+
+    @Test
+    void labelsUnavailableMetricsWhenRollupsAreEmpty() throws Exception {
+        mockMvc.perform(
+                        get("/v1/reports?range=week")
+                                .with(jwt("11111111-1111-1111-1111-111111111111")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kpis.tasksCreated").value(0))
+                .andExpect(jsonPath("$.kpis.projectsCreated").value(0))
+                .andExpect(jsonPath("$.prioritySegments").isEmpty())
+                .andExpect(jsonPath("$.assigneeThroughput").isEmpty())
+                .andExpect(jsonPath("$.dataFreshness").value(org.hamcrest.Matchers.containsString("priority segments are coming soon")));
     }
 
     @Test
