@@ -93,7 +93,7 @@ variable "log_retention_days" {
   default = 30
 }
 variable "cloudwatch_logs_kms_key_id" {
-  description = "Optional KMS key ARN or ID used to encrypt ECS service CloudWatch log groups."
+  description = "Optional KMS key ARN or ID used to encrypt ECS service CloudWatch log groups. When set, the key policy must allow CloudWatch Logs in the target AWS region (logs.<region>.amazonaws.com) to use the key for the TaskMind log group ARNs."
   type        = string
   default     = null
 }

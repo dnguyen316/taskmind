@@ -68,6 +68,16 @@ variable "service_images" {
   type        = map(string)
 }
 
+variable "cloudwatch_logs_kms_key_id" {
+  description = "Production customer managed KMS key ID or ARN for ECS service CloudWatch log group encryption. The key policy must allow CloudWatch Logs in var.aws_region (logs.<region>.amazonaws.com) to use the key for the TaskMind log groups."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.cloudwatch_logs_kms_key_id) != ""
+    error_message = "cloudwatch_logs_kms_key_id must be a non-empty KMS key ID or ARN for production."
+  }
+}
+
 variable "service_environment" {
   type    = map(list(object({ name = string, value = string })))
   default = {}

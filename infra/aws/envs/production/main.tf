@@ -114,9 +114,10 @@ module "compute" {
   core_desired_count     = 2
   relay_desired_count    = 1
   nova_desired_count     = 1
-  log_retention_days     = 90
-  enable_execute_command = false
-  tags                   = local.tags
+  log_retention_days         = 90
+  cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
+  enable_execute_command     = false
+  tags                       = local.tags
 }
 
 data "aws_iam_policy_document" "opensearch_activity" {
