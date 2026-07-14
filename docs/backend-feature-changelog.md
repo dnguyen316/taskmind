@@ -22,6 +22,7 @@
 
 - Added backend coverage for concurrent first-time preference writes and stale update rejection through both service and REST flows.
 - Applicable skills: none. Delegated agents: none.
+
 # Backend Feature Changelog
 
 ## 2026-07-12 (M05 Relay Redis Stream Consumer Groups)
@@ -758,6 +759,7 @@ This changelog tracks backend feature progress against the core implementation p
 
 ### Added
 
+- Added local Grafana provisioning for the Prometheus datasource and the TaskMind Observability dashboard covering Core API latency/outbox lag, Relay stream processing/dead letters, and Nova token/LLM latency metrics.
 - Added request correlation filters, MDC helpers, request logging properties, and problem-detail correlation enrichment helpers across Core, Relay, and Nova.
 - Configured Core outbound Relay and Nova RestClient beans to propagate the active `X-Correlation-Id` header.
 - Added per-service Logback configuration with readable local/test console output and JSON console output under the `prod` profile.
@@ -1003,6 +1005,7 @@ This changelog tracks backend feature progress against the core implementation p
 ### Closeout notes
 
 - Primary milestone: task concurrency hardening.
+
 ## 2026-07-12 - Asynchronous notification delivery queue
 
 ### Changed
@@ -1035,6 +1038,7 @@ This changelog tracks backend feature progress against the core implementation p
 ### Closeout notes
 
 - Primary milestone: M02 backend foundation/error handling hardening.
+
 ## 2026-07-12 - Nova runtime provider metrics
 
 ### Changed
