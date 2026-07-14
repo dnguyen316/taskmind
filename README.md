@@ -55,31 +55,31 @@ taskmind/
 
 ## Technology Stack
 
-| Area | Technology |
-|------|------------|
-| Backend language | Java 17 |
-| Backend framework | Spring Boot 3.3.5 |
-| AI orchestration | Spring AI 1.0.0 |
-| Java build | Maven reactor |
-| Frontend | Vue 3.5, Vite 5, TypeScript 5.8 |
-| UI and state | Ant Design Vue 4, Pinia 3, vue-router 4 |
-| Rich text | Tiptap 3 |
-| Database | PostgreSQL 16 with Flyway migrations |
-| Cache and streams | Redis 7 |
-| Search | OpenSearch-compatible local service / Amazon OpenSearch Service target |
-| Object storage | S3-compatible local storage / Amazon S3 target |
-| Job locks and rate limits | ShedLock and Bucket4j |
+| Area                      | Technology                                                             |
+| ------------------------- | ---------------------------------------------------------------------- |
+| Backend language          | Java 17                                                                |
+| Backend framework         | Spring Boot 3.3.5                                                      |
+| AI orchestration          | Spring AI 1.0.0                                                        |
+| Java build                | Maven reactor                                                          |
+| Frontend                  | Vue 3.5, Vite 5, TypeScript 5.8                                        |
+| UI and state              | Ant Design Vue 4, Pinia 3, vue-router 4                                |
+| Rich text                 | Tiptap 3                                                               |
+| Database                  | PostgreSQL 16 with Flyway migrations                                   |
+| Cache and streams         | Redis 7                                                                |
+| Search                    | OpenSearch-compatible local service / Amazon OpenSearch Service target |
+| Object storage            | S3-compatible local storage / Amazon S3 target                         |
+| Job locks and rate limits | ShedLock and Bucket4j                                                  |
 
 ## Service Boundaries
 
-| Component | Path | Responsibility | Port | Public? |
-|-----------|------|----------------|------|---------|
-| Frontend | `apps/frontend` | Browser UI, typed Core API usage, route guards, user workflows | 5173 | Dev only |
-| Core API | `apps/backend` | Auth, tasks, projects, public REST API, OpenAPI contract, facades to internal services | 8080 | Yes |
-| Relay | `apps/relay` | Event consumption, analytics projections, searchable context | 8081 | No |
-| Nova AI | `apps/ai` | LLM provider routing, AI capabilities, prompt/orchestration runtime | 8082 | No |
-| Events library | `libs/events` | Shared event envelope and event DTOs | n/a | Internal |
-| AI contracts library | `libs/ai-contracts` | Shared Core/Nova request and response DTOs | n/a | Internal |
+| Component            | Path                | Responsibility                                                                         | Port | Public?  |
+| -------------------- | ------------------- | -------------------------------------------------------------------------------------- | ---- | -------- |
+| Frontend             | `apps/frontend`     | Browser UI, typed Core API usage, route guards, user workflows                         | 5173 | Dev only |
+| Core API             | `apps/backend`      | Auth, tasks, projects, public REST API, OpenAPI contract, facades to internal services | 8080 | Yes      |
+| Relay                | `apps/relay`        | Event consumption, analytics projections, searchable context                           | 8081 | No       |
+| Nova AI              | `apps/ai`           | LLM provider routing, AI capabilities, prompt/orchestration runtime                    | 8082 | No       |
+| Events library       | `libs/events`       | Shared event envelope and event DTOs                                                   | n/a  | Internal |
+| AI contracts library | `libs/ai-contracts` | Shared Core/Nova request and response DTOs                                             | n/a  | Internal |
 
 ## Current Implemented API Areas
 
@@ -134,6 +134,17 @@ Local observability URLs:
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (default local credentials: `admin` / `admin`, override with `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`)
 
+Grafana provisions Prometheus and the **TaskMind Observability** dashboard automatically from `infra/compose/grafana/provisioning`. To open it locally:
+
+1. Start the local compose stack with `make infra-up` or `docker compose up -d prometheus grafana`.
+2. Start Core, Relay, and Nova (`make run-backend`, `make run-relay`, and `make run-ai`) so Prometheus can scrape `/actuator/prometheus`.
+3. Open `http://localhost:3000/d/taskmind-observability/taskmind-observability` and sign in with the local Grafana credentials.
+4. Validate panel data by generating representative traffic:
+   - Core API latency: call `/api/health` or authenticated `/v1/**` Core endpoints several times, then confirm `http_server_requests_seconds` appears in Prometheus.
+   - Core outbox lag: perform a task write that emits outbox events, then confirm `taskmind_outbox_lag_events` is present.
+   - Relay stream duration and dead letters: run Relay while Core publishes events, then confirm `taskmind_relay_stream_processing_duration_seconds` and `taskmind_relay_events_dead_letters_total` are present. Dead letters should normally stay at zero.
+   - Nova token usage and LLM latency: invoke an AI-backed workflow, then confirm `taskmind_ai_tokens_total_total` (or the normalized `taskmind_ai_tokens_total` fallback) and `taskmind_ai_llm_response_duration_seconds` are present.
+
 For local E2E/dev login when the bypass profile is enabled:
 
 ```text
@@ -181,31 +192,31 @@ libs/events -> libs/ai-contracts -> apps/backend -> apps/relay -> apps/ai
 
 ## Roadmap and Documentation Map
 
-| Need | Start here |
-|------|------------|
-| Product and architecture overview | `docs/build-kit/00-overview.md` |
-| Milestone build order | `docs/build-kit/01-build-order.md` |
-| Coding conventions and DDD layering | `docs/build-kit/conventions.md` |
-| API, data, events, AI, and frontend references | `docs/build-kit/reference/` |
-| Per-milestone implementation specs | `docs/build-kit/phases/` |
-| Backend implementation history | `docs/backend-feature-changelog.md` |
-| Frontend implementation history | `docs/frontend-feature-changelog.md` |
-| Agent/session workflow | `docs/agent-session-workflow.md` |
-| AWS deployment notes | `infra/aws/README.md` |
+| Need                                           | Start here                           |
+| ---------------------------------------------- | ------------------------------------ |
+| Product and architecture overview              | `docs/build-kit/00-overview.md`      |
+| Milestone build order                          | `docs/build-kit/01-build-order.md`   |
+| Coding conventions and DDD layering            | `docs/build-kit/conventions.md`      |
+| API, data, events, AI, and frontend references | `docs/build-kit/reference/`          |
+| Per-milestone implementation specs             | `docs/build-kit/phases/`             |
+| Backend implementation history                 | `docs/backend-feature-changelog.md`  |
+| Frontend implementation history                | `docs/frontend-feature-changelog.md` |
+| Agent/session workflow                         | `docs/agent-session-workflow.md`     |
+| AWS deployment notes                           | `infra/aws/README.md`                |
 
 ## Milestone Snapshot
 
-| Milestone | Focus |
-|-----------|-------|
-| M00 | Bootstrap monorepo, Maven reactor, service shells, frontend shell, CI gate |
-| M01 | Core foundations: persistence, JWT security, E2E bypass, health, error handling |
-| M02 | Core task and project modules plus OpenAPI contract |
-| M03 | Frontend shell, auth, task pages, and project pages |
-| M04 | Scheduler preferences, blocks, proposals, and calendar UI |
-| M05 | Outbox eventing, Redis Streams, Relay projections, analytics schema |
-| M06 | Search and object storage on the AWS-aligned data plane |
-| M07 | Nova AI provider router, capabilities, chat, and audit foundations |
-| M08-M13 | AI features, spec breakdown, integrations, notifications, analytics, hardening, and AWS deployment |
+| Milestone | Focus                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| M00       | Bootstrap monorepo, Maven reactor, service shells, frontend shell, CI gate                         |
+| M01       | Core foundations: persistence, JWT security, E2E bypass, health, error handling                    |
+| M02       | Core task and project modules plus OpenAPI contract                                                |
+| M03       | Frontend shell, auth, task pages, and project pages                                                |
+| M04       | Scheduler preferences, blocks, proposals, and calendar UI                                          |
+| M05       | Outbox eventing, Redis Streams, Relay projections, analytics schema                                |
+| M06       | Search and object storage on the AWS-aligned data plane                                            |
+| M07       | Nova AI provider router, capabilities, chat, and audit foundations                                 |
+| M08-M13   | AI features, spec breakdown, integrations, notifications, analytics, hardening, and AWS deployment |
 
 See `docs/build-kit/01-build-order.md` for the source-of-truth milestone tracker.
 
