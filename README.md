@@ -127,6 +127,13 @@ make run-frontend
 
 Then open the frontend at `http://localhost:5173`.
 
+Local infrastructure and observability run through the root `docker-compose.yml`, which includes `infra/compose/docker-compose.infra.yml` for PostgreSQL, Redis, OpenSearch, and LocalStack, plus `infra/compose/docker-compose.observability.yml` for metrics tooling. The compose project uses a shared `taskmind` network so Prometheus can scrape application containers named `backend`, `relay`, and `ai` when those services are started in the same compose project/network.
+
+Local observability URLs:
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (default local credentials: `admin` / `admin`, override with `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`)
+
 For local E2E/dev login when the bypass profile is enabled:
 
 ```text

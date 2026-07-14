@@ -1,0 +1,5 @@
+# TaskMind local compose entry point.
+# Starts the AWS-aligned data plane plus local observability tools.
+include:
+  - infra/compose/docker-compose.infra.yml
+  - infra/compose/docker-compose.observability.yml
