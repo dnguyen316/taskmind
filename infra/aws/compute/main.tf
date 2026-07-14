@@ -146,8 +146,9 @@ resource "aws_cloudwatch_log_group" "service" {
   for_each          = local.services
   name              = "/taskmind/${var.environment}/${each.key}"
   retention_in_days = var.log_retention_days
-  kms_key_id        = var.cloudwatch_logs_kms_key_id
-  tags              = local.tags
+  # Customer managed keys must allow CloudWatch Logs in var.aws_region to use the key.
+  kms_key_id = var.cloudwatch_logs_kms_key_id
+  tags       = local.tags
 }
 
 resource "aws_service_discovery_service" "service" {
