@@ -127,7 +127,10 @@ jobs:
 
       - name: Validate AWS account and protected production source
         run: |
-          actual_account_id="$(aws sts get-caller-identity --query Account --output text)"
+          caller_identity="$(aws sts get-caller-identity)"
+          printf '%s\n' "$caller_identity"
+
+          actual_account_id="$(printf '%s' "$caller_identity" | jq -r '.Account')"
           if [ "$actual_account_id" != "$AWS_ACCOUNT_ID" ]; then
             printf 'AWS account mismatch: expected %s but authenticated as %s.\n' "$AWS_ACCOUNT_ID" "$actual_account_id" >&2
             exit 1
