@@ -83,6 +83,45 @@ Disposable preview stacks may intentionally set `deletion_protection = false` an
 needed for incident response or rollback. Keep that preview-specific behavior in the
 preview root or its variable files rather than weakening staging or production defaults.
 
+## Observability and metrics
+
+TaskMind standardizes on **Micrometer** metrics in every Spring Boot service. Local
+development exposes each service's Prometheus scrape endpoint at `/actuator/prometheus`
+and uses the local observability compose stack to run **Prometheus** and **Grafana**. The
+Prometheus config scrapes Core on `backend:8080`, Relay on `relay:8081`, and Nova on
+`ai:8082` with `metrics_path: /actuator/prometheus`; Grafana is provisioned with that
+Prometheus datasource.
+
+Production metrics should use the same Micrometer/Prometheus metric contracts. The
+preferred AWS path is **Amazon Managed Service for Prometheus** scraping the ECS service
+endpoints or sidecar/collector targets for Core, Relay, and Nova, with dashboards in
+Amazon Managed Grafana or the committed CloudWatch dashboard module. If a deployment does
+not run Prometheus-compatible scraping, enable **CloudWatch Container Insights** for ECS
+platform/task health and forward the application Prometheus metrics through an
+OpenTelemetry or CloudWatch agent pipeline so the service-level names below remain the
+canonical alert inputs.
+
+Canonical application metrics:
+
+| Concern | Micrometer meter name | Prometheus export / primary query input | Notes |
+| --- | --- | --- | --- |
+| API latency | `http.server.requests` | `http_server_requests_seconds` (`_bucket`, `_count`, `_sum`, `_max`) | Built-in Spring Boot HTTP server timer; tag by bounded `uri`, `method`, `status`, and service/job labels. |
+| Outbox lag | `taskmind.outbox.lag.events` | `taskmind_outbox_lag_events` | Core gauge of unpublished `outbox_events` rows. |
+| Redis stream pending | `taskmind.relay.stream.pending` | `taskmind_relay_stream_pending` | Relay gauge for pending entries in the configured Redis consumer group. |
+| Redis stream processing time | `taskmind.relay.stream.processing.duration` | `taskmind_relay_stream_processing_duration_seconds` (`_bucket`, `_count`, `_sum`, `_max`) | Relay timer tagged with `result` (`ingested`, `duplicate`, `dead_letter`, `failed`). |
+| AI prompt tokens | `taskmind.ai.tokens.prompt` | `taskmind_ai_tokens_prompt_total` | Nova counter tagged only by bounded `provider`, `model`, `capability`, and `status`. |
+| AI completion tokens | `taskmind.ai.tokens.completion` | `taskmind_ai_tokens_completion_total` | Same bounded tags as prompt tokens. |
+| AI total tokens | `taskmind.ai.tokens.total` | `taskmind_ai_tokens_total_total` | Primary token-spend alert input. |
+| LLM response duration | `taskmind.ai.llm.response.duration` | `taskmind_ai_llm_response_duration_seconds` (`_bucket`, `_count`, `_sum`, `_max`) | Nova provider latency timer with the same bounded AI tags. |
+
+Suggested alerts start as environment-specific defaults and should be tuned from baseline
+traffic before paging:
+
+- **p99 API latency:** page when `histogram_quantile(0.99, sum by (le, job) (rate(http_server_requests_seconds_bucket{uri!~"/actuator/.*|/api/health"}[5m])))` stays above the service SLO (for example 1s for Core user APIs or 2s for AI facades) for 10 minutes.
+- **Outbox lag:** warn when `taskmind_outbox_lag_events` is above 1,000 for 10 minutes; page when it is above 10,000 or monotonically increasing for 15 minutes because Relay freshness is at risk.
+- **Relay dead-letter rate:** page when `sum(rate(taskmind_relay_events_dead_letters_total[5m]))` is greater than zero for 10 minutes, and warn on any single dead-letter event in staging so schema/projection drift is caught early.
+- **AI token spikes:** warn when `sum(rate(taskmind_ai_tokens_total_total[5m]))` is more than 3x the same service's recent baseline for 15 minutes; page when the spike coincides with elevated `taskmind_ai_llm_response_duration_seconds` p95/p99 or provider failure status because runaway prompts or retries can drive cost and user-visible latency.
+
 ## CloudWatch log encryption
 
 The compute module keeps ECS service log retention configurable with `log_retention_days`
