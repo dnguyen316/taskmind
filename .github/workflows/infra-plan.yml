@@ -68,6 +68,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     environment: ${{ inputs.environment }}
+    env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -77,11 +80,36 @@ jobs:
         with:
           tofu_version: ${{ env.TOFU_VERSION }}
 
+      - name: Validate plan configuration
+        run: |
+          required=(AWS_ACCOUNT_ID AWS_REGION)
+          missing=()
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub environment variables: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Validate AWS account
+        run: |
+          caller_identity="$(aws sts get-caller-identity)"
+          printf '%s\n' "$caller_identity"
+
+          actual_account_id="$(printf '%s' "$caller_identity" | jq -r '.Account')"
+          if [ "$actual_account_id" != "$AWS_ACCOUNT_ID" ]; then
+            printf 'AWS account mismatch: expected %s but authenticated as %s.\n' "$AWS_ACCOUNT_ID" "$actual_account_id" >&2
+            exit 1
+          fi
 
       - name: Verify environment root exists
         run: test -d "infra/aws/envs/${{ inputs.environment }}"

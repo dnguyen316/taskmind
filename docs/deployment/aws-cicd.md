@@ -19,7 +19,7 @@ Create `staging` and `production` GitHub Environments with these variables:
 | Variable | Used by | Description |
 | --- | --- | --- |
 | `AWS_ROLE_TO_ASSUME` | Deploy and infra plan | IAM role trusted by GitHub OIDC. |
-| `AWS_ACCOUNT_ID` | Deploy | Required 12-digit AWS account ID for the target GitHub Environment. Deploy preflight runs `aws sts get-caller-identity` and fails if the OIDC role authenticates into a different account. |
+| `AWS_ACCOUNT_ID` | Deploy and infra plan | Required 12-digit AWS account ID for the target GitHub Environment. Deploy preflight and manual infra plans run `aws sts get-caller-identity` and fail if the OIDC role authenticates into a different account. |
 | `AWS_REGION` | Deploy and infra plan | AWS region for ECR, ECS, S3, CloudFront invalidation calls, and OpenTofu. |
 | `CORE_ECR_REPOSITORY` | Deploy | ECR repository name for Core API. |
 | `RELAY_ECR_REPOSITORY` | Deploy | ECR repository name for Relay. |
