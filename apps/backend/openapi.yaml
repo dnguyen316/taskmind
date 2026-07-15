@@ -3277,9 +3277,16 @@ components:
         code:
           type: string
           description: Stable TaskMind error code when returned by facade handlers.
+        field:
+          type: string
+          description: Request field associated with the validation failure when available.
         reason:
           type: string
           description: More specific stable validation reason when available.
+        projectId:
+          type: string
+          format: uuid
+          description: Project associated with the validation failure when available.
 
     Project:
       type: object

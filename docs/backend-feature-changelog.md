@@ -1,3 +1,20 @@
+## 2026-07-15 - Task type validation problem metadata
+
+### Changed
+
+- Added task-type validation problem metadata for project, key, name, and unknown-type failures so clients receive stable `field` and `reason` values alongside the existing validation code.
+- Documented optional `ProblemDetail.field` and `ProblemDetail.projectId` properties in the Core OpenAPI contract.
+
+### Tests
+
+- Added task type controller coverage asserting `code`, `field`, and `reason` for missing project ID, key, and name validation failures.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/error handling hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-12 - Notification optimistic locking hardening
 
 ### Changed

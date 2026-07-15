@@ -39,7 +39,7 @@ public class TaskTypeApplicationService {
 
     public TaskTypeDefinition requireActiveByKey(UUID projectId, String key) {
         return taskTypes.findActiveByKey(projectId, normalize(key))
-                .orElseThrow(() -> new TaskTypeValidationException("Unknown task type"));
+                .orElseThrow(() -> new TaskTypeValidationException("Unknown task type", "taskType", "TASK_TYPE_UNKNOWN", projectId));
     }
 
     @Transactional
@@ -52,7 +52,7 @@ public class TaskTypeApplicationService {
             String icon,
             Integer sortOrder) {
         if (projectId == null) {
-            throw new TaskTypeValidationException("Project id is required");
+            throw new TaskTypeValidationException("Project id is required", "projectId", "TASK_TYPE_PROJECT_REQUIRED");
         }
         assertCanManageProjectTypes(actor, projectId);
         validateName(name);
@@ -130,11 +130,11 @@ public class TaskTypeApplicationService {
     }
 
     private String normalize(String key) {
-        if (key == null || key.isBlank()) throw new TaskTypeValidationException("Task type key is required");
+        if (key == null || key.isBlank()) throw new TaskTypeValidationException("Task type key is required", "key", "TASK_TYPE_KEY_REQUIRED");
         return key.trim().toUpperCase();
     }
 
     private void validateName(String name) {
-        if (name == null || name.isBlank()) throw new TaskTypeValidationException("Task type name is required");
+        if (name == null || name.isBlank()) throw new TaskTypeValidationException("Task type name is required", "name", "TASK_TYPE_NAME_REQUIRED");
     }
 }
