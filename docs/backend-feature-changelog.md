@@ -12,6 +12,12 @@
 - Applicable skills: none. Delegated agents: none.
 
 
+## 2026-07-15 - Task API unreadable-task 404 policy
+
+- Documented the Task API policy to return `404 Not Found` for both missing and unreadable task ids to avoid existence disclosure, while keeping non-task-scoped authorization failures as `403 Forbidden`.
+- Aligned task detail, hierarchy, mutation, status, archive, and task-link operations to use the same safe not-found behavior for unreadable task ids.
+- Added controller coverage for missing tasks, personal tasks owned by another user, project-member task reads, and non-member project-task reads.
+
 ## 2026-07-15 - Stable task validation reasons
 
 ### Changed

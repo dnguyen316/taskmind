@@ -47,13 +47,13 @@ public class TaskLinkApplicationService {
 
     private Task authorizedToRead(AuthenticatedUser u, UUID id) {
         Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
-        if (!canRead(u, t)) throw new TaskAccessDeniedException("Task access denied");
+        if (!canRead(u, t)) throw new TaskNotFoundException("Task not found");
         return t;
     }
 
     private Task authorizedToMutateLink(AuthenticatedUser u, UUID id) {
         Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
-        if (!canMutateLink(u, t)) throw new TaskAccessDeniedException("Task access denied");
+        if (!canMutateLink(u, t)) throw new TaskNotFoundException("Task not found");
         return t;
     }
 

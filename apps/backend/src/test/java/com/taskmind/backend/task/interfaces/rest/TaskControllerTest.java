@@ -532,7 +532,7 @@ class TaskControllerTest {
                 .header("X-User-Roles", "ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"status\":\"DONE\"}"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
     }
 
 
@@ -586,6 +586,55 @@ class TaskControllerTest {
             .andExpect(status().isConflict());
     }
 
+
+    @Test
+    void returnsNotFoundForMissingTask() throws Exception {
+        mockMvc.perform(get("/v1/tasks/{id}", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+                .with(jwt("11111111-1111-1111-1111-111111111111")))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void returnsNotFoundForTaskOwnedByAnotherUser() throws Exception {
+        var ownerId = "51515151-5151-5151-5151-515151515151";
+        var otherId = "62626262-6262-6262-6262-626262626262";
+        var taskId = createPersonalTask(ownerId, "Private task");
+
+        mockMvc.perform(get("/v1/tasks/{id}", taskId).with(jwt(otherId)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.title").value("Task not found"));
+    }
+
+    @Test
+    void projectMemberCanReadTaskOwnedByAnotherProjectMember() throws Exception {
+        var ownerId = "73737373-7373-7373-7373-737373737373";
+        var taskOwnerId = "84848484-8484-8484-8484-848484848484";
+        var memberId = "95959595-9595-9595-9595-959595959595";
+        var projectId = createProjectThroughApi(ownerId, "PM" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        addProjectMember(projectId, ownerId, taskOwnerId);
+        addProjectMember(projectId, ownerId, memberId);
+        var taskId = createProjectTask(projectId, taskOwnerId, "Readable project task");
+
+        mockMvc.perform(get("/v1/tasks/{id}", taskId).with(jwt(memberId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(taskId))
+            .andExpect(jsonPath("$.title").value("Readable project task"));
+    }
+
+    @Test
+    void nonMemberCannotReadProjectTask() throws Exception {
+        var ownerId = "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1";
+        var taskOwnerId = "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2";
+        var nonMemberId = "c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3";
+        var projectId = createProjectThroughApi(ownerId, "NM" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        addProjectMember(projectId, ownerId, taskOwnerId);
+        var taskId = createProjectTask(projectId, taskOwnerId, "Hidden project task");
+
+        mockMvc.perform(get("/v1/tasks/{id}", taskId).with(jwt(nonMemberId)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.detail").value("Task not found"));
+    }
+
     @Test
     void projectMembersCanCreateListAndDeleteTaskLinksButUnrelatedUsersCannot() throws Exception {
         var ownerId = "12121212-1212-1212-1212-121212121212";
@@ -617,7 +666,7 @@ class TaskControllerTest {
                 .content("""
                     {"targetTaskId":"%s","linkType":"BLOCKS"}
                     """.formatted(targetTaskId)))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
 
         var linkResponse = mockMvc.perform(post("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(memberId))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -636,14 +685,46 @@ class TaskControllerTest {
             .andExpect(jsonPath("$[0].id").value(linkId));
 
         mockMvc.perform(get("/v1/tasks/{taskId}/links", sourceTaskId).with(jwt(unrelatedId)))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
 
         mockMvc.perform(delete("/v1/task-links/{id}", linkId).with(jwt(memberId)))
             .andExpect(status().isNoContent());
     }
 
-    private void addProjectMember(String projectId, String ownerId, String memberId) throws Exception {
-        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId).with(jwt(ownerId))
+
+    private String createPersonalTask(String userId, String title) throws Exception {
+        var response = mockMvc.perform(post("/v1/tasks").with(jwt(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "%s",
+                      "title": "%s",
+                      "status": "TODO",
+                      "priority": 2,
+                      "source": "MANUAL"
+                    }
+                    """.formatted(userId, title)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private String createProjectThroughApi(String ownerId, String key) throws Exception {
+        var response = mockMvc.perform(post("/v1/projects").with(jwt(ownerId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "name": "%s Project",
+                      "key": "%s",
+                      "ownerUserId": "%s"
+                    }
+                    """.formatted(key, key, ownerId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private void addProjectMember(String projectId, String ownerId, String memberId) throws Exception {        mockMvc.perform(post("/v1/projects/{projectId}/members", projectId).with(jwt(ownerId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"userId":"%s","role":"MEMBER"}
