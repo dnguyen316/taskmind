@@ -6,6 +6,9 @@ import com.taskmind.backend.config.logging.ProblemDetailLogging;
 import com.taskmind.backend.config.logging.RequestContextFilter;
 import com.taskmind.backend.config.logging.RequestLoggingProperties;
 import com.taskmind.backend.integration.infrastructure.ProviderClientException;
+import com.taskmind.backend.task.application.TaskAccessDeniedException;
+import com.taskmind.backend.task.application.TaskErrorCode;
+import com.taskmind.backend.task.application.TaskErrorMetadata;
 import com.taskmind.backend.task.application.TaskValidationException;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
@@ -32,6 +35,48 @@ class ApiExceptionHandlerTest {
         assertThat(problem.getProperties())
                 .containsEntry("code", "TASK_VALIDATION_FAILED")
                 .containsEntry("correlationId", CORRELATION_ID);
+    }
+
+
+    @Test
+    void includesSafeTaskErrorMetadata() {
+        ProblemDetail problem = handler.handleTaskValidation(new TaskValidationException(
+                "Invalid priority",
+                new TaskErrorMetadata(
+                        TaskErrorCode.TASK_VALIDATION_FAILED,
+                        "task",
+                        "TASK-1",
+                        "update",
+                        "priority",
+                        "must be between 1 and 5")));
+
+        assertThat(problem.getProperties())
+                .containsEntry("code", "TASK_VALIDATION_FAILED")
+                .containsEntry("resource", "task")
+                .containsEntry("resourceId", "TASK-1")
+                .containsEntry("operation", "update")
+                .containsEntry("field", "priority")
+                .containsEntry("reason", "must be between 1 and 5");
+    }
+
+    @Test
+    void taskAccessDeniedUsesGenericDetailAndOmitsResourceId() {
+        ProblemDetail problem = handler.handleTaskAccessDenied(new TaskAccessDeniedException(
+                "Cannot modify task 111 owned by another user",
+                new TaskErrorMetadata(
+                        TaskErrorCode.TASK_ACCESS_DENIED,
+                        "task",
+                        "111",
+                        "update",
+                        null,
+                        null)));
+
+        assertThat(problem.getDetail()).isEqualTo("You are not allowed to perform this task operation.");
+        assertThat(problem.getProperties())
+                .containsEntry("code", "TASK_ACCESS_DENIED")
+                .containsEntry("resource", "task")
+                .containsEntry("operation", "update")
+                .doesNotContainKey("resourceId");
     }
 
     @Test

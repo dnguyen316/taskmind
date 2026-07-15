@@ -3,6 +3,8 @@ package com.taskmind.backend;
 import com.taskmind.backend.config.logging.ProblemDetailLogging;
 import com.taskmind.backend.integration.infrastructure.ProviderClientException;
 import com.taskmind.backend.task.application.TaskAccessDeniedException;
+import com.taskmind.backend.task.application.TaskErrorCode;
+import com.taskmind.backend.task.application.TaskErrorMetadata;
 import com.taskmind.backend.task.application.TaskNotFoundException;
 import com.taskmind.backend.task.application.TaskValidationException;
 import com.taskmind.backend.tasktype.application.TaskTypeForbiddenException;
@@ -32,17 +34,21 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(TaskValidationException.class)
     public ProblemDetail handleTaskValidation(TaskValidationException ex) {
-        return problem(HttpStatus.BAD_REQUEST, "Invalid task request", ex.getMessage(), "TASK_VALIDATION_FAILED");
+        return problem(HttpStatus.BAD_REQUEST, "Invalid task request", ex.getMessage(), ex.metadata());
     }
 
     @ExceptionHandler(TaskAccessDeniedException.class)
     public ProblemDetail handleTaskAccessDenied(TaskAccessDeniedException ex) {
-        return problem(HttpStatus.FORBIDDEN, "Task access denied", ex.getMessage(), "TASK_ACCESS_DENIED");
+        return problem(
+                HttpStatus.FORBIDDEN,
+                "Task access denied",
+                "You are not allowed to perform this task operation.",
+                ex.metadata().sanitizedForAccessDenied());
     }
 
     @ExceptionHandler(TaskNotFoundException.class)
     public ProblemDetail handleTaskNotFound(TaskNotFoundException ex) {
-        return problem(HttpStatus.NOT_FOUND, "Task not found", ex.getMessage(), "TASK_NOT_FOUND");
+        return problem(HttpStatus.NOT_FOUND, "Task not found", ex.getMessage(), ex.metadata());
     }
 
     @ExceptionHandler(TaskTypeForbiddenException.class)
@@ -52,7 +58,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(TaskTypeValidationException.class)
     public ProblemDetail handleTaskTypeValidation(TaskTypeValidationException ex) {
-        return problem(HttpStatus.BAD_REQUEST, "Invalid task type request", ex.getMessage(), "TASK_TYPE_VALIDATION_FAILED");
+        return problem(HttpStatus.BAD_REQUEST, "Invalid task type request", ex.getMessage(), ex.metadata());
     }
 
     @ExceptionHandler(ProviderClientException.class)
@@ -68,10 +74,25 @@ public class ApiExceptionHandler {
     }
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, String code) {
+        return problem(status, title, detail, TaskErrorMetadata.withCode(TaskErrorCode.valueOf(code)));
+    }
+
+    private ProblemDetail problem(HttpStatus status, String title, String detail, TaskErrorMetadata metadata) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(status);
         problemDetail.setTitle(title);
         problemDetail.setDetail(detail);
-        problemDetail.setProperty("code", code);
+        setIfPresent(problemDetail, "code", metadata.code().name());
+        setIfPresent(problemDetail, "resource", metadata.resource());
+        setIfPresent(problemDetail, "resourceId", metadata.resourceId());
+        setIfPresent(problemDetail, "operation", metadata.operation());
+        setIfPresent(problemDetail, "field", metadata.field());
+        setIfPresent(problemDetail, "reason", metadata.reason());
         return problemDetailLogging.enrich(problemDetail);
+    }
+
+    private void setIfPresent(ProblemDetail problemDetail, String name, String value) {
+        if (value != null) {
+            problemDetail.setProperty(name, value);
+        }
     }
 }

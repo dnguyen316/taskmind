@@ -991,6 +991,23 @@ This changelog tracks backend feature progress against the core implementation p
 - Skills used: none.
 - Agent delegation: none.
 
+## 2026-07-15 - Task error metadata responses
+
+### Changed
+
+- Added structured task error metadata for task and task-type application exceptions and surfaced safe metadata fields on Core API `ProblemDetail` responses.
+- Changed task access-denied responses to use generic detail text while allowing safe operation metadata and omitting resource identifiers.
+
+### Tests
+
+- Added API exception handler coverage for safe metadata propagation and access-denied sanitization.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/error handling hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-12 - Task status optimistic locking
 
 ### Changed
