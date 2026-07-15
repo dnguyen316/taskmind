@@ -46,6 +46,17 @@ Each feature is an independent vertical slice. The `task` module is the **refere
 | `internal` | Service-token read APIs for Nova | `InternalTaskReadController` |
 | `ratelimit` | Bucket4j Redis per-user and AI quotas | `RateLimitFilter` |
 
+### Task API authorization error policy
+
+Core Task APIs use **Option A** for task-scoped reads and mutations: return `404 Not Found`
+for both missing tasks and existing tasks the requester cannot read or mutate. This avoids
+disclosing task existence across personal workspaces and project boundaries. Project members
+may read and link tasks inside projects they belong to; non-members receive the same safe
+`404` response they would receive for an unknown task id. Non-task-scoped authorization
+failures, such as attempting to create a task in a project where the requester lacks
+membership, may still return `403 Forbidden` because there is no task id whose existence
+would be disclosed.
+
 Cross-cutting packages are not feature slices:
 
 | Package | Holds |

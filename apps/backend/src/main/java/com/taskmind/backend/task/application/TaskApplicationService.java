@@ -149,7 +149,7 @@ public class TaskApplicationService {
     }
 
     public Optional<Task> findById(AuthenticatedUser r, UUID id) {
-        return tasks.findById(id).filter(t -> canRead(r, t));
+        return tasks.findById(id).map(t -> requireReadable(r, t));
     }
 
     public List<Task> children(AuthenticatedUser r, UUID id) {
@@ -264,14 +264,15 @@ public class TaskApplicationService {
 
     private Task authorized(AuthenticatedUser r, UUID id) {
         return tasks.findById(id)
-                .map(
-                        task -> {
-                            if (!canRead(r, task)) {
-                                throw new TaskAccessDeniedException("Task access denied");
-                            }
-                            return task;
-                        })
+                .map(task -> requireReadable(r, task))
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+    }
+
+    private Task requireReadable(AuthenticatedUser r, Task task) {
+        if (!canRead(r, task)) {
+            throw new TaskNotFoundException("Task not found");
+        }
+        return task;
     }
 
     private boolean canRead(AuthenticatedUser r, Task t) {
@@ -282,7 +283,7 @@ public class TaskApplicationService {
 
     private void validateCanMutate(AuthenticatedUser r, Task t) {
         if (!r.isPrivileged() && !r.userId().equals(t.userId()))
-            throw new TaskAccessDeniedException("Cannot modify another user's task");
+            throw new TaskNotFoundException("Task not found");
     }
 
     private void validateTaskType(TaskTypeDefinition definition, TaskLevel level) {

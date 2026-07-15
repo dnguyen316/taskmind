@@ -174,13 +174,13 @@ class TaskAttachmentControllerTest {
     }
 
     @Test
-    void rejectsAttachmentAccessByNonOwner() throws Exception {
+    void hidesAttachmentTaskExistenceFromNonOwner() throws Exception {
         String ownerId = UUID.randomUUID().toString();
         String taskId = createTask(ownerId);
         mockMvc.perform(
                         get("/v1/tasks/{taskId}/attachments", taskId)
                                 .with(jwt(UUID.randomUUID().toString())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     private String createTask(String userId) throws Exception {
