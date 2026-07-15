@@ -147,6 +147,67 @@ class TaskTypeControllerTest {
     }
 
     @Test
+    void createRejectsMissingProjectIdWithProblemMetadata() throws Exception {
+        mockMvc.perform(post("/v1/task-types")
+                        .with(jwt(OWNER_ID.toString()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "key": "risk",
+                                  "name": "Risk"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("TASK_TYPE_VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.field").value("projectId"))
+                .andExpect(jsonPath("$.reason").value("TASK_TYPE_PROJECT_REQUIRED"));
+
+        verify(taskTypes, never()).save(any());
+    }
+
+    @Test
+    void createRejectsMissingKeyWithProblemMetadata() throws Exception {
+        when(projects.findById(PROJECT_ID)).thenReturn(Optional.of(project()));
+
+        mockMvc.perform(post("/v1/task-types")
+                        .with(jwt(OWNER_ID.toString()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "projectId": "%s",
+                                  "name": "Risk"
+                                }
+                                """.formatted(PROJECT_ID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("TASK_TYPE_VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.field").value("key"))
+                .andExpect(jsonPath("$.reason").value("TASK_TYPE_KEY_REQUIRED"));
+
+        verify(taskTypes, never()).save(any());
+    }
+
+    @Test
+    void createRejectsMissingNameWithProblemMetadata() throws Exception {
+        when(projects.findById(PROJECT_ID)).thenReturn(Optional.of(project()));
+
+        mockMvc.perform(post("/v1/task-types")
+                        .with(jwt(OWNER_ID.toString()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "projectId": "%s",
+                                  "key": "risk"
+                                }
+                                """.formatted(PROJECT_ID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("TASK_TYPE_VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.field").value("name"))
+                .andExpect(jsonPath("$.reason").value("TASK_TYPE_NAME_REQUIRED"));
+
+        verify(taskTypes, never()).save(any());
+    }
+
+    @Test
     void ownerCanPatchProjectTaskTypeWithMatchingVersion() throws Exception {
         when(taskTypes.findById(TASK_TYPE_ID)).thenReturn(Optional.of(projectType(7L)));
         when(projects.findById(PROJECT_ID)).thenReturn(Optional.of(project()));

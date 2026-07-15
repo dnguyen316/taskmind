@@ -58,7 +58,13 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(TaskTypeValidationException.class)
     public ProblemDetail handleTaskTypeValidation(TaskTypeValidationException ex) {
-        return problem(HttpStatus.BAD_REQUEST, "Invalid task type request", ex.getMessage(), ex.metadata());
+        ProblemDetail problemDetail = problem(HttpStatus.BAD_REQUEST, "Invalid task type request", ex.getMessage(), ex.metadata());
+        setIfPresent(problemDetail, "field", ex.field());
+        setIfPresent(problemDetail, "reason", ex.reason());
+        if (ex.projectId() != null) {
+            problemDetail.setProperty("projectId", ex.projectId().toString());
+        }
+        return problemDetail;
     }
 
     @ExceptionHandler(ProviderClientException.class)
