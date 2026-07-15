@@ -23,11 +23,28 @@ public class TaskReleaseApplicationService {
     }
 
     public ReleaseSummaryResponse summary(AuthenticatedUser user, UUID projectId) {
-        Project p = projects.findById(projectId).orElseThrow();
+        Project p = projects.findById(projectId)
+                .orElseThrow(() -> new TaskNotFoundException(
+                        "Project not found",
+                        new TaskErrorMetadata(
+                                TaskErrorCode.TASK_NOT_FOUND,
+                                "project",
+                                projectId.toString(),
+                                "release-summary",
+                                null,
+                                null)));
         if (!user.isPrivileged()
                 && !p.ownerUserId().equals(user.userId())
                 && !members.isMember(projectId, user.userId()))
-            throw new IllegalArgumentException("Access denied");
+            throw new TaskAccessDeniedException(
+                    "Project access denied",
+                    new TaskErrorMetadata(
+                            TaskErrorCode.TASK_ACCESS_DENIED,
+                            "project",
+                            projectId.toString(),
+                            "release-summary",
+                            null,
+                            null));
         return new ReleaseSummaryResponse(
                 projectId,
                 tasks.releaseStats(projectId).stream()

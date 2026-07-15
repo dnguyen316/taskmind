@@ -1105,3 +1105,20 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: Relay observability hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-15 - Release summary problem details
+
+### Changed
+
+- Replaced generic release-summary project lookup and authorization exceptions with typed task not-found and access-denied exceptions carrying safe project metadata.
+- Kept release-summary error responses on the global Core API problem-detail path so clients receive stable error codes and correlation metadata.
+
+### Tests
+
+- Added release-summary controller coverage for missing projects returning `404 Not Found` and non-member access returning `403 Forbidden` with stable problem metadata.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/error handling hardening.
+- Skills used: none.
+- Agent delegation: none.
