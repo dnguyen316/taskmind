@@ -11,6 +11,24 @@
 - Advanced primary milestone: M11 Notifications.
 - Applicable skills: none. Delegated agents: none.
 
+
+## 2026-07-15 - Stable task validation reasons
+
+### Changed
+
+- Added stable task validation `reason` values for known hierarchy and task-type rule failures while preserving the top-level `TASK_VALIDATION_FAILED` problem code.
+- Documented the optional `ProblemDetail.reason` property in the Core OpenAPI contract.
+
+### Tests
+
+- Added task controller coverage for invalid hierarchy levels and invalid task-type levels asserting both `400 Bad Request` and the stable validation reason.
+
+### Closeout notes
+
+- Primary milestone: M02 backend foundation/error handling hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-12 - Notification preference concurrency hardening
 
 ### Changed

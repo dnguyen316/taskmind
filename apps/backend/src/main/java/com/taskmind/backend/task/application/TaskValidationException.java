@@ -21,6 +21,10 @@ public class TaskValidationException extends RuntimeException {
         this.metadata = metadata == null ? TaskErrorMetadata.withCode(TaskErrorCode.TASK_VALIDATION_FAILED) : metadata;
     }
 
+    public String reason() {
+        return metadata.reason();
+    }
+
     public TaskErrorMetadata metadata() {
         return metadata;
     }

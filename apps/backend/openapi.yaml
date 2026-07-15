@@ -3277,6 +3277,9 @@ components:
         code:
           type: string
           description: Stable TaskMind error code when returned by facade handlers.
+        reason:
+          type: string
+          description: More specific stable validation reason when available.
 
     Project:
       type: object

@@ -54,7 +54,7 @@ All `/internal/**` routes require the `X-Service-Token` header matching the targ
 - **Authenticated**: everything else under `/v1/**`.
 - **Denied**: all else.
 - `/internal/**`: separate `@Order(1)` chain, service-token auth.
-- Errors: RFC-7807 `ProblemDetail` JSON.
+- Errors: RFC-7807 `ProblemDetail` JSON. Task validation failures keep top-level `code: TASK_VALIDATION_FAILED` and may include a stable `reason` property for the specific rule failure.
 
 ## Conventions
 

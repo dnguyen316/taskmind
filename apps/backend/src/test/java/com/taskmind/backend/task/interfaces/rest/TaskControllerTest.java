@@ -137,7 +137,51 @@ class TaskControllerTest {
         mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("TASK_VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.reason").value("TASK_TYPE_INVALID_FOR_LEVEL"));
+    }
+
+    @Test
+    void rejectsInvalidHierarchyLevelWithStableReason() throws Exception {
+        var owner = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        var project = createProject(owner, "HL" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+        var parentResponse = mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "%s",
+                      "projectId": "%s",
+                      "title": "Parent task",
+                      "taskType": "TASK",
+                      "taskLevel": "TASK",
+                      "status": "TODO",
+                      "priority": 2,
+                      "source": "MANUAL"
+                    }
+                    """.formatted(owner, project.id())))
+            .andExpect(status().isCreated())
+            .andReturn();
+        var parentId = objectMapper.readTree(parentResponse.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(post("/v1/tasks").with(jwt(owner.toString()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "userId": "%s",
+                      "projectId": "%s",
+                      "parentTaskId": "%s",
+                      "title": "Invalid child level",
+                      "taskType": "TASK",
+                      "taskLevel": "TASK",
+                      "status": "TODO",
+                      "priority": 2,
+                      "source": "MANUAL"
+                    }
+                    """.formatted(owner, project.id(), parentId)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("TASK_VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.reason").value("TASK_HIERARCHY_INVALID_LEVEL"));
     }
 
     @Test

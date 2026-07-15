@@ -257,7 +257,7 @@ public class TaskApplicationService {
             try {
                 TaskHierarchyRules.validateParent(t, p, tasks.findAncestors(p.id()));
             } catch (IllegalArgumentException e) {
-                throw new TaskValidationException(e.getMessage(), e);
+                throw new TaskValidationException(e.getMessage(), e, taskValidationReason(hierarchyReason(e.getMessage())));
             }
         }
     }
@@ -289,8 +289,33 @@ public class TaskApplicationService {
         try {
             TaskTypeRules.validate(definition, level);
         } catch (IllegalArgumentException e) {
-            throw new TaskValidationException(e.getMessage(), e);
+            throw new TaskValidationException(e.getMessage(), e, taskValidationReason(taskTypeReason(e.getMessage())));
         }
+    }
+
+    private TaskErrorMetadata taskValidationReason(String reason) {
+        return new TaskErrorMetadata(TaskErrorCode.TASK_VALIDATION_FAILED, null, null, null, null, reason);
+    }
+
+    private String hierarchyReason(String message) {
+        return switch (message) {
+            case "A task cannot be its own parent" -> "TASK_PARENT_SAME_AS_CHILD";
+            case "Parent and child must belong to the same project" -> "TASK_PARENT_PROJECT_MISMATCH";
+            case "Task hierarchy cannot contain a cycle" -> "TASK_HIERARCHY_CYCLE";
+            case "Task hierarchy exceeds maximum depth" -> "TASK_HIERARCHY_MAX_DEPTH";
+            case "Invalid task hierarchy level" -> "TASK_HIERARCHY_INVALID_LEVEL";
+            default -> null;
+        };
+    }
+
+    private String taskTypeReason(String message) {
+        return switch (message) {
+            case "Task type is required" -> "TASK_TYPE_REQUIRED";
+            case "Unknown task type" -> "TASK_TYPE_UNKNOWN";
+            case "Task type and level are required" -> "TASK_TYPE_LEVEL_REQUIRED";
+            case "Task type is not valid for its hierarchy level" -> "TASK_TYPE_INVALID_FOR_LEVEL";
+            default -> null;
+        };
     }
 
     private void validateMembership(UUID projectId, UUID userId) {
