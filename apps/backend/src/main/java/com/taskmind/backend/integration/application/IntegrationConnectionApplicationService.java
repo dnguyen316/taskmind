@@ -1,11 +1,13 @@
 package com.taskmind.backend.integration.application;
 
 import com.taskmind.backend.auth.AuthenticatedUser;
-import com.taskmind.backend.integration.domain.model.*;
+import com.taskmind.backend.integration.domain.model.IntegrationConnection;
+import com.taskmind.backend.integration.domain.model.IntegrationProvider;
 import com.taskmind.backend.integration.domain.repository.IntegrationConnectionRepository;
 import com.taskmind.backend.integration.infrastructure.security.TokenCipher;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +16,57 @@ import org.springframework.transaction.annotation.Transactional;
 public class IntegrationConnectionApplicationService {
     private final IntegrationConnectionRepository connections;
     private final TokenCipher cipher;
-    public IntegrationConnectionApplicationService(IntegrationConnectionRepository connections, TokenCipher cipher) { this.connections = connections; this.cipher = cipher; }
-    @Transactional
-    public IntegrationConnection connect(AuthenticatedUser actor, IntegrationProvider provider, String accountName, String baseUrl, String externalId, String accessToken, String refreshToken, String scopes) {
-        if (accountName == null || accountName.isBlank() || accessToken == null || accessToken.isBlank()) throw new IllegalArgumentException("accountName and accessToken are required");
-        Instant now = Instant.now();
-        return connections.save(new IntegrationConnection(UUID.randomUUID(), null, provider, accountName.trim(), baseUrl, externalId, actor.userId(), cipher.encrypt(accessToken), cipher.encrypt(refreshToken), null, scopes, "CONNECTED", now, now));
+
+    public IntegrationConnectionApplicationService(IntegrationConnectionRepository connections, TokenCipher cipher) {
+        this.connections = connections;
+        this.cipher = cipher;
     }
-    public List<IntegrationConnection> list(AuthenticatedUser actor) { return connections.findByOwnerUserId(actor.userId()); }
-    public IntegrationConnection requireOwned(AuthenticatedUser actor, UUID id) { return connections.findById(id).filter(c -> actor.isPrivileged() || c.ownerUserId().equals(actor.userId())).orElseThrow(() -> new IllegalArgumentException("Connection not found")); }
-    public ConnectionCredentials credentials(IntegrationConnection connection) { return new ConnectionCredentials(connection.baseUrl(), cipher.decrypt(connection.encryptedAccessToken())); }
+
+    @Transactional
+    public IntegrationConnection connect(
+            AuthenticatedUser actor,
+            IntegrationProvider provider,
+            String accountName,
+            String baseUrl,
+            String externalId,
+            String accessToken,
+            String refreshToken,
+            String scopes) {
+        if (accountName == null || accountName.isBlank() || accessToken == null || accessToken.isBlank()) {
+            throw new IllegalArgumentException("accountName and accessToken are required");
+        }
+        Instant now = Instant.now();
+        return connections.save(new IntegrationConnection(
+                UUID.randomUUID(),
+                null,
+                provider,
+                accountName.trim(),
+                baseUrl,
+                externalId,
+                actor.userId(),
+                cipher.encrypt(accessToken),
+                cipher.encrypt(refreshToken),
+                null,
+                scopes,
+                "CONNECTED",
+                now,
+                now));
+    }
+
+    public List<IntegrationConnection> list(AuthenticatedUser actor) {
+        return connections.findByOwnerUserId(actor.userId());
+    }
+
+    public IntegrationConnection requireOwned(AuthenticatedUser actor, UUID connectionId) {
+        return connections
+                .findById(connectionId)
+                .filter(connection -> actor.isPrivileged() || connection.ownerUserId().equals(actor.userId()))
+                .orElseThrow(() -> new IllegalArgumentException("Connection not found"));
+    }
+
+    public ConnectionCredentials credentials(IntegrationConnection connection) {
+        return new ConnectionCredentials(connection.baseUrl(), cipher.decrypt(connection.encryptedAccessToken()));
+    }
+
     public record ConnectionCredentials(String baseUrl, String accessToken) {}
 }
