@@ -50,28 +50,28 @@ public class TaskTypeJpaEntity {
 
     protected TaskTypeJpaEntity() {}
 
-    private TaskTypeJpaEntity(TaskTypeDefinition d) {
-        id = d.id();
-        version = d.version();
-        projectId = d.projectId();
-        key = d.key();
-        name = d.name();
-        color = d.color();
-        icon = d.icon();
-        defaultTaskLevel = d.defaultTaskLevel();
-        allowedTaskLevels = encodeLevels(d.allowedTaskLevels());
-        container = d.container();
-        allowChildren = d.allowChildren();
-        systemKind = d.systemKind();
-        system = d.system();
-        active = d.active();
-        sortOrder = d.sortOrder();
-        createdAt = d.createdAt();
-        updatedAt = d.updatedAt();
+    private TaskTypeJpaEntity(TaskTypeDefinition definition) {
+        id = definition.id();
+        version = definition.version();
+        projectId = definition.projectId();
+        key = definition.key();
+        name = definition.name();
+        color = definition.color();
+        icon = definition.icon();
+        defaultTaskLevel = definition.defaultTaskLevel();
+        allowedTaskLevels = encodeLevels(definition.allowedTaskLevels());
+        container = definition.container();
+        allowChildren = definition.allowChildren();
+        systemKind = definition.systemKind();
+        system = definition.system();
+        active = definition.active();
+        sortOrder = definition.sortOrder();
+        createdAt = definition.createdAt();
+        updatedAt = definition.updatedAt();
     }
 
-    static TaskTypeJpaEntity fromDomain(TaskTypeDefinition d) {
-        return new TaskTypeJpaEntity(d);
+    static TaskTypeJpaEntity fromDomain(TaskTypeDefinition definition) {
+        return new TaskTypeJpaEntity(definition);
     }
 
     TaskTypeDefinition toDomain() {
