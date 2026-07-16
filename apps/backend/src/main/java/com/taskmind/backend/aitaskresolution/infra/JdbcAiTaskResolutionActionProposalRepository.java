@@ -18,26 +18,26 @@ public class JdbcAiTaskResolutionActionProposalRepository
     }
 
     @Override
-    public AiTaskResolutionActionProposal save(AiTaskResolutionActionProposal p) {
+    public AiTaskResolutionActionProposal save(AiTaskResolutionActionProposal proposal) {
         jdbc.update(
                 """
                 INSERT INTO ai_task_resolution_action_proposals (id, job_id, proposed_action_type, payload_preview, risk_level, rationale, status, decided_by, decided_at, error_code, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, decided_by = EXCLUDED.decided_by, decided_at = EXCLUDED.decided_at, error_code = EXCLUDED.error_code, updated_at = EXCLUDED.updated_at
                 """,
-                p.id(),
-                p.jobId(),
-                p.proposedActionType(),
-                p.payloadPreview(),
-                p.riskLevel(),
-                p.rationale(),
-                p.status().name(),
-                p.decidedBy(),
-                p.decidedAt(),
-                p.errorCode(),
-                p.createdAt(),
-                p.updatedAt());
-        return findById(p.id()).orElseThrow();
+                proposal.id(),
+                proposal.jobId(),
+                proposal.proposedActionType(),
+                proposal.payloadPreview(),
+                proposal.riskLevel(),
+                proposal.rationale(),
+                proposal.status().name(),
+                proposal.decidedBy(),
+                proposal.decidedAt(),
+                proposal.errorCode(),
+                proposal.createdAt(),
+                proposal.updatedAt());
+        return findById(proposal.id()).orElseThrow();
     }
 
     @Override

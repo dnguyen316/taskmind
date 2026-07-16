@@ -49,12 +49,12 @@ public class AiTaskResolutionApplicationService {
 
     @Transactional
     public AiTaskResolutionJob create(
-            AuthenticatedUser user, UUID taskId, CreateAiTaskResolutionJobCommand c) {
+            AuthenticatedUser user, UUID taskId, CreateAiTaskResolutionJobCommand command) {
         Task task =
                 tasks.findById(taskId)
-                        .filter(t -> canRead(user, t))
+                        .filter(taskCandidate -> canRead(user, taskCandidate))
                         .orElseThrow(() -> new NoSuchElementException("Task not found"));
-        String key = c.idempotencyKey();
+        String key = command.idempotencyKey();
         if (key != null && !key.isBlank()) {
             Optional<AiTaskResolutionJob> existing =
                     jobs.findByTaskAndRequesterAndIdempotencyKey(taskId, user.userId(), key.trim());
@@ -66,8 +66,8 @@ public class AiTaskResolutionApplicationService {
                         UUID.randomUUID(),
                         task.id(),
                         task.projectId(),
-                        c.templateId(),
-                        c.githubProjectLinkId(),
+                        command.templateId(),
+                        command.githubProjectLinkId(),
                         AiTaskResolutionJobStatus.QUEUED,
                         user.userId(),
                         key == null ? null : key.trim(),
@@ -86,14 +86,14 @@ public class AiTaskResolutionApplicationService {
     public List<AiTaskResolutionJob> list(AuthenticatedUser user, UUID taskId) {
         Task task =
                 tasks.findById(taskId)
-                        .filter(t -> canRead(user, t))
+                        .filter(taskCandidate -> canRead(user, taskCandidate))
                         .orElseThrow(() -> new NoSuchElementException("Task not found"));
         return jobs.findByTaskId(task.id());
     }
 
     public Optional<AiTaskResolutionJob> get(AuthenticatedUser user, UUID id) {
         return jobs.findById(id)
-                .filter(j -> tasks.findById(j.taskId()).filter(t -> canRead(user, t)).isPresent());
+                .filter(job -> tasks.findById(job.taskId()).filter(taskCandidate -> canRead(user, taskCandidate)).isPresent());
     }
 
     public List<AiTaskResolutionActionProposal> listProposals(AuthenticatedUser user, UUID jobId) {
@@ -116,7 +116,7 @@ public class AiTaskResolutionApplicationService {
                 decideProposal(
                         user, jobId, proposalId, AiTaskResolutionActionProposalStatus.REJECTED);
         decided.ifPresent(
-                p ->
+                proposal ->
                         transition(
                                 user,
                                 jobId,
@@ -139,23 +139,23 @@ public class AiTaskResolutionApplicationService {
         Instant now = Instant.now();
         return proposals
                 .findById(proposalId)
-                .filter(p -> p.jobId().equals(job.id()))
-                .filter(p -> p.status() == AiTaskResolutionActionProposalStatus.PENDING)
+                .filter(proposal -> proposal.jobId().equals(job.id()))
+                .filter(proposal -> proposal.status() == AiTaskResolutionActionProposalStatus.PENDING)
                 .map(
-                        p ->
+                        proposal ->
                                 proposals.save(
                                         new AiTaskResolutionActionProposal(
-                                                p.id(),
-                                                p.jobId(),
-                                                p.proposedActionType(),
-                                                p.payloadPreview(),
-                                                p.riskLevel(),
-                                                p.rationale(),
+                                                proposal.id(),
+                                                proposal.jobId(),
+                                                proposal.proposedActionType(),
+                                                proposal.payloadPreview(),
+                                                proposal.riskLevel(),
+                                                proposal.rationale(),
                                                 status,
                                                 user.userId(),
                                                 now,
                                                 null,
-                                                p.createdAt(),
+                                                proposal.createdAt(),
                                                 now)));
     }
 
@@ -170,29 +170,29 @@ public class AiTaskResolutionApplicationService {
     }
 
     private Optional<AiTaskResolutionJob> transition(
-            AuthenticatedUser u,
+            AuthenticatedUser authenticatedUser,
             UUID id,
             AiTaskResolutionJobStatus status,
             String step,
             String error) {
-        return get(u, id)
+        return get(authenticatedUser, id)
                 .map(
-                        j ->
+                        job ->
                                 saveWithEvent(
                                         new AiTaskResolutionJob(
-                                                j.id(),
-                                                j.taskId(),
-                                                j.projectId(),
-                                                j.templateId(),
-                                                j.githubProjectLinkId(),
+                                                job.id(),
+                                                job.taskId(),
+                                                job.projectId(),
+                                                job.templateId(),
+                                                job.githubProjectLinkId(),
                                                 status,
-                                                j.requestedBy(),
-                                                j.idempotencyKey(),
-                                                j.novaRunId(),
+                                                job.requestedBy(),
+                                                job.idempotencyKey(),
+                                                job.novaRunId(),
                                                 step,
-                                                j.resultSummary(),
+                                                job.resultSummary(),
                                                 error,
-                                                j.createdAt(),
+                                                job.createdAt(),
                                                 Instant.now(),
                                                 terminal(status) ? Instant.now() : null)));
     }
@@ -201,26 +201,26 @@ public class AiTaskResolutionApplicationService {
     public boolean processOneQueuedJob() {
         AiTaskResolutionJob running =
                 tx.execute(
-                        s ->
+                        transactionStatus ->
                                 jobs.findFirstQueued()
                                         .map(
-                                                j ->
+                                                job ->
                                                         saveWithEvent(
                                                                 new AiTaskResolutionJob(
-                                                                        j.id(),
-                                                                        j.taskId(),
-                                                                        j.projectId(),
-                                                                        j.templateId(),
-                                                                        j.githubProjectLinkId(),
+                                                                        job.id(),
+                                                                        job.taskId(),
+                                                                        job.projectId(),
+                                                                        job.templateId(),
+                                                                        job.githubProjectLinkId(),
                                                                         AiTaskResolutionJobStatus
                                                                                 .RUNNING,
-                                                                        j.requestedBy(),
-                                                                        j.idempotencyKey(),
-                                                                        j.novaRunId(),
+                                                                        job.requestedBy(),
+                                                                        job.idempotencyKey(),
+                                                                        job.novaRunId(),
                                                                         "calling_nova",
-                                                                        j.resultSummary(),
+                                                                        job.resultSummary(),
                                                                         null,
-                                                                        j.createdAt(),
+                                                                        job.createdAt(),
                                                                         Instant.now(),
                                                                         null)))
                                         .orElse(null));
@@ -259,7 +259,7 @@ public class AiTaskResolutionApplicationService {
             String summary = response.output() == null ? null : response.output().toString();
             if (persistReturnedProposals(running, response.output())) {
                 tx.executeWithoutResult(
-                        s ->
+                        transactionStatus ->
                                 saveWithEvent(
                                         new AiTaskResolutionJob(
                                                 running.id(),
@@ -279,7 +279,7 @@ public class AiTaskResolutionApplicationService {
                                                 null)));
             } else {
                 tx.executeWithoutResult(
-                        s ->
+                        transactionStatus ->
                                 saveWithEvent(
                                         new AiTaskResolutionJob(
                                                 running.id(),
@@ -300,7 +300,7 @@ public class AiTaskResolutionApplicationService {
             }
         } catch (Exception ex) {
             tx.executeWithoutResult(
-                    s ->
+                    transactionStatus ->
                             saveWithEvent(
                                     new AiTaskResolutionJob(
                                             running.id(),
@@ -360,21 +360,21 @@ public class AiTaskResolutionApplicationService {
         return saved;
     }
 
-    private boolean terminal(AiTaskResolutionJobStatus s) {
-        return s == AiTaskResolutionJobStatus.SUCCEEDED
-                || s == AiTaskResolutionJobStatus.FAILED
-                || s == AiTaskResolutionJobStatus.CANCELED;
+    private boolean terminal(AiTaskResolutionJobStatus status) {
+        return status == AiTaskResolutionJobStatus.SUCCEEDED
+                || status == AiTaskResolutionJobStatus.FAILED
+                || status == AiTaskResolutionJobStatus.CANCELED;
     }
 
-    private String idempotencyKey(AiTaskResolutionJob j) {
-        return j.idempotencyKey() == null || j.idempotencyKey().isBlank()
-                ? j.id().toString()
-                : j.idempotencyKey();
+    private String idempotencyKey(AiTaskResolutionJob job) {
+        return job.idempotencyKey() == null || job.idempotencyKey().isBlank()
+                ? job.id().toString()
+                : job.idempotencyKey();
     }
 
-    private boolean canRead(AuthenticatedUser u, Task t) {
-        return u.isPrivileged()
-                || u.userId().equals(t.userId())
-                || u.userId().equals(t.assigneeId());
+    private boolean canRead(AuthenticatedUser authenticatedUser, Task task) {
+        return authenticatedUser.isPrivileged()
+                || authenticatedUser.userId().equals(task.userId())
+                || authenticatedUser.userId().equals(task.assigneeId());
     }
 }
