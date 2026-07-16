@@ -24,7 +24,7 @@ public record TaskTypeDefinitionResponse(
         Integer sortOrder,
         Instant createdAt,
         Instant updatedAt) {
-    public static TaskTypeDefinitionResponse from(TaskTypeDefinition d) {
-        return new TaskTypeDefinitionResponse(d.id(), d.version(), d.projectId(), d.key(), d.name(), d.color(), d.icon(), d.defaultTaskLevel(), d.allowedTaskLevels(), d.container(), d.allowChildren(), d.systemKind(), d.system(), d.active(), d.sortOrder(), d.createdAt(), d.updatedAt());
+    public static TaskTypeDefinitionResponse from(TaskTypeDefinition definition) {
+        return new TaskTypeDefinitionResponse(definition.id(), definition.version(), definition.projectId(), definition.key(), definition.name(), definition.color(), definition.icon(), definition.defaultTaskLevel(), definition.allowedTaskLevels(), definition.container(), definition.allowChildren(), definition.systemKind(), definition.system(), definition.active(), definition.sortOrder(), definition.createdAt(), definition.updatedAt());
     }
 }
