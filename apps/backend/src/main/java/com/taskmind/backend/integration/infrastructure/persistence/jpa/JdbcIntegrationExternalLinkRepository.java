@@ -1,3 +1,93 @@
 package com.taskmind.backend.integration.infrastructure.persistence.jpa;
-import com.taskmind.backend.integration.domain.model.*; import com.taskmind.backend.integration.domain.repository.IntegrationExternalLinkRepository; import java.sql.*; import java.time.Instant; import java.util.*; import org.springframework.jdbc.core.JdbcTemplate; import org.springframework.stereotype.Repository;
-@Repository public class JdbcIntegrationExternalLinkRepository implements IntegrationExternalLinkRepository { private final JdbcTemplate jdbc; public JdbcIntegrationExternalLinkRepository(JdbcTemplate jdbc){this.jdbc=jdbc;} public IntegrationExternalLink save(IntegrationExternalLink l){jdbc.update("MERGE INTO integration_external_links (id,version,task_id,project_id,provider,external_type,external_id,external_key,external_url,direction,metadata_json,repository_owner,repository_name,external_number,git_sha,check_run_id,created_at,updated_at) KEY(id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",l.id(),0,l.taskId(),l.projectId(),l.provider().name(),l.externalType(),l.externalId(),l.externalKey(),l.externalUrl(),l.direction(),l.metadataJson(),l.repositoryOwner(),l.repositoryName(),l.externalNumber(),l.gitSha(),l.checkRunId(),l.createdAt(),l.updatedAt());return l;} public Optional<IntegrationExternalLink> findByTaskIdAndProvider(UUID taskId,IntegrationProvider provider){return jdbc.query("SELECT * FROM integration_external_links WHERE task_id=? AND provider=? ORDER BY created_at LIMIT 1",this::map,taskId,provider.name()).stream().findFirst();} public Optional<IntegrationExternalLink> findByProviderAndExternalTypeAndExternalIdentity(IntegrationProvider provider,String externalType,String externalId,String externalKey){String sql="SELECT * FROM integration_external_links WHERE provider=? AND external_type=? AND (external_id=? OR (? IS NOT NULL AND external_key=?)) ORDER BY created_at LIMIT 1";return jdbc.query(sql,this::map,provider.name(),externalType,externalId,externalKey,externalKey).stream().findFirst();} private IntegrationExternalLink map(ResultSet rs,int row)throws SQLException{return new IntegrationExternalLink((UUID)rs.getObject("id"),rs.getLong("version"),(UUID)rs.getObject("task_id"),(UUID)rs.getObject("project_id"),IntegrationProvider.valueOf(rs.getString("provider")),rs.getString("external_type"),rs.getString("external_id"),rs.getString("external_key"),rs.getString("external_url"),rs.getString("direction"),rs.getString("metadata_json"),rs.getString("repository_owner"),rs.getString("repository_name"),(Integer)rs.getObject("external_number"),rs.getString("git_sha"),rs.getString("check_run_id"),i(rs,"created_at"),i(rs,"updated_at"));} private Instant i(ResultSet rs,String c)throws SQLException{java.sql.Timestamp ts=rs.getTimestamp(c);return ts==null?null:ts.toInstant();}}
+
+import com.taskmind.backend.integration.domain.model.IntegrationExternalLink;
+import com.taskmind.backend.integration.domain.model.IntegrationProvider;
+import com.taskmind.backend.integration.domain.repository.IntegrationExternalLinkRepository;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class JdbcIntegrationExternalLinkRepository implements IntegrationExternalLinkRepository {
+
+    private final JdbcTemplate jdbc;
+
+    public JdbcIntegrationExternalLinkRepository(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    public IntegrationExternalLink save(IntegrationExternalLink link) {
+        jdbc.update(
+                "MERGE INTO integration_external_links (id,version,task_id,project_id,provider,external_type,external_id,external_key,external_url,direction,metadata_json,repository_owner,repository_name,external_number,git_sha,check_run_id,created_at,updated_at) KEY(id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                link.id(),
+                0,
+                link.taskId(),
+                link.projectId(),
+                link.provider().name(),
+                link.externalType(),
+                link.externalId(),
+                link.externalKey(),
+                link.externalUrl(),
+                link.direction(),
+                link.metadataJson(),
+                link.repositoryOwner(),
+                link.repositoryName(),
+                link.externalNumber(),
+                link.gitSha(),
+                link.checkRunId(),
+                link.createdAt(),
+                link.updatedAt());
+        return link;
+    }
+
+    public Optional<IntegrationExternalLink> findByTaskIdAndProvider(UUID taskId, IntegrationProvider provider) {
+        return jdbc.query(
+                        "SELECT * FROM integration_external_links WHERE task_id=? AND provider=? ORDER BY created_at LIMIT 1",
+                        this::map,
+                        taskId,
+                        provider.name())
+                .stream()
+                .findFirst();
+    }
+
+    public Optional<IntegrationExternalLink> findByProviderAndExternalTypeAndExternalIdentity(
+            IntegrationProvider provider, String externalType, String externalId, String externalKey) {
+        String sql =
+                "SELECT * FROM integration_external_links WHERE provider=? AND external_type=? AND (external_id=? OR (? IS NOT NULL AND external_key=?)) ORDER BY created_at LIMIT 1";
+        return jdbc.query(sql, this::map, provider.name(), externalType, externalId, externalKey, externalKey)
+                .stream()
+                .findFirst();
+    }
+
+    private IntegrationExternalLink map(ResultSet resultSet, int row) throws SQLException {
+        return new IntegrationExternalLink(
+                (UUID) resultSet.getObject("id"),
+                resultSet.getLong("version"),
+                (UUID) resultSet.getObject("task_id"),
+                (UUID) resultSet.getObject("project_id"),
+                IntegrationProvider.valueOf(resultSet.getString("provider")),
+                resultSet.getString("external_type"),
+                resultSet.getString("external_id"),
+                resultSet.getString("external_key"),
+                resultSet.getString("external_url"),
+                resultSet.getString("direction"),
+                resultSet.getString("metadata_json"),
+                resultSet.getString("repository_owner"),
+                resultSet.getString("repository_name"),
+                (Integer) resultSet.getObject("external_number"),
+                resultSet.getString("git_sha"),
+                resultSet.getString("check_run_id"),
+                timestampToInstant(resultSet, "created_at"),
+                timestampToInstant(resultSet, "updated_at"));
+    }
+
+    private Instant timestampToInstant(ResultSet resultSet, String columnName) throws SQLException {
+        Timestamp timestamp = resultSet.getTimestamp(columnName);
+        return timestamp == null ? null : timestamp.toInstant();
+    }
+}
