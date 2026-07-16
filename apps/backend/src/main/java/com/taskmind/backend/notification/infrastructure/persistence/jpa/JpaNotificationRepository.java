@@ -13,34 +13,38 @@ import org.springframework.stereotype.Repository;
 public class JpaNotificationRepository implements NotificationRepository {
     private final JdbcTemplate jdbc;
 
-    public JpaNotificationRepository(JdbcTemplate j) {
-        jdbc = j;
+    public JpaNotificationRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbc = jdbcTemplate;
     }
 
-    public Notification save(Notification n) {
-        if (findById(n.id()).isPresent()) {
+    public Notification save(Notification notification) {
+        if (findById(notification.id()).isPresent()) {
             int updated =
                     jdbc.update(
                             "update notifications set read_at=?, version=version+1 where id=? and version=?",
-                            n.readAt() == null ? null : Timestamp.from(n.readAt()),
-                            n.id(),
-                            n.version());
+                            notification.readAt() == null
+                                    ? null
+                                    : Timestamp.from(notification.readAt()),
+                            notification.id(),
+                            notification.version());
             if (updated == 0) {
-                throw new ObjectOptimisticLockingFailureException(Notification.class, n.id());
+                throw new ObjectOptimisticLockingFailureException(Notification.class, notification.id());
             }
         } else
             jdbc.update(
                     "insert into notifications(id,recipient_user_id,type,title,body,task_id,action_url,read_at,created_at,version) values (?,?,?,?,?,?,?,?,?,0)",
-                    n.id(),
-                    n.recipientUserId(),
-                    n.type().name(),
-                    n.title(),
-                    n.body(),
-                    n.taskId(),
-                    n.actionUrl(),
-                    n.readAt() == null ? null : Timestamp.from(n.readAt()),
-                    Timestamp.from(n.createdAt()));
-        return findById(n.id()).orElseThrow();
+                    notification.id(),
+                    notification.recipientUserId(),
+                    notification.type().name(),
+                    notification.title(),
+                    notification.body(),
+                    notification.taskId(),
+                    notification.actionUrl(),
+                    notification.readAt() == null
+                            ? null
+                            : Timestamp.from(notification.readAt()),
+                    Timestamp.from(notification.createdAt()));
+        return findById(notification.id()).orElseThrow();
     }
 
     public Optional<Notification> findById(UUID id) {
@@ -48,21 +52,21 @@ public class JpaNotificationRepository implements NotificationRepository {
         return l.stream().findFirst();
     }
 
-    public List<Notification> findByRecipient(UUID u, int p, int s) {
+    public List<Notification> findByRecipient(UUID userId, int page, int size) {
         return jdbc.query(
                 "select * from notifications where recipient_user_id=? order by created_at desc limit ? offset ?",
                 this::map,
-                u,
-                s,
-                p * s);
+                userId,
+                size,
+                page * size);
     }
 
-    public long unreadCount(UUID u) {
+    public long unreadCount(UUID userId) {
         Long c =
                 jdbc.queryForObject(
                         "select count(*) from notifications where recipient_user_id=? and read_at is null",
                         Long.class,
-                        u);
+                        userId);
         return c == null ? 0 : c;
     }
 
@@ -70,34 +74,35 @@ public class JpaNotificationRepository implements NotificationRepository {
      * Bulk idempotent read operation. It intentionally bypasses per-row optimistic locking so
      * repeated read-all requests can safely converge every unread notification for the user.
      */
-    public int markAllRead(UUID u, Instant now) {
+    public int markAllRead(UUID userId, Instant now) {
         return jdbc.update(
                 "update notifications set read_at=?, version=version+1 where recipient_user_id=? and read_at is null",
                 Timestamp.from(now),
-                u);
+                userId);
     }
 
-    public List<Notification> unreadOlderThan(UUID u, Instant b) {
+    public List<Notification> unreadOlderThan(UUID userId, Instant before) {
         return jdbc.query(
                 "select * from notifications where recipient_user_id=? and read_at is null and created_at <= ? order by created_at",
                 this::map,
-                u,
-                Timestamp.from(b));
+                userId,
+                Timestamp.from(before));
     }
 
-    public void recordDelivery(DeliveryAttempt a) {
+    public void recordDelivery(DeliveryAttempt attempt) {
         jdbc.update(
                 "insert into notification_delivery_attempts(id,notification_id,user_id,channel,status,error_message,attempted_at) values (?,?,?,?,?,?,?)",
-                a.id(),
-                a.notificationId(),
-                a.userId(),
-                a.channel().name(),
-                a.status().name(),
-                a.errorMessage(),
-                Timestamp.from(a.attemptedAt()));
+                attempt.id(),
+                attempt.notificationId(),
+                attempt.userId(),
+                attempt.channel().name(),
+                attempt.status().name(),
+                attempt.errorMessage(),
+                Timestamp.from(attempt.attemptedAt()));
     }
 
-    public Optional<DeliveryAttempt> latestDeliveryAttempt(UUID notificationId, NotificationChannel channel) {
+    public Optional<DeliveryAttempt> latestDeliveryAttempt(
+            UUID notificationId, NotificationChannel channel) {
         return jdbc.query(
                         "select * from notification_delivery_attempts where notification_id=? and channel=? order by attempted_at desc limit 1",
                         this::mapAttempt,
@@ -106,7 +111,6 @@ public class JpaNotificationRepository implements NotificationRepository {
                 .stream()
                 .findFirst();
     }
-
 
     public List<DeliveryAttempt> claimPendingDeliveries(Instant now, int limit) {
         return jdbc.query(
@@ -131,22 +135,22 @@ public class JpaNotificationRepository implements NotificationRepository {
                 deliveryAttemptId);
     }
 
-    public boolean reminderExists(UUID t, UUID u) {
-        Boolean b =
+    public boolean reminderExists(UUID taskId, UUID userId) {
+        Boolean exists =
                 jdbc.queryForObject(
                         "select count(*)>0 from notification_reminder_state where task_id=? and user_id=?",
                         Boolean.class,
-                        t,
-                        u);
-        return Boolean.TRUE.equals(b);
+                        taskId,
+                        userId);
+        return Boolean.TRUE.equals(exists);
     }
 
-    public void recordReminder(ReminderState s) {
+    public void recordReminder(ReminderState reminderState) {
         jdbc.update(
                 "merge into notification_reminder_state(task_id,user_id,reminded_at) key(task_id,user_id) values (?,?,?)",
-                s.taskId(),
-                s.userId(),
-                Timestamp.from(s.remindedAt()));
+                reminderState.taskId(),
+                reminderState.userId(),
+                Timestamp.from(reminderState.remindedAt()));
     }
 
     public List<ReminderCandidate> dueReminderCandidates(Instant now, int limit) {

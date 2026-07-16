@@ -13,11 +13,11 @@ import org.springframework.stereotype.Repository;
 public class JpaNotificationPreferenceRepository implements NotificationPreferenceRepository {
     private final JdbcTemplate jdbc;
 
-    public JpaNotificationPreferenceRepository(JdbcTemplate j) {
-        jdbc = j;
+    public JpaNotificationPreferenceRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbc = jdbcTemplate;
     }
 
-    public Optional<NotificationPreference> findByUserId(UUID u) {
+    public Optional<NotificationPreference> findByUserId(UUID userId) {
         return jdbc
                 .query(
                         "select * from notification_preferences where user_id=?",
@@ -32,45 +32,45 @@ public class JpaNotificationPreferenceRepository implements NotificationPreferen
                                         rs.getString("slack_channel"),
                                         rs.getTimestamp("created_at").toInstant(),
                                         rs.getTimestamp("updated_at").toInstant()),
-                        u)
+                        userId)
                 .stream()
                 .findFirst();
     }
 
-    public NotificationPreference save(NotificationPreference p) {
-        if (p.version() != null) {
+    public NotificationPreference save(NotificationPreference preference) {
+        if (preference.version() != null) {
             int updated =
                     jdbc.update(
                             "update notification_preferences set in_app_enabled=?,email_digest_enabled=?,slack_enabled=?,slack_webhook_url=?,slack_channel=?,updated_at=?,version=version+1 where user_id=? and version=?",
-                            p.inAppEnabled(),
-                            p.emailDigestEnabled(),
-                            p.slackEnabled(),
-                            p.slackWebhookUrl(),
-                            p.slackChannel(),
-                            Timestamp.from(p.updatedAt()),
-                            p.userId(),
-                            p.version());
-            if (updated == 1) return findByUserId(p.userId()).orElseThrow();
-            if (findByUserId(p.userId()).isPresent()) {
+                            preference.inAppEnabled(),
+                            preference.emailDigestEnabled(),
+                            preference.slackEnabled(),
+                            preference.slackWebhookUrl(),
+                            preference.slackChannel(),
+                            Timestamp.from(preference.updatedAt()),
+                            preference.userId(),
+                            preference.version());
+            if (updated == 1) return findByUserId(preference.userId()).orElseThrow();
+            if (findByUserId(preference.userId()).isPresent()) {
                 throw new ObjectOptimisticLockingFailureException(
-                        NotificationPreference.class, p.userId());
+                        NotificationPreference.class, preference.userId());
             }
         }
 
         try {
             jdbc.update(
                     "insert into notification_preferences(user_id,in_app_enabled,email_digest_enabled,slack_enabled,slack_webhook_url,slack_channel,created_at,updated_at,version) values (?,?,?,?,?,?,?,?,0)",
-                    p.userId(),
-                    p.inAppEnabled(),
-                    p.emailDigestEnabled(),
-                    p.slackEnabled(),
-                    p.slackWebhookUrl(),
-                    p.slackChannel(),
-                    Timestamp.from(p.createdAt()),
-                    Timestamp.from(p.updatedAt()));
+                    preference.userId(),
+                    preference.inAppEnabled(),
+                    preference.emailDigestEnabled(),
+                    preference.slackEnabled(),
+                    preference.slackWebhookUrl(),
+                    preference.slackChannel(),
+                    Timestamp.from(preference.createdAt()),
+                    Timestamp.from(preference.updatedAt()));
         } catch (DuplicateKeyException e) {
-            return findByUserId(p.userId()).orElseThrow();
+            return findByUserId(preference.userId()).orElseThrow();
         }
-        return findByUserId(p.userId()).orElseThrow();
+        return findByUserId(preference.userId()).orElseThrow();
     }
 }

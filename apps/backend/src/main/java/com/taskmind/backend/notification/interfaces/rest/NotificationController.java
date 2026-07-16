@@ -17,39 +17,40 @@ public class NotificationController {
     private final NotificationApplicationService service;
     private final NotificationSseHub hub;
 
-    public NotificationController(NotificationApplicationService s, NotificationSseHub h) {
-        service = s;
-        hub = h;
+    public NotificationController(NotificationApplicationService service, NotificationSseHub sseHub) {
+        this.service = service;
+        this.hub = sseHub;
     }
 
     @GetMapping
     public List<Notification> list(
-            AuthenticatedUser u,
+            AuthenticatedUser authenticatedUser,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return service.list(u, page, size);
+        return service.list(authenticatedUser, page, size);
     }
 
     @GetMapping("/unread-count")
-    public UnreadCountResponse unread(AuthenticatedUser u) {
-        return new UnreadCountResponse(service.unreadCount(u));
+    public UnreadCountResponse unread(AuthenticatedUser authenticatedUser) {
+        return new UnreadCountResponse(service.unreadCount(authenticatedUser));
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<Notification> read(AuthenticatedUser u, @PathVariable UUID id) {
-        return service.markRead(u, id)
+    public ResponseEntity<Notification> read(AuthenticatedUser authenticatedUser, @PathVariable UUID id) {
+        return service.markRead(authenticatedUser, id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/read-all")
-    public MarkAllReadResponse readAll(AuthenticatedUser u) {
-        return new MarkAllReadResponse(service.markAllRead(u), service.unreadCount(u));
+    public MarkAllReadResponse readAll(AuthenticatedUser authenticatedUser) {
+        return new MarkAllReadResponse(
+                service.markAllRead(authenticatedUser), service.unreadCount(authenticatedUser));
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(AuthenticatedUser u) {
-        return hub.subscribe(u.userId());
+    public SseEmitter stream(AuthenticatedUser authenticatedUser) {
+        return hub.subscribe(authenticatedUser.userId());
     }
 
     public record UnreadCountResponse(long unreadCount) {}

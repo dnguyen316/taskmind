@@ -20,16 +20,16 @@ public class NotificationDigestJob {
     private final NotificationDeliveryCoordinator delivery;
 
     public NotificationDigestJob(
-            JdbcTemplate j,
-            NotificationRepository n,
-            NotificationPreferenceRepository p,
-            EmailSender e,
-            NotificationDeliveryCoordinator d) {
-        jdbc = j;
-        notifications = n;
-        preferences = p;
-        email = e;
-        delivery = d;
+            JdbcTemplate jdbcTemplate,
+            NotificationRepository notificationRepository,
+            NotificationPreferenceRepository preferenceRepository,
+            EmailSender emailSender,
+            NotificationDeliveryCoordinator deliveryCoordinator) {
+        this.jdbc = jdbcTemplate;
+        this.notifications = notificationRepository;
+        this.preferences = preferenceRepository;
+        this.email = emailSender;
+        this.delivery = deliveryCoordinator;
     }
 
     @Scheduled(cron = "${taskmind.notifications.digest.cron:0 0 * * * *}")
@@ -41,14 +41,14 @@ public class NotificationDigestJob {
                         "select distinct recipient_user_id from notifications where read_at is null and created_at <= ?",
                         (rs, i) -> (java.util.UUID) rs.getObject(1),
                         java.sql.Timestamp.from(before));
-        for (java.util.UUID u : users) {
+        for (java.util.UUID userId : users) {
             NotificationPreference pref =
                     preferences
-                            .findByUserId(u)
-                            .orElse(NotificationPreference.defaults(u, Instant.now()));
+                            .findByUserId(userId)
+                            .orElse(NotificationPreference.defaults(userId, Instant.now()));
             if (!pref.emailDigestEnabled()) continue;
             List<Notification> unread =
-                    notifications.unreadOlderThan(u, before).stream()
+                    notifications.unreadOlderThan(userId, before).stream()
                             .filter(
                                     notification ->
                                             delivery.shouldAttempt(
