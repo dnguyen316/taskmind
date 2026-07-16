@@ -86,47 +86,47 @@ public class SpecBreakdownApplicationService {
     }
 
     @Transactional
-    public SpecBreakdownDraft createDraft(AuthenticatedUser u, CreateDraftCommand c) {
+    public SpecBreakdownDraft createDraft(AuthenticatedUser authenticatedUser, CreateDraftCommand command) {
         Instant now = Instant.now();
-        String tree = c.candidateTree() != null ? c.candidateTree() : "{\"nodes\":[]}";
+        String tree = command.candidateTree() != null ? command.candidateTree() : "{\"nodes\":[]}";
         return drafts.save(
                 new SpecBreakdownDraft(
                         UUID.randomUUID(),
                         null,
-                        c.projectId(),
-                        u.userId(),
-                        c.templateId(),
-                        c.title().trim(),
-                        c.rawSpec(),
-                        c.richContent(),
+                        command.projectId(),
+                        authenticatedUser.userId(),
+                        command.templateId(),
+                        command.title().trim(),
+                        command.rawSpec(),
+                        command.richContent(),
                         tree,
                         SpecBreakdownStatus.DRAFT,
-                        c.fixVersion(),
-                        c.affectedVersion(),
-                        c.sprint(),
-                        c.issueType(),
-                        c.publishKey(),
+                        command.fixVersion(),
+                        command.affectedVersion(),
+                        command.sprint(),
+                        command.issueType(),
+                        command.publishKey(),
                         null,
                         now,
                         now));
     }
 
-    public Optional<SpecBreakdownDraft> getDraft(AuthenticatedUser u, UUID id) {
-        return drafts.findById(id)
-                .filter(d -> u.isPrivileged() || d.ownerUserId().equals(u.userId()));
+    public Optional<SpecBreakdownDraft> getDraft(AuthenticatedUser authenticatedUser, UUID draftId) {
+        return drafts.findById(draftId)
+                .filter(draft -> authenticatedUser.isPrivileged() || draft.ownerUserId().equals(authenticatedUser.userId()));
     }
 
     @Transactional
     public SpecBreakdownProcessingJob startJob(
-            AuthenticatedUser u, UUID draftId, SpecBreakdownJobType type) {
-        SpecBreakdownDraft d = require(u, draftId);
+            AuthenticatedUser authenticatedUser, UUID draftId, SpecBreakdownJobType type) {
+        SpecBreakdownDraft draft = require(authenticatedUser, draftId);
         Instant now = Instant.now();
         return jobs.save(
                 new SpecBreakdownProcessingJob(
                         UUID.randomUUID(),
                         null,
-                        d.id(),
-                        u.userId(),
+                        draft.id(),
+                        authenticatedUser.userId(),
                         type,
                         SpecBreakdownJobStatus.QUEUED,
                         "{}",
@@ -150,29 +150,29 @@ public class SpecBreakdownApplicationService {
         }
 
         SpecBreakdownProcessingJob running = claimed.jobToRun();
-        SpecBreakdownDraft d = drafts.findById(running.draftId()).orElseThrow();
+        SpecBreakdownDraft draft = drafts.findById(running.draftId()).orElseThrow();
         try {
             ObjectNode input = mapper.createObjectNode();
-            input.put("draftId", d.id().toString());
-            input.put("rawSpec", d.rawSpec());
-            input.set("candidateTree", mapper.readTree(d.candidateTree()));
+            input.put("draftId", draft.id().toString());
+            input.put("rawSpec", draft.rawSpec());
+            input.set("candidateTree", mapper.readTree(draft.candidateTree()));
             CapabilityResponse response =
                     nova.executeCapability(
                             capability(running.aiJobType()),
                             new CapabilityRequest(
                                     new AiCapabilityId(capability(running.aiJobType())),
                                     running.userId(),
-                                    d.projectId().toString(),
+                                    draft.projectId().toString(),
                                     input,
                                     running.id().toString(),
                                     running.id().toString()));
             String output =
                     response.output() == null
-                            ? d.candidateTree()
+                            ? draft.candidateTree()
                             : mapper.writeValueAsString(response.output());
-            runInTransaction(() -> completeSucceededJob(d, running, output, response.runId()));
+            runInTransaction(() -> completeSucceededJob(draft, running, output, response.runId()));
         } catch (Exception e) {
-            runInTransaction(() -> completeFailedJob(d, running, e));
+            runInTransaction(() -> completeFailedJob(draft, running, e));
         }
         return true;
     }
@@ -277,7 +277,7 @@ public class SpecBreakdownApplicationService {
     }
 
     private void completeSucceededJob(
-            SpecBreakdownDraft d, SpecBreakdownProcessingJob running, String output, UUID runId) {
+            SpecBreakdownDraft draft, SpecBreakdownProcessingJob running, String output, UUID runId) {
         SpecBreakdownProcessingJob latest = jobs.findById(running.id()).orElse(running);
         if (latest.requestedCancel()) {
             jobs.save(
@@ -319,30 +319,30 @@ public class SpecBreakdownApplicationService {
         }
         drafts.save(
                 new SpecBreakdownDraft(
-                        d.id(),
-                        d.version(),
-                        d.projectId(),
-                        d.ownerUserId(),
-                        d.templateId(),
-                        d.title(),
-                        d.rawSpec(),
-                        d.richContent(),
+                        draft.id(),
+                        draft.version(),
+                        draft.projectId(),
+                        draft.ownerUserId(),
+                        draft.templateId(),
+                        draft.title(),
+                        draft.rawSpec(),
+                        draft.richContent(),
                         output,
                         SpecBreakdownStatus.READY_FOR_REVIEW,
-                        d.fixVersion(),
-                        d.affectedVersion(),
-                        d.sprint(),
-                        d.issueType(),
-                        d.publishKey(),
-                        d.materializedAt(),
-                        d.createdAt(),
+                        draft.fixVersion(),
+                        draft.affectedVersion(),
+                        draft.sprint(),
+                        draft.issueType(),
+                        draft.publishKey(),
+                        draft.materializedAt(),
+                        draft.createdAt(),
                         Instant.now()));
         events.publish(
                 running.userId(),
                 EventTypes.AI_SPEC_BREAKDOWN_COMPLETED,
                 Map.of(
                         "draftId",
-                        d.id().toString(),
+                        draft.id().toString(),
                         "jobId",
                         running.id().toString(),
                         "jobType",
@@ -366,37 +366,37 @@ public class SpecBreakdownApplicationService {
     }
 
     private void completeFailedJob(
-            SpecBreakdownDraft d, SpecBreakdownProcessingJob running, Exception e) {
+            SpecBreakdownDraft draft, SpecBreakdownProcessingJob running, Exception e) {
         String message = e.getMessage() == null ? "failed" : e.getMessage();
         events.publish(
                 running.userId(),
                 EventTypes.AI_SPEC_BREAKDOWN_FAILED,
                 Map.of(
                         "draftId",
-                        d.id().toString(),
+                        draft.id().toString(),
                         "jobId",
                         running.id().toString(),
                         "message",
                         message));
         drafts.save(
                 new SpecBreakdownDraft(
-                        d.id(),
-                        d.version(),
-                        d.projectId(),
-                        d.ownerUserId(),
-                        d.templateId(),
-                        d.title(),
-                        d.rawSpec(),
-                        d.richContent(),
-                        d.candidateTree(),
+                        draft.id(),
+                        draft.version(),
+                        draft.projectId(),
+                        draft.ownerUserId(),
+                        draft.templateId(),
+                        draft.title(),
+                        draft.rawSpec(),
+                        draft.richContent(),
+                        draft.candidateTree(),
                         SpecBreakdownStatus.FAILED,
-                        d.fixVersion(),
-                        d.affectedVersion(),
-                        d.sprint(),
-                        d.issueType(),
-                        d.publishKey(),
-                        d.materializedAt(),
-                        d.createdAt(),
+                        draft.fixVersion(),
+                        draft.affectedVersion(),
+                        draft.sprint(),
+                        draft.issueType(),
+                        draft.publishKey(),
+                        draft.materializedAt(),
+                        draft.createdAt(),
                         Instant.now()));
         SpecBreakdownProcessingJob latest = jobs.findById(running.id()).orElse(running);
         jobs.save(
@@ -431,30 +431,30 @@ public class SpecBreakdownApplicationService {
         }
     }
 
-    public Optional<SpecBreakdownProcessingJob> getJob(AuthenticatedUser u, UUID id) {
-        return jobs.findById(id).filter(j -> getDraft(u, j.draftId()).isPresent());
+    public Optional<SpecBreakdownProcessingJob> getJob(AuthenticatedUser authenticatedUser, UUID jobId) {
+        return jobs.findById(jobId).filter(job -> getDraft(authenticatedUser, job.draftId()).isPresent());
     }
 
     @Transactional
-    public SpecBreakdownProcessingJob commandJob(AuthenticatedUser u, UUID id, String command) {
-        SpecBreakdownProcessingJob j = getJob(u, id).orElseThrow();
-        SpecBreakdownJobStatus s = statusForCommand(j.status(), command);
+    public SpecBreakdownProcessingJob commandJob(AuthenticatedUser authenticatedUser, UUID jobId, String command) {
+        SpecBreakdownProcessingJob job = getJob(authenticatedUser, jobId).orElseThrow();
+        SpecBreakdownJobStatus nextStatus = statusForCommand(job.status(), command);
         return jobs.save(
                 new SpecBreakdownProcessingJob(
-                        j.id(),
-                        j.version(),
-                        j.draftId(),
-                        j.userId(),
-                        j.aiJobType(),
-                        s,
-                        j.checkpoint(),
-                        j.novaRunId(),
-                        j.errorMessage(),
+                        job.id(),
+                        job.version(),
+                        job.draftId(),
+                        job.userId(),
+                        job.aiJobType(),
+                        nextStatus,
+                        job.checkpoint(),
+                        job.novaRunId(),
+                        job.errorMessage(),
                         "cancel".equals(command),
                         "pause".equals(command),
-                        j.createdAt(),
+                        job.createdAt(),
                         Instant.now(),
-                        s == SpecBreakdownJobStatus.CANCELED ? Instant.now() : j.completedAt()));
+                        nextStatus == SpecBreakdownJobStatus.CANCELED ? Instant.now() : job.completedAt()));
     }
 
     private SpecBreakdownJobStatus statusForCommand(
@@ -489,81 +489,81 @@ public class SpecBreakdownApplicationService {
     }
 
     @Transactional
-    public SpecBreakdownDraft review(AuthenticatedUser u, UUID id, ReviewCommand c) {
-        SpecBreakdownDraft d = require(u, id);
+    public SpecBreakdownDraft review(AuthenticatedUser authenticatedUser, UUID draftId, ReviewCommand command) {
+        SpecBreakdownDraft draft = require(authenticatedUser, draftId);
         return drafts.save(
                 new SpecBreakdownDraft(
-                        d.id(),
-                        d.version(),
-                        d.projectId(),
-                        d.ownerUserId(),
-                        d.templateId(),
-                        d.title(),
-                        d.rawSpec(),
-                        d.richContent(),
-                        c.candidateTree() != null ? c.candidateTree() : d.candidateTree(),
-                        c.accepted()
+                        draft.id(),
+                        draft.version(),
+                        draft.projectId(),
+                        draft.ownerUserId(),
+                        draft.templateId(),
+                        draft.title(),
+                        draft.rawSpec(),
+                        draft.richContent(),
+                        command.candidateTree() != null ? command.candidateTree() : draft.candidateTree(),
+                        command.accepted()
                                 ? SpecBreakdownStatus.READY_FOR_REVIEW
                                 : SpecBreakdownStatus.REJECTED,
-                        d.fixVersion(),
-                        d.affectedVersion(),
-                        d.sprint(),
-                        d.issueType(),
-                        d.publishKey(),
-                        d.materializedAt(),
-                        d.createdAt(),
+                        draft.fixVersion(),
+                        draft.affectedVersion(),
+                        draft.sprint(),
+                        draft.issueType(),
+                        draft.publishKey(),
+                        draft.materializedAt(),
+                        draft.createdAt(),
                         Instant.now()));
     }
 
     @Transactional
-    public List<UUID> materialize(AuthenticatedUser u, UUID id) {
-        SpecBreakdownDraft d = require(u, id);
-        if (d.materializedAt() != null || d.status() == SpecBreakdownStatus.MATERIALIZED) {
+    public List<UUID> materialize(AuthenticatedUser authenticatedUser, UUID draftId) {
+        SpecBreakdownDraft draft = require(authenticatedUser, draftId);
+        if (draft.materializedAt() != null || draft.status() == SpecBreakdownStatus.MATERIALIZED) {
             return List.of();
         }
         List<UUID> ids = new ArrayList<>();
         try {
-            JsonNode nodes = mapper.readTree(d.candidateTree()).path("nodes");
-            for (JsonNode n : nodes) {
-                ids.add(createTask(u, d, n, null));
+            JsonNode nodes = mapper.readTree(draft.candidateTree()).path("nodes");
+            for (JsonNode node : nodes) {
+                ids.add(createTask(authenticatedUser, draft, node, null));
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid candidate tree", e);
         }
         drafts.save(
                 new SpecBreakdownDraft(
-                        d.id(),
-                        d.version(),
-                        d.projectId(),
-                        d.ownerUserId(),
-                        d.templateId(),
-                        d.title(),
-                        d.rawSpec(),
-                        d.richContent(),
-                        d.candidateTree(),
+                        draft.id(),
+                        draft.version(),
+                        draft.projectId(),
+                        draft.ownerUserId(),
+                        draft.templateId(),
+                        draft.title(),
+                        draft.rawSpec(),
+                        draft.richContent(),
+                        draft.candidateTree(),
                         SpecBreakdownStatus.MATERIALIZED,
-                        d.fixVersion(),
-                        d.affectedVersion(),
-                        d.sprint(),
-                        d.issueType(),
-                        d.publishKey(),
+                        draft.fixVersion(),
+                        draft.affectedVersion(),
+                        draft.sprint(),
+                        draft.issueType(),
+                        draft.publishKey(),
                         Instant.now(),
-                        d.createdAt(),
+                        draft.createdAt(),
                         Instant.now()));
         return ids;
     }
 
-    private UUID createTask(AuthenticatedUser u, SpecBreakdownDraft d, JsonNode n, UUID parent) {
-        TaskLevel level = deriveTaskLevel(n, parent);
+    private UUID createTask(AuthenticatedUser authenticatedUser, SpecBreakdownDraft draft, JsonNode node, UUID parent) {
+        TaskLevel level = deriveTaskLevel(node, parent);
         String type = deriveTaskType(level);
-        Integer storyPoints = parseStoryPoints(n);
+        Integer storyPoints = parseStoryPoints(node);
         CreateTaskCommand command =
-                buildGeneratedTaskCommand(d, n, parent, level, type, storyPoints);
+                buildGeneratedTaskCommand(draft, node, parent, level, type, storyPoints);
 
-        Task task = tasks.create(u, command);
-        UUID id = task.id();
-        createChildTasks(u, d, n, id);
-        return id;
+        Task task = tasks.create(authenticatedUser, command);
+        UUID taskId = task.id();
+        createChildTasks(authenticatedUser, draft, node, taskId);
+        return taskId;
     }
 
     private TaskLevel deriveTaskLevel(JsonNode node, UUID parent) {
@@ -617,19 +617,19 @@ public class SpecBreakdownApplicationService {
     }
 
     private void createChildTasks(
-            AuthenticatedUser u, SpecBreakdownDraft d, JsonNode n, UUID parent) {
-        for (JsonNode child : n.path("children")) {
-            createTask(u, d, child, parent);
+            AuthenticatedUser authenticatedUser, SpecBreakdownDraft draft, JsonNode node, UUID parent) {
+        for (JsonNode child : node.path("children")) {
+            createTask(authenticatedUser, draft, child, parent);
         }
     }
 
-    private SpecBreakdownDraft require(AuthenticatedUser u, UUID id) {
-        return getDraft(u, id)
+    private SpecBreakdownDraft require(AuthenticatedUser authenticatedUser, UUID draftId) {
+        return getDraft(authenticatedUser, draftId)
                 .orElseThrow(() -> new IllegalArgumentException("Spec breakdown draft not found"));
     }
 
-    private String capability(SpecBreakdownJobType t) {
-        return switch (t) {
+    private String capability(SpecBreakdownJobType type) {
+        return switch (type) {
             case OUTLINE -> "spec-outline";
             case ENRICH -> "spec-enrich";
             case BREAKDOWN -> "spec-breakdown";
