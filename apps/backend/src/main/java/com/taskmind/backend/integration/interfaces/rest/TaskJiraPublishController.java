@@ -13,9 +13,52 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/v1/tasks/{taskId}/integrations")
 public class TaskJiraPublishController {
     private final IntegrationPublishApplicationService publish;
-    public TaskJiraPublishController(IntegrationPublishApplicationService publish) { this.publish = publish; }
-    @PostMapping("/jira/publish") public PublishResponse publishToJira(@PathVariable UUID taskId, AuthenticatedUser actor, @Valid @RequestBody PublishRequest request) { try { return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId())); } catch (IllegalArgumentException e) { throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e); } }
-    @PostMapping("/wiki/publish") public PublishResponse publishToWiki(@PathVariable UUID taskId, AuthenticatedUser actor, @Valid @RequestBody PublishRequest request) { try { return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId())); } catch (IllegalArgumentException e) { throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e); } }
+
+    public TaskJiraPublishController(IntegrationPublishApplicationService publish) {
+        this.publish = publish;
+    }
+
+    @PostMapping("/jira/publish")
+    public PublishResponse publishToJira(
+            @PathVariable UUID taskId, AuthenticatedUser actor, @Valid @RequestBody PublishRequest request) {
+        try {
+            return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId()));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        }
+    }
+
+    @PostMapping("/wiki/publish")
+    public PublishResponse publishToWiki(
+            @PathVariable UUID taskId, AuthenticatedUser actor, @Valid @RequestBody PublishRequest request) {
+        try {
+            return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId()));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        }
+    }
+
     public record PublishRequest(@NotNull UUID projectLinkId) {}
-    public record PublishResponse(UUID id, UUID taskId, UUID projectLinkId, String provider, String externalId, String externalKey, String externalUrl, String status) { static PublishResponse from(IntegrationPublishRecord r) { return new PublishResponse(r.id(), r.taskId(), r.projectLinkId(), r.provider().name(), r.externalId(), r.externalKey(), r.externalUrl(), r.status()); } }
+
+    public record PublishResponse(
+            UUID id,
+            UUID taskId,
+            UUID projectLinkId,
+            String provider,
+            String externalId,
+            String externalKey,
+            String externalUrl,
+            String status) {
+        static PublishResponse from(IntegrationPublishRecord record) {
+            return new PublishResponse(
+                    record.id(),
+                    record.taskId(),
+                    record.projectLinkId(),
+                    record.provider().name(),
+                    record.externalId(),
+                    record.externalKey(),
+                    record.externalUrl(),
+                    record.status());
+        }
+    }
 }
