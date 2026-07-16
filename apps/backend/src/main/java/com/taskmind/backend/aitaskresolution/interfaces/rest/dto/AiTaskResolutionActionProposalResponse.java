@@ -17,19 +17,19 @@ public record AiTaskResolutionActionProposalResponse(
         String errorCode,
         Instant createdAt,
         Instant updatedAt) {
-    public static AiTaskResolutionActionProposalResponse from(AiTaskResolutionActionProposal p) {
+    public static AiTaskResolutionActionProposalResponse from(AiTaskResolutionActionProposal proposal) {
         return new AiTaskResolutionActionProposalResponse(
-                p.id(),
-                p.jobId(),
-                p.proposedActionType(),
-                p.payloadPreview(),
-                p.riskLevel(),
-                p.rationale(),
-                p.status(),
-                p.decidedBy(),
-                p.decidedAt(),
-                p.errorCode(),
-                p.createdAt(),
-                p.updatedAt());
+                proposal.id(),
+                proposal.jobId(),
+                proposal.proposedActionType(),
+                proposal.payloadPreview(),
+                proposal.riskLevel(),
+                proposal.rationale(),
+                proposal.status(),
+                proposal.decidedBy(),
+                proposal.decidedAt(),
+                proposal.errorCode(),
+                proposal.createdAt(),
+                proposal.updatedAt());
     }
 }
