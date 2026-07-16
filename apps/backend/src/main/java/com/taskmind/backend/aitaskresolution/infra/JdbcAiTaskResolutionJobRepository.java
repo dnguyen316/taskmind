@@ -15,13 +15,13 @@ public class JdbcAiTaskResolutionJobRepository implements AiTaskResolutionJobRep
     public JdbcAiTaskResolutionJobRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     @Override
-    public AiTaskResolutionJob save(AiTaskResolutionJob j) {
+    public AiTaskResolutionJob save(AiTaskResolutionJob job) {
         jdbc.update("""
                 INSERT INTO ai_task_resolution_jobs (id, task_id, project_id, template_id, github_project_link_id, status, requested_by, idempotency_key, nova_run_id, current_step, result_summary, error_code, created_at, updated_at, completed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, nova_run_id = EXCLUDED.nova_run_id, current_step = EXCLUDED.current_step, result_summary = EXCLUDED.result_summary, error_code = EXCLUDED.error_code, updated_at = EXCLUDED.updated_at, completed_at = EXCLUDED.completed_at
-                """, j.id(), j.taskId(), j.projectId(), j.templateId(), j.githubProjectLinkId(), j.status().name(), j.requestedBy(), j.idempotencyKey(), j.novaRunId(), j.currentStep(), j.resultSummary(), j.errorCode(), j.createdAt(), j.updatedAt(), j.completedAt());
-        return findById(j.id()).orElseThrow();
+                """, job.id(), job.taskId(), job.projectId(), job.templateId(), job.githubProjectLinkId(), job.status().name(), job.requestedBy(), job.idempotencyKey(), job.novaRunId(), job.currentStep(), job.resultSummary(), job.errorCode(), job.createdAt(), job.updatedAt(), job.completedAt());
+        return findById(job.id()).orElseThrow();
     }
 
     @Override public Optional<AiTaskResolutionJob> findById(UUID id) { return queryOne("SELECT * FROM ai_task_resolution_jobs WHERE id = ?", id); }
