@@ -23,7 +23,6 @@ public class TaskApplicationService {
     private final TaskDomainEventPublisher events;
     private final TaskTypeApplicationService taskTypes;
 
-
     public TaskApplicationService(
             TaskRepository tasks,
             ProjectMembershipApplicationService memberships,
@@ -47,13 +46,17 @@ public class TaskApplicationService {
     }
 
     @Transactional
-    public Task create(AuthenticatedUser requester, CreateTaskCommand c) {
-        UUID owner = requester.isPrivileged() ? c.userId() : requester.userId();
-        validateMembership(c.projectId(), owner);
-        if (c.assigneeId() != null) validateMembership(c.projectId(), c.assigneeId());
-        String requestedType = c.taskType() == null ? "TASK" : c.taskType();
-        TaskTypeDefinition typeDefinition = resolveActiveType(c.projectId(), requestedType);
-        TaskLevel level = c.taskLevel() == null ? typeDefinition.defaultTaskLevel() : c.taskLevel();
+    public Task create(AuthenticatedUser requester, CreateTaskCommand command) {
+        UUID owner = requester.isPrivileged() ? command.userId() : requester.userId();
+        validateMembership(command.projectId(), owner);
+        if (command.assigneeId() != null)
+            validateMembership(command.projectId(), command.assigneeId());
+        String requestedType = command.taskType() == null ? "TASK" : command.taskType();
+        TaskTypeDefinition typeDefinition = resolveActiveType(command.projectId(), requestedType);
+        TaskLevel level =
+                command.taskLevel() == null
+                        ? typeDefinition.defaultTaskLevel()
+                        : command.taskLevel();
         validateTaskType(typeDefinition, level);
         String type = typeDefinition.key();
         Instant now = Instant.now();
@@ -62,24 +65,24 @@ public class TaskApplicationService {
                         UUID.randomUUID(),
                         null,
                         owner,
-                        c.projectId(),
-                        keys.assign(c.projectId()),
-                        c.assigneeId(),
-                        c.parentTaskId(),
+                        command.projectId(),
+                        keys.assign(command.projectId()),
+                        command.assigneeId(),
+                        command.parentTaskId(),
                         level,
                         type,
-                        c.storyPoints(),
-                        c.releaseVersion(),
+                        command.storyPoints(),
+                        command.releaseVersion(),
                         null,
-                        c.title().trim(),
-                        c.description(),
-                        c.status(),
-                        c.priority(),
-                        c.dueAt(),
-                        c.durationMinutes(),
-                        c.energyLevel(),
-                        c.source(),
-                        c.confidence(),
+                        command.title().trim(),
+                        command.description(),
+                        command.status(),
+                        command.priority(),
+                        command.dueAt(),
+                        command.durationMinutes(),
+                        command.energyLevel(),
+                        command.source(),
+                        command.confidence(),
                         now,
                         now);
         validateParent(task);
@@ -89,19 +92,20 @@ public class TaskApplicationService {
     }
 
     public List<Task> list(
-            AuthenticatedUser r,
-            Optional<UUID> u,
-            Optional<TaskStatus> s,
-            boolean o,
-            int p,
-            int z) {
+            AuthenticatedUser requester,
+            Optional<UUID> user,
+            Optional<TaskStatus> status,
+            boolean overdue,
+            int page,
+            int size) {
         return list(
-                r,
+                requester,
                 new TaskQuery(
-                        (r.isPrivileged() ? u : Optional.of(r.userId())).orElse(null),
-                        s.orElse(null),
+                        (requester.isPrivileged() ? user : Optional.of(requester.userId()))
+                                .orElse(null),
+                        status.orElse(null),
                         false,
-                        o,
+                        overdue,
                         false,
                         false,
                         false,
@@ -111,12 +115,12 @@ public class TaskApplicationService {
                         null,
                         null,
                         "updatedAt",
-                        p,
-                        z));
+                        page,
+                        size));
     }
 
-    public List<Task> list(AuthenticatedUser r, TaskQuery q) {
-        UUID user = r.isPrivileged() ? q.userId() : r.userId();
+    public List<Task> list(AuthenticatedUser requester, TaskQuery query) {
+        UUID user = requester.isPrivileged() ? query.userId() : requester.userId();
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         OffsetDateTime todayStart = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime tomorrowStart = todayStart.plusDays(1);
@@ -124,20 +128,20 @@ public class TaskApplicationService {
         return tasks.findFiltered(
                 new TaskQuery(
                         user,
-                        q.status(),
-                        q.dueToday(),
-                        q.overdue(),
-                        q.blocked(),
-                        q.unassigned(),
-                        q.noDueDate(),
-                        q.stale(),
-                        q.archived(),
-                        q.priority(),
-                        q.projectId(),
-                        q.assigneeId(),
-                        q.sort(),
-                        q.page(),
-                        q.size()),
+                        query.status(),
+                        query.dueToday(),
+                        query.overdue(),
+                        query.blocked(),
+                        query.unassigned(),
+                        query.noDueDate(),
+                        query.stale(),
+                        query.archived(),
+                        query.priority(),
+                        query.projectId(),
+                        query.assigneeId(),
+                        query.sort(),
+                        query.page(),
+                        query.size()),
                 now,
                 todayStart,
                 tomorrowStart,
@@ -148,160 +152,192 @@ public class TaskApplicationService {
         return tasks.findById(id);
     }
 
-    public Optional<Task> findById(AuthenticatedUser r, UUID id) {
-        return tasks.findById(id).map(t -> requireReadable(r, t));
+    public Optional<Task> findById(AuthenticatedUser requester, UUID id) {
+        return tasks.findById(id).map(task -> requireReadable(requester, task));
     }
 
-    public List<Task> children(AuthenticatedUser r, UUID id) {
-        Task root = authorized(r, id);
+    public List<Task> children(AuthenticatedUser requester, UUID id) {
+        Task root = authorized(requester, id);
         return tasks.findChildren(root.id());
     }
 
-    public List<Task> ancestors(AuthenticatedUser r, UUID id) {
-        authorized(r, id);
+    public List<Task> ancestors(AuthenticatedUser requester, UUID id) {
+        authorized(requester, id);
         return tasks.findAncestors(id);
     }
 
     @Transactional
-    public Optional<Task> update(AuthenticatedUser r, UUID id, UpdateTaskCommand c) {
+    public Optional<Task> update(AuthenticatedUser requester, UUID id, UpdateTaskCommand command) {
         return tasks.findByIdForUpdate(id)
                 .map(
-                        e -> {
-                            validateCanMutate(r, e);
-                            if (c.version() != null && !c.version().equals(e.version()))
+                        entity -> {
+                            validateCanMutate(requester, entity);
+                            if (command.version() != null
+                                    && !command.version().equals(entity.version()))
                                 throw new org.springframework.orm
                                         .ObjectOptimisticLockingFailureException(Task.class, id);
-                            UUID project = c.projectId() != null ? c.projectId() : e.projectId();
-                            validateMembership(project, e.userId());
-                            if (c.assigneeId() != null) validateMembership(project, c.assigneeId());
-                            TaskTypeDefinition typeDefinition = resolveActiveType(project, c.taskType() != null ? c.taskType() : e.taskType());
-                            TaskLevel resolvedLevel = c.taskLevel() != null ? c.taskLevel() : e.taskLevel();
+                            UUID project =
+                                    command.projectId() != null
+                                            ? command.projectId()
+                                            : entity.projectId();
+                            validateMembership(project, entity.userId());
+                            if (command.assigneeId() != null)
+                                validateMembership(project, command.assigneeId());
+                            TaskTypeDefinition typeDefinition =
+                                    resolveActiveType(
+                                            project,
+                                            command.taskType() != null
+                                                    ? command.taskType()
+                                                    : entity.taskType());
+                            TaskLevel resolvedLevel =
+                                    command.taskLevel() != null
+                                            ? command.taskLevel()
+                                            : entity.taskLevel();
                             validateTaskType(typeDefinition, resolvedLevel);
                             String resolvedType = typeDefinition.key();
                             Task updated =
                                     new Task(
-                                            e.id(),
-                                            e.version(),
-                                            e.userId(),
+                                            entity.id(),
+                                            entity.version(),
+                                            entity.userId(),
                                             project,
-                                            e.taskKey(),
-                                            c.assigneeId() != null
-                                                    ? c.assigneeId()
-                                                    : e.assigneeId(),
-                                            c.parentTaskId() != null
-                                                    ? c.parentTaskId()
-                                                    : e.parentTaskId(),
+                                            entity.taskKey(),
+                                            command.assigneeId() != null
+                                                    ? command.assigneeId()
+                                                    : entity.assigneeId(),
+                                            command.parentTaskId() != null
+                                                    ? command.parentTaskId()
+                                                    : entity.parentTaskId(),
                                             resolvedLevel,
                                             resolvedType,
-                                            c.storyPoints() != null
-                                                    ? c.storyPoints()
-                                                    : e.storyPoints(),
-                                            c.releaseVersion() != null
-                                                    ? c.releaseVersion()
-                                                    : e.releaseVersion(),
-                                            e.deletedAt(),
-                                            c.title() != null ? c.title().trim() : e.title(),
-                                            c.description() != null
-                                                    ? c.description()
-                                                    : e.description(),
-                                            c.status() != null ? c.status() : e.status(),
-                                            c.priority() != null ? c.priority() : e.priority(),
-                                            c.dueAt() != null ? c.dueAt() : e.dueAt(),
-                                            c.durationMinutes() != null
-                                                    ? c.durationMinutes()
-                                                    : e.durationMinutes(),
-                                            c.energyLevel() != null
-                                                    ? c.energyLevel()
-                                                    : e.energyLevel(),
-                                            e.source(),
-                                            e.confidence(),
-                                            e.createdAt(),
+                                            command.storyPoints() != null
+                                                    ? command.storyPoints()
+                                                    : entity.storyPoints(),
+                                            command.releaseVersion() != null
+                                                    ? command.releaseVersion()
+                                                    : entity.releaseVersion(),
+                                            entity.deletedAt(),
+                                            command.title() != null
+                                                    ? command.title().trim()
+                                                    : entity.title(),
+                                            command.description() != null
+                                                    ? command.description()
+                                                    : entity.description(),
+                                            command.status() != null
+                                                    ? command.status()
+                                                    : entity.status(),
+                                            command.priority() != null
+                                                    ? command.priority()
+                                                    : entity.priority(),
+                                            command.dueAt() != null
+                                                    ? command.dueAt()
+                                                    : entity.dueAt(),
+                                            command.durationMinutes() != null
+                                                    ? command.durationMinutes()
+                                                    : entity.durationMinutes(),
+                                            command.energyLevel() != null
+                                                    ? command.energyLevel()
+                                                    : entity.energyLevel(),
+                                            entity.source(),
+                                            entity.confidence(),
+                                            entity.createdAt(),
                                             Instant.now());
                             validateParent(updated);
                             Task saved = tasks.save(updated);
-                            events.taskUpdated(e, saved, r.userId());
+                            events.taskUpdated(entity, saved, requester.userId());
                             return saved;
                         });
     }
 
     @Transactional
-    public Optional<Task> updateStatus(AuthenticatedUser r, UUID id, TaskStatus s, Long version) {
+    public Optional<Task> updateStatus(
+            AuthenticatedUser requester, UUID id, TaskStatus status, Long version) {
         return tasks.findByIdForUpdate(id)
                 .map(
-                        e -> {
-                            validateCanMutate(r, e);
-                            if (version != null && !version.equals(e.version()))
+                        entity -> {
+                            validateCanMutate(requester, entity);
+                            if (version != null && !version.equals(entity.version()))
                                 throw new org.springframework.orm
                                         .ObjectOptimisticLockingFailureException(Task.class, id);
-                            Task saved = tasks.save(e.withStatus(s, Instant.now()));
-                            events.taskUpdated(e, saved, r.userId());
+                            Task saved = tasks.save(entity.withStatus(status, Instant.now()));
+                            events.taskUpdated(entity, saved, requester.userId());
                             return saved;
                         });
     }
 
     @Transactional
-    public Optional<Task> archive(AuthenticatedUser r, UUID id) {
-        return updateStatus(r, id, TaskStatus.ARCHIVED, null);
+    public Optional<Task> archive(AuthenticatedUser requester, UUID id) {
+        return updateStatus(requester, id, TaskStatus.ARCHIVED, null);
     }
 
     private TaskTypeDefinition resolveActiveType(UUID projectId, String key) {
-        return taskTypes != null ? taskTypes.requireActiveByKey(projectId, key) : TaskTypeRules.systemDefinition(key);
+        return taskTypes != null
+                ? taskTypes.requireActiveByKey(projectId, key)
+                : TaskTypeRules.systemDefinition(key);
     }
 
-    private void validateParent(Task t) {
-        if (t.parentTaskId() != null) {
-            Task p =
-                    tasks.findById(t.parentTaskId())
-                            .orElseThrow(
-                                    () -> new TaskNotFoundException("Parent task not found"));
+    private void validateParent(Task task) {
+        if (task.parentTaskId() != null) {
+            Task parent =
+                    tasks.findById(task.parentTaskId())
+                            .orElseThrow(() -> new TaskNotFoundException("Parent task not found"));
             try {
-                TaskHierarchyRules.validateParent(t, p, tasks.findAncestors(p.id()));
-            } catch (IllegalArgumentException e) {
-                throw new TaskValidationException(e.getMessage(), e, taskValidationReason(hierarchyReason(e.getMessage())));
+                TaskHierarchyRules.validateParent(task, parent, tasks.findAncestors(parent.id()));
+            } catch (IllegalArgumentException exception) {
+                throw new TaskValidationException(
+                        exception.getMessage(),
+                        exception,
+                        taskValidationReason(hierarchyReason(exception.getMessage())));
             }
         }
     }
 
-    private Task authorized(AuthenticatedUser r, UUID id) {
+    private Task authorized(AuthenticatedUser requester, UUID id) {
         return tasks.findById(id)
-                .map(task -> requireReadable(r, task))
+                .map(task -> requireReadable(requester, task))
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
-    private Task requireReadable(AuthenticatedUser r, Task task) {
-        if (!canRead(r, task)) {
+    private Task requireReadable(AuthenticatedUser requester, Task task) {
+        if (!canRead(requester, task)) {
             throw new TaskNotFoundException("Task not found");
         }
         return task;
     }
 
-    private boolean canRead(AuthenticatedUser r, Task t) {
-        return r.isPrivileged()
-                || r.userId().equals(t.userId())
-                || (t.projectId() != null && memberships.isMember(t.projectId(), r.userId()));
+    private boolean canRead(AuthenticatedUser requester, Task task) {
+        return requester.isPrivileged()
+                || requester.userId().equals(task.userId())
+                || (task.projectId() != null
+                        && memberships.isMember(task.projectId(), requester.userId()));
     }
 
-    private void validateCanMutate(AuthenticatedUser r, Task t) {
-        if (!r.isPrivileged() && !r.userId().equals(t.userId()))
+    private void validateCanMutate(AuthenticatedUser requester, Task task) {
+        if (!requester.isPrivileged() && !requester.userId().equals(task.userId()))
             throw new TaskNotFoundException("Task not found");
     }
 
     private void validateTaskType(TaskTypeDefinition definition, TaskLevel level) {
         try {
             TaskTypeRules.validate(definition, level);
-        } catch (IllegalArgumentException e) {
-            throw new TaskValidationException(e.getMessage(), e, taskValidationReason(taskTypeReason(e.getMessage())));
+        } catch (IllegalArgumentException exception) {
+            throw new TaskValidationException(
+                    exception.getMessage(),
+                    exception,
+                    taskValidationReason(taskTypeReason(exception.getMessage())));
         }
     }
 
     private TaskErrorMetadata taskValidationReason(String reason) {
-        return new TaskErrorMetadata(TaskErrorCode.TASK_VALIDATION_FAILED, null, null, null, null, reason);
+        return new TaskErrorMetadata(
+                TaskErrorCode.TASK_VALIDATION_FAILED, null, null, null, null, reason);
     }
 
     private String hierarchyReason(String message) {
         return switch (message) {
             case "A task cannot be its own parent" -> "TASK_PARENT_SAME_AS_CHILD";
-            case "Parent and child must belong to the same project" -> "TASK_PARENT_PROJECT_MISMATCH";
+            case "Parent and child must belong to the same project" ->
+                    "TASK_PARENT_PROJECT_MISMATCH";
             case "Task hierarchy cannot contain a cycle" -> "TASK_HIERARCHY_CYCLE";
             case "Task hierarchy exceeds maximum depth" -> "TASK_HIERARCHY_MAX_DEPTH";
             case "Invalid task hierarchy level" -> "TASK_HIERARCHY_INVALID_LEVEL";
@@ -322,8 +358,8 @@ public class TaskApplicationService {
     private void validateMembership(UUID projectId, UUID userId) {
         try {
             memberships.validateMembership(projectId, userId);
-        } catch (IllegalArgumentException e) {
-            throw new TaskAccessDeniedException(e.getMessage());
+        } catch (IllegalArgumentException exception) {
+            throw new TaskAccessDeniedException(exception.getMessage());
         }
     }
 }

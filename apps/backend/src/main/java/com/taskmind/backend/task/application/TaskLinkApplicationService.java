@@ -16,56 +16,73 @@ public class TaskLinkApplicationService {
     private final ProjectMembershipApplicationService memberships;
 
     public TaskLinkApplicationService(
-            TaskRepository t, TaskLinkRepository l, ProjectMembershipApplicationService m) {
-        tasks = t;
-        links = l;
-        memberships = m;
+            TaskRepository tasks,
+            TaskLinkRepository links,
+            ProjectMembershipApplicationService memberships) {
+        this.tasks = tasks;
+        this.links = links;
+        this.memberships = memberships;
     }
 
     @Transactional
-    public TaskLink create(AuthenticatedUser u, UUID source, UUID target, TaskLinkType type) {
-        Task s = authorizedToMutateLink(u, source);
-        Task t = authorizedToMutateLink(u, target);
-        if (s.projectId() == null || !s.projectId().equals(t.projectId()))
+    public TaskLink create(
+            AuthenticatedUser authenticatedUser, UUID source, UUID target, TaskLinkType type) {
+        Task sourceTask = authorizedToMutateLink(authenticatedUser, source);
+        Task targetTask = authorizedToMutateLink(authenticatedUser, target);
+        if (sourceTask.projectId() == null
+                || !sourceTask.projectId().equals(targetTask.projectId()))
             throw new TaskValidationException("Linked tasks must belong to the same project");
         return links.save(
                 new TaskLink(
-                        UUID.randomUUID(), null, source, target, type, u.userId(), Instant.now()));
+                        UUID.randomUUID(),
+                        null,
+                        source,
+                        target,
+                        type,
+                        authenticatedUser.userId(),
+                        Instant.now()));
     }
 
-    public List<TaskLink> list(AuthenticatedUser u, UUID id) {
-        authorizedToRead(u, id);
+    public List<TaskLink> list(AuthenticatedUser authenticatedUser, UUID id) {
+        authorizedToRead(authenticatedUser, id);
         return links.findForTask(id);
     }
 
     @Transactional
-    public void delete(AuthenticatedUser u, UUID id) {
-        TaskLink l = links.findById(id).orElseThrow(() -> new TaskNotFoundException("Task link not found"));
-        authorizedToMutateLink(u, l.sourceTaskId());
+    public void delete(AuthenticatedUser authenticatedUser, UUID id) {
+        TaskLink link =
+                links.findById(id)
+                        .orElseThrow(() -> new TaskNotFoundException("Task link not found"));
+        authorizedToMutateLink(authenticatedUser, link.sourceTaskId());
         links.deleteById(id);
     }
 
-    private Task authorizedToRead(AuthenticatedUser u, UUID id) {
-        Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
-        if (!canRead(u, t)) throw new TaskNotFoundException("Task not found");
-        return t;
+    private Task authorizedToRead(AuthenticatedUser authenticatedUser, UUID id) {
+        Task task =
+                tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
+        if (!canRead(authenticatedUser, task)) throw new TaskNotFoundException("Task not found");
+        return task;
     }
 
-    private Task authorizedToMutateLink(AuthenticatedUser u, UUID id) {
-        Task t = tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
-        if (!canMutateLink(u, t)) throw new TaskNotFoundException("Task not found");
-        return t;
+    private Task authorizedToMutateLink(AuthenticatedUser authenticatedUser, UUID id) {
+        Task task =
+                tasks.findById(id).orElseThrow(() -> new TaskNotFoundException("Task not found"));
+        if (!canMutateLink(authenticatedUser, task))
+            throw new TaskNotFoundException("Task not found");
+        return task;
     }
 
-    private boolean canRead(AuthenticatedUser u, Task t) {
-        return u.isPrivileged()
-                || u.userId().equals(t.userId())
-                || (t.projectId() != null && memberships.isMember(t.projectId(), u.userId()));
+    private boolean canRead(AuthenticatedUser authenticatedUser, Task task) {
+        return authenticatedUser.isPrivileged()
+                || authenticatedUser.userId().equals(task.userId())
+                || (task.projectId() != null
+                        && memberships.isMember(task.projectId(), authenticatedUser.userId()));
     }
 
-    private boolean canMutateLink(AuthenticatedUser u, Task t) {
-        return u.isPrivileged()
-                || u.userId().equals(t.userId())
-                || (t.projectId() != null && memberships.isMember(t.projectId(), u.userId()));
+    private boolean canMutateLink(AuthenticatedUser authenticatedUser, Task task) {
+        return authenticatedUser.isPrivileged()
+                || authenticatedUser.userId().equals(task.userId())
+                || (task.projectId() != null
+                        && memberships.isMember(task.projectId(), authenticatedUser.userId()));
     }
 }
