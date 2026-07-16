@@ -10,26 +10,26 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationPreferenceController {
     private final NotificationApplicationService service;
 
-    public NotificationPreferenceController(NotificationApplicationService s) {
-        service = s;
+    public NotificationPreferenceController(NotificationApplicationService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public NotificationPreference get(AuthenticatedUser u) {
-        return service.preferences(u);
+    public NotificationPreference get(AuthenticatedUser authenticatedUser) {
+        return service.preferences(authenticatedUser);
     }
 
     @PutMapping
     public NotificationPreference put(
-            AuthenticatedUser u, @RequestBody UpdateNotificationPreferencesRequest r) {
+            AuthenticatedUser authenticatedUser, @RequestBody UpdateNotificationPreferencesRequest request) {
         return service.updatePreferences(
-                u,
-                r.version(),
-                r.inAppEnabled(),
-                r.emailDigestEnabled(),
-                r.slackEnabled(),
-                r.slackWebhookUrl(),
-                r.slackChannel());
+                authenticatedUser,
+                request.version(),
+                request.inAppEnabled(),
+                request.emailDigestEnabled(),
+                request.slackEnabled(),
+                request.slackWebhookUrl(),
+                request.slackChannel());
     }
 
     public record UpdateNotificationPreferencesRequest(
