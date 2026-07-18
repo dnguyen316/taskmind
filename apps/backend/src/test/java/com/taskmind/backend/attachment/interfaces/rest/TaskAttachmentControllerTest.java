@@ -11,12 +11,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskmind.backend.attachment.domain.repository.ObjectStoragePort;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.util.StreamUtils;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,6 +40,12 @@ import org.springframework.test.web.servlet.MockMvc;
 class TaskAttachmentControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired FailureInjectingObjectStoragePort storage;
+
+    @BeforeEach
+    void resetStorageFailures() {
+        storage.resetFailures();
+    }
 
     @Test
     void uploadsListsDownloadsAndDeletesAttachmentForTaskOwner() throws Exception {
@@ -113,6 +130,52 @@ class TaskAttachmentControllerTest {
                 .andExpect(header().longValue("Content-Length", content.length));
     }
 
+    @Test
+    void downloadStorageFailureReturnsServiceUnavailable() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        MockMultipartFile file =
+                new MockMultipartFile("file", "note.txt", "text/plain", "content".getBytes());
+        var upload =
+                mockMvc.perform(
+                                multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                        .file(file)
+                                        .param("mediaKind", "DOCUMENT")
+                                        .with(jwt(userId)))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String attachmentId =
+                objectMapper.readTree(upload.getResponse().getContentAsString()).get("id").asText();
+        storage.failGet = true;
+
+        mockMvc.perform(
+                        get(
+                                        "/v1/tasks/{taskId}/attachments/{attachmentId}/download",
+                                        taskId,
+                                        attachmentId)
+                                .with(jwt(userId)))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void storageFailureReturnsServiceUnavailableAndDoesNotPersistMetadata() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        String taskId = createTask(userId);
+        MockMultipartFile file =
+                new MockMultipartFile("file", "note.txt", "text/plain", "content".getBytes());
+        storage.failPut = true;
+
+        mockMvc.perform(
+                        multipart("/v1/tasks/{taskId}/attachments", taskId)
+                                .file(file)
+                                .param("mediaKind", "DOCUMENT")
+                                .with(jwt(userId)))
+                .andExpect(status().isServiceUnavailable());
+
+        mockMvc.perform(get("/v1/tasks/{taskId}/attachments", taskId).with(jwt(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 
     @Test
     void rejectsUploadWithMissingFilename() throws Exception {
@@ -201,5 +264,52 @@ class TaskAttachmentControllerTest {
                 .readTree(response.getResponse().getContentAsString())
                 .get("id")
                 .asText();
+    }
+
+    @TestConfiguration
+    static class StorageFailureTestConfig {
+        @Bean
+        @Primary
+        FailureInjectingObjectStoragePort failureInjectingObjectStoragePort() {
+            return new FailureInjectingObjectStoragePort();
+        }
+    }
+
+    static class FailureInjectingObjectStoragePort implements ObjectStoragePort {
+        private final Map<String, StoredObject> objects = new ConcurrentHashMap<>();
+        volatile boolean failPut;
+        volatile boolean failGet;
+
+        @Override
+        public void put(String key, InputStream content, long sizeBytes, String contentType)
+                throws IOException {
+            if (failPut) {
+                throw new RuntimeException("storage unavailable");
+            }
+            byte[] bytes = StreamUtils.copyToByteArray(content);
+            objects.put(key, new StoredObject(new ByteArrayResource(bytes), contentType, sizeBytes));
+        }
+
+        @Override
+        public StoredObject get(String key) throws IOException {
+            if (failGet) {
+                throw new RuntimeException("storage unavailable");
+            }
+            StoredObject object = objects.get(key);
+            if (object == null) {
+                throw new IOException("Object not found");
+            }
+            return object;
+        }
+
+        @Override
+        public void delete(String key) {
+            objects.remove(key);
+        }
+
+        void resetFailures() {
+            failPut = false;
+            failGet = false;
+        }
     }
 }
