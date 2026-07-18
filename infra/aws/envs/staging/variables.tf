@@ -36,12 +36,12 @@ variable "single_nat_gateway" {
 }
 
 variable "alb_certificate_arn" {
-  description = "Regional ACM certificate ARN for the Core ALB HTTPS listener."
+  description = "Regional ACM certificate ARN in ap-southeast-2 for the Core ALB HTTPS listener."
   type        = string
 }
 
 variable "cloudfront_certificate_arn" {
-  description = "Optional us-east-1 ACM certificate ARN for CloudFront aliases."
+  description = "Optional ACM certificate ARN for CloudFront aliases. CloudFront viewer certificates are the us-east-1 ACM exception and do not change the main TaskMind deployment region."
   type        = string
   default     = null
 }
