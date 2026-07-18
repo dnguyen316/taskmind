@@ -25,9 +25,9 @@ public class RelaySecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers("/actuator/prometheus")
-                                        .authenticated()
+                                        .hasRole("SERVICE")
                                         .requestMatchers("/internal/**")
-                                        .authenticated()
+                                        .hasRole("SERVICE")
                                         .anyRequest()
                                         .denyAll())
                 .addFilterBefore(serviceTokenFilter, UsernamePasswordAuthenticationFilter.class)
