@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region used for regional TaskMind resources. Must match the S3 backend region unless backend configuration is overridden during init."
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"
 }
 
 variable "environment" {

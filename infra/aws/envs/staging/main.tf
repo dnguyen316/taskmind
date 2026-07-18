@@ -20,9 +20,9 @@ module "network" {
 module "security" {
   source = "../../security"
 
-  environment           = var.environment
-  vpc_id                = module.network.vpc_id
-  tags                  = local.tags
+  environment = var.environment
+  vpc_id      = module.network.vpc_id
+  tags        = local.tags
 }
 
 module "data" {

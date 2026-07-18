@@ -20,9 +20,9 @@ module "network" {
 module "security" {
   source = "../../security"
 
-  environment           = var.environment
-  vpc_id                = module.network.vpc_id
-  tags                  = local.tags
+  environment = var.environment
+  vpc_id      = module.network.vpc_id
+  tags        = local.tags
 }
 
 module "data" {
@@ -97,23 +97,23 @@ resource "aws_security_group_rule" "alb_to_ecs_core" {
 module "compute" {
   source = "../../compute"
 
-  environment            = var.environment
-  aws_region             = var.aws_region
-  vpc_id                 = module.network.vpc_id
-  private_subnet_ids     = module.network.private_subnet_ids
-  ecs_security_group_id  = module.security.ecs_security_group_id
-  core_target_group_arn  = module.edge.core_target_group_arn
-  attachments_bucket_arn = module.data.attachments_bucket_arn
-  opensearch_domain_arn  = module.data.opensearch_domain_arn
-  core_secret_arns       = var.core_secret_arns
-  relay_secret_arns      = var.relay_secret_arns
-  nova_secret_arns       = var.nova_secret_arns
-  service_images         = var.service_images
-  service_environment    = var.service_environment
-  service_secrets        = var.service_secrets
-  core_desired_count     = 2
-  relay_desired_count    = 1
-  nova_desired_count     = 1
+  environment                = var.environment
+  aws_region                 = var.aws_region
+  vpc_id                     = module.network.vpc_id
+  private_subnet_ids         = module.network.private_subnet_ids
+  ecs_security_group_id      = module.security.ecs_security_group_id
+  core_target_group_arn      = module.edge.core_target_group_arn
+  attachments_bucket_arn     = module.data.attachments_bucket_arn
+  opensearch_domain_arn      = module.data.opensearch_domain_arn
+  core_secret_arns           = var.core_secret_arns
+  relay_secret_arns          = var.relay_secret_arns
+  nova_secret_arns           = var.nova_secret_arns
+  service_images             = var.service_images
+  service_environment        = var.service_environment
+  service_secrets            = var.service_secrets
+  core_desired_count         = 2
+  relay_desired_count        = 1
+  nova_desired_count         = 1
   log_retention_days         = 90
   cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
   enable_execute_command     = false
