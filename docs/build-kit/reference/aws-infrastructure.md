@@ -8,17 +8,17 @@ LocalStack so the inner loop is offline and fast.
 
 ## Local -> AWS mapping
 
-| Concern | Local dev | AWS production |
-|---------|-----------|----------------|
-| Postgres | container `postgres:16` | **RDS PostgreSQL 16.x** (Multi-AZ in prod) |
-| Redis | container `redis:7` | **ElastiCache Redis 7.x** (replication group) |
-| Search | container OpenSearch/ES (`:9200`) | **Amazon OpenSearch Service** (VPC endpoint) |
-| Object storage | **LocalStack S3** (`:4566`) or filesystem fallback | **Amazon S3** + IAM task role |
-| Edge / nginx gateway | nginx gateway (compose) | **ALB + WAF** (+ optional nginx sidecar for SSE) |
-| Compute | `spring-boot:run` / compose | **ECS Fargate** (Core, Relay, Nova) |
-| Frontend | Vite dev server | **S3 + CloudFront** (OAC, `403/404 -> /index.html`) |
-| Secrets | `infra/env/.env` | **AWS Secrets Manager** |
-| Internal DNS | localhost ports | **AWS Cloud Map** (`*.taskmind.local`) |
+| Concern              | Local dev                                          | AWS production                                      |
+| -------------------- | -------------------------------------------------- | --------------------------------------------------- |
+| Postgres             | container `postgres:16`                            | **RDS PostgreSQL 16.x** (Multi-AZ in prod)          |
+| Redis                | container `redis:7`                                | **ElastiCache Redis 7.x** (replication group)       |
+| Search               | container OpenSearch/ES (`:9200`)                  | **Amazon OpenSearch Service** (VPC endpoint)        |
+| Object storage       | **LocalStack S3** (`:4566`) or filesystem fallback | **Amazon S3** + IAM task role                       |
+| Edge / nginx gateway | nginx gateway (compose)                            | **ALB + WAF** (+ optional nginx sidecar for SSE)    |
+| Compute              | `spring-boot:run` / compose                        | **ECS Fargate** (Core, Relay, Nova)                 |
+| Frontend             | Vite dev server                                    | **S3 + CloudFront** (OAC, `403/404 -> /index.html`) |
+| Secrets              | `infra/env/.env`                                   | **AWS Secrets Manager**                             |
+| Internal DNS         | localhost ports                                    | **AWS Cloud Map** (`*.taskmind.local`)              |
 
 One database `taskmind` contains three schemas: **public** (Core), **ai** (Nova), and
 **analytics** (Relay). Only **Core** and **Nova** run Flyway.
@@ -32,17 +32,17 @@ Implement the `ObjectStoragePort` in the `attachment` module with an **S3 adapte
 - **Prod**: use the **default credential chain + IAM task role**; do **not** set
   `endpointOverride`. Bucket: `taskmind-attachments-{env}`. Block public access, enable
   versioning, and configure lifecycle rules.
-- **Local**: point at LocalStack (`TASKMIND_STORAGE_ENDPOINT=http://localhost:4566`,
-  path-style access, static credentials) or use a filesystem fallback adapter for tests.
+- **Local**: point at LocalStack (`TASKMIND_ATTACHMENTS_S3_ENDPOINT=http://localhost:4566`,
+  path-style access, SDK/local credentials) or use a filesystem fallback adapter for tests.
 
 Environment variables, carried from the reference and S3-flavored:
 
 ```env
-TASKMIND_STORAGE_ENDPOINT=        # empty in prod (real S3); set for LocalStack
-TASKMIND_STORAGE_BUCKET=taskmind-attachments
-TASKMIND_STORAGE_REGION=us-east-1
-TASKMIND_STORAGE_ACCESS_KEY=      # local only; prod uses IAM role
-TASKMIND_STORAGE_SECRET_KEY=      # local only
+TASKMIND_ATTACHMENTS_ADAPTER=s3                 # prod S3 adapter; tests/local may use filesystem
+TASKMIND_ATTACHMENTS_S3_ENDPOINT=               # empty in prod (real S3); set for LocalStack
+TASKMIND_ATTACHMENTS_BUCKET=taskmind-attachments
+TASKMIND_ATTACHMENTS_S3_REGION=ap-southeast-2
+TASKMIND_ATTACHMENTS_S3_PATH_STYLE_ACCESS=true  # useful for LocalStack; evaluate for prod
 ```
 
 ## Search: Amazon OpenSearch Service (replaces self-hosted ES)
@@ -81,11 +81,11 @@ Relay, plus Core's activity-search read API, target OpenSearch:
 
 ## Compute: ECS Fargate
 
-| Service | CPU / Mem | Min tasks | Public? |
-|---------|-----------|-----------|---------|
-| Core | 1 vCPU / 2 GB | 2 | yes (via ALB) |
-| Relay | 0.5 vCPU / 1 GB | 1-2 | no |
-| Nova | 1 vCPU / 2 GB | 1-2 | no |
+| Service | CPU / Mem       | Min tasks | Public?       |
+| ------- | --------------- | --------- | ------------- |
+| Core    | 1 vCPU / 2 GB   | 2         | yes (via ALB) |
+| Relay   | 0.5 vCPU / 1 GB | 1-2       | no            |
+| Nova    | 1 vCPU / 2 GB   | 1-2       | no            |
 
 - A per-service `Dockerfile` exists under `apps/*/Dockerfile`; build from the repository
   root so the Spring Boot images can resolve the Maven reactor and the frontend can inject
