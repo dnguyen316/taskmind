@@ -2,6 +2,7 @@ package com.taskmind.backend.attachment.interfaces.rest;
 
 import com.taskmind.backend.attachment.application.AttachmentAccessDeniedException;
 import com.taskmind.backend.attachment.application.AttachmentValidationException;
+import com.taskmind.backend.attachment.application.AttachmentStorageException;
 import com.taskmind.backend.attachment.application.TaskAttachmentApplicationService;
 import com.taskmind.backend.attachment.domain.model.TaskAttachment;
 import com.taskmind.backend.attachment.interfaces.rest.dto.TaskAttachmentResponse;
@@ -59,6 +60,8 @@ public class TaskAttachmentController {
             throw new ResponseStatusException(status, e.getMessage(), e);
         } catch (AttachmentAccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        } catch (AttachmentStorageException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload", e);
         }
@@ -114,6 +117,8 @@ public class TaskAttachmentController {
                     .body(download.resource());
         } catch (AttachmentAccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        } catch (AttachmentStorageException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }

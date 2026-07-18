@@ -1,13 +1,14 @@
 package com.taskmind.backend.attachment.infrastructure.storage;
 
 import com.taskmind.backend.attachment.domain.repository.ObjectStoragePort;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import org.springframework.core.io.InputStreamResource;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.core.io.InputStreamResource;
 
 public class FilesystemObjectStorageAdapter implements ObjectStoragePort {
     private final Path root;
@@ -22,7 +23,15 @@ public class FilesystemObjectStorageAdapter implements ObjectStoragePort {
             throws IOException {
         Path path = pathFor(key);
         Files.createDirectories(path.getParent());
-        Files.copy(content, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.copy(
+                    new SizeEnforcingInputStream(content, sizeBytes),
+                    path,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            Files.deleteIfExists(path);
+            throw e;
+        }
         contentTypes.put(key, contentType);
     }
 
@@ -47,5 +56,40 @@ public class FilesystemObjectStorageAdapter implements ObjectStoragePort {
             throw new IllegalArgumentException("Invalid object key");
         }
         return path;
+    }
+
+    private static final class SizeEnforcingInputStream extends FilterInputStream {
+        private final long maxBytes;
+        private long bytesRead;
+
+        private SizeEnforcingInputStream(InputStream in, long maxBytes) {
+            super(in);
+            this.maxBytes = maxBytes;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int value = super.read();
+            if (value != -1) {
+                recordBytes(1);
+            }
+            return value;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int read = super.read(b, off, len);
+            if (read > 0) {
+                recordBytes(read);
+            }
+            return read;
+        }
+
+        private void recordBytes(long count) throws IOException {
+            bytesRead += count;
+            if (bytesRead > maxBytes) {
+                throw new IOException("Attachment stream exceeded declared size");
+            }
+        }
     }
 }

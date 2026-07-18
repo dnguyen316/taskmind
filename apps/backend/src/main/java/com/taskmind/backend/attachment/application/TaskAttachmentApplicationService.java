@@ -55,8 +55,8 @@ public class TaskAttachmentApplicationService {
                         : contentType;
         try {
             storage.put(key, content, sizeBytes, normalizedContentType);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not store attachment object", e);
+        } catch (IOException | RuntimeException e) {
+            throw new AttachmentStorageException("Could not store attachment object", e);
         }
         Instant now = Instant.now();
         return attachments.save(
@@ -86,8 +86,8 @@ public class TaskAttachmentApplicationService {
         try {
             ObjectStoragePort.StoredObject object = storage.get(attachment.objectKey());
             return new Download(attachment, object.resource(), object.contentType(), object.sizeBytes());
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not read attachment object", e);
+        } catch (IOException | RuntimeException e) {
+            throw new AttachmentStorageException("Could not read attachment object", e);
         }
     }
 
