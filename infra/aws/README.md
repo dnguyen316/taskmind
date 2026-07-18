@@ -12,6 +12,11 @@ interfaces.
   run by Terraform 1.6+ if an environment standardizes on Terraform instead.
 - **State:** store remote state in an encrypted S3 backend with DynamoDB locking per
   environment when these modules are promoted into an environment root.
+- **Backend-state region:** the TaskMind Sydney AWS account stores the staging and
+  production Terraform/OpenTofu state buckets and DynamoDB lock tables in
+  `ap-southeast-2`, matching the deployment region. Do not treat the backend region as
+  independent from the workload region unless the bootstrap resources are deliberately
+  migrated and the committed backend blocks are updated in the same change.
 
 ## Layout
 
@@ -27,6 +32,29 @@ infra/aws/
     staging/      # Composed staging root with S3 state + DynamoDB locking
     production/   # Composed protected production root with stricter defaults
 ```
+
+
+## Remote state migration
+
+Decision: staging and production state storage are migrated/recreated in
+`ap-southeast-2` for the Sydney AWS account. The previous `us-east-1` backend setting was a
+bootstrap default and should not be used for this account unless an explicit rollback plan
+recreates the old backend resources.
+
+Preferred migration flow for each environment (`staging`, then `production`):
+
+1. Confirm the destination `ap-southeast-2` S3 state bucket and DynamoDB lock table exist
+   with encryption, versioning, and least-privilege IAM equivalent to the previous backend.
+2. From `infra/aws/envs/<environment>`, run `tofu init -migrate-state` and approve the
+   backend migration only after OpenTofu shows the source and destination bucket, key,
+   lock table, and region values expected for that environment. Terraform users can run
+   the equivalent `terraform init -migrate-state`.
+3. Run `tofu state list` to verify state is readable from the Sydney backend, then run a
+   read-only validation such as `tofu plan -refresh-only` before applying any
+   infrastructure changes.
+4. Keep the old `us-east-1` bucket and lock table retained until the migrated state has
+   been backed up and at least one successful plan has completed from the
+   `ap-southeast-2` backend.
 
 ## Deployment model
 
@@ -66,12 +94,15 @@ this dependency order:
    their identifiers.
 
 The roots pass module outputs explicitly instead of reconstructing ARNs. They use S3 remote
-state and DynamoDB locking in each `backend.tf`; if an AWS account uses different bootstrap
-bucket or lock table names, pass OpenTofu `-backend-config` overrides during `tofu init` or
-update the committed backend block before planning. Production requires the protected
-`production` GitHub Environment, an ALB HTTPS certificate ARN, RDS deletion protection, and
-final snapshots. Keep all secrets in AWS Secrets Manager or SSM Parameter Store, and never
-commit generated state files or plaintext secrets.
+state and DynamoDB locking in each `backend.tf`. For the Sydney AWS account, the committed
+backend blocks point at `ap-southeast-2` state buckets and lock tables for both staging and
+production, so `var.aws_region` and the backend `region` remain aligned by default. If a
+different account uses nonstandard bootstrap bucket or lock table names, pass OpenTofu
+`-backend-config` overrides during `tofu init`; only override the backend region when the
+state bucket and DynamoDB table actually exist in that alternate region. Production requires
+the protected `production` GitHub Environment, an ALB HTTPS certificate ARN, RDS deletion
+protection, and final snapshots. Keep all secrets in AWS Secrets Manager or SSM Parameter
+Store, and never commit generated state files or plaintext secrets.
 
 ### RDS final snapshots and disposable previews
 
