@@ -117,6 +117,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         await this.fetchCurrentUser({ silent: true })
       } catch {
+        clearAuthTokens()
+        this.markUnauthenticated()
         return null
       }
 
