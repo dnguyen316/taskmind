@@ -60,13 +60,16 @@ Preferred migration flow for each environment (`staging`, then `production`):
 
 Core is the only public API and is exposed through ALB + WAF. Relay and Nova run as
 private ECS Fargate services and are reachable only from inside the VPC via Cloud Map.
-Non-local AWS environments must provide `alb_certificate_arn` for an ACM certificate on
-the Core ALB: only the HTTPS listener forwards to the Core target group, while the HTTP
-listener redirects to HTTPS when a certificate exists and otherwise returns a fixed `426`
-response instead of forwarding plaintext traffic. The Vue SPA is built separately,
-published to the frontend artifact bucket, and served by CloudFront using origin access
-control. The CloudFront distribution maps SPA `403` and `404` responses to `/index.html`
-so client-side routing works on deep links.
+Non-local AWS environments must provide `alb_certificate_arn` for an ACM certificate in
+the primary `ap-southeast-2` region on the Core ALB: only the HTTPS listener forwards to
+the Core target group, while the HTTP listener redirects to HTTPS when a certificate
+exists and otherwise returns a fixed `426` response instead of forwarding plaintext
+traffic. The Vue SPA is built separately, published to the frontend artifact bucket, and
+served by CloudFront using origin access control. The primary TaskMind deployment region
+is `ap-southeast-2`; CloudFront ACM viewer certificates for SPA aliases may still be
+issued in `us-east-1` because CloudFront requires viewer certificates there. The
+CloudFront distribution maps SPA `403` and `404` responses to `/index.html` so
+client-side routing works on deep links.
 
 ## Example composition
 
