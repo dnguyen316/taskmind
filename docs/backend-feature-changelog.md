@@ -1,3 +1,19 @@
+## 2026-07-18 - Attachment S3 Sydney defaults
+
+### Changed
+
+- Changed Core attachment S3 region defaults and local LocalStack fallback from `us-east-1` to Sydney (`ap-southeast-2`) while preserving `TASKMIND_ATTACHMENTS_S3_REGION` overrides.
+
+### Tests
+
+- Added attachment storage property coverage for the POJO default, explicit binding override, and `application.properties` environment placeholder fallback.
+
+### Closeout notes
+
+- Primary milestone: M06 Search/storage AWS.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-15 - Task type validation problem metadata
 
 ### Changed

@@ -53,7 +53,7 @@ services:
     image: localstack/localstack:latest
     environment:
       SERVICES: s3
-      AWS_DEFAULT_REGION: ${TASKMIND_ATTACHMENTS_S3_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${TASKMIND_ATTACHMENTS_S3_REGION:-ap-southeast-2}
       DEBUG: ${LOCALSTACK_DEBUG:-0}
     ports:
       - "4566:4566"
