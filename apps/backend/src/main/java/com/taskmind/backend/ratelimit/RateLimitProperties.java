@@ -21,6 +21,7 @@ public class RateLimitProperties {
     private List<String> aiHeavyPaths = List.of("/v1/ai/", "/v1/spec-breakdown/");
     private List<String> publicApiPrefixes = List.of("/v1/", "/api/health");
     private List<String> internalPrefixes = List.of("/internal/");
+    private List<String> trustedProxies = List.of();
 
     public boolean isEnabled() {
         return enabled;
@@ -100,6 +101,14 @@ public class RateLimitProperties {
 
     public void setInternalPrefixes(List<String> internalPrefixes) {
         this.internalPrefixes = internalPrefixes;
+    }
+
+    public List<String> getTrustedProxies() {
+        return trustedProxies;
+    }
+
+    public void setTrustedProxies(List<String> trustedProxies) {
+        this.trustedProxies = trustedProxies;
     }
 
     public record Bucket(@Min(1) long capacity, Duration refillPeriod) {}

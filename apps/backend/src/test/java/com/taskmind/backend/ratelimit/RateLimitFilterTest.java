@@ -32,9 +32,11 @@ class RateLimitFilterTest {
                         properties,
                         (key, bucket) -> {
                             consumed.set(true);
-                            return RateLimitService.RateLimitDecision.rejected(bucket.capacity(), 60);
+                            return RateLimitService.RateLimitDecision.rejected(
+                                    bucket.capacity(), 60);
                         },
-                        new ObjectMapper());
+                        new ObjectMapper(),
+                        new ClientIpResolver(properties));
 
         MockHttpServletResponse response = execute(filter, request("/v1/tasks"));
 
@@ -46,7 +48,9 @@ class RateLimitFilterTest {
     void anonymousRequestsUseIpBucketLimits() throws Exception {
         RateLimitProperties properties = propertiesWithLimits(1, 10);
         InMemoryRateLimitService service = new InMemoryRateLimitService();
-        RateLimitFilter filter = new RateLimitFilter(properties, service, new ObjectMapper());
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
 
         assertThat(execute(filter, request("/v1/tasks")).getStatus()).isEqualTo(200);
         MockHttpServletResponse limited = execute(filter, request("/v1/tasks"));
@@ -61,7 +65,9 @@ class RateLimitFilterTest {
                 .setAuthentication(new TestingAuthenticationToken("user-123", "n/a", "ROLE_USER"));
         RateLimitProperties properties = propertiesWithLimits(10, 1);
         InMemoryRateLimitService service = new InMemoryRateLimitService();
-        RateLimitFilter filter = new RateLimitFilter(properties, service, new ObjectMapper());
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
 
         assertThat(execute(filter, request("/v1/tasks")).getStatus()).isEqualTo(200);
         MockHttpServletResponse limited = execute(filter, request("/v1/tasks"));
@@ -77,13 +83,83 @@ class RateLimitFilterTest {
         RateLimitProperties properties = propertiesWithLimits(10, 10);
         properties.setAiHeavy(new RateLimitProperties.Bucket(1, Duration.ofMinutes(1)));
         InMemoryRateLimitService service = new InMemoryRateLimitService();
-        RateLimitFilter filter = new RateLimitFilter(properties, service, new ObjectMapper());
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
 
-        assertThat(execute(filter, request("/v1/spec-breakdown/drafts")).getStatus()).isEqualTo(200);
+        assertThat(execute(filter, request("/v1/spec-breakdown/drafts")).getStatus())
+                .isEqualTo(200);
         MockHttpServletResponse limited = execute(filter, request("/v1/spec-breakdown/drafts"));
 
         assertThat(limited.getStatus()).isEqualTo(429);
         assertThat(service.lastKey).isEqualTo("taskmind:ratelimit:ai-heavy:user-123");
+    }
+
+    @Test
+    void directPublicRequestWithSpoofedForwardedForUsesRemoteAddressBucket() throws Exception {
+        RateLimitProperties properties = propertiesWithLimits(1, 10);
+        InMemoryRateLimitService service = new InMemoryRateLimitService();
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
+        MockHttpServletRequest first = request("/v1/tasks");
+        first.addHeader("X-Forwarded-For", "203.0.113.77");
+        MockHttpServletRequest second = request("/v1/tasks");
+        second.addHeader("X-Forwarded-For", "198.51.100.12");
+
+        assertThat(execute(filter, first).getStatus()).isEqualTo(200);
+        MockHttpServletResponse limited = execute(filter, second);
+
+        assertThat(limited.getStatus()).isEqualTo(429);
+        assertThat(service.lastKey).isEqualTo("taskmind:ratelimit:ip:127.0.0.1");
+    }
+
+    @Test
+    void trustedProxyRequestUsesForwardedClientIpBucket() throws Exception {
+        RateLimitProperties properties = propertiesWithLimits(1, 10);
+        properties.setTrustedProxies(java.util.List.of("10.0.0.0/8"));
+        InMemoryRateLimitService service = new InMemoryRateLimitService();
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
+        MockHttpServletRequest first = request("/v1/tasks");
+        first.setRemoteAddr("10.20.30.40");
+        first.addHeader("X-Forwarded-For", "203.0.113.77, 10.20.30.40");
+        MockHttpServletRequest second = request("/v1/tasks");
+        second.setRemoteAddr("10.20.30.40");
+        second.addHeader("X-Forwarded-For", "198.51.100.12, 10.20.30.40");
+
+        assertThat(execute(filter, first).getStatus()).isEqualTo(200);
+        assertThat(execute(filter, second).getStatus()).isEqualTo(200);
+
+        assertThat(service.counts)
+                .containsEntry("taskmind:ratelimit:ip:203.0.113.77", 1L)
+                .containsEntry("taskmind:ratelimit:ip:198.51.100.12", 1L);
+    }
+
+    @Test
+    void authFlowPathsRemainRateLimitedPerEffectiveClient() throws Exception {
+        RateLimitProperties properties = propertiesWithLimits(1, 10);
+        properties.setTrustedProxies(java.util.List.of("10.0.0.5"));
+        InMemoryRateLimitService service = new InMemoryRateLimitService();
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties, service, new ObjectMapper(), new ClientIpResolver(properties));
+        MockHttpServletRequest first = request("/v1/auth/login");
+        first.setRemoteAddr("10.0.0.5");
+        first.addHeader("X-Forwarded-For", "203.0.113.77");
+        MockHttpServletRequest second = request("/v1/auth/login");
+        second.setRemoteAddr("10.0.0.5");
+        second.addHeader("X-Forwarded-For", "203.0.113.77");
+        MockHttpServletRequest otherClient = request("/v1/auth/login");
+        otherClient.setRemoteAddr("10.0.0.5");
+        otherClient.addHeader("X-Forwarded-For", "198.51.100.12");
+
+        assertThat(execute(filter, first).getStatus()).isEqualTo(200);
+        assertThat(execute(filter, second).getStatus()).isEqualTo(429);
+        assertThat(execute(filter, otherClient).getStatus()).isEqualTo(200);
+
+        assertThat(service.lastKey).isEqualTo("taskmind:ratelimit:auth-flow:198.51.100.12");
     }
 
     @Test
@@ -93,7 +169,8 @@ class RateLimitFilterTest {
                 new RateLimitFilter(
                         properties,
                         (key, bucket) -> RateLimitService.RateLimitDecision.rejected(2, 37),
-                        new ObjectMapper());
+                        new ObjectMapper(),
+                        new ClientIpResolver(properties));
 
         MockHttpServletResponse response = execute(filter, request("/v1/auth/login"));
 
@@ -114,9 +191,11 @@ class RateLimitFilterTest {
                         properties,
                         (key, bucket) -> {
                             consumed.set(true);
-                            return RateLimitService.RateLimitDecision.rejected(bucket.capacity(), 60);
+                            return RateLimitService.RateLimitDecision.rejected(
+                                    bucket.capacity(), 60);
                         },
-                        new ObjectMapper());
+                        new ObjectMapper(),
+                        new ClientIpResolver(properties));
 
         MockHttpServletResponse response = execute(filter, request("/internal/relay/events"));
 
@@ -126,11 +205,14 @@ class RateLimitFilterTest {
 
     private RateLimitProperties propertiesWithLimits(long anonymousLimit, long authenticatedLimit) {
         RateLimitProperties properties = new RateLimitProperties();
-        properties.setAnonymous(new RateLimitProperties.Bucket(anonymousLimit, Duration.ofMinutes(1)));
+        properties.setAnonymous(
+                new RateLimitProperties.Bucket(anonymousLimit, Duration.ofMinutes(1)));
         properties.setAuthenticated(
                 new RateLimitProperties.Bucket(authenticatedLimit, Duration.ofMinutes(1)));
-        properties.setAuthFlow(new RateLimitProperties.Bucket(anonymousLimit, Duration.ofMinutes(1)));
-        properties.setAiHeavy(new RateLimitProperties.Bucket(authenticatedLimit, Duration.ofMinutes(1)));
+        properties.setAuthFlow(
+                new RateLimitProperties.Bucket(anonymousLimit, Duration.ofMinutes(1)));
+        properties.setAiHeavy(
+                new RateLimitProperties.Bucket(authenticatedLimit, Duration.ofMinutes(1)));
         return properties;
     }
 
@@ -156,7 +238,8 @@ class RateLimitFilterTest {
             lastKey = bucketKey;
             long count = counts.merge(bucketKey, 1L, Long::sum);
             if (count > bucket.capacity()) {
-                return RateLimitDecision.rejected(bucket.capacity(), bucket.refillPeriod().toSeconds());
+                return RateLimitDecision.rejected(
+                        bucket.capacity(), bucket.refillPeriod().toSeconds());
             }
             return RateLimitDecision.allowed(bucket.capacity(), bucket.capacity() - count);
         }
