@@ -36,7 +36,9 @@ public class E2eSuperAdminSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (users.findByPrimaryEmail(EMAIL).isPresent()) return;
+        if (users.findByPrimaryEmail(EMAIL).isPresent()) {
+            return;
+        }
         Instant now = Instant.now();
         UserJpaEntity user =
                 users.save(
