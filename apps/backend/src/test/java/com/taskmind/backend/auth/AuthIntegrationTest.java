@@ -26,7 +26,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(properties = {"taskmind.auth.otp.max-attempts=2", "taskmind.ratelimit.auth-flow.capacity=100"})
+@SpringBootTest(properties = {
+    "taskmind.auth.otp.max-attempts=2",
+    "taskmind.ratelimit.auth-flow.capacity=100",
+    "taskmind.cors.allowed-origins=http://localhost:5173"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AuthIntegrationTest {
@@ -157,19 +161,29 @@ class AuthIntegrationTest {
     @Test
     void refreshRotatesPersistentTokenAndInvalidatesPreviousToken() throws Exception {
         var email=email(); var old=signupAndVerifyResult(email); var oldRefresh=old.getResponse().getCookie("taskmind_refresh").getValue();
-        var result=mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", oldRefresh)))
+        var result=mvc.perform(post("/v1/auth/token/refresh")
+                        .cookie(new Cookie("taskmind_refresh", oldRefresh))
+                        .header("Origin", "http://localhost:5173"))
                 .andExpect(status().isOk()).andReturn();
         var rotatedRefresh = result.getResponse().getCookie("taskmind_refresh").getValue();
         assertThat(rotatedRefresh).isNotEqualTo(oldRefresh);
-        mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", oldRefresh)))
+        mvc.perform(post("/v1/auth/token/refresh")
+                        .cookie(new Cookie("taskmind_refresh", oldRefresh))
+                        .header("Origin", "http://localhost:5173"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void logoutRevokesPersistentSession() throws Exception {
         var result=signupAndVerifyResult(email()); var refresh=result.getResponse().getCookie("taskmind_refresh").getValue();
-        mvc.perform(post("/v1/auth/logout").cookie(new Cookie("taskmind_refresh", refresh))) .andExpect(status().isNoContent()).andExpect(cookie().maxAge("taskmind_refresh", 0));
-        mvc.perform(post("/v1/auth/token/refresh").cookie(new Cookie("taskmind_refresh", refresh))) .andExpect(status().isUnauthorized());
+        mvc.perform(post("/v1/auth/logout")
+                        .cookie(new Cookie("taskmind_refresh", refresh))
+                        .header("Origin", "http://localhost:5173"))
+                .andExpect(status().isNoContent()).andExpect(cookie().maxAge("taskmind_refresh", 0));
+        mvc.perform(post("/v1/auth/token/refresh")
+                        .cookie(new Cookie("taskmind_refresh", refresh))
+                        .header("Origin", "http://localhost:5173"))
+                .andExpect(status().isUnauthorized());
     }
 
     private JsonNode signupAndVerify(String email) throws Exception { return json.readTree(signupAndVerifyResult(email).getResponse().getContentAsString()); }

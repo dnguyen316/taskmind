@@ -758,6 +758,7 @@ paths:
   /v1/auth/token/refresh:
     post:
       summary: Rotate a refresh-token session
+      description: Browsers use the HttpOnly taskmind_refresh cookie and must send a trusted Origin or Referer header matching taskmind.cors.allowed-origins; legacy clients may still send a request-body refreshToken.
       operationId: refreshToken
       tags: [Auth]
       security: []
@@ -776,10 +777,13 @@ paths:
                 $ref: '#/components/schemas/AuthTokens'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /v1/auth/logout:
     post:
       summary: Log out and invalidate a refresh-token session
+      description: Browsers use the HttpOnly taskmind_refresh cookie and must send a trusted Origin or Referer header matching taskmind.cors.allowed-origins; legacy clients may still send a request-body refreshToken.
       operationId: logout
       tags: [Auth]
       security: []
@@ -792,6 +796,8 @@ paths:
       responses:
         '204':
           description: Session invalidated
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /v1/auth/me:
     get:

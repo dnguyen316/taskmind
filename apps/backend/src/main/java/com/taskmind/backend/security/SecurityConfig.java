@@ -58,8 +58,10 @@ public class SecurityConfig implements WebMvcConfigurer {
             JwtClaimAuthenticationConverter jwtConverter,
             ObjectMapper objectMapper,
             ObjectProvider<RateLimitFilter> rateLimitFilter,
-            InternalServiceTokenFilter internalServiceTokenFilter)
+            InternalServiceTokenFilter internalServiceTokenFilter,
+            CookieAuthOriginValidationFilter cookieAuthOriginValidationFilter)
             throws Exception {
+        http.addFilterBefore(cookieAuthOriginValidationFilter, BearerTokenAuthenticationFilter.class);
         http.addFilterBefore(internalServiceTokenFilter, BearerTokenAuthenticationFilter.class);
         rateLimitFilter.ifAvailable(
                 filter -> http.addFilterAfter(filter, BearerTokenAuthenticationFilter.class));

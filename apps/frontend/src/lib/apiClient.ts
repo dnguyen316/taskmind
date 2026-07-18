@@ -9,6 +9,8 @@ import {
 } from './authToken'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+// Cookie-backed refresh/logout requests rely on the browser Origin/Referer headers;
+// do not add custom CSRF headers unless Core changes this contract.
 const REFRESH_TOKEN_PATH = '/v1/auth/token/refresh'
 
 interface AuthTokensResponse {

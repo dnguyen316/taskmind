@@ -886,3 +886,5 @@
 
 - `cd apps/frontend && npm run format -- src/features/tasks/api/tasksApi.ts src/features/tasks/composables/useTasks.ts src/features/tasks/pages/TasksPage.vue src/features/tasks/components/TaskList.vue src/features/tasks/components/TaskKanbanView.vue src/features/tasks/components/TaskBacklogView.vue`
 - `cd apps/frontend && npm run typecheck`
+
+- Documented that SPA refresh/logout continues to use the HttpOnly refresh cookie and relies on browser-supplied Origin/Referer headers; no custom frontend CSRF header is currently required.
