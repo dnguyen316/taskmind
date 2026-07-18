@@ -11,7 +11,7 @@ terraform {
   backend "s3" {
     bucket         = "taskmind-tfstate-staging"
     key            = "infra/aws/envs/staging/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "ap-southeast-2"
     dynamodb_table = "taskmind-tf-locks-staging"
     encrypt        = true
   }

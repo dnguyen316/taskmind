@@ -11,7 +11,7 @@ terraform {
   backend "s3" {
     bucket         = "taskmind-tfstate-production"
     key            = "infra/aws/envs/production/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "ap-southeast-2"
     dynamodb_table = "taskmind-tf-locks-production"
     encrypt        = true
   }
