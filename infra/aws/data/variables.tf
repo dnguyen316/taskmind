@@ -71,6 +71,18 @@ variable "final_snapshot_identifier_prefix" {
   }
 }
 
+
+variable "redis_auth_token" {
+  description = "Authentication token used by ElastiCache Redis when in-transit encryption is enabled. Store this value in Secrets Manager/SSM and inject the same value into Relay and Nova as TASKMIND_REDIS_PASSWORD."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.redis_auth_token) >= 16 && length(var.redis_auth_token) <= 128
+    error_message = "redis_auth_token must be 16 to 128 characters to satisfy ElastiCache AUTH token requirements."
+  }
+}
+
 variable "redis_node_type" {
   type    = string
   default = "cache.t4g.small"

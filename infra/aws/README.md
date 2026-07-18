@@ -104,8 +104,16 @@ different account uses nonstandard bootstrap bucket or lock table names, pass Op
 `-backend-config` overrides during `tofu init`; only override the backend region when the
 state bucket and DynamoDB table actually exist in that alternate region. Production requires
 the protected `production` GitHub Environment, an ALB HTTPS certificate ARN, RDS deletion
-protection, and final snapshots. Keep all secrets in AWS Secrets Manager or SSM Parameter
-Store, and never commit generated state files or plaintext secrets.
+protection, final snapshots, and a customer-managed CloudWatch Logs KMS key. Keep all secrets in AWS Secrets Manager or SSM Parameter
+Store, and never commit generated state files or plaintext secrets. The manual `AWS
+Infrastructure Plan` workflow expects environment-scoped variables for
+`AWS_ACCOUNT_ID`, `AWS_REGION`, `AWS_ROLE_TO_ASSUME`, `ALB_CERTIFICATE_ARN`,
+`SERVICE_IMAGES_JSON`, `CORE_SECRET_ARNS_JSON`, `RELAY_SECRET_ARNS_JSON`, and
+`NOVA_SECRET_ARNS_JSON`; optional JSON variables can supply CloudFront aliases, service
+environment, service secrets, and alarm topics. Store the ElastiCache AUTH token in the
+`TASKMIND_REDIS_PASSWORD` GitHub Environment secret so the plan can set
+`redis_auth_token`; inject the same secret into Relay and Nova as
+`TASKMIND_REDIS_PASSWORD`. Production also requires `CLOUDWATCH_LOGS_KMS_KEY_ID`.
 
 ### RDS final snapshots and disposable previews
 
@@ -184,3 +192,16 @@ The repository includes three GitHub Actions workflows for AWS deployment prepar
 
 See [`docs/deployment/aws-cicd.md`](../../docs/deployment/aws-cicd.md) for the GitHub
 Environment variables, AWS bootstrap checklist, and staging-to-production promotion model.
+
+
+## Database and Redis secrets
+
+The data module lets RDS generate and manage the PostgreSQL master password with
+`manage_master_user_password = true`; it exports `rds_master_user_secret_arn` from both
+the module and composed environment roots so operators can wire the generated secret into
+service-specific Secrets Manager/SSM values without reconstructing ARNs. ElastiCache Redis
+uses in-transit encryption plus AUTH through the sensitive `redis_auth_token` variable.
+Use the same token value as the Relay and Nova `TASKMIND_REDIS_PASSWORD` ECS secret so
+those services can authenticate to Redis after startup. ECS container secret injection is
+granted on the task execution role; runtime task roles should only keep permissions needed
+by application code.

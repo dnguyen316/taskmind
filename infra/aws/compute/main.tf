@@ -87,6 +87,27 @@ resource "aws_iam_role_policy_attachment" "execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+locals {
+  execution_secret_arns = distinct(concat(var.core_secret_arns, var.relay_secret_arns, var.nova_secret_arns))
+}
+
+data "aws_iam_policy_document" "execution_secrets" {
+  count = length(local.execution_secret_arns) > 0 ? 1 : 0
+
+  statement {
+    actions   = ["secretsmanager:GetSecretValue", "ssm:GetParameter", "ssm:GetParameters"]
+    resources = local.execution_secret_arns
+  }
+}
+
+resource "aws_iam_role_policy" "execution_secrets" {
+  count = length(local.execution_secret_arns) > 0 ? 1 : 0
+
+  name   = "secret-injection"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.execution_secrets[0].json
+}
+
 resource "aws_iam_role" "task" {
   for_each           = local.services
   name               = "${local.name}-${each.key}-task"
@@ -104,11 +125,6 @@ data "aws_iam_policy_document" "core_policy" {
     actions   = ["es:ESHttpGet", "es:ESHttpPost"]
     resources = ["${var.opensearch_domain_arn}/*"]
   }
-
-  statement {
-    actions   = ["secretsmanager:GetSecretValue", "ssm:GetParameter", "ssm:GetParameters"]
-    resources = var.core_secret_arns
-  }
 }
 
 data "aws_iam_policy_document" "relay_policy" {
@@ -116,17 +132,12 @@ data "aws_iam_policy_document" "relay_policy" {
     actions   = ["es:ESHttpGet", "es:ESHttpPost", "es:ESHttpPut", "es:ESHttpDelete"]
     resources = ["${var.opensearch_domain_arn}/*"]
   }
-
-  statement {
-    actions   = ["secretsmanager:GetSecretValue", "ssm:GetParameter", "ssm:GetParameters"]
-    resources = var.relay_secret_arns
-  }
 }
 
 data "aws_iam_policy_document" "nova_policy" {
   statement {
-    actions   = ["secretsmanager:GetSecretValue", "ssm:GetParameter", "ssm:GetParameters"]
-    resources = var.nova_secret_arns
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["*"]
   }
 }
 

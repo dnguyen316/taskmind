@@ -56,6 +56,18 @@ variable "service_images" {
   type        = map(string)
 }
 
+
+variable "redis_auth_token" {
+  description = "ElastiCache Redis AUTH token. Must match the TASKMIND_REDIS_PASSWORD secret injected into Relay and Nova."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.redis_auth_token) >= 16 && length(var.redis_auth_token) <= 128
+    error_message = "redis_auth_token must be 16 to 128 characters to satisfy ElastiCache AUTH token requirements."
+  }
+}
+
 variable "service_environment" {
   type    = map(list(object({ name = string, value = string })))
   default = {}

@@ -25,3 +25,8 @@ output "frontend_bucket_name" {
 output "dashboard_name" {
   value = module.observability.dashboard_name
 }
+
+output "rds_master_user_secret_arn" {
+  value     = module.data.rds_master_user_secret_arn
+  sensitive = true
+}
