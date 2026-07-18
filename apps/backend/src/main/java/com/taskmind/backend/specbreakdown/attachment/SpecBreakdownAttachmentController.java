@@ -48,7 +48,7 @@ public class SpecBreakdownAttachmentController {
                                             file.getSize(),
                                             file.getInputStream())));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload", e);
         }
@@ -59,7 +59,7 @@ public class SpecBreakdownAttachmentController {
         try {
             return service.list(requester, draftId).stream().map(this::toResponse).toList();
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -72,7 +72,7 @@ public class SpecBreakdownAttachmentController {
             service.delete(requester, draftId, attachmentId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 

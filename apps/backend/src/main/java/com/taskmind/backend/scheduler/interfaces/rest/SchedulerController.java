@@ -64,7 +64,7 @@ public class SchedulerController {
                     "Scheduling preferences were updated by another request",
                     e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
@@ -84,7 +84,7 @@ public class SchedulerController {
                             .toList();
             return new GenerateScheduleResponse(generated, proposals.overdueProposals(requester));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
@@ -118,7 +118,7 @@ public class SchedulerController {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Scheduled block was updated by another request", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -131,7 +131,7 @@ public class SchedulerController {
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 }

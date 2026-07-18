@@ -48,7 +48,7 @@ public class IntegrationController {
                             request.refreshToken(),
                             request.scopes())));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
@@ -71,7 +71,7 @@ public class IntegrationController {
                             request.externalProjectName(),
                             request.metadataJson())));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -80,7 +80,7 @@ public class IntegrationController {
         try {
             return links.list(actor, projectId).stream().map(ProjectLinkResponse::from).toList();
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -93,7 +93,7 @@ public class IntegrationController {
         try {
             return GitHubRepositoryResponse.from(github.getRepository(actor, connectionId, owner, repo));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
@@ -112,7 +112,7 @@ public class IntegrationController {
                             request.repo(),
                             request.allowedOperations())));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -123,7 +123,7 @@ public class IntegrationController {
             return ImportRunResponse.from(
                     imports.importIssues(actor, projectLinkId, request.limit() == null ? 0 : request.limit()));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 

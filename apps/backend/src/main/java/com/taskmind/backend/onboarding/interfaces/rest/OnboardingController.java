@@ -39,7 +39,7 @@ public class OnboardingController {
         try {
             return onboarding.resetDemoWorkspace(user);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 

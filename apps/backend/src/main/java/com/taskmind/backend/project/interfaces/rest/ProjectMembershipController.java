@@ -44,11 +44,11 @@ public class ProjectMembershipController {
                             actor, projectId, request.userId(), request.role());
             return ResponseEntity.status(HttpStatus.CREATED).body(membership);
         } catch (ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request conflicts with the current resource state.", e);
         }
     }
 
@@ -58,9 +58,9 @@ public class ProjectMembershipController {
         try {
             projectMembershipApplicationService.removeMember(actor, projectId, userId);
         } catch (ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
         return ResponseEntity.noContent().build();
     }
@@ -71,9 +71,9 @@ public class ProjectMembershipController {
         try {
             return projectMembershipApplicationService.listMembers(actor, projectId);
         } catch (ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 }

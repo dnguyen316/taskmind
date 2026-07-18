@@ -52,7 +52,7 @@ public class SpecBreakdownController {
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(service.startJob(user, id, request.aiJobType()));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 
@@ -79,7 +79,7 @@ public class SpecBreakdownController {
         try {
             return Map.of("taskIds", service.materialize(user, id));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 

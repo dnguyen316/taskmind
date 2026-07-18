@@ -4,6 +4,9 @@ import static com.taskmind.backend.security.TestJwtSupport.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -76,6 +79,29 @@ class ProjectControllerTest {
     }
 
 
+
+    @Test
+    void conflictProblemDetailsDoNotExposeInternalMessages() throws Exception {
+        var key = projectKey();
+        mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"name": "First", "key": "%s"}
+                            """.formatted(key)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/v1/projects").with(jwt(OWNER_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"name": "Duplicate", "key": "%s"}
+                            """.formatted(key)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PUBLIC_REQUEST_CONFLICT"))
+                .andExpect(content().string(not(containsString("IllegalArgumentException"))))
+                .andExpect(content().string(not(containsString("SQLException"))))
+                .andExpect(content().string(not(containsString("select *"))))
+                .andExpect(content().string(not(containsString(key))));
+    }
 
     @Test
     void projectRoleCapabilityMatrixControlsReadUpdateAndArchive() throws Exception {

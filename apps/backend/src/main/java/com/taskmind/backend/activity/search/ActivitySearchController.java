@@ -38,7 +38,7 @@ public class ActivitySearchController {
         try {
             return service.search(requester, query, size, entityType, status, projectId, from, to, eventType);
         } catch (ActivitySearchDisabledException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         }
     }
 
@@ -62,7 +62,7 @@ public class ActivitySearchController {
         try {
             return service.suggest(requester, query, size, entityType, status, projectId, from, to, eventType);
         } catch (ActivitySearchDisabledException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         }
     }
 
@@ -80,7 +80,7 @@ public class ActivitySearchController {
         try {
             return service.recommend(requester, query, size, entityType, status, projectId, from, to, eventType);
         } catch (ActivitySearchDisabledException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         }
     }
 }

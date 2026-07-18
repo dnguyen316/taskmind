@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskmind.backend.attachment.domain.repository.ObjectStoragePort;
@@ -154,7 +156,11 @@ class TaskAttachmentControllerTest {
                                         taskId,
                                         attachmentId)
                                 .with(jwt(userId)))
-                .andExpect(status().isServiceUnavailable());
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().string(not(containsString("s3://taskmind"))))
+                .andExpect(content().string(not(containsString("secret-access"))))
+                .andExpect(content().string(not(containsString("java.lang"))))
+                .andExpect(content().string(not(containsString("select *"))));
     }
 
     @Test
@@ -170,7 +176,11 @@ class TaskAttachmentControllerTest {
                                 .file(file)
                                 .param("mediaKind", "DOCUMENT")
                                 .with(jwt(userId)))
-                .andExpect(status().isServiceUnavailable());
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().string(not(containsString("s3://taskmind"))))
+                .andExpect(content().string(not(containsString("secret-access"))))
+                .andExpect(content().string(not(containsString("SQLException"))))
+                .andExpect(content().string(not(containsString("select *"))));
 
         mockMvc.perform(get("/v1/tasks/{taskId}/attachments", taskId).with(jwt(userId)))
                 .andExpect(status().isOk())
@@ -284,7 +294,7 @@ class TaskAttachmentControllerTest {
         public void put(String key, InputStream content, long sizeBytes, String contentType)
                 throws IOException {
             if (failPut) {
-                throw new RuntimeException("storage unavailable");
+                throw new RuntimeException("S3 write failed for s3://taskmind/private/key token=secret-access java.sql.SQLException: select * from attachments");
             }
             byte[] bytes = StreamUtils.copyToByteArray(content);
             objects.put(key, new StoredObject(new ByteArrayResource(bytes), contentType, sizeBytes));
@@ -293,7 +303,7 @@ class TaskAttachmentControllerTest {
         @Override
         public StoredObject get(String key) throws IOException {
             if (failGet) {
-                throw new RuntimeException("storage unavailable");
+                throw new RuntimeException("S3 write failed for s3://taskmind/private/key token=secret-access java.sql.SQLException: select * from attachments");
             }
             StoredObject object = objects.get(key);
             if (object == null) {

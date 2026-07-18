@@ -2,7 +2,9 @@ package com.taskmind.backend.team;
 
 import static com.taskmind.backend.security.TestJwtSupport.jwt;
 import static com.taskmind.backend.security.TestJwtSupport.jwtWithPermissions;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -72,7 +74,11 @@ class TeamControllerTest {
     void memberCannotEnumerateWholeDirectory() throws Exception {
         mockMvc.perform(get("/v1/team/directory")
                         .with(jwt("11111111-1111-1111-1111-111111111111", "MEMBER")))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(not(containsString("SecurityException"))))
+                .andExpect(content().string(not(containsString("java.lang"))))
+                .andExpect(content().string(not(containsString("token="))))
+                .andExpect(content().string(not(containsString("select *"))));
     }
 
     @Test
@@ -134,7 +140,11 @@ class TeamControllerTest {
                         .content("""
                             {"role": "MEMBER"}
                             """))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(not(containsString("ProjectMembershipForbiddenException"))))
+                .andExpect(content().string(not(containsString("java.lang"))))
+                .andExpect(content().string(not(containsString("token="))))
+                .andExpect(content().string(not(containsString("select *"))));
     }
 
     @Test

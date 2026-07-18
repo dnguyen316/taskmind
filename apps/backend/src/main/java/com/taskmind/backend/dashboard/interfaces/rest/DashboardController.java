@@ -21,7 +21,7 @@ public class DashboardController {
         try {
             return service.dashboard(requester);
         } catch (RelayClientException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         }
     }
 }

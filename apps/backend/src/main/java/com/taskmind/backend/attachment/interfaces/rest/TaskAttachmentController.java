@@ -57,11 +57,11 @@ public class TaskAttachmentController {
                     e.isSizeLimitViolation()
                             ? HttpStatus.PAYLOAD_TOO_LARGE
                             : HttpStatus.BAD_REQUEST;
-            throw new ResponseStatusException(status, e.getMessage(), e);
+            throw new ResponseStatusException(status, "The attachment request could not be processed.", e);
         } catch (AttachmentAccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (AttachmentStorageException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload", e);
         }
@@ -72,7 +72,7 @@ public class TaskAttachmentController {
         try {
             return service.list(requester, taskId).stream().map(this::toResponse).toList();
         } catch (AttachmentAccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -116,11 +116,11 @@ public class TaskAttachmentController {
                                     .toString())
                     .body(download.resource());
         } catch (AttachmentAccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (AttachmentStorageException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "A dependent service is temporarily unavailable.", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 
@@ -133,9 +133,9 @@ public class TaskAttachmentController {
             service.delete(requester, taskId, attachmentId);
             return ResponseEntity.noContent().build();
         } catch (AttachmentAccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 }
