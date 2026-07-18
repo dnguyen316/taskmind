@@ -1,3 +1,20 @@
+## 2026-07-18 - E2E bypass dangerous seed guard
+
+### Changed
+
+- Hardened Core E2E auth bypass startup validation so the known super-admin seed requires an explicit `taskmind.auth.e2e-bypass.allow-dangerous-local-seed=true` opt-in and exactly one allowed `local`, `test`, or `e2e` profile.
+- Moved the local known-user bypass defaults out of `application-local.properties`; the bypass seed now lives in the dedicated `e2e` profile while normal local development keeps it disabled.
+
+### Tests
+
+- Added guard coverage for the secondary opt-in and mixed public profile startup failures.
+
+### Closeout notes
+
+- Primary milestone: M03 Auth/security hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-18 - Attachment storage failure handling
 
 ### Changed
