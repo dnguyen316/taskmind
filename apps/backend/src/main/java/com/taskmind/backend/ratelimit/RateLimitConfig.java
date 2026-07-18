@@ -16,10 +16,16 @@ public class RateLimitConfig {
     }
 
     @Bean
+    ClientIpResolver clientIpResolver(RateLimitProperties properties) {
+        return new ClientIpResolver(properties);
+    }
+
+    @Bean
     RateLimitFilter rateLimitFilter(
             RateLimitProperties properties,
             RateLimitService rateLimitService,
-            ObjectMapper objectMapper) {
-        return new RateLimitFilter(properties, rateLimitService, objectMapper);
+            ObjectMapper objectMapper,
+            ClientIpResolver clientIpResolver) {
+        return new RateLimitFilter(properties, rateLimitService, objectMapper, clientIpResolver);
     }
 }

@@ -1,3 +1,20 @@
+## 2026-07-18 - E2E bypass dangerous seed guard
+
+### Changed
+
+- Hardened Core E2E auth bypass startup validation so the known super-admin seed requires an explicit `taskmind.auth.e2e-bypass.allow-dangerous-local-seed=true` opt-in and exactly one allowed `local`, `test`, or `e2e` profile.
+- Moved the local known-user bypass defaults out of `application-local.properties`; the bypass seed now lives in the dedicated `e2e` profile while normal local development keeps it disabled.
+
+### Tests
+
+- Added guard coverage for the secondary opt-in and mixed public profile startup failures.
+
+### Closeout notes
+
+- Primary milestone: M03 Auth/security hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-18 - Attachment storage failure handling
 
 ### Changed
@@ -1196,5 +1213,21 @@ This changelog tracks backend feature progress against the core implementation p
 ### Closeout notes
 
 - Primary milestone: M13 hardening / M01 global error handling.
+
+## 2026-07-18 - Rate-limit client IP hardening
+
+### Changed
+
+- Replaced direct `X-Forwarded-For` parsing in Core rate limiting with a shared normalized client IP resolver that only trusts forwarded client IPs from configured proxy IPs/CIDRs.
+- Added client IP MDC population from the same resolver used by rate-limit bucket derivation.
+- Documented CDN/load-balancer requirements to strip inbound forwarding headers and inject canonical forwarding headers.
+
+### Tests
+
+- Added Core rate-limit filter coverage for spoofed direct requests, trusted proxy forwarding, and auth-flow buckets per effective client IP.
+
+### Closeout notes
+
+- Primary milestone: M13 observability hardening.
 - Skills used: none.
 - Agent delegation: none.

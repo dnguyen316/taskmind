@@ -1,5 +1,6 @@
 package com.taskmind.backend.config.logging;
 
+import com.taskmind.backend.ratelimit.ClientIpResolver;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,9 +11,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class RequestContextFilter extends OncePerRequestFilter {
     private final RequestLoggingProperties properties;
+    private final ClientIpResolver clientIpResolver;
 
-    public RequestContextFilter(RequestLoggingProperties properties) {
+    public RequestContextFilter(
+            RequestLoggingProperties properties, ClientIpResolver clientIpResolver) {
         this.properties = properties;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -23,11 +27,13 @@ public class RequestContextFilter extends OncePerRequestFilter {
                 RequestCorrelation.normalizeOrGenerate(
                         request.getHeader(properties.correlationHeader()));
         MDC.put(properties.mdcKey(), correlationId);
+        MDC.put(ClientIpResolver.MDC_KEY, clientIpResolver.resolve(request));
         response.setHeader(properties.correlationHeader(), correlationId);
         try {
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(properties.mdcKey());
+            MDC.remove(ClientIpResolver.MDC_KEY);
         }
     }
 }

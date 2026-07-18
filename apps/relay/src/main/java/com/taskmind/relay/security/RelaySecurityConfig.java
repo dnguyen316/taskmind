@@ -5,15 +5,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -28,9 +25,9 @@ public class RelaySecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers("/actuator/prometheus")
-                                        .authenticated()
+                                        .hasRole("SERVICE")
                                         .requestMatchers("/internal/**")
-                                        .authenticated()
+                                        .hasRole("SERVICE")
                                         .anyRequest()
                                         .denyAll())
                 .addFilterBefore(serviceTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -59,22 +56,8 @@ public class RelaySecurityConfig {
                 throws ServletException, IOException {
             String authorization = request.getHeader("Authorization");
             if (authorization != null && authorization.equals("Bearer " + serviceToken)) {
-                AbstractAuthenticationToken authentication =
-                        new AbstractAuthenticationToken(
-                                List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))) {
-                            @Override
-                            public Object getCredentials() {
-                                return serviceToken;
-                            }
-
-                            @Override
-                            public Object getPrincipal() {
-                                return "taskmind-service";
-                            }
-                        };
-                authentication.setAuthenticated(true);
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                        .setAuthentication(new ServiceAuthenticationToken());
             }
             filterChain.doFilter(request, response);
         }

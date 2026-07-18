@@ -6,6 +6,8 @@ import com.taskmind.backend.config.logging.ProblemDetailLogging;
 import com.taskmind.backend.config.logging.RequestContextFilter;
 import com.taskmind.backend.config.logging.RequestLoggingProperties;
 import com.taskmind.backend.integration.infrastructure.ProviderClientException;
+import com.taskmind.backend.ratelimit.ClientIpResolver;
+import com.taskmind.backend.ratelimit.RateLimitProperties;
 import com.taskmind.backend.task.application.TaskAccessDeniedException;
 import com.taskmind.backend.task.application.TaskErrorCode;
 import com.taskmind.backend.task.application.TaskErrorMetadata;
@@ -25,7 +27,10 @@ class ApiExceptionHandlerTest {
     private static final String CORRELATION_ID = "test-correlation-123";
 
     private final ApiExceptionHandler handler = new ApiExceptionHandler(problemDetailLogging());
-    private final RequestContextFilter filter = new RequestContextFilter(new RequestLoggingProperties(null, null, false));
+    private final RequestContextFilter filter =
+            new RequestContextFilter(
+                    new RequestLoggingProperties(null, null, false),
+                    new ClientIpResolver(new RateLimitProperties()));
 
     @Test
     void enrichesTaskProblemsWithCorrelationIdWithoutChangingCode() throws Exception {
