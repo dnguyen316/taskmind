@@ -24,14 +24,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final RateLimitProperties properties;
     private final RateLimitService rateLimitService;
     private final ObjectMapper objectMapper;
+    private final ClientIpResolver clientIpResolver;
 
     public RateLimitFilter(
             RateLimitProperties properties,
             RateLimitService rateLimitService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ClientIpResolver clientIpResolver) {
         this.properties = properties;
         this.rateLimitService = rateLimitService;
         this.objectMapper = objectMapper;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -64,20 +67,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String prefix = properties.getKeyPrefix();
         if (matches(path, properties.getAuthFlowPaths())) {
             return new BucketSelection(
-                    prefix + ":auth-flow:" + clientIp(request), properties.getAuthFlow());
+                    prefix + ":auth-flow:" + clientIpResolver.resolve(request),
+                    properties.getAuthFlow());
         }
         if (matches(path, properties.getAiHeavyPaths())) {
             String identity = authenticatedIdentity();
             return new BucketSelection(
-                    prefix + ":ai-heavy:" + (identity == null ? clientIp(request) : identity),
+                    prefix
+                            + ":ai-heavy:"
+                            + (identity == null ? clientIpResolver.resolve(request) : identity),
                     properties.getAiHeavy());
         }
         String identity = authenticatedIdentity();
         if (identity != null) {
-            return new BucketSelection(
-                    prefix + ":user:" + identity, properties.getAuthenticated());
+            return new BucketSelection(prefix + ":user:" + identity, properties.getAuthenticated());
         }
-        return new BucketSelection(prefix + ":ip:" + clientIp(request), properties.getAnonymous());
+        return new BucketSelection(
+                prefix + ":ip:" + clientIpResolver.resolve(request), properties.getAnonymous());
     }
 
     private String authenticatedIdentity() {
@@ -97,14 +103,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private boolean matches(String path, List<String> prefixes) {
         return prefixes.stream().anyMatch(prefix -> path.equals(prefix) || path.startsWith(prefix));
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private void writeLimitExceeded(HttpServletResponse response) throws IOException {

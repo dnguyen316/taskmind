@@ -2,6 +2,8 @@ package com.taskmind.backend.config.logging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskmind.backend.ratelimit.ClientIpResolver;
+import com.taskmind.backend.ratelimit.RateLimitProperties;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
@@ -14,7 +16,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class RequestContextFilterTest {
     private final RequestLoggingProperties properties =
             new RequestLoggingProperties(null, null, false);
-    private final RequestContextFilter filter = new RequestContextFilter(properties);
+    private final RateLimitProperties rateLimitProperties = new RateLimitProperties();
+    private final RequestContextFilter filter =
+            new RequestContextFilter(properties, new ClientIpResolver(rateLimitProperties));
 
     @AfterEach
     void clearMdc() {
@@ -33,6 +37,7 @@ class RequestContextFilterTest {
         assertThat(chain.correlationId).isNotBlank();
         assertThat(response.getHeader(RequestCorrelation.HEADER_NAME))
                 .isEqualTo(chain.correlationId);
+        assertThat(chain.clientIp).isEqualTo("127.0.0.1");
     }
 
     @Test
@@ -61,12 +66,14 @@ class RequestContextFilterTest {
 
     private static class CapturingFilterChain extends MockFilterChain {
         private String correlationId;
+        private String clientIp;
 
         @Override
         public void doFilter(
                 jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response)
                 throws IOException, ServletException {
             correlationId = MDC.get(RequestCorrelation.MDC_KEY);
+            clientIp = MDC.get(ClientIpResolver.MDC_KEY);
             super.doFilter(request, response);
         }
     }

@@ -1181,3 +1181,22 @@ This changelog tracks backend feature progress against the core implementation p
 - Agent delegation: none.
 
 - Hardened cookie-backed auth refresh/logout with strict trusted Origin/Referer validation for the `taskmind_refresh` cookie while keeping legacy request-body refresh tokens for non-browser clients.
+
+
+## 2026-07-18 - Rate-limit client IP hardening
+
+### Changed
+
+- Replaced direct `X-Forwarded-For` parsing in Core rate limiting with a shared normalized client IP resolver that only trusts forwarded client IPs from configured proxy IPs/CIDRs.
+- Added client IP MDC population from the same resolver used by rate-limit bucket derivation.
+- Documented CDN/load-balancer requirements to strip inbound forwarding headers and inject canonical forwarding headers.
+
+### Tests
+
+- Added Core rate-limit filter coverage for spoofed direct requests, trusted proxy forwarding, and auth-flow buckets per effective client IP.
+
+### Closeout notes
+
+- Primary milestone: M13 observability hardening.
+- Skills used: none.
+- Agent delegation: none.

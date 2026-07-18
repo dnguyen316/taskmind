@@ -141,7 +141,7 @@ flowchart LR
 | `e2e`     | isolated browser E2E opt-in layered onto non-prod environments; bypass on        |
 | `prod`    | requires `TASKMIND_JWT_SECRET`; bypass must be off (enforced)                    |
 
-Key environment and property families: `TASKMIND_JWT_SECRET`, `TASKMIND_*_SERVICE_TOKEN`, `TASKMIND_ATTACHMENTS_*` / `TASKMIND_ATTACHMENTS_S3_*` for attachment storage and S3, `spring.elasticsearch.uris` for OpenSearch, `TASKMIND_AI_*` for Nova provider routing, `taskmind.outbox.*`, `taskmind.relay.*`, and `taskmind.ratelimit.*`.
+Key environment and property families: `TASKMIND_JWT_SECRET`, `TASKMIND_*_SERVICE_TOKEN`, `TASKMIND_ATTACHMENTS_*` / `TASKMIND_ATTACHMENTS_S3_*` for attachment storage and S3, `spring.elasticsearch.uris` for OpenSearch, `TASKMIND_AI_*` for Nova provider routing, `taskmind.outbox.*`, `taskmind.relay.*`, and `taskmind.ratelimit.*`. Set `taskmind.ratelimit.trusted-proxies` / `TASKMIND_RATELIMIT_TRUSTED_PROXIES` only to known CDN or load-balancer source IPs/CIDRs; Core ignores inbound forwarding headers from all other remote addresses. The CDN/load balancer must strip any client-supplied `X-Forwarded-*` / `Forwarded` headers before injecting canonical forwarding headers so the first `X-Forwarded-For` value is the verified client IP.
 
 ## Testing
 
