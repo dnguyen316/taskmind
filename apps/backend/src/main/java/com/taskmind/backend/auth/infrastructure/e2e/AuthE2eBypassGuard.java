@@ -13,11 +13,15 @@ public class AuthE2eBypassGuard {
 
     private final Environment environment;
     private final boolean enabled;
+    private final boolean dangerousLocalSeedAllowed;
 
     public AuthE2eBypassGuard(
-            Environment environment, @Value("${taskmind.auth.e2e-bypass.enabled:false}") boolean enabled) {
+            Environment environment,
+            @Value("${taskmind.auth.e2e-bypass.enabled:false}") boolean enabled,
+            @Value("${taskmind.auth.e2e-bypass.allow-dangerous-local-seed:false}") boolean dangerousLocalSeedAllowed) {
         this.environment = environment;
         this.enabled = enabled;
+        this.dangerousLocalSeedAllowed = dangerousLocalSeedAllowed;
     }
 
     @PostConstruct
@@ -26,10 +30,15 @@ public class AuthE2eBypassGuard {
             return;
         }
 
-        java.util.List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
-        if (activeProfiles.stream().noneMatch(ALLOWED_BYPASS_PROFILES::contains)) {
+        if (!dangerousLocalSeedAllowed) {
             throw new IllegalStateException(
-                    "E2E authentication bypass may only be enabled with local, test, or e2e profiles");
+                    "E2E authentication bypass requires taskmind.auth.e2e-bypass.allow-dangerous-local-seed=true");
+        }
+
+        java.util.List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
+        if (activeProfiles.size() != 1 || !ALLOWED_BYPASS_PROFILES.contains(activeProfiles.get(0))) {
+            throw new IllegalStateException(
+                    "E2E authentication bypass may only be enabled with exactly one of the local, test, or e2e profiles");
         }
     }
 }
