@@ -72,8 +72,10 @@ public class SecurityConfig implements WebMvcConfigurer {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/health", "/actuator/prometheus")
+                                auth.requestMatchers("/api/health")
                                         .permitAll()
+                                        .requestMatchers("/actuator/prometheus")
+                                        .authenticated()
                                         .requestMatchers(PUBLIC_AUTH_ROUTES)
                                         .permitAll()
                                         .requestMatchers("/v1/**", "/internal/**")

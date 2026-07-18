@@ -132,7 +132,12 @@ development exposes each service's Prometheus scrape endpoint at `/actuator/prom
 and uses the local observability compose stack to run **Prometheus** and **Grafana**. The
 Prometheus config scrapes Core on `backend:8080`, Relay on `relay:8081`, and Nova on
 `ai:8082` with `metrics_path: /actuator/prometheus`; Grafana is provisioned with that
-Prometheus datasource.
+Prometheus datasource. Metrics endpoints are not public: Prometheus must scrape them from
+the private service network and present the same service-token credential used for
+internal calls (Core/Nova use the Nova service token; Relay uses the Relay service token).
+Anonymous requests to `/actuator/prometheus` are rejected, so production scrapers should
+load bearer tokens from AWS Secrets Manager or an equivalent secret mount rather than
+embedding them in task definitions.
 
 Production metrics should use the same Micrometer/Prometheus metric contracts. The
 preferred AWS path is **Amazon Managed Service for Prometheus** scraping the ECS service

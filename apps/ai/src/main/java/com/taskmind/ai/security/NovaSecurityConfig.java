@@ -34,7 +34,7 @@ public class NovaSecurityConfig {
                                 auth.requestMatchers("/api/health")
                                         .permitAll()
                                         .requestMatchers("/actuator/prometheus")
-                                        .permitAll()
+                                        .authenticated()
                                         .requestMatchers("/internal/**")
                                         .authenticated()
                                         .anyRequest()

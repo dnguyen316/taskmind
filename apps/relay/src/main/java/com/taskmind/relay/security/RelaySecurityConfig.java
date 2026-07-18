@@ -27,7 +27,7 @@ public class RelaySecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers("/actuator/prometheus")
-                                        .permitAll()
+                                        .authenticated()
                                         .requestMatchers("/internal/**")
                                         .authenticated()
                                         .anyRequest()

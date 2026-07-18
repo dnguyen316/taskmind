@@ -35,7 +35,11 @@ import org.springframework.test.web.servlet.MockMvc;
     CookieAuthOriginValidationFilter.class,
     SecurityRouteTest.ActuatorProbeController.class
 })
-@TestPropertySource(properties = "taskmind.cors.allowed-origins=http://localhost:5173")
+@TestPropertySource(
+        properties = {
+            "taskmind.cors.allowed-origins=http://localhost:5173",
+            "taskmind.nova.service-token=test-only-nova-token"
+        })
 class SecurityRouteTest {
 
     @Autowired private MockMvc mockMvc;
@@ -159,8 +163,10 @@ class SecurityRouteTest {
 
 
     @Test
-    void allowsUnauthenticatedPrometheusScrapes() throws Exception {
-        mockMvc.perform(get("/actuator/prometheus"))
+    void protectsPrometheusScrapesWithServiceToken() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus")).andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/actuator/prometheus").header("X-Service-Token", "test-only-nova-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("# HELP taskmind_test_metric Test metric\n"));
     }
