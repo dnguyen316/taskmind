@@ -1179,3 +1179,5 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M02 backend foundation/error handling hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+- Hardened cookie-backed auth refresh/logout with strict trusted Origin/Referer validation for the `taskmind_refresh` cookie while keeping legacy request-body refresh tokens for non-browser clients.
