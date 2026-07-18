@@ -10,7 +10,7 @@ public class AttachmentStorageProperties {
     private Path filesystemRoot = Path.of("build/taskmind-attachments");
     private String bucket = "taskmind-attachments";
     private String s3Endpoint;
-    private String s3Region = "us-east-1";
+    private String s3Region = "ap-southeast-2";
     private boolean s3PathStyleAccess = true;
 
     public String getAdapter() {
