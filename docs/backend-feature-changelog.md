@@ -1231,3 +1231,21 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M13 observability hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-18 - Production refresh-cookie hardening
+
+### Changed
+
+- Added explicit production refresh-cookie settings so Core marks `taskmind_refresh` as Secure and SameSite=Lax for the public browser login flow.
+- Added a startup guard that fails non-local/non-test backend profiles when refresh cookies are configured without the Secure attribute.
+
+### Tests
+
+- Added prod-profile refresh-cookie contract coverage for HttpOnly, Secure, SameSite, scoped auth path, and refresh-token omission from JSON responses.
+- Added negative startup coverage for production-like insecure refresh-cookie configuration.
+
+### Closeout notes
+
+- Primary milestone: M13 security hardening.
+- Skills used: none.
+- Agent delegation: none.
