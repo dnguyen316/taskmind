@@ -11,13 +11,13 @@ All three Spring Boot services share **Java 17 + Spring Boot 3.3.5**, the **DDD 
 
 ## Service map
 
-| Service | Module | Port | Public | Owns |
-|---------|--------|------|--------|------|
-| **Core** | `apps/backend` | 8080 | yes | system of record, auth, all FE-facing APIs, AI/Nova facades, outbox |
-| **Relay** | `apps/relay` | 8081 | no | event projections, analytics rollups, OpenSearch indexing, Nova context |
-| **Nova** | `apps/ai` | 8082 | no | LLM orchestration, capabilities, chat, `ai_runs` audit |
-| `libs/events` | shared jar | — | — | `DomainEvent` envelope + `EventTypes` for Core → Relay |
-| `libs/ai-contracts` | shared jar | — | — | Core ↔ Nova request/response records + JSON schemas |
+| Service             | Module         | Port | Public | Owns                                                                    |
+| ------------------- | -------------- | ---- | ------ | ----------------------------------------------------------------------- |
+| **Core**            | `apps/backend` | 8080 | yes    | system of record, auth, all FE-facing APIs, AI/Nova facades, outbox     |
+| **Relay**           | `apps/relay`   | 8081 | no     | event projections, analytics rollups, OpenSearch indexing, Nova context |
+| **Nova**            | `apps/ai`      | 8082 | no     | LLM orchestration, capabilities, chat, `ai_runs` audit                  |
+| `libs/events`       | shared jar     | —    | —      | `DomainEvent` envelope + `EventTypes` for Core → Relay                  |
+| `libs/ai-contracts` | shared jar     | —    | —      | Core ↔ Nova request/response records + JSON schemas                     |
 
 Build order in the Maven reactor: `libs/events` → `libs/ai-contracts` → `apps/backend` → `apps/relay` → `apps/ai`. The frontend is **not** in the reactor.
 
@@ -25,26 +25,26 @@ Build order in the Maven reactor: `libs/events` → `libs/ai-contracts` → `app
 
 Each feature is an independent vertical slice. The `task` module is the **reference example**; mirror its shape everywhere.
 
-| Module | Responsibility | Notable pieces |
-|--------|----------------|----------------|
-| `task` | Tasks, hierarchy, links, types, releases | `TaskController`, `TaskApplicationService`, `TaskHierarchyRules`, `TaskTypeRules` |
-| `project` | Projects, memberships, AI brief facade | `ProjectController`, `ProjectBriefController` |
-| `auth` | Users, RBAC, sessions, OTP, OAuth, JWT issue/refresh | `OtpService`, `JwtTokenService`, identity tables |
-| `scheduler` | Preferences, blocks, auto-schedule, reschedule proposals | `RescheduleProposalEngine`, `RescheduleProposalService` |
-| `comment` | Task comments + reactions | `CommentAuthorResolver` |
-| `attachment` | Task attachments through `ObjectStoragePort` | upload/list/download/delete |
-| `notification` | In-app + SSE + email digest + Slack + reminders | `NotificationDigestJob`, `NotificationSlackDispatcher` |
-| `integration` | Jira Cloud + GitHub + wiki connect/import/publish | `JiraRestClient`, `GitHubRestClient`, OAuth state |
-| `specbreakdown` | Async spec → Epic/Story/Subtask jobs + templates | `SpecHierarchyValidator`, `SpecBreakdownProcessingCheckpoint` |
-| `ai` | BFF facades to Nova (`/v1/ai/**`, `/v1/nova/**`) | `NovaAiClient`, `AiFacadeApplicationService`, local fallbacks |
-| `dashboard` | Aggregated home (`/v1/dashboard`) | read aggregation |
-| `analytics` | `/v1/reports` over Relay rollups | `AnalyticsRollupRepository` |
-| `activity` | Activity log + `/v1/activity/search` | `ActivitySearchController` using OpenSearch |
-| `team` | `/v1/team/directory` aggregation | team directory aggregation |
-| `outbox` | Transactional outbox + Redis Streams publish | `RedisStreamEventTransport`, poller |
-| `events` | Core-side event publishers wrapping `libs/events` | `task/project` publishers |
-| `internal` | Service-token read APIs for Nova | `InternalTaskReadController` |
-| `ratelimit` | Bucket4j Redis per-user and AI quotas | `RateLimitFilter` |
+| Module          | Responsibility                                           | Notable pieces                                                                    |
+| --------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `task`          | Tasks, hierarchy, links, types, releases                 | `TaskController`, `TaskApplicationService`, `TaskHierarchyRules`, `TaskTypeRules` |
+| `project`       | Projects, memberships, AI brief facade                   | `ProjectController`, `ProjectBriefController`                                     |
+| `auth`          | Users, RBAC, sessions, OTP, OAuth, JWT issue/refresh     | `OtpService`, `JwtTokenService`, identity tables                                  |
+| `scheduler`     | Preferences, blocks, auto-schedule, reschedule proposals | `RescheduleProposalEngine`, `RescheduleProposalService`                           |
+| `comment`       | Task comments + reactions                                | `CommentAuthorResolver`                                                           |
+| `attachment`    | Task attachments through `ObjectStoragePort`             | upload/list/download/delete                                                       |
+| `notification`  | In-app + SSE + email digest + Slack + reminders          | `NotificationDigestJob`, `NotificationSlackDispatcher`                            |
+| `integration`   | Jira Cloud + GitHub + wiki connect/import/publish        | `JiraRestClient`, `GitHubRestClient`, OAuth state                                 |
+| `specbreakdown` | Async spec → Epic/Story/Subtask jobs + templates         | `SpecHierarchyValidator`, `SpecBreakdownProcessingCheckpoint`                     |
+| `ai`            | BFF facades to Nova (`/v1/ai/**`, `/v1/nova/**`)         | `NovaAiClient`, `AiFacadeApplicationService`, local fallbacks                     |
+| `dashboard`     | Aggregated home (`/v1/dashboard`)                        | read aggregation                                                                  |
+| `analytics`     | `/v1/reports` over Relay rollups                         | `AnalyticsRollupRepository`                                                       |
+| `activity`      | Activity log + `/v1/activity/search`                     | `ActivitySearchController` using OpenSearch                                       |
+| `team`          | `/v1/team/directory` aggregation                         | team directory aggregation                                                        |
+| `outbox`        | Transactional outbox + Redis Streams publish             | `RedisStreamEventTransport`, poller                                               |
+| `events`        | Core-side event publishers wrapping `libs/events`        | `task/project` publishers                                                         |
+| `internal`      | Service-token read APIs for Nova                         | `InternalTaskReadController`                                                      |
+| `ratelimit`     | Bucket4j Redis per-user and AI quotas                    | `RateLimitFilter`                                                                 |
 
 ### Task API authorization error policy
 
@@ -59,11 +59,11 @@ would be disclosed.
 
 Cross-cutting packages are not feature slices:
 
-| Package | Holds |
-|---------|-------|
-| `config` | `WebClientConfig`, `WebCorsConfig`, `SchedulingConfig`, `ShedLockConfig`, OpenSearch autoconfig exclusions |
+| Package    | Holds                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| `config`   | `WebClientConfig`, `WebCorsConfig`, `SchedulingConfig`, `ShedLockConfig`, OpenSearch autoconfig exclusions   |
 | `security` | `SecurityConfig`, `ApiSecurityAuthorization`, `JwtClaimAuthenticationConverter`, `AuthenticatedUserResolver` |
-| `common` | `web` logging/error helpers, `email`, `slack`, `content`, shared domain helpers |
+| `common`   | `web` logging/error helpers, `email`, `slack`, `content`, shared domain helpers                              |
 
 ## Four-layer anatomy (per module)
 
@@ -133,15 +133,15 @@ flowchart LR
 
 ## Configuration & profiles
 
-| Profile | Use |
-|---------|-----|
-| `local` | dev against compose infra; E2E bypass on |
-| `test` | H2 in PostgreSQL mode; Flyway runs; OpenSearch/ES autoconfig excluded; bypass on |
-| `staging` | pre-prod; bypass off by default |
-| `e2e` | isolated browser E2E opt-in layered onto non-prod environments; bypass on |
-| `prod` | requires `TASKMIND_JWT_SECRET`; bypass must be off (enforced) |
+| Profile   | Use                                                                              |
+| --------- | -------------------------------------------------------------------------------- |
+| `local`   | dev against compose infra; E2E bypass on                                         |
+| `test`    | H2 in PostgreSQL mode; Flyway runs; OpenSearch/ES autoconfig excluded; bypass on |
+| `staging` | pre-prod; bypass off by default                                                  |
+| `e2e`     | isolated browser E2E opt-in layered onto non-prod environments; bypass on        |
+| `prod`    | requires `TASKMIND_JWT_SECRET`; bypass must be off (enforced)                    |
 
-Key environment and property families: `TASKMIND_JWT_SECRET`, `TASKMIND_*_SERVICE_TOKEN`, `TASKMIND_STORAGE_*` for S3, `spring.elasticsearch.uris` for OpenSearch, `TASKMIND_AI_*` for Nova provider routing, `taskmind.outbox.*`, `taskmind.relay.*`, and `taskmind.ratelimit.*`.
+Key environment and property families: `TASKMIND_JWT_SECRET`, `TASKMIND_*_SERVICE_TOKEN`, `TASKMIND_ATTACHMENTS_*` / `TASKMIND_ATTACHMENTS_S3_*` for attachment storage and S3, `spring.elasticsearch.uris` for OpenSearch, `TASKMIND_AI_*` for Nova provider routing, `taskmind.outbox.*`, `taskmind.relay.*`, and `taskmind.ratelimit.*`.
 
 ## Testing
 
