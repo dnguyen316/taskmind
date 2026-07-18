@@ -9,15 +9,24 @@ scrape_configs:
 
   - job_name: taskmind-backend
     metrics_path: /actuator/prometheus
+    http_headers:
+      X-Service-Token:
+        values: ["development-only-nova-service-token"]
     static_configs:
       - targets: ["backend:8080"]
 
   - job_name: taskmind-relay
     metrics_path: /actuator/prometheus
+    authorization:
+      type: Bearer
+      credentials: local-relay-service-token
     static_configs:
       - targets: ["relay:8081"]
 
   - job_name: taskmind-ai
     metrics_path: /actuator/prometheus
+    authorization:
+      type: Bearer
+      credentials: development-only-nova-service-token
     static_configs:
       - targets: ["ai:8082"]

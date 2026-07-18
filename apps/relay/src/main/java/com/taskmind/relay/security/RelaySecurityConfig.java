@@ -18,13 +18,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Configuration
 public class RelaySecurityConfig {
     @Bean
-    SecurityFilterChain relaySecurityFilterChain(HttpSecurity http, ServiceTokenFilter serviceTokenFilter) throws Exception {
+    SecurityFilterChain relaySecurityFilterChain(HttpSecurity http, ServiceTokenFilter serviceTokenFilter)
+            throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers("/actuator/prometheus")
-                                        .permitAll()
+                                        .authenticated()
                                         .requestMatchers("/internal/**")
                                         .authenticated()
                                         .anyRequest()
@@ -37,7 +38,8 @@ public class RelaySecurityConfig {
     }
 
     @Bean
-    ServiceTokenFilter serviceTokenFilter(@Value("${taskmind.relay.service-token}") String serviceToken) {
+    ServiceTokenFilter serviceTokenFilter(
+            @Value("${taskmind.relay.service-token}") String serviceToken) {
         return new ServiceTokenFilter(serviceToken);
     }
 
@@ -49,7 +51,9 @@ public class RelaySecurityConfig {
         }
 
         @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        protected void doFilterInternal(
+                HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
             String authorization = request.getHeader("Authorization");
             if (authorization != null && authorization.equals("Bearer " + serviceToken)) {
                 org.springframework.security.core.context.SecurityContextHolder.getContext()

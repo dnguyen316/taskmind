@@ -35,8 +35,11 @@ class NovaSecurityTest {
     }
 
     @Test
-    void prometheusScrapeIsPublicButOtherActuatorEndpointsRemainDenied() throws Exception {
-        mockMvc.perform(get("/actuator/prometheus"))
+    void prometheusScrapeRequiresServiceTokenAndOtherActuatorEndpointsRemainDenied() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/actuator/prometheus").header("X-Service-Token", "test-ai-token"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
+        mockMvc.perform(get("/actuator/prometheus").header("Authorization", "Bearer test-ai-token"))
                 .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
         mockMvc.perform(get("/actuator/health")).andExpect(status().isForbidden());
         mockMvc.perform(get("/actuator/info")).andExpect(status().isForbidden());

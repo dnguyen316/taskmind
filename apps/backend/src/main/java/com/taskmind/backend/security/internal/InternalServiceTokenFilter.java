@@ -27,13 +27,14 @@ public class InternalServiceTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/internal/");
+        return !request.getRequestURI().startsWith("/internal/")
+                && !request.getRequestURI().equals("/actuator/prometheus");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String suppliedToken = request.getHeader(SERVICE_TOKEN_HEADER);
+        String suppliedToken = serviceTokenFrom(request);
         if (serviceToken == null || serviceToken.isBlank() || suppliedToken == null || !matches(suppliedToken)) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "Service token authentication required");
             return;
@@ -46,6 +47,14 @@ public class InternalServiceTokenFilter extends OncePerRequestFilter {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private String serviceTokenFrom(HttpServletRequest request) {
+        String headerToken = request.getHeader(SERVICE_TOKEN_HEADER);
+        if (headerToken != null && !headerToken.isBlank()) {
+            return headerToken;
+        }
+        return null;
     }
 
     private boolean matches(String suppliedToken) {

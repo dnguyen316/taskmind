@@ -122,7 +122,9 @@ clear and update this file list with the final location.
 - Include error/problem-detail logging without leaking secrets, tokens, OTPs, attachment
   contents, or LLM prompt payloads.
 - Expose Spring Boot Actuator `health`, `info`, `metrics`, and `prometheus` endpoints as
-  appropriate for each environment.
+  appropriate for each environment; `/actuator/prometheus` must be reachable only from
+  internal scraper infrastructure and must require service-token authentication rather
+  than accepting anonymous public traffic.
 - Record Nova provider tokens, run counts, and LLM response latency with bounded tags only
   (`provider`, `model`, `capability`, and `status`); never tag user/workspace/run IDs,
   prompt text, or correlation IDs.
