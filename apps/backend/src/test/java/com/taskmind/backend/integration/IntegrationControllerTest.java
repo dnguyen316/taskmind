@@ -35,6 +35,7 @@ class IntegrationControllerTest {
     private static final ConcurrentHashMap<String, AtomicInteger> WIKI_PUBLISH_COUNTS = new ConcurrentHashMap<>();
     private static final AtomicInteger GITHUB_COMMENT_COUNT = new AtomicInteger();
     private static volatile boolean GITHUB_FAIL_ISSUE = false;
+    private static volatile boolean GITHUB_FAIL_REPOSITORY = false;
 
     @TestConfiguration
     static class ProviderClientStubs {
@@ -62,6 +63,7 @@ class IntegrationControllerTest {
             return new GitHubClient(org.springframework.web.client.RestClient.builder()) {
                 @Override
                 public RepositoryMetadata getRepository(String baseUrl, String accessToken, String owner, String repo) {
+                    if (GITHUB_FAIL_REPOSITORY) throw new com.taskmind.backend.integration.infrastructure.ProviderClientException(org.springframework.http.HttpStatus.BAD_GATEWAY, "PROVIDER_UNAVAILABLE", "GitHub request failed for https://api.github.test/repos/" + owner + "/" + repo + " token=ghp_secret", true);
                     return new RepositoryMetadata("repo-node-1", owner, repo, owner + "/" + repo, "main", false, "https://github.com/" + owner + "/" + repo, "99", "42");
                 }
 
@@ -278,6 +280,26 @@ class IntegrationControllerTest {
                     .andExpect(jsonPath("$.id").value("comment-node-1"));
         }
         org.assertj.core.api.Assertions.assertThat(GITHUB_COMMENT_COUNT.get()).isEqualTo(1);
+    }
+
+    @Test void publicGitHubProviderFailureReturnsSanitizedProblemDetails() throws Exception {
+        String connectionId = mapper.readTree(connect("GITHUB", USER).andReturn().getResponse().getContentAsString())
+                .get("id")
+                .asText();
+        GITHUB_FAIL_REPOSITORY = true;
+        try {
+            mockMvc.perform(get("/v1/integrations/github/repositories/{owner}/{repo}", "taskmind", "core")
+                            .param("connectionId", connectionId)
+                            .with(jwt(USER)))
+                    .andExpect(status().isBadGateway())
+                    .andExpect(jsonPath("$.detail").value("Integration provider request failed."))
+                    .andExpect(content().string(not(containsString("https://api.github.test"))))
+                    .andExpect(content().string(not(containsString("ghp_secret"))))
+                    .andExpect(content().string(not(containsString("ProviderClientException"))))
+                    .andExpect(content().string(not(containsString("java.lang"))));
+        } finally {
+            GITHUB_FAIL_REPOSITORY = false;
+        }
     }
 
     @Test void repeatedJiraImportSkipsPreviouslyImportedIssues() throws Exception {

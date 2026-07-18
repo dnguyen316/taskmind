@@ -15,9 +15,13 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
     private final ProblemDetailLogging problemDetailLogging;
 
     public ApiExceptionHandler(ObjectProvider<ProblemDetailLogging> problemDetailLogging) {
@@ -69,13 +73,38 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ProviderClientException.class)
     public ProblemDetail handleProviderClientException(ProviderClientException ex) {
+        log.warn(
+                "provider_client_exception code={} providerStatus={} retrySafe={} correlationId={}",
+                ex.errorCode(),
+                ex.statusCode().value(),
+                ex.retrySafe(),
+                com.taskmind.backend.config.logging.RequestCorrelation.currentId(),
+                ex);
         HttpStatus status = "PROVIDER_RATE_LIMITED".equals(ex.errorCode()) ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.BAD_GATEWAY;
         ProblemDetail problemDetail = ProblemDetail.forStatus(status);
         problemDetail.setTitle("Integration provider request failed");
-        problemDetail.setDetail(ex.getMessage());
+        problemDetail.setDetail("Integration provider request failed.");
         problemDetail.setProperty("code", ex.errorCode());
         problemDetail.setProperty("providerStatus", ex.statusCode().value());
         problemDetail.setProperty("retrySafe", ex.retrySafe());
+        return problemDetailLogging.enrich(problemDetail);
+    }
+
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail handleResponseStatusException(ResponseStatusException ex) {
+        if (ex.getCause() != null) {
+            log.warn(
+                    "public_api_exception status={} code={} correlationId={}",
+                    ex.getStatusCode().value(),
+                    errorCodeFor(ex),
+                    com.taskmind.backend.config.logging.RequestCorrelation.currentId(),
+                    ex);
+        }
+        ProblemDetail problemDetail = ProblemDetail.forStatus(ex.getStatusCode());
+        problemDetail.setTitle(titleFor(ex));
+        problemDetail.setDetail(detailFor(ex));
+        problemDetail.setProperty("code", errorCodeFor(ex));
         return problemDetailLogging.enrich(problemDetail);
     }
 
@@ -94,6 +123,42 @@ public class ApiExceptionHandler {
         setIfPresent(problemDetail, "field", metadata.field());
         setIfPresent(problemDetail, "reason", metadata.reason());
         return problemDetailLogging.enrich(problemDetail);
+    }
+
+    private String errorCodeFor(ResponseStatusException ex) {
+        return switch (ex.getStatusCode().value()) {
+            case 400 -> "PUBLIC_REQUEST_INVALID";
+            case 403 -> "PUBLIC_ACCESS_DENIED";
+            case 404 -> "PUBLIC_RESOURCE_NOT_FOUND";
+            case 409 -> "PUBLIC_REQUEST_CONFLICT";
+            case 413 -> "PUBLIC_UPLOAD_TOO_LARGE";
+            case 503 -> "PUBLIC_DEPENDENCY_UNAVAILABLE";
+            default -> "PUBLIC_REQUEST_FAILED";
+        };
+    }
+
+    private String titleFor(ResponseStatusException ex) {
+        return switch (ex.getStatusCode().value()) {
+            case 400 -> "Invalid request";
+            case 403 -> "Access denied";
+            case 404 -> "Resource not found";
+            case 409 -> "Request conflict";
+            case 413 -> "Upload too large";
+            case 503 -> "Service unavailable";
+            default -> "Request failed";
+        };
+    }
+
+    private String detailFor(ResponseStatusException ex) {
+        return switch (ex.getStatusCode().value()) {
+            case 400 -> "The request could not be processed.";
+            case 403 -> "You are not allowed to perform this operation.";
+            case 404 -> "The requested resource was not found.";
+            case 409 -> "The request conflicts with the current resource state.";
+            case 413 -> "The uploaded file is too large.";
+            case 503 -> "A dependent service is temporarily unavailable.";
+            default -> "The request failed.";
+        };
     }
 
     private void setIfPresent(ProblemDetail problemDetail, String name, String value) {

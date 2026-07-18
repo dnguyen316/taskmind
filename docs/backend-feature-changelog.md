@@ -79,7 +79,6 @@
 - Advanced primary milestone: M11 Notifications.
 - Applicable skills: none. Delegated agents: none.
 
-
 ## 2026-07-15 - Task API unreadable-task 404 policy
 
 - Documented the Task API policy to return `404 Not Found` for both missing and unreadable task ids to avoid existence disclosure, while keeping non-task-scoped authorization failures as `403 Forbidden`.
@@ -1199,6 +1198,21 @@ This changelog tracks backend feature progress against the core implementation p
 
 - Hardened cookie-backed auth refresh/logout with strict trusted Origin/Referer validation for the `taskmind_refresh` cookie while keeping legacy request-body refresh tokens for non-browser clients.
 
+## 2026-07-18 - Public error response sanitization
+
+### Changed
+
+- Standardized Core public `/v1/**` `ResponseStatusException` handling so responses use generic user-safe details, structured public error codes, and correlation metadata instead of raw application/provider exception messages.
+- Updated provider client failures to return a generic integration-provider failure detail while logging provider status, retry safety, and internal exception context with correlation IDs for server-side diagnosis.
+- Replaced public controller rethrows that previously copied `e.getMessage()` into response reasons with stable safe messages across integration, attachment, dashboard, project/team, scheduler, activity search, onboarding, AI task resolution, and spec-breakdown endpoints.
+
+### Tests
+
+- Added integration, attachment, dashboard, project, and team controller coverage proving error response bodies omit provider URLs, tokens, storage keys, stack-trace/class names, and SQL text.
+
+### Closeout notes
+
+- Primary milestone: M13 hardening / M01 global error handling.
 
 ## 2026-07-18 - Rate-limit client IP hardening
 

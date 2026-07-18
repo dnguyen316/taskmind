@@ -57,6 +57,16 @@ failures, such as attempting to create a task in a project where the requester l
 membership, may still return `403 Forbidden` because there is no task id whose existence
 would be disclosed.
 
+### Public API error response policy
+
+Public Core endpoints under `/v1/**` must not return raw exception messages, provider URLs,
+tokens, storage object keys, SQL text, stack traces, or implementation class names in
+response bodies. Controller-local `ResponseStatusException` mappings use stable user-safe
+details; `ApiExceptionHandler` converts those failures into RFC 7807 `ProblemDetail`
+responses with structured `PUBLIC_*` codes and correlation metadata. Sensitive provider or
+internal diagnostics belong only in server logs, where they must include the request
+correlation ID.
+
 Cross-cutting packages are not feature slices:
 
 | Package    | Holds                                                                                                        |

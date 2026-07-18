@@ -62,7 +62,7 @@ public class ProjectController {
                                     ownerUserId));
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request conflicts with the current resource state.", e);
         }
     }
 
@@ -109,7 +109,7 @@ public class ProjectController {
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request conflicts with the current resource state.", e);
         }
     }
 

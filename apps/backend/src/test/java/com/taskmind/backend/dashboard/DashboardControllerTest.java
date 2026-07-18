@@ -118,9 +118,14 @@ class DashboardControllerTest {
         when(relay.userTasks(any()))
                 .thenThrow(
                         new RelayClientException(
-                                "Relay context API is unavailable", new RuntimeException()));
+                                "Relay context API failed at https://relay.internal/v1/context token=relay-secret java.sql.SQLException: select * from context",
+                                new RuntimeException()));
         mockMvc.perform(get("/v1/dashboard").with(jwt("11111111-1111-1111-1111-111111111111")))
-                .andExpect(status().isServiceUnavailable());
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().string(not(containsString("https://relay.internal"))))
+                .andExpect(content().string(not(containsString("relay-secret"))))
+                .andExpect(content().string(not(containsString("SQLException"))))
+                .andExpect(content().string(not(containsString("select *"))));
     }
 
     @Test

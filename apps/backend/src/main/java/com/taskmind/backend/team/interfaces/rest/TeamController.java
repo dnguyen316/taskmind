@@ -28,7 +28,7 @@ public class TeamController {
         try {
             return service.directory(requester);
         } catch (SecurityException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         }
     }
 
@@ -43,11 +43,11 @@ public class TeamController {
                     .body(ProjectMembershipResponse.from(memberships.assignProjectMember(
                             actor, new AssignProjectMemberCommand(userId, projectId, request.role()))));
         } catch (SecurityException | ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request conflicts with the current resource state.", e);
         }
     }
 
@@ -61,9 +61,9 @@ public class TeamController {
             return ProjectMembershipResponse.from(memberships.changeProjectMemberRole(
                     actor, new ChangeProjectMemberRoleCommand(userId, projectId, request.role())));
         } catch (SecurityException | ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 
@@ -74,9 +74,9 @@ public class TeamController {
             memberships.removeProjectMember(actor, new RemoveProjectMemberCommand(userId, projectId));
             return ResponseEntity.noContent().build();
         } catch (SecurityException | ProjectMembershipForbiddenException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (ProjectMembershipNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 
@@ -89,9 +89,9 @@ public class TeamController {
             String role = memberships.changeGlobalRole(actor, new ChangeGlobalRoleCommand(userId, request.role()));
             return new GlobalRoleResponse(userId, role);
         } catch (SecurityException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to perform this operation.", e);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The requested resource was not found.", e);
         }
     }
 }

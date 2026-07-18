@@ -24,7 +24,7 @@ public class TaskJiraPublishController {
         try {
             return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId()));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
@@ -34,7 +34,7 @@ public class TaskJiraPublishController {
         try {
             return PublishResponse.from(publish.publish(actor, taskId, request.projectLinkId()));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "The request could not be processed.", e);
         }
     }
 
