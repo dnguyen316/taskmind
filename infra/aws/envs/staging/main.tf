@@ -35,6 +35,7 @@ module "data" {
   rds_security_group_ids           = [module.security.rds_security_group_id]
   redis_security_group_ids         = [module.security.redis_security_group_id]
   opensearch_security_group_ids    = [module.security.opensearch_security_group_id]
+  redis_auth_token                 = var.redis_auth_token
   deletion_protection              = true
   skip_final_snapshot              = false
   final_snapshot_identifier_prefix = "taskmind-staging-final-snapshot"

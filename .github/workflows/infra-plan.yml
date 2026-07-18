@@ -38,6 +38,7 @@ jobs:
       matrix:
         module:
           - network
+          - security
           - data
           - compute
           - edge
@@ -63,6 +64,37 @@ jobs:
         working-directory: infra/aws/${{ matrix.module }}
         run: tofu validate
 
+
+  validate-environment-roots:
+    name: Validate composed AWS environment roots
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - staging
+          - production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+
+      - name: Initialize environment without backend
+        working-directory: infra/aws/envs/${{ matrix.environment }}
+        run: tofu init -backend=false
+
+      - name: Format check
+        working-directory: infra/aws/envs/${{ matrix.environment }}
+        run: tofu fmt -check -diff
+
+      - name: Validate environment root
+        working-directory: infra/aws/envs/${{ matrix.environment }}
+        run: tofu validate
+
   plan-environment:
     name: Plan composed environment
     runs-on: ubuntu-latest
@@ -71,6 +103,21 @@ jobs:
     env:
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      CLOUDWATCH_LOGS_KMS_KEY_ID: ${{ vars.CLOUDWATCH_LOGS_KMS_KEY_ID }}
+      TF_VAR_account_suffix: ${{ vars.AWS_ACCOUNT_ID }}
+      TF_VAR_alb_certificate_arn: ${{ vars.ALB_CERTIFICATE_ARN }}
+      TF_VAR_cloudfront_certificate_arn: ${{ vars.CLOUDFRONT_CERTIFICATE_ARN }}
+      TF_VAR_frontend_aliases: ${{ vars.FRONTEND_ALIASES_JSON || '[]' }}
+      TF_VAR_service_images: ${{ vars.SERVICE_IMAGES_JSON }}
+      TF_VAR_service_environment: ${{ vars.SERVICE_ENVIRONMENT_JSON || '{}' }}
+      TF_VAR_service_secrets: ${{ vars.SERVICE_SECRETS_JSON || '{}' }}
+      TF_VAR_core_secret_arns: ${{ vars.CORE_SECRET_ARNS_JSON }}
+      TF_VAR_relay_secret_arns: ${{ vars.RELAY_SECRET_ARNS_JSON }}
+      TF_VAR_nova_secret_arns: ${{ vars.NOVA_SECRET_ARNS_JSON }}
+      TF_VAR_alarm_topic_arns: ${{ vars.ALARM_TOPIC_ARNS_JSON || '[]' }}
+      TF_VAR_cloudwatch_logs_kms_key_id: ${{ inputs.environment == 'production' && vars.CLOUDWATCH_LOGS_KMS_KEY_ID || '' }}
+      TF_VAR_redis_auth_token: ${{ secrets.TASKMIND_REDIS_PASSWORD }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -82,7 +129,10 @@ jobs:
 
       - name: Validate plan configuration
         run: |
-          required=(AWS_ACCOUNT_ID AWS_REGION)
+          required=(AWS_ACCOUNT_ID AWS_REGION AWS_ROLE_TO_ASSUME TF_VAR_alb_certificate_arn TF_VAR_service_images TF_VAR_core_secret_arns TF_VAR_relay_secret_arns TF_VAR_nova_secret_arns TF_VAR_redis_auth_token)
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            required+=(TF_VAR_cloudwatch_logs_kms_key_id)
+          fi
           missing=()
           for name in "${required[@]}"; do
             if [ -z "${!name:-}" ]; then
