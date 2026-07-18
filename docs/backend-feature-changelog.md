@@ -1249,3 +1249,19 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M13 security hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-18 - Development credential startup hardening
+
+### Changed
+
+- Added Core, Nova, and Relay startup guards that reject known local/development shared-token and JWT-secret defaults outside the dedicated local, test, or e2e profiles.
+
+### Tests
+
+- Added configuration guard coverage for default, local, test, e2e, and production-like profiles across Core, Nova, and Relay.
+
+### Closeout notes
+
+- Primary milestone: M13 security hardening.
+- Skills used: none.
+- Agent delegation: none.
