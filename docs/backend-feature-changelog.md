@@ -1,3 +1,21 @@
+## 2026-07-18 - Attachment storage failure handling
+
+### Changed
+
+- Added a typed attachment storage exception and mapped upload/download storage failures to `503 Service Unavailable` instead of allowing generic server errors to leak.
+- Hardened filesystem attachment writes so local storage rejects streams that exceed the validated declared upload size and removes partial files on failure.
+
+### Tests
+
+- Added attachment controller coverage for upload and download storage failures, including verification that failed uploads leave no attachment metadata for the task.
+- Added filesystem storage coverage for rejecting over-declared content streams.
+
+### Closeout notes
+
+- Primary milestone: M06 Search/storage AWS.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-18 - Attachment S3 Sydney defaults
 
 ### Changed

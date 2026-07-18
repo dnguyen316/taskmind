@@ -888,3 +888,16 @@
 - `cd apps/frontend && npm run typecheck`
 
 - Documented that SPA refresh/logout continues to use the HttpOnly refresh cookie and relies on browser-supplied Origin/Referer headers; no custom frontend CSRF header is currently required.
+## 2026-07-18 - Auth initialization profile failure cleanup
+
+### Summary
+
+- Updated SPA auth session initialization so a failed silent current-user lookup after token refresh clears in-memory tokens, resets auth state, and still marks the auth store initialized.
+- Added a focused Pinia auth-store unit test for the refresh-succeeds/profile-fetch-fails path.
+- No Codex skills or delegated agents were used for this local frontend store fix.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/stores/auth.ts src/stores/__tests__/auth.test.ts package.json`
+- `cd apps/frontend && npm run test -- src/stores/__tests__/auth.test.ts`
+- `cd apps/frontend && npm run typecheck`

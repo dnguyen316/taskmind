@@ -2,9 +2,12 @@ package com.taskmind.backend.attachment.infrastructure.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.springframework.util.StreamUtils;
 import org.junit.jupiter.api.Test;
@@ -25,6 +28,20 @@ class FilesystemObjectStorageAdapterTest {
         adapter.delete("tasks/t1/file.txt");
         assertThrows(
                 java.nio.file.NoSuchFileException.class, () -> adapter.get("tasks/t1/file.txt"));
+    }
+    @Test
+    void rejectsContentThatExceedsDeclaredSize() {
+        FilesystemObjectStorageAdapter adapter = new FilesystemObjectStorageAdapter(tempDir);
+
+        assertThrows(
+                IOException.class,
+                () ->
+                        adapter.put(
+                                "tasks/t1/too-large.txt",
+                                new ByteArrayInputStream("too large".getBytes()),
+                                3,
+                                "text/plain"));
+        assertFalse(Files.exists(tempDir.resolve("tasks/t1/too-large.txt")));
     }
 
     @Test
