@@ -26,7 +26,7 @@ public class DevelopmentCredentialStartupGuard {
         if (usesOnlyAllowedDevelopmentProfiles()) {
             return;
         }
-        if (DEVELOPMENT_RELAY_SERVICE_TOKEN.equals(relayServiceToken)) {
+        if (relayServiceToken.isBlank() || DEVELOPMENT_RELAY_SERVICE_TOKEN.equals(relayServiceToken)) {
             throw new IllegalStateException(
                     "taskmind.relay.service-token must be changed for non-local/non-test deployments");
         }

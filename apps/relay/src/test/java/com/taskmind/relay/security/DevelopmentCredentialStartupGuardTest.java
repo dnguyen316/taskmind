@@ -51,6 +51,32 @@ class DevelopmentCredentialStartupGuardTest {
     }
 
     @Test
+    void prodLikeProfileRejectsEmptyRelayToken() {
+        contextRunner
+                .withPropertyValues("spring.profiles.active=prod", "taskmind.relay.service-token=")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(IllegalStateException.class)
+                            .hasRootCauseMessage(
+                                    "taskmind.relay.service-token must be changed for non-local/non-test deployments");
+                });
+    }
+
+    @Test
+    void prodLikeProfileRejectsWhitespaceRelayToken() {
+        contextRunner
+                .withPropertyValues("spring.profiles.active=prod", "taskmind.relay.service-token=   ")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(IllegalStateException.class)
+                            .hasRootCauseMessage(
+                                    "taskmind.relay.service-token must be changed for non-local/non-test deployments");
+                });
+    }
+
+    @Test
     void prodLikeProfileAcceptsChangedCredentials() {
         contextRunner
                 .withPropertyValues("spring.profiles.active=prod", "taskmind.relay.service-token=prod-relay-token")
