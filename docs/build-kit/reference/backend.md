@@ -111,6 +111,7 @@ Core is a stateless **JWT resource server**. Errors use RFC 7807 `ProblemDetail`
 
 - `SecurityConfig` + `ApiSecurityAuthorization` define route rules.
 - **Public:** `/api/health`, `/v1/auth/login`, `/v1/auth/signup/**`, `/v1/auth/verify/**`, `/v1/auth/oauth/**`, `/v1/auth/password/**`, `/v1/auth/token/refresh`, `/v1/auth/logout`, and integration OAuth callbacks.
+- **Infrastructure probe:** the exact `/api/health` path bypasses rate limiting so readiness checks never consult Redis or consume an anonymous bucket; similarly named paths are not exempted.
 - **Authenticated:** everything else under `/v1/**`.
 - **Denied:** all other routes.
 - `/internal/**` is a separate `@Order(0)` chain requiring `X-Service-Token`.

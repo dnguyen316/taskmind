@@ -203,6 +203,34 @@ class RateLimitFilterTest {
         assertThat(consumed).isFalse();
     }
 
+    @Test
+    void healthProbeIsExcludedWithoutExemptingSimilarlyNamedRoutes() throws Exception {
+        RateLimitProperties properties = propertiesWithLimits(1, 1);
+        AtomicBoolean consumed = new AtomicBoolean(false);
+        RateLimitFilter filter =
+                new RateLimitFilter(
+                        properties,
+                        (key, bucket) -> {
+                            consumed.set(true);
+                            return RateLimitService.RateLimitDecision.rejected(
+                                    bucket.capacity(), 60);
+                        },
+                        new ObjectMapper(),
+                        new ClientIpResolver(properties));
+
+        MockHttpServletResponse healthResponse = execute(filter, request("/api/health"));
+
+        assertThat(healthResponse.getStatus()).isEqualTo(200);
+        assertThat(healthResponse.getHeader(RateLimitFilter.RETRY_AFTER_HEADER)).isNull();
+        assertThat(consumed).isFalse();
+
+        MockHttpServletResponse similarlyNamedResponse =
+                execute(filter, request("/api/health-check"));
+
+        assertThat(similarlyNamedResponse.getStatus()).isEqualTo(429);
+        assertThat(consumed).isTrue();
+    }
+
     private RateLimitProperties propertiesWithLimits(long anonymousLimit, long authenticatedLimit) {
         RateLimitProperties properties = new RateLimitProperties();
         properties.setAnonymous(
