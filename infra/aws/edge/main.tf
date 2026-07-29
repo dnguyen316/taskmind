@@ -71,7 +71,7 @@ resource "aws_lb_target_group" "core" {
   vpc_id      = var.vpc_id
 
   health_check {
-    path    = "/actuator/health"
+    path    = "/api/health"
     matcher = "200-399"
   }
 

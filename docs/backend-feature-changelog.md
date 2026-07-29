@@ -1,3 +1,23 @@
+## 2026-07-29 - Core ALB health probe alignment
+
+### Changed
+
+- Pointed the Core ALB target-group health check at the public `/api/health` readiness
+  endpoint instead of the denied actuator namespace.
+- Documented the distinct Core, Relay, and Nova startup health endpoints without exposing
+  additional Core actuator routes.
+
+### Tests
+
+- Extended Core security route coverage to verify anonymous readiness access and continued
+  denial of non-public actuator health and info endpoints.
+
+### Closeout notes
+
+- Primary milestone: M13 AWS deployment and security hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-18 - E2E bypass dangerous seed guard
 
 ### Changed
