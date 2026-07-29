@@ -6,11 +6,15 @@
   endpoint instead of the denied actuator namespace.
 - Documented the distinct Core, Relay, and Nova startup health endpoints without exposing
   additional Core actuator routes.
+- Exempted the exact Core `/api/health` infrastructure-probe path from rate limiting so
+  readiness checks do not depend on Redis or consume anonymous rate-limit capacity.
 
 ### Tests
 
 - Extended Core security route coverage to verify anonymous readiness access and continued
   denial of non-public actuator health and info endpoints.
+- Added rate-limit filter coverage proving the health probe reaches the filter chain without
+  consulting the rate-limit service while similarly named routes remain subject to limiting.
 
 ### Closeout notes
 

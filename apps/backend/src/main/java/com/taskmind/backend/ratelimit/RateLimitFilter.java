@@ -41,6 +41,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return !properties.isEnabled()
+                || properties.getExcludedPaths().contains(path)
                 || matches(path, properties.getInternalPrefixes())
                 || !matchesPublicApi(path);
     }

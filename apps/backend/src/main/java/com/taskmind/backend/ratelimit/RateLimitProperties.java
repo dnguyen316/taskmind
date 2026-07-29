@@ -20,6 +20,7 @@ public class RateLimitProperties {
     private List<String> authFlowPaths = List.of("/v1/auth/");
     private List<String> aiHeavyPaths = List.of("/v1/ai/", "/v1/spec-breakdown/");
     private List<String> publicApiPrefixes = List.of("/v1/", "/api/health");
+    private List<String> excludedPaths = List.of("/api/health");
     private List<String> internalPrefixes = List.of("/internal/");
     private List<String> trustedProxies = List.of();
 
@@ -93,6 +94,14 @@ public class RateLimitProperties {
 
     public void setPublicApiPrefixes(List<String> publicApiPrefixes) {
         this.publicApiPrefixes = publicApiPrefixes;
+    }
+
+    public List<String> getExcludedPaths() {
+        return excludedPaths;
+    }
+
+    public void setExcludedPaths(List<String> excludedPaths) {
+        this.excludedPaths = excludedPaths;
     }
 
     public List<String> getInternalPrefixes() {
