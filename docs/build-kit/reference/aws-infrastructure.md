@@ -94,8 +94,9 @@ Relay, plus Core's activity-search read API, target OpenSearch:
   `make image-build-ai`, or `make image-build-frontend`. Override `IMAGE_REGISTRY`,
   `IMAGE_TAG`, and `VITE_API_BASE_URL` as needed before pushing to ECR or a web edge
   runtime registry.
-- Startup order: RDS, Redis, and OpenSearch healthy -> Core (Flyway and
-  `/actuator/health`) -> Relay -> Nova.
+- Startup order: RDS, Redis, and OpenSearch healthy -> Core (Flyway, with
+  `/api/health` as its readiness and ALB probe) -> Relay (`/actuator/health`) -> Nova
+  (`/actuator/health`).
 - **SSE** (`/v1/nova/chat/stream`, `/v1/notifications/stream`): set the ALB idle timeout
   to 3600 seconds, or run the nginx sidecar to mirror local configuration.
 - Internal service URLs resolve through Cloud Map, for example

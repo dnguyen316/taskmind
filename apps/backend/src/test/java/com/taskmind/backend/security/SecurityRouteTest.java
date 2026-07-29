@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.taskmind.backend.HealthController;
 import com.taskmind.backend.auth.application.AuthApplicationService;
 import com.taskmind.backend.auth.application.AuthTokens;
 import com.taskmind.backend.auth.interfaces.rest.AuthController;
@@ -27,7 +28,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = {AuthController.class, SecurityRouteTest.ActuatorProbeController.class})
+@WebMvcTest(
+        controllers = {
+            AuthController.class,
+            HealthController.class,
+            SecurityRouteTest.ActuatorProbeController.class
+        })
 @Import({
     SecurityConfig.class,
     JwtClaimAuthenticationConverter.class,
@@ -161,6 +167,16 @@ class SecurityRouteTest {
         mockMvc.perform(get("/v1/projects")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void allowsPublicHealthWhileNonPublicActuatorEndpointsRemainInaccessible()
+            throws Exception {
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
+    }
 
     @Test
     void protectsPrometheusScrapesWithServiceToken() throws Exception {
@@ -169,11 +185,6 @@ class SecurityRouteTest {
         mockMvc.perform(get("/actuator/prometheus").header("X-Service-Token", "test-only-nova-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("# HELP taskmind_test_metric Test metric\n"));
-    }
-
-    @Test
-    void blocksNonPrometheusActuatorEndpoints() throws Exception {
-        mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -192,6 +203,11 @@ class SecurityRouteTest {
         @GetMapping("/actuator/env")
         String env() {
             return "secret";
+        }
+
+        @GetMapping("/actuator/health")
+        String health() {
+            return "healthy";
         }
     }
 }
