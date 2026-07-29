@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,13 +62,32 @@ public class NovaSecurityConfig {
         protected void doFilterInternal(
                 HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
-            String headerToken = request.getHeader(SERVICE_TOKEN_HEADER);
-            String authorization = request.getHeader("Authorization");
-            if (serviceToken.equals(headerToken)
-                    || (authorization != null && authorization.equals("Bearer " + serviceToken))) {
+            String suppliedToken = serviceTokenFrom(request);
+            if (suppliedToken != null && matches(suppliedToken)) {
                 SecurityContextHolder.getContext().setAuthentication(new ServiceAuthenticationToken());
             }
-            filterChain.doFilter(request, response);
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        private String serviceTokenFrom(HttpServletRequest request) {
+            String headerToken = request.getHeader(SERVICE_TOKEN_HEADER);
+            if (headerToken != null && !headerToken.isBlank()) {
+                return headerToken;
+            }
+            String authorization = request.getHeader("Authorization");
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                return authorization.substring("Bearer ".length());
+            }
+            return null;
+        }
+
+        private boolean matches(String suppliedToken) {
+            return MessageDigest.isEqual(
+                    serviceToken.getBytes(StandardCharsets.UTF_8), suppliedToken.getBytes(StandardCharsets.UTF_8));
         }
     }
 }
