@@ -1,3 +1,23 @@
+## 2026-07-29 - Nova chat session store selection
+
+### Changed
+
+- Made Nova's in-memory and Redis chat session stores mutually exclusive: missing or
+  disabled Redis configuration selects the in-memory store, while explicitly enabling
+  Redis selects the Redis-backed store.
+- Retained Redis-backed chat sessions as the production default.
+
+### Tests
+
+- Added focused Spring context coverage for the default in-memory selection and the
+  Redis-enabled selection with a mocked Redis template.
+
+### Closeout notes
+
+- Primary milestone: M07 Nova AI.
+- Skills used: `taskmind-backend-feature`.
+- Agent delegation: none.
+
 ## 2026-07-29 - Core ALB health probe alignment
 
 ### Changed
