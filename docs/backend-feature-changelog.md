@@ -1249,3 +1249,21 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M13 security hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-07-29 - Relay and Nova service-token authentication hardening
+
+### Changed
+
+- Updated Relay and Nova service-token filters to compare configured tokens in constant time and keep raw shared credentials out of Spring Security's `Authentication` object.
+- Made service-token authentication request-scoped by clearing the security context after downstream processing, while retaining Nova's `X-Service-Token` and bearer credential support and Relay's bearer credential support.
+- Documented the hardened inter-service authentication lifecycle in the backend reference.
+
+### Tests
+
+- Added Relay and Nova filter coverage for protected authentication credentials and security-context cleanup after request processing.
+
+### Closeout notes
+
+- Primary milestone: M07 Nova internal integration and Relay service security hardening.
+- Skills used: none.
+- Agent delegation: none.

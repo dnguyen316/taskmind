@@ -139,6 +139,7 @@ flowchart LR
 
 - Frontend → Core only, using a per-user JWT bearer token.
 - Core ↔ Nova ↔ Relay use shared service tokens (`TASKMIND_*_SERVICE_TOKEN`) on `/internal/**`; WebClient wiring lives in `config/WebClientConfig`.
+- Nova accepts its configured service token from `X-Service-Token` or the matching bearer credential, while Relay accepts its configured bearer service token. Both services compare supplied tokens in constant time, expose only protected credentials through Spring Security's `Authentication`, and clear the request security context after the filter chain completes.
 - Core → Relay is **event-driven** through the transactional outbox and Redis Stream `taskmind.events`; see [`domain-events.md`](domain-events.md).
 
 ## Configuration & profiles
