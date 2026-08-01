@@ -20,6 +20,11 @@ variable "account_suffix" {
   type        = string
 }
 
+variable "final_snapshot_identifier_suffix" {
+  description = "Unique identifier for the current RDS replacement generation. Change this before intentionally replacing the database."
+  type        = string
+}
+
 variable "vpc_cidr" {
   type    = string
   default = "10.40.0.0/16"
