@@ -108,6 +108,9 @@ jobs:
       - name: Check ALB listener ordering regression
         run: python3 infra/aws/tests/test_listener_order.py
 
+      - name: Check VPC endpoint ingress regression
+        run: python3 infra/aws/tests/test_endpoint_ingress.py
+
   plan-environment:
     name: Plan composed environment
     runs-on: ubuntu-latest

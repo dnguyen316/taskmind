@@ -131,14 +131,6 @@ resource "aws_security_group" "vpc_endpoints" {
   description = "HTTPS access to interface VPC endpoints"
   vpc_id      = aws_vpc.this.id
 
-  ingress {
-    description = "Private subnet HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
