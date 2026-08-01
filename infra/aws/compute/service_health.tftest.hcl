@@ -38,7 +38,11 @@ variables {
   aws_region             = "ap-southeast-2"
   vpc_id                 = "vpc-00000000000000000"
   private_subnet_ids     = ["subnet-00000000000000000", "subnet-11111111111111111"]
-  ecs_security_group_id  = "sg-00000000000000000"
+  service_security_group_ids = {
+    core  = "sg-00000000000000001"
+    relay = "sg-00000000000000002"
+    nova  = "sg-00000000000000003"
+  }
   core_target_group_arn  = "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:targetgroup/core/0000000000000000"
   alb_listener_ready_arn = "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:listener/app/taskmind-test/0000000000000000/1111111111111111"
   attachments_bucket_arn = "arn:aws:s3:::taskmind-test-attachments"
@@ -97,6 +101,15 @@ run "services_are_health_checked_and_rollback_safe" {
   assert {
     condition     = aws_ecs_service.service["core"].health_check_grace_period_seconds == 120
     error_message = "Core must receive an ALB health-check grace period."
+  }
+
+  assert {
+    condition = alltrue([
+      aws_ecs_service.service["core"].network_configuration[0].security_groups == ["sg-00000000000000001"],
+      aws_ecs_service.service["relay"].network_configuration[0].security_groups == ["sg-00000000000000002"],
+      aws_ecs_service.service["nova"].network_configuration[0].security_groups == ["sg-00000000000000003"],
+    ])
+    error_message = "Each ECS service must use its matching service security group."
   }
 }
 

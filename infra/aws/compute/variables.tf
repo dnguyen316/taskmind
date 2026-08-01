@@ -10,9 +10,14 @@ variable "vpc_id" {
 variable "private_subnet_ids" {
   type = list(string)
 }
-variable "ecs_security_group_id" {
-  description = "Security group applied to ECS tasks. Created by the shared security module so data can authorize it without depending on compute."
-  type        = string
+variable "service_security_group_ids" {
+  description = "ECS task security groups keyed by core, relay, and nova."
+  type        = map(string)
+
+  validation {
+    condition     = toset(keys(var.service_security_group_ids)) == toset(["core", "relay", "nova"])
+    error_message = "service_security_group_ids must contain exactly core, relay, and nova."
+  }
 }
 variable "core_target_group_arn" {
   type = string
