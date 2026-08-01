@@ -109,8 +109,20 @@ variable "opensearch_instance_type" {
 }
 
 variable "opensearch_instance_count" {
-  type    = number
-  default = 2
+  description = "Number of data nodes in the OpenSearch domain."
+  type        = number
+  default     = 2
+}
+
+variable "opensearch_availability_zone_count" {
+  description = "Number of Availability Zones used by the OpenSearch domain. AWS supports one, two, or three zones."
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = contains([1, 2, 3], var.opensearch_availability_zone_count)
+    error_message = "opensearch_availability_zone_count must be one of the AWS-supported values: 1, 2, or 3."
+  }
 }
 
 variable "opensearch_volume_size" {
