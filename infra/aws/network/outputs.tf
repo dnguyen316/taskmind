@@ -29,3 +29,8 @@ output "s3_prefix_list_id" {
   description = "AWS-managed S3 prefix list associated with the gateway endpoint."
   value       = aws_vpc_endpoint.s3.prefix_list_id
 }
+
+output "vpc_flow_log_group_name" {
+  description = "CloudWatch log group receiving encrypted VPC Flow Logs."
+  value       = aws_cloudwatch_log_group.vpc_flow_logs.name
+}

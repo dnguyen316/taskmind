@@ -9,12 +9,14 @@ locals {
 module "network" {
   source = "../../network"
 
-  environment        = var.environment
-  aws_region         = var.aws_region
-  vpc_cidr           = var.vpc_cidr
-  az_count           = var.az_count
-  single_nat_gateway = var.single_nat_gateway
-  tags               = local.tags
+  environment             = var.environment
+  aws_region              = var.aws_region
+  vpc_cidr                = var.vpc_cidr
+  az_count                = var.az_count
+  single_nat_gateway      = var.single_nat_gateway
+  flow_log_retention_days = 30
+  alarm_topic_arns        = var.alarm_topic_arns
+  tags                    = local.tags
 }
 
 module "security" {

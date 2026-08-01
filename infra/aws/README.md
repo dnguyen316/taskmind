@@ -129,6 +129,17 @@ AWS account and region. Production retains logs for 365 days and protects both t
 Staging defaults to 30 days and exposes `alb_access_log_retention_days` and
 `enable_alb_deletion_protection` so operators can choose a cheaper, disposable posture.
 
+### VPC Flow Logs
+
+The network module records all accepted and rejected VPC traffic in an encrypted
+CloudWatch log group. Production reuses the required customer-managed CloudWatch Logs
+key and retains flow logs for 365 days; staging retains them for 30 days and receives a
+dedicated, automatically rotated KMS key unless `flow_log_kms_key_id` is supplied. The
+extended flow-log format includes endpoints, ports, protocol, interface, direction, TCP
+flags, action, and rejection reason. A metric filter counts rejected flows and an alarm
+notifies the environment's configured alarm topics when the five-minute rejection
+threshold is exceeded.
+
 Production teardown is deliberately a reviewed, two-apply operation. First, change the
 production root's `enable_deletion_protection` argument to `false`, obtain approval for a
 plan containing only that ALB attribute change, and apply it. Only after AWS reports ALB
