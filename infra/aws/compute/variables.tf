@@ -105,6 +105,41 @@ variable "enable_execute_command" {
   type    = bool
   default = false
 }
+variable "container_health_check_interval_seconds" {
+  description = "Seconds between ECS container health checks."
+  type        = number
+  default     = 30
+}
+variable "container_health_check_timeout_seconds" {
+  description = "Seconds an ECS container health check may run before it fails."
+  type        = number
+  default     = 5
+}
+variable "container_health_check_retries" {
+  description = "Consecutive failed container health checks required before ECS marks a task unhealthy."
+  type        = number
+  default     = 3
+}
+variable "container_health_check_start_period_seconds" {
+  description = "Startup period during which failed ECS container health checks are ignored."
+  type        = number
+  default     = 60
+}
+variable "core_health_check_grace_period_seconds" {
+  description = "Grace period for Core to start before ECS evaluates ALB health checks."
+  type        = number
+  default     = 120
+}
+variable "deployment_minimum_healthy_percent" {
+  description = "Minimum healthy task percentage during deployment; 100 keeps desired-count-one services available."
+  type        = number
+  default     = 100
+}
+variable "deployment_maximum_percent" {
+  description = "Maximum running task percentage during deployment; 200 permits a replacement alongside a desired-count-one task."
+  type        = number
+  default     = 200
+}
 variable "tags" {
   type    = map(string)
   default = {}

@@ -19,25 +19,28 @@ locals {
 
   services = {
     core = {
-      port    = 8080
-      cpu     = 1024
-      memory  = 2048
-      desired = var.core_desired_count
-      public  = true
+      port        = 8080
+      cpu         = 1024
+      memory      = 2048
+      desired     = var.core_desired_count
+      public      = true
+      health_path = "/api/health"
     }
     relay = {
-      port    = 8081
-      cpu     = 512
-      memory  = 1024
-      desired = var.relay_desired_count
-      public  = false
+      port        = 8081
+      cpu         = 512
+      memory      = 1024
+      desired     = var.relay_desired_count
+      public      = false
+      health_path = "/actuator/health"
     }
     nova = {
-      port    = 8082
-      cpu     = 1024
-      memory  = 2048
-      desired = var.nova_desired_count
-      public  = false
+      port        = 8082
+      cpu         = 1024
+      memory      = 2048
+      desired     = var.nova_desired_count
+      public      = false
+      health_path = "/api/health"
     }
   }
 
@@ -205,6 +208,19 @@ resource "aws_ecs_task_definition" "service" {
         { name = "TASKMIND_ENVIRONMENT", value = var.environment }
       ], lookup(var.service_environment, each.key, []))
       secrets = lookup(var.service_secrets, each.key, [])
+      healthCheck = {
+        command = each.key == "relay" ? [
+          "CMD-SHELL",
+          "wget --quiet --spider --header='Authorization: Bearer '$${TASKMIND_RELAY_SERVICE_TOKEN} http://localhost:${each.value.port}${each.value.health_path} || exit 1"
+          ] : [
+          "CMD-SHELL",
+          "wget --quiet --spider http://localhost:${each.value.port}${each.value.health_path} || exit 1"
+        ]
+        interval    = var.container_health_check_interval_seconds
+        timeout     = var.container_health_check_timeout_seconds
+        retries     = var.container_health_check_retries
+        startPeriod = var.container_health_check_start_period_seconds
+      }
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -231,13 +247,21 @@ resource "aws_ecs_task_definition" "service" {
 }
 
 resource "aws_ecs_service" "service" {
-  for_each               = local.services
-  name                   = each.key
-  cluster                = aws_ecs_cluster.this.id
-  task_definition        = aws_ecs_task_definition.service[each.key].arn
-  desired_count          = each.value.desired
-  launch_type            = "FARGATE"
-  enable_execute_command = var.enable_execute_command
+  for_each                           = local.services
+  name                               = each.key
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.service[each.key].arn
+  desired_count                      = each.value.desired
+  launch_type                        = "FARGATE"
+  enable_execute_command             = var.enable_execute_command
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  health_check_grace_period_seconds  = each.key == "core" ? var.core_health_check_grace_period_seconds : null
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
