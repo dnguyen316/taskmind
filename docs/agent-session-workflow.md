@@ -13,6 +13,22 @@ For backend work, keep changes inside Core (`apps/backend`), Relay (`apps/relay`
 changes inside `apps/frontend`, call Core only through typed feature APIs, and avoid
 direct Relay or Nova calls.
 
+## Infrastructure session closeout rule
+
+Every implementation session related to infrastructure must finish with a successful
+**AWS Infrastructure Plan** after the implementation is complete. This rule applies to
+changes under `infra/aws/**`, the infrastructure plan workflow, AWS deployment
+configuration, and application or data-plane contracts that require a corresponding AWS
+resource or configuration change.
+
+Run the repository's `.github/workflows/infra-plan.yml` workflow for the affected
+environment and verify that its module validation, environment-root validation, and
+composed environment plan all pass. A local format, validation, or test run is useful
+preflight evidence, but it does not replace the successful AWS-authenticated environment
+plan. Do not claim the infrastructure session or its milestone complete while the plan is
+failed, pending, cancelled, or skipped; record the plan run and affected environment in
+the session closeout evidence.
+
 ## Backend session closeout sequence
 
 Before closing a backend-focused session, complete this sequence and call out any item
