@@ -43,7 +43,7 @@ variable "flow_log_retention_days" {
   default     = null
 
   validation {
-    condition     = var.flow_log_retention_days == null || contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653], var.flow_log_retention_days)
+    condition     = var.flow_log_retention_days == null ? true : contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653], var.flow_log_retention_days)
     error_message = "flow_log_retention_days must be a retention period supported by CloudWatch Logs."
   }
 }
@@ -53,7 +53,7 @@ variable "flow_log_kms_key_id" {
   default     = null
 
   validation {
-    condition     = var.flow_log_kms_key_id == null || trimspace(var.flow_log_kms_key_id) != ""
+    condition     = var.flow_log_kms_key_id == null ? true : trimspace(var.flow_log_kms_key_id) != ""
     error_message = "flow_log_kms_key_id must be null or a non-empty KMS key ID or ARN."
   }
 }

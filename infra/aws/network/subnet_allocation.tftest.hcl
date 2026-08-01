@@ -4,6 +4,24 @@ mock_provider "aws" {
       names = ["ap-southeast-2a", "ap-southeast-2b", "ap-southeast-2c", "ap-southeast-2d"]
     }
   }
+
+  mock_data "aws_iam_policy_document" {
+    defaults = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  mock_resource "aws_cloudwatch_log_group" {
+    defaults = {
+      arn = "arn:aws:logs:ap-southeast-2:123456789012:log-group:/taskmind/test/vpc-flow-logs"
+    }
+  }
+
+  mock_resource "aws_iam_role" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:role/taskmind-test-vpc-flow-logs"
+    }
+  }
 }
 
 run "default_subnets_are_distinct" {

@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 AWS_ROOT = Path(__file__).resolve().parents[1]
@@ -45,3 +45,11 @@ def test_retention_and_kms_are_configurable_with_longer_production_retention():
     assert "flow_log_retention_days = 365" in production
     assert "flow_log_retention_days = 30" in staging
     assert re.search(r"flow_log_kms_key_id\s*=\s*var\.cloudwatch_logs_kms_key_id", production)
+
+
+def test_optional_variable_validation_does_not_evaluate_functions_with_null():
+    assert (
+        'var.flow_log_kms_key_id == null ? true : trimspace(var.flow_log_kms_key_id) != ""'
+        in NETWORK_VARIABLES
+    )
+    assert "var.flow_log_retention_days == null ? true : contains(" in NETWORK_VARIABLES

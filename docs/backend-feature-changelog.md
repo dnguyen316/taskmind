@@ -8,11 +8,16 @@
   to each environment's alarm topics.
 - Production reuses its required CloudWatch Logs KMS key and retains flow logs for 365
   days; staging retains 30 days and creates a dedicated rotating key by default.
+- Made nullable flow-log variable validation lazy so omitted KMS and retention settings
+  validate successfully, and made the attachments lifecycle filter explicit for current
+  AWS provider validation.
 
 ### Tests
 
 - Added static infrastructure assertions for encryption, IAM trust and delivery scope,
   flow-log fields, rejected-traffic monitoring, and environment retention settings.
+- Updated the network module's mocked IAM policy documents so its native OpenTofu plan
+  tests continue to exercise subnet allocation after flow-log IAM resources were added.
 
 ### Closeout notes
 
