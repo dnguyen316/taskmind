@@ -30,6 +30,16 @@ def test_flow_logs_are_encrypted_and_capture_security_fields():
 
 def test_delivery_role_and_rejected_traffic_alarm_are_scoped():
     assert 'identifiers = ["vpc-flow-logs.amazonaws.com"]' in NETWORK_MAIN
+    assert re.search(
+        r'variable\s*=\s*"aws:SourceAccount".*?values\s*=\s*\[data\.aws_caller_identity\.current\.account_id\]',
+        NETWORK_MAIN,
+        re.DOTALL,
+    )
+    assert re.search(
+        r'variable\s*=\s*"aws:SourceArn".*?values\s*=\s*\["arn:aws:ec2:\$\{var\.aws_region\}:\$\{data\.aws_caller_identity\.current\.account_id\}:vpc-flow-log/\*"\]',
+        NETWORK_MAIN,
+        re.DOTALL,
+    )
     assert 'resources = ["${aws_cloudwatch_log_group.vpc_flow_logs.arn}:*"]' in NETWORK_MAIN
     assert 'action = REJECT' in NETWORK_MAIN
     assert 'resource "aws_cloudwatch_metric_alarm" "unusual_rejected_traffic"' in NETWORK_MAIN
