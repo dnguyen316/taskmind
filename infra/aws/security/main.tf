@@ -95,12 +95,12 @@ resource "aws_vpc_security_group_egress_rule" "interface_endpoints" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "core_s3" {
-  description                = "Core attachment access through the S3 gateway endpoint"
-  security_group_id          = aws_security_group.core.id
-  destination_prefix_list_id = var.s3_prefix_list_id
-  from_port                  = 443
-  to_port                    = 443
-  ip_protocol                = "tcp"
+  description       = "Core attachment access through the S3 gateway endpoint"
+  security_group_id = aws_security_group.core.id
+  prefix_list_id    = var.s3_prefix_list_id
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
 }
 
 resource "aws_vpc_security_group_egress_rule" "database" {

@@ -43,7 +43,7 @@ run "only_documented_network_paths_are_authorized" {
       aws_vpc_security_group_egress_rule.dns_udp["core"].cidr_ipv4 == "10.42.0.2/32",
       aws_vpc_security_group_egress_rule.dns_tcp["relay"].cidr_ipv4 == "10.42.0.2/32",
       aws_vpc_security_group_egress_rule.interface_endpoints["nova"].referenced_security_group_id == "sg-00000000000000009",
-      aws_vpc_security_group_egress_rule.core_s3.destination_prefix_list_id == "pl-00000000000000000",
+      aws_vpc_security_group_egress_rule.core_s3.prefix_list_id == "pl-00000000000000000",
       aws_vpc_security_group_egress_rule.nova_external_ai.cidr_ipv4 == "0.0.0.0/0",
       aws_vpc_security_group_egress_rule.nova_external_ai.ip_protocol == "tcp",
     ])

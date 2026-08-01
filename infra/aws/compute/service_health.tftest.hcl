@@ -34,10 +34,10 @@ override_data {
 }
 
 variables {
-  environment            = "test"
-  aws_region             = "ap-southeast-2"
-  vpc_id                 = "vpc-00000000000000000"
-  private_subnet_ids     = ["subnet-00000000000000000", "subnet-11111111111111111"]
+  environment        = "test"
+  aws_region         = "ap-southeast-2"
+  vpc_id             = "vpc-00000000000000000"
+  private_subnet_ids = ["subnet-00000000000000000", "subnet-11111111111111111"]
   service_security_group_ids = {
     core  = "sg-00000000000000001"
     relay = "sg-00000000000000002"
