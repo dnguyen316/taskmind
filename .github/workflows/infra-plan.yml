@@ -64,6 +64,11 @@ jobs:
         working-directory: infra/aws/${{ matrix.module }}
         run: tofu validate
 
+      - name: Test network subnet allocation
+        if: matrix.module == 'network'
+        working-directory: infra/aws/network
+        run: tofu test
+
 
   validate-environment-roots:
     name: Validate composed AWS environment roots
