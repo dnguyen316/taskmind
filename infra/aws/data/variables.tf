@@ -61,13 +61,23 @@ variable "skip_final_snapshot" {
 }
 
 variable "final_snapshot_identifier_prefix" {
-  description = "Prefix used when naming the final RDS snapshot. The environment is appended automatically for a deterministic per-environment snapshot identifier."
+  description = "Shared prefix used when naming final RDS snapshots. The environment and operator-supplied replacement suffix are appended automatically. Do not include the environment in this value."
   type        = string
   default     = "taskmind-final-snapshot"
 
   validation {
-    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]{0,190}$", var.final_snapshot_identifier_prefix)) && !endswith(var.final_snapshot_identifier_prefix, "-")
-    error_message = "final_snapshot_identifier_prefix must start with a letter, contain only letters, numbers, or hyphens, must not end with a hyphen, and must leave room for the environment suffix."
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]{0,159}$", var.final_snapshot_identifier_prefix)) && !strcontains(var.final_snapshot_identifier_prefix, "--") && !endswith(var.final_snapshot_identifier_prefix, "-")
+    error_message = "final_snapshot_identifier_prefix must be 1-160 characters, start with a letter, contain only letters, numbers, or single hyphens, and must not end with a hyphen. The environment is appended automatically."
+  }
+}
+
+variable "final_snapshot_identifier_suffix" {
+  description = "Operator-supplied unique suffix for this RDS replacement generation (for example change-20260801-01). Change it before applying any intentional database replacement so a previously created final snapshot identifier is never reused."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$", var.final_snapshot_identifier_suffix)) && !strcontains(var.final_snapshot_identifier_suffix, "--") && !endswith(var.final_snapshot_identifier_suffix, "-")
+    error_message = "final_snapshot_identifier_suffix must be 1-63 characters, contain only letters, numbers, or single hyphens, and must not end with a hyphen."
   }
 }
 

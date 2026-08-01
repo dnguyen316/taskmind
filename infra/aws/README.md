@@ -113,13 +113,22 @@ Infrastructure Plan` workflow expects environment-scoped variables for
 environment, service secrets, and alarm topics. Store the ElastiCache AUTH token in the
 `TASKMIND_REDIS_PASSWORD` GitHub Environment secret so the plan can set
 `redis_auth_token`; inject the same secret into Relay and Nova as
-`TASKMIND_REDIS_PASSWORD`. Production also requires `CLOUDWATCH_LOGS_KMS_KEY_ID`.
+`TASKMIND_REDIS_PASSWORD`. Set `RDS_FINAL_SNAPSHOT_SUFFIX` to a stable, unique identifier
+for the current database generation. Before approving an intentional RDS replacement,
+change this value to one that has never been used in that environment; do not derive it
+with a Terraform timestamp function because that would cause perpetual plan drift.
+Production also requires `CLOUDWATCH_LOGS_KMS_KEY_ID`.
 
 ### RDS final snapshots and disposable previews
 
 The shared data module defaults `skip_final_snapshot` to `false`, and the staging and
 production roots pass `deletion_protection = true` with `skip_final_snapshot = false` so
 managed RDS databases retain a final recovery point if deletion is ever approved.
+Final snapshot names have the form
+`<prefix>-<environment>-<replacement-suffix>`. The roots use the shared
+`taskmind-final-snapshot` prefix, append their environment automatically, and require the
+operator-managed suffix described above so successive replacements cannot collide with
+an existing snapshot.
 Disposable preview stacks may intentionally set `deletion_protection = false` and
 `skip_final_snapshot = true` only when their data is ephemeral, reproducible, and not
 needed for incident response or rollback. Keep that preview-specific behavior in the

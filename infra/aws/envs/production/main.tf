@@ -38,7 +38,8 @@ module "data" {
   redis_auth_token                 = var.redis_auth_token
   deletion_protection              = true
   skip_final_snapshot              = false
-  final_snapshot_identifier_prefix = "taskmind-production-final-snapshot"
+  final_snapshot_identifier_prefix = "taskmind-final-snapshot"
+  final_snapshot_identifier_suffix = var.final_snapshot_identifier_suffix
   tags                             = local.tags
 }
 

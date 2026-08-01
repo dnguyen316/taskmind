@@ -12,7 +12,7 @@ terraform {
 locals {
   name                      = "taskmind-${var.environment}"
   tags                      = merge(var.tags, { Project = "taskmind", Environment = var.environment, ManagedBy = "opentofu" })
-  final_snapshot_identifier = "${var.final_snapshot_identifier_prefix}-${var.environment}"
+  final_snapshot_identifier = "${var.final_snapshot_identifier_prefix}-${var.environment}-${var.final_snapshot_identifier_suffix}"
 }
 
 resource "aws_db_subnet_group" "this" {
@@ -54,6 +54,11 @@ resource "aws_db_instance" "postgres" {
     precondition {
       condition     = var.skip_final_snapshot || length(trimspace(var.final_snapshot_identifier_prefix)) > 0
       error_message = "final_snapshot_identifier_prefix must be non-empty when skip_final_snapshot is false."
+    }
+
+    precondition {
+      condition     = var.skip_final_snapshot || length(local.final_snapshot_identifier) <= 255
+      error_message = "The complete final snapshot identifier (prefix, environment, and suffix) must not exceed 255 characters."
     }
   }
 }
