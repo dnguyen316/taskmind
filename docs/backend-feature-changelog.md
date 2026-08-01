@@ -1311,3 +1311,21 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M07 Nova internal integration and Relay service security hardening.
 - Skills used: none.
 - Agent delegation: none.
+## 2026-08-01 - ECS service-specific egress controls
+
+### Changed
+
+- Replaced the ECS services' all-protocol internet egress with resolver DNS, private AWS
+  interface endpoint HTTPS, Core S3 prefix-list access, and explicit data-plane and internal
+  service TCP paths.
+- Retained TCP 443 NAT egress only where current application dependencies require external
+  providers: Nova AI APIs and Core OAuth/integration/notification APIs. Documented that
+  hostname enforcement requires AWS Network Firewall or an authenticated egress proxy.
+- Added static and Terraform assertions for the egress matrix, including a regression guard
+  preventing Core and Relay from regaining unrestricted all-protocol egress.
+
+### Closeout notes
+
+- Primary milestone: M13 AWS deployment and security hardening.
+- Skills used: none.
+- Agent delegation: none.

@@ -1,15 +1,18 @@
 mock_provider "aws" {}
 
 variables {
-  environment           = "test"
-  vpc_id                = "vpc-00000000000000000"
+  environment                    = "test"
+  vpc_id                         = "vpc-00000000000000000"
+  vpc_cidr                       = "10.42.0.0/16"
+  vpc_endpoint_security_group_id = "sg-00000000000000009"
+  s3_prefix_list_id              = "pl-00000000000000000"
 }
 
 run "only_documented_network_paths_are_authorized" {
   command = plan
 
   assert {
-    condition = toset(keys(output.service_security_group_ids)) == toset(["core", "relay", "nova"])
+    condition     = toset(keys(output.service_security_group_ids)) == toset(["core", "relay", "nova"])
     error_message = "Security outputs must expose one group for each ECS service and no shared ECS group."
   }
 
@@ -33,5 +36,17 @@ run "only_documented_network_paths_are_authorized" {
       alltrue([for rule in values(aws_vpc_security_group_ingress_rule.redis_from_service) : rule.from_port == 6379 && rule.to_port == 6379]),
     ])
     error_message = "Only the three application services may reach RDS and Redis on their required ports."
+  }
+
+  assert {
+    condition = alltrue([
+      aws_vpc_security_group_egress_rule.dns_udp["core"].cidr_ipv4 == "10.42.0.2/32",
+      aws_vpc_security_group_egress_rule.dns_tcp["relay"].cidr_ipv4 == "10.42.0.2/32",
+      aws_vpc_security_group_egress_rule.interface_endpoints["nova"].referenced_security_group_id == "sg-00000000000000009",
+      aws_vpc_security_group_egress_rule.core_s3.prefix_list_id == "pl-00000000000000000",
+      aws_vpc_security_group_egress_rule.nova_external_ai.cidr_ipv4 == "0.0.0.0/0",
+      aws_vpc_security_group_egress_rule.nova_external_ai.ip_protocol == "tcp",
+    ])
+    error_message = "Service egress must use the resolver, private endpoints, S3 prefix list, and HTTPS-only Nova provider path."
   }
 }

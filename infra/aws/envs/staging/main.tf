@@ -20,9 +20,12 @@ module "network" {
 module "security" {
   source = "../../security"
 
-  environment = var.environment
-  vpc_id      = module.network.vpc_id
-  tags        = local.tags
+  environment                    = var.environment
+  vpc_id                         = module.network.vpc_id
+  vpc_cidr                       = module.network.vpc_cidr
+  vpc_endpoint_security_group_id = module.network.vpc_endpoint_security_group_id
+  s3_prefix_list_id              = module.network.s3_prefix_list_id
+  tags                           = local.tags
 }
 
 module "data" {
@@ -173,27 +176,27 @@ resource "aws_vpc_security_group_ingress_rule" "alb_to_core" {
 module "compute" {
   source = "../../compute"
 
-  environment            = var.environment
-  aws_region             = var.aws_region
-  vpc_id                 = module.network.vpc_id
-  private_subnet_ids     = module.network.private_subnet_ids
+  environment                = var.environment
+  aws_region                 = var.aws_region
+  vpc_id                     = module.network.vpc_id
+  private_subnet_ids         = module.network.private_subnet_ids
   service_security_group_ids = module.security.service_security_group_ids
-  core_target_group_arn  = module.edge.core_target_group_arn
-  alb_listener_ready_arn = module.edge.alb_listener_ready_arn
-  attachments_bucket_arn = module.data.attachments_bucket_arn
-  opensearch_domain_arn  = module.data.opensearch_domain_arn
-  core_secret_arns       = var.core_secret_arns
-  relay_secret_arns      = var.relay_secret_arns
-  nova_secret_arns       = var.nova_secret_arns
-  service_images         = var.service_images
-  service_environment    = var.service_environment
-  service_secrets        = var.service_secrets
-  core_desired_count     = 1
-  relay_desired_count    = 1
-  nova_desired_count     = 1
-  log_retention_days     = 30
-  enable_execute_command = true
-  tags                   = local.tags
+  core_target_group_arn      = module.edge.core_target_group_arn
+  alb_listener_ready_arn     = module.edge.alb_listener_ready_arn
+  attachments_bucket_arn     = module.data.attachments_bucket_arn
+  opensearch_domain_arn      = module.data.opensearch_domain_arn
+  core_secret_arns           = var.core_secret_arns
+  relay_secret_arns          = var.relay_secret_arns
+  nova_secret_arns           = var.nova_secret_arns
+  service_images             = var.service_images
+  service_environment        = var.service_environment
+  service_secrets            = var.service_secrets
+  core_desired_count         = 1
+  relay_desired_count        = 1
+  nova_desired_count         = 1
+  log_retention_days         = 30
+  enable_execute_command     = true
+  tags                       = local.tags
 }
 
 data "aws_iam_policy_document" "opensearch_activity" {

@@ -23,3 +23,8 @@ output "private_subnet_cidrs" {
 output "vpc_endpoint_security_group_id" {
   value = aws_security_group.vpc_endpoints.id
 }
+
+output "s3_prefix_list_id" {
+  description = "AWS-managed S3 prefix list associated with the gateway endpoint."
+  value       = aws_vpc_endpoint.s3.prefix_list_id
+}

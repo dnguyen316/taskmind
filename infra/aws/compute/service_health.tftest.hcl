@@ -34,10 +34,10 @@ override_data {
 }
 
 variables {
-  environment            = "test"
-  aws_region             = "ap-southeast-2"
-  vpc_id                 = "vpc-00000000000000000"
-  private_subnet_ids     = ["subnet-00000000000000000", "subnet-11111111111111111"]
+  environment        = "test"
+  aws_region         = "ap-southeast-2"
+  vpc_id             = "vpc-00000000000000000"
+  private_subnet_ids = ["subnet-00000000000000000", "subnet-11111111111111111"]
   service_security_group_ids = {
     core  = "sg-00000000000000001"
     relay = "sg-00000000000000002"
@@ -105,9 +105,9 @@ run "services_are_health_checked_and_rollback_safe" {
 
   assert {
     condition = alltrue([
-      aws_ecs_service.service["core"].network_configuration[0].security_groups == ["sg-00000000000000001"],
-      aws_ecs_service.service["relay"].network_configuration[0].security_groups == ["sg-00000000000000002"],
-      aws_ecs_service.service["nova"].network_configuration[0].security_groups == ["sg-00000000000000003"],
+      aws_ecs_service.service["core"].network_configuration[0].security_groups == toset(["sg-00000000000000001"]),
+      aws_ecs_service.service["relay"].network_configuration[0].security_groups == toset(["sg-00000000000000002"]),
+      aws_ecs_service.service["nova"].network_configuration[0].security_groups == toset(["sg-00000000000000003"]),
     ])
     error_message = "Each ECS service must use its matching service security group."
   }

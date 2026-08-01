@@ -118,6 +118,32 @@ Relay, plus Core's activity-search read API, target OpenSearch:
 - Set `SPRING_PROFILES_ACTIVE=prod` in production. The production profile disables the E2E
   bypass and the application enforces that guard in code.
 
+### ECS egress matrix
+
+The service security groups default to no egress and authorize only the application calls
+reviewed below. DNS is limited to TCP/UDP 53 at the VPC Route 53 Resolver (the VPC base
+address plus two). AWS control-plane traffic uses TCP 443 to the interface endpoint security
+group for ECR API/Docker, CloudWatch Logs, Secrets Manager, SSM/SSM Messages, KMS, and
+X-Ray. Core reaches S3 on TCP 443 through the gateway endpoint's AWS-managed prefix list.
+
+| Caller | Allowed destination | TCP port | Application dependency |
+| --- | --- | ---: | --- |
+| Core | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Primary persistence, streams/cache, and activity search |
+| Core | Relay / Nova security groups | 8081 / 8082 | Context/search projections and AI facade calls |
+| Core | S3 gateway endpoint prefix list | 443 | Attachment object storage |
+| Relay | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Projection persistence, event stream, and indexing/search |
+| Nova | RDS / Redis security groups | 5432 / 6379 | AI audit/job persistence and chat/session state |
+| Nova | Core / Relay security groups | 8080 / 8081 | Tool callbacks and context retrieval |
+
+Two HTTPS internet paths remain unavoidable with the current provider integrations and
+private-subnet/NAT topology. Nova calls configured external AI provider APIs. Core calls
+configured OAuth/JWK, GitHub, Jira, wiki, and Slack endpoints; several integration base URLs
+are tenant-configurable, so an IP allowlist is not stable. Both paths are TCP 443 only, while
+Relay has no internet egress. Route either path through AWS Network Firewall or an
+authenticated egress proxy when destination-domain restrictions are required. Security
+groups cannot filter by hostname, and the broad HTTPS destination must not be described as
+domain-restricted merely because its intended use is provider traffic.
+
 ## CI/CD
 
 ```text
