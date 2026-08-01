@@ -52,6 +52,23 @@ variable "single_nat_gateway" {
   default = true
 }
 
+variable "enable_alb_deletion_protection" {
+  description = "Whether staging protects the Core ALB from deletion. Disable to reduce teardown friction for an intentionally disposable staging stack."
+  type        = bool
+  default     = false
+}
+
+variable "alb_access_log_retention_days" {
+  description = "Number of days to retain staging Core ALB access logs."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.alb_access_log_retention_days >= 1 && floor(var.alb_access_log_retention_days) == var.alb_access_log_retention_days
+    error_message = "alb_access_log_retention_days must be a positive whole number."
+  }
+}
+
 variable "alb_certificate_arn" {
   description = "Regional ACM certificate ARN in ap-southeast-2 for the Core ALB HTTPS listener."
   type        = string
