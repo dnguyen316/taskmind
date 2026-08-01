@@ -15,9 +15,9 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
-    # Module outputs are lists; tolist avoids comparing a list to a tuple,
-    # which is always false even when every CIDR string is identical.
-    condition = output.public_subnet_cidrs == tolist([
+    # Comprehension-backed module outputs are tuples. Normalize both operands
+    # before comparison so matching CIDR values are not rejected by type alone.
+    condition = tolist(output.public_subnet_cidrs) == tolist([
       "10.40.0.0/20",
       "10.40.16.0/20",
     ])
@@ -25,7 +25,7 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
-    condition = output.private_subnet_cidrs == tolist([
+    condition = tolist(output.private_subnet_cidrs) == tolist([
       "10.40.64.0/20",
       "10.40.80.0/20",
     ])
