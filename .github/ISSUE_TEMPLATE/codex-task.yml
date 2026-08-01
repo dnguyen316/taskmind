@@ -1,0 +1,61 @@
+name: Codex task
+description: Define a scoped, verifiable task for a coding agent.
+title: "[Codex]: "
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide enough detail for an agent to implement and verify the task without expanding its scope.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: State the outcome this task must achieve.
+      placeholder: Describe the desired end state.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Identify the components, files, or behavior included in this task.
+      placeholder: List what is in scope and any important boundaries.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List the observable conditions that must be satisfied for completion.
+      placeholder: |
+        - [ ] The expected behavior is implemented.
+        - [ ] Relevant documentation and contracts are updated.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Specify the tests, checks, or manual flows that must demonstrate completion.
+      placeholder: List exact commands and any required manual verification.
+    validations:
+      required: true
+
+  - type: textarea
+    id: restrictions
+    attributes:
+      label: Restrictions
+      description: Keep these safeguards and add any task-specific restrictions.
+      value: |
+        - Follow all applicable instructions in `AGENTS.md`.
+        - Avoid unrelated changes.
+        - Never deploy or run `terraform apply` or `tofu apply`.
+        - Never merge automatically.
+    validations:
+      required: true
