@@ -64,6 +64,11 @@ jobs:
         working-directory: infra/aws/${{ matrix.module }}
         run: tofu validate
 
+      - name: Test compute module
+        if: matrix.module == 'compute'
+        working-directory: infra/aws/compute
+        run: tofu test
+
       - name: Test network subnet allocation
         if: matrix.module == 'network'
         working-directory: infra/aws/network
