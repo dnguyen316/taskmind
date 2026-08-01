@@ -260,4 +260,11 @@ resource "aws_ecs_service" "service" {
   }
 
   tags = local.tags
+
+  lifecycle {
+    precondition {
+      condition     = each.key != "core" || var.alb_listener_ready_arn != ""
+      error_message = "Core requires a ready ALB listener before its ECS service can be created."
+    }
+  }
 }

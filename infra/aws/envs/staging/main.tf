@@ -104,6 +104,7 @@ module "compute" {
   private_subnet_ids     = module.network.private_subnet_ids
   ecs_security_group_id  = module.security.ecs_security_group_id
   core_target_group_arn  = module.edge.core_target_group_arn
+  alb_listener_ready_arn = module.edge.alb_listener_ready_arn
   attachments_bucket_arn = module.data.attachments_bucket_arn
   opensearch_domain_arn  = module.data.opensearch_domain_arn
   core_secret_arns       = var.core_secret_arns
