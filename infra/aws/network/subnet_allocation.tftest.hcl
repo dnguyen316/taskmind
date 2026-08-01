@@ -15,18 +15,20 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
-    condition = output.public_subnet_cidrs == [
+    # Module outputs are lists; tolist avoids comparing a list to a tuple,
+    # which is always false even when every CIDR string is identical.
+    condition = output.public_subnet_cidrs == tolist([
       "10.40.0.0/20",
       "10.40.16.0/20",
-    ]
+    ])
     error_message = "The default public subnet CIDRs did not expand as expected."
   }
 
   assert {
-    condition = output.private_subnet_cidrs == [
+    condition = output.private_subnet_cidrs == tolist([
       "10.40.64.0/20",
       "10.40.80.0/20",
-    ]
+    ])
     error_message = "The default private subnet CIDRs did not expand as expected."
   }
 

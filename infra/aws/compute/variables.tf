@@ -17,6 +17,10 @@ variable "ecs_security_group_id" {
 variable "core_target_group_arn" {
   type = string
 }
+variable "alb_listener_ready_arn" {
+  description = "ALB listener readiness token consumed by the Core ECS service to enforce listener-before-service ordering."
+  type        = string
+}
 variable "attachments_bucket_arn" {
   type = string
 }

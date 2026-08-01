@@ -100,6 +100,9 @@ jobs:
         working-directory: infra/aws/envs/${{ matrix.environment }}
         run: tofu validate
 
+      - name: Check ALB listener ordering regression
+        run: python3 infra/aws/tests/test_listener_order.py
+
   plan-environment:
     name: Plan composed environment
     runs-on: ubuntu-latest

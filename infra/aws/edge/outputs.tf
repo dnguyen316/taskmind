@@ -11,6 +11,10 @@ output "alb_security_group_id" {
 output "core_target_group_arn" {
   value = aws_lb_target_group.core.arn
 }
+output "alb_listener_ready_arn" {
+  description = "ARN of the listener that must be ready before Core is attached to the ALB (HTTPS outside local environments, HTTP locally)."
+  value       = var.environment == "local" ? aws_lb_listener.http.arn : aws_lb_listener.https[0].arn
+}
 output "cloudfront_distribution_id" {
   value = aws_cloudfront_distribution.spa.id
 }
