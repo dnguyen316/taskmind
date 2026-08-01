@@ -21,7 +21,8 @@ output "private_subnet_cidrs" {
   value       = local.private_subnets
 }
 output "vpc_endpoint_security_group_id" {
-  value = aws_security_group.vpc_endpoints.id
+  description = "Security group attached to interface VPC endpoints; environment roots own its workload ingress rules."
+  value       = aws_security_group.vpc_endpoints.id
 }
 
 output "s3_prefix_list_id" {

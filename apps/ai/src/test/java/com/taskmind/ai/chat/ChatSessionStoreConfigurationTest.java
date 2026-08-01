@@ -1,12 +1,13 @@
 package com.taskmind.ai.chat;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.convert.ApplicationConversionService;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 class ChatSessionStoreConfigurationTest {
@@ -15,7 +16,15 @@ class ChatSessionStoreConfigurationTest {
                     .setConversionService(ApplicationConversionService.getSharedInstance()))
             .withUserConfiguration(InMemoryChatSessionStore.class, RedisChatSessionStore.class)
             .withBean(ObjectMapper.class)
-            .withBean(StringRedisTemplate.class, () -> mock(StringRedisTemplate.class));
+            .withBean(StringRedisTemplate.class, ChatSessionStoreConfigurationTest::redisTemplate);
+
+    private static StringRedisTemplate redisTemplate() {
+        RedisConnectionFactory connectionFactory = (RedisConnectionFactory) Proxy.newProxyInstance(
+                RedisConnectionFactory.class.getClassLoader(),
+                new Class<?>[] {RedisConnectionFactory.class},
+                (proxy, method, args) -> method.getReturnType() == boolean.class ? false : null);
+        return new StringRedisTemplate(connectionFactory);
+    }
 
     @Test
     void usesInMemoryStoreWhenRedisPropertyIsMissing() {

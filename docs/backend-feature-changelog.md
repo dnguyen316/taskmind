@@ -1,3 +1,25 @@
+## 2026-08-01 - VPC endpoint workload ingress ownership
+
+### Changed
+
+- Removed the VPC-wide HTTPS ingress authorization from the interface endpoint security
+  group and moved rule ownership into both composed environment roots.
+- Restricted interface endpoint ingress to port 443 from the named Core, Relay, and Nova
+  ECS service security groups after those workload groups are assembled.
+
+### Tests
+
+- Added a static regression guard that rejects endpoint ingress sourced from the VPC CIDR
+  or `0.0.0.0/0` and verifies both environment roots use workload security-group references.
+- Kept the Nova chat-store configuration test compatible with the repository's Java 17+
+  build contract by using an unconnected Redis template instead of runtime bytecode mocking.
+
+### Closeout notes
+
+- Primary milestone: M13 AWS deployment and security hardening.
+- Skills used: none.
+- Agent delegation: none.
+
 ## 2026-07-29 - Nova chat session store selection
 
 ### Changed

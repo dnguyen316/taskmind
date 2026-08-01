@@ -28,6 +28,17 @@ module "security" {
   tags                           = local.tags
 }
 
+resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints_from_service" {
+  for_each = module.security.service_security_group_ids
+
+  description                  = "${title(each.key)} service HTTPS to interface VPC endpoints"
+  security_group_id            = module.network.vpc_endpoint_security_group_id
+  referenced_security_group_id = each.value
+  from_port                    = 443
+  to_port                      = 443
+  ip_protocol                  = "tcp"
+}
+
 module "data" {
   source = "../../data"
 
