@@ -1,0 +1,75 @@
+name: Sync managed labels
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    name: Create or update manifest labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('.github/labels.yml', 'utf8'));
+            const labels = manifest.labels;
+
+            if (!Array.isArray(labels)) {
+              throw new Error('The label manifest must contain a labels array.');
+            }
+
+            const seen = new Set();
+            for (const label of labels) {
+              const keys = Object.keys(label).sort().join(',');
+              if (keys !== 'color,description,name' ||
+                  typeof label.name !== 'string' || !label.name ||
+                  !/^[0-9a-fA-F]{6}$/.test(label.color) ||
+                  typeof label.description !== 'string' || !label.description) {
+                throw new Error(`Invalid manifest entry: ${JSON.stringify(label)}`);
+              }
+              if (seen.has(label.name)) {
+                throw new Error(`Duplicate label in manifest: ${label.name}`);
+              }
+              seen.add(label.name);
+
+              let exists = true;
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                exists = false;
+              }
+
+              if (exists) {
+                await github.rest.issues.updateLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                core.info(`Updated ${label.name}`);
+              } else {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                core.info(`Created ${label.name}`);
+              }
+            }
