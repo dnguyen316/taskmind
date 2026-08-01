@@ -13,6 +13,8 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+data "aws_caller_identity" "current" {}
+
 locals {
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 
@@ -33,6 +35,153 @@ locals {
     Environment = var.environment
     ManagedBy   = "opentofu"
   })
+  flow_log_retention_days = coalesce(var.flow_log_retention_days, var.environment == "production" ? 365 : 30)
+  flow_log_kms_key_id     = coalesce(var.flow_log_kms_key_id, try(aws_kms_key.flow_logs[0].arn, null))
+}
+
+data "aws_iam_policy_document" "flow_logs_kms" {
+  count = var.flow_log_kms_key_id == null ? 1 : 0
+
+  statement {
+    sid     = "EnableAccountAdministration"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "AllowCloudWatchLogsEncryption"
+    actions = [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*",
+      "kms:DescribeKey",
+    ]
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.aws_region}.amazonaws.com"]
+    }
+    resources = ["*"]
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/taskmind/${var.environment}/vpc-flow-logs"]
+    }
+  }
+}
+
+resource "aws_kms_key" "flow_logs" {
+  count                   = var.flow_log_kms_key_id == null ? 1 : 0
+  description             = "Encrypt TaskMind ${var.environment} VPC Flow Logs"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.flow_logs_kms[0].json
+  tags                    = local.common_tags
+}
+
+resource "aws_kms_alias" "flow_logs" {
+  count         = var.flow_log_kms_key_id == null ? 1 : 0
+  name          = "alias/taskmind-${var.environment}-vpc-flow-logs"
+  target_key_id = aws_kms_key.flow_logs[0].key_id
+}
+
+resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  name              = "/taskmind/${var.environment}/vpc-flow-logs"
+  retention_in_days = local.flow_log_retention_days
+  kms_key_id        = local.flow_log_kms_key_id
+  tags              = local.common_tags
+}
+
+data "aws_iam_policy_document" "flow_logs_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc-flow-log/*"]
+    }
+  }
+}
+
+resource "aws_iam_role" "flow_logs" {
+  name               = "taskmind-${var.environment}-vpc-flow-logs"
+  assume_role_policy = data.aws_iam_policy_document.flow_logs_assume_role.json
+  tags               = local.common_tags
+}
+
+data "aws_iam_policy_document" "flow_logs_delivery" {
+  statement {
+    sid       = "DescribeLogGroups"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
+  }
+  statement {
+    sid = "DeliverToVpcFlowLogGroup"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+    ]
+    resources = ["${aws_cloudwatch_log_group.vpc_flow_logs.arn}:*"]
+  }
+}
+
+resource "aws_iam_role_policy" "flow_logs_delivery" {
+  name   = "deliver-vpc-flow-logs"
+  role   = aws_iam_role.flow_logs.id
+  policy = data.aws_iam_policy_document.flow_logs_delivery.json
+}
+
+resource "aws_flow_log" "this" {
+  vpc_id                   = aws_vpc.this.id
+  traffic_type             = "ALL"
+  log_destination_type     = "cloud-watch-logs"
+  log_destination          = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  iam_role_arn             = aws_iam_role.flow_logs.arn
+  max_aggregation_interval = 60
+  log_format               = "$${version} $${account-id} $${interface-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${action} $${log-status} $${flow-direction} $${tcp-flags} $${reject-reason}"
+
+  depends_on = [aws_iam_role_policy.flow_logs_delivery]
+}
+
+resource "aws_cloudwatch_log_metric_filter" "rejected_flows" {
+  name           = "taskmind-${var.environment}-rejected-vpc-flows"
+  log_group_name = aws_cloudwatch_log_group.vpc_flow_logs.name
+  pattern        = "[version, account_id, interface_id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action = REJECT, log_status, flow_direction, tcp_flags, reject_reason]"
+
+  metric_transformation {
+    name      = "RejectedVpcFlows-${var.environment}"
+    namespace = "TaskMind/Network"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "unusual_rejected_traffic" {
+  alarm_name          = "taskmind-${var.environment}-unusual-rejected-vpc-traffic"
+  alarm_description   = "Rejected VPC flows exceeded the expected five-minute threshold."
+  namespace           = "TaskMind/Network"
+  metric_name         = "RejectedVpcFlows-${var.environment}"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = var.rejected_traffic_alarm_threshold
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_topic_arns
+  tags                = local.common_tags
 }
 
 resource "aws_vpc" "this" {

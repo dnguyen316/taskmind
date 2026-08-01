@@ -37,6 +37,41 @@ variable "interface_endpoints" {
   type    = list(string)
   default = ["ecr.api", "ecr.dkr", "logs", "secretsmanager", "ssm", "ssmmessages", "xray", "kms"]
 }
+variable "flow_log_retention_days" {
+  description = "CloudWatch retention for VPC Flow Logs. When null, production retains 365 days and other environments retain 30 days."
+  type        = number
+  default     = null
+
+  validation {
+    condition     = var.flow_log_retention_days == null ? true : contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653], var.flow_log_retention_days)
+    error_message = "flow_log_retention_days must be a retention period supported by CloudWatch Logs."
+  }
+}
+variable "flow_log_kms_key_id" {
+  description = "Optional customer-managed KMS key ID or ARN for VPC Flow Logs. A dedicated key is created when omitted."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.flow_log_kms_key_id == null ? true : trimspace(var.flow_log_kms_key_id) != ""
+    error_message = "flow_log_kms_key_id must be null or a non-empty KMS key ID or ARN."
+  }
+}
+variable "rejected_traffic_alarm_threshold" {
+  description = "Rejected VPC flows in a five-minute period that trigger the unusual rejected traffic alarm."
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.rejected_traffic_alarm_threshold > 0
+    error_message = "rejected_traffic_alarm_threshold must be greater than zero."
+  }
+}
+variable "alarm_topic_arns" {
+  description = "SNS topic ARNs notified when unusual rejected VPC traffic is detected."
+  type        = list(string)
+  default     = []
+}
 variable "tags" {
   type    = map(string)
   default = {}
