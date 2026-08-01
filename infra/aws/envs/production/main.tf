@@ -20,9 +20,12 @@ module "network" {
 module "security" {
   source = "../../security"
 
-  environment = var.environment
-  vpc_id      = module.network.vpc_id
-  tags        = local.tags
+  environment                    = var.environment
+  vpc_id                         = module.network.vpc_id
+  vpc_cidr                       = module.network.vpc_cidr
+  vpc_endpoint_security_group_id = module.network.vpc_endpoint_security_group_id
+  s3_prefix_list_id              = module.network.s3_prefix_list_id
+  tags                           = local.tags
 }
 
 module "data" {

@@ -52,6 +52,31 @@ class SecurityPathTest(unittest.TestCase):
             )
             self.assertEqual(callers, {"core", "relay", "nova"})
 
+    def test_core_and_relay_have_no_unrestricted_all_protocol_egress(self) -> None:
+        for service in ("core", "relay"):
+            group = re.search(
+                rf'resource\s+"aws_security_group"\s+"{service}"\s+\{{(.*?)\n\}}',
+                self.source,
+                re.S,
+            )
+            self.assertIsNotNone(group)
+            self.assertNotRegex(
+                group.group(1),
+                r'protocol\s*=\s*"-1".*cidr_blocks\s*=\s*\["0\.0\.0\.0/0"\]',
+            )
+
+        all_egress_blocks = re.findall(
+            r'resource\s+"aws_vpc_security_group_egress_rule"\s+"([^"]+)"\s+\{(.*?)\n\}',
+            self.source,
+            re.S,
+        )
+        for name, block in all_egress_blocks:
+            if 'cidr_ipv4         = "0.0.0.0/0"' in block:
+                self.assertIn(name, {"core_external_integrations", "nova_external_ai"})
+                self.assertRegex(block, r'ip_protocol\s*=\s*"tcp"')
+                self.assertRegex(block, r'from_port\s*=\s*443')
+                self.assertRegex(block, r'to_port\s*=\s*443')
+
 
 if __name__ == "__main__":
     unittest.main()
