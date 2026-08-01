@@ -1,0 +1,39 @@
+{
+  "labels": [
+    {
+      "name": "codex-planned",
+      "color": "6f42c1",
+      "description": "Scoped work that is planned but not yet approved to start."
+    },
+    {
+      "name": "codex-ready",
+      "color": "0e8a16",
+      "description": "Approved and sufficiently specified for Codex to begin."
+    },
+    {
+      "name": "codex-in-progress",
+      "color": "1d76db",
+      "description": "Actively being implemented by Codex."
+    },
+    {
+      "name": "codex-review",
+      "color": "fbca04",
+      "description": "Implementation is complete and awaiting validation."
+    },
+    {
+      "name": "codex-blocked",
+      "color": "d93f0b",
+      "description": "Progress is stopped pending a decision or dependency."
+    },
+    {
+      "name": "human-review",
+      "color": "b60205",
+      "description": "A human decision or approval is explicitly required."
+    },
+    {
+      "name": "codex-done",
+      "color": "5319e7",
+      "description": "Human-accepted work that requires no further Codex action."
+    }
+  ]
+}
