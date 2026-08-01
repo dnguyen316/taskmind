@@ -57,6 +57,11 @@ run "services_are_health_checked_and_rollback_safe" {
   command = plan
 
   assert {
+    condition     = toset(keys(aws_ecs_task_definition.service)) == toset(["core", "relay", "nova"])
+    error_message = "The compute module must create task definitions for Core, Relay, and Nova."
+  }
+
+  assert {
     condition = alltrue([
       for task in values(aws_ecs_task_definition.service) :
       try(length(jsondecode(task.container_definitions)[0].healthCheck.command) > 0, false)
@@ -92,5 +97,43 @@ run "services_are_health_checked_and_rollback_safe" {
   assert {
     condition     = aws_ecs_service.service["core"].health_check_grace_period_seconds == 120
     error_message = "Core must receive an ALB health-check grace period."
+  }
+}
+
+run "health_and_deployment_tuning_is_applied" {
+  command = plan
+
+  variables {
+    container_health_check_interval_seconds     = 45
+    container_health_check_timeout_seconds      = 10
+    container_health_check_retries              = 5
+    container_health_check_start_period_seconds = 90
+    core_health_check_grace_period_seconds      = 180
+    deployment_minimum_healthy_percent          = 50
+    deployment_maximum_percent                  = 150
+  }
+
+  assert {
+    condition = alltrue([
+      for task in values(aws_ecs_task_definition.service) :
+      jsondecode(task.container_definitions)[0].healthCheck.interval == 45 &&
+      jsondecode(task.container_definitions)[0].healthCheck.timeout == 10 &&
+      jsondecode(task.container_definitions)[0].healthCheck.retries == 5 &&
+      jsondecode(task.container_definitions)[0].healthCheck.startPeriod == 90
+    ])
+    error_message = "Container health-check tuning must be applied to every service task definition."
+  }
+
+  assert {
+    condition = alltrue([
+      for service in values(aws_ecs_service.service) :
+      service.deployment_minimum_healthy_percent == 50 && service.deployment_maximum_percent == 150
+    ])
+    error_message = "Deployment percentage tuning must be applied to every ECS service."
+  }
+
+  assert {
+    condition     = aws_ecs_service.service["core"].health_check_grace_period_seconds == 180
+    error_message = "Core ALB health-check grace-period tuning must be applied."
   }
 }
