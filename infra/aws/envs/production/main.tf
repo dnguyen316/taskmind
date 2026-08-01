@@ -170,14 +170,14 @@ resource "aws_s3_bucket_policy" "frontend" {
 }
 
 
-resource "aws_security_group_rule" "alb_to_ecs_core" {
-  type                     = "ingress"
-  description              = "Core from ALB"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = module.security.ecs_security_group_id
-  source_security_group_id = module.edge.alb_security_group_id
+
+resource "aws_vpc_security_group_ingress_rule" "alb_to_core" {
+  description                  = "ALB to Core"
+  security_group_id            = module.security.core_security_group_id
+  referenced_security_group_id = module.edge.alb_security_group_id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
 }
 
 module "compute" {
@@ -187,7 +187,7 @@ module "compute" {
   aws_region                 = var.aws_region
   vpc_id                     = module.network.vpc_id
   private_subnet_ids         = module.network.private_subnet_ids
-  ecs_security_group_id      = module.security.ecs_security_group_id
+  service_security_group_ids = module.security.service_security_group_ids
   core_target_group_arn      = module.edge.core_target_group_arn
   alb_listener_ready_arn     = module.edge.alb_listener_ready_arn
   attachments_bucket_arn     = module.data.attachments_bucket_arn
