@@ -1,4 +1,37 @@
-mock_provider "aws" {}
+mock_provider "aws" {
+  mock_resource "aws_iam_role" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:role/taskmind-test"
+    }
+  }
+
+  mock_resource "aws_service_discovery_service" {
+    defaults = {
+      arn = "arn:aws:servicediscovery:ap-southeast-2:123456789012:service/srv-00000000000000000"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.core_policy
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.relay_policy
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.nova_policy
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+}
 
 variables {
   environment            = "test"
@@ -7,6 +40,7 @@ variables {
   private_subnet_ids     = ["subnet-00000000000000000", "subnet-11111111111111111"]
   ecs_security_group_id  = "sg-00000000000000000"
   core_target_group_arn  = "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:targetgroup/core/0000000000000000"
+  alb_listener_ready_arn = "arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:listener/app/taskmind-test/0000000000000000/1111111111111111"
   attachments_bucket_arn = "arn:aws:s3:::taskmind-test-attachments"
   opensearch_domain_arn  = "arn:aws:es:ap-southeast-2:123456789012:domain/taskmind-test"
   core_secret_arns       = []

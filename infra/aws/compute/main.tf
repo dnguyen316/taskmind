@@ -49,6 +49,17 @@ locals {
     relay = var.relay_secret_arns
     nova  = var.nova_secret_arns
   }
+
+  ecs_assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+    }]
+  })
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -70,19 +81,8 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
 
 resource "aws_iam_role" "execution" {
   name               = "${local.name}-ecs-execution"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+  assume_role_policy = local.ecs_assume_role_policy
   tags               = local.tags
-}
-
-data "aws_iam_policy_document" "ecs_assume" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "execution" {
@@ -114,7 +114,7 @@ resource "aws_iam_role_policy" "execution_secrets" {
 resource "aws_iam_role" "task" {
   for_each           = local.services
   name               = "${local.name}-${each.key}-task"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+  assume_role_policy = local.ecs_assume_role_policy
   tags               = local.tags
 }
 
