@@ -14,9 +14,14 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  azs             = slice(data.aws_availability_zones.available.names, 0, var.az_count)
-  public_subnets  = cidrsubnets(var.vpc_cidr, 4, 4, 4, 4)
-  private_subnets = cidrsubnets(var.vpc_cidr, 3, 3, 3, 3)
+  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+
+  # Allocate all subnet tiers from one sequence so a CIDR can never be reused
+  # between the public and private tiers. Eight equal-sized ranges support up to
+  # four AZs while preserving the same per-AZ capacity for both tiers.
+  subnet_cidrs    = cidrsubnets(var.vpc_cidr, 4, 4, 4, 4, 4, 4, 4, 4)
+  public_subnets  = slice(local.subnet_cidrs, 0, var.az_count)
+  private_subnets = slice(local.subnet_cidrs, 4, 4 + var.az_count)
   common_tags = merge(var.tags, {
     Project     = "taskmind"
     Environment = var.environment
