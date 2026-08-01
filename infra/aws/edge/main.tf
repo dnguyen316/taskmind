@@ -54,13 +54,25 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_lb" "core" {
-  name               = "${local.name}-core"
-  load_balancer_type = "application"
-  internal           = false
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnet_ids
-  idle_timeout       = 3600
-  tags               = local.tags
+  name                       = "${local.name}-core"
+  load_balancer_type         = "application"
+  internal                   = false
+  security_groups            = [aws_security_group.alb.id]
+  subnets                    = var.public_subnet_ids
+  idle_timeout               = 3600
+  enable_deletion_protection = var.enable_deletion_protection
+
+  dynamic "access_logs" {
+    for_each = var.access_logs_bucket == null ? [] : [var.access_logs_bucket]
+
+    content {
+      bucket  = access_logs.value
+      prefix  = var.access_logs_prefix
+      enabled = true
+    }
+  }
+
+  tags = local.tags
 }
 
 resource "aws_lb_target_group" "core" {

@@ -119,6 +119,25 @@ change this value to one that has never been used in that environment; do not de
 with a Terraform timestamp function because that would cause perpetual plan drift.
 Production also requires `CLOUDWATCH_LOGS_KMS_KEY_ID`.
 
+### ALB access logs and intentional teardown
+
+Every composed AWS environment writes Core ALB access logs to its own private,
+SSE-S3-encrypted bucket under the `core/` prefix. The bucket policy grants only the
+Elastic Load Balancing log-delivery service permission to write objects for the current
+AWS account and region. Production retains logs for 365 days and protects both the ALB
+(`enable_deletion_protection = true`) and its log bucket (`prevent_destroy = true`).
+Staging defaults to 30 days and exposes `alb_access_log_retention_days` and
+`enable_alb_deletion_protection` so operators can choose a cheaper, disposable posture.
+
+Production teardown is deliberately a reviewed, two-apply operation. First, change the
+production root's `enable_deletion_protection` argument to `false`, obtain approval for a
+plan containing only that ALB attribute change, and apply it. Only after AWS reports ALB
+deletion protection disabled should an operator run the reviewed destroy plan. The log
+bucket remains protected: preserve or export any logs required by audit policy, empty all
+object versions, then remove `prevent_destroy` in a separately reviewed change before
+destroying the bucket. Do not bypass these controls with console changes or state removal;
+doing so leaves configuration drift or an untracked audit bucket.
+
 ### RDS final snapshots and disposable previews
 
 The shared data module defaults `skip_final_snapshot` to `false`, and the staging and

@@ -44,8 +44,78 @@ module "data" {
   tags                               = local.tags
 }
 
+data "aws_caller_identity" "current" {}
+
+resource "aws_s3_bucket" "alb_access_logs" {
+  bucket = "taskmind-${var.environment}-alb-logs-${var.account_suffix}"
+  tags   = merge(local.tags, { Purpose = "alb-access-logs" })
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_access_logs" {
+  bucket = aws_s3_bucket.alb_access_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_access_logs" {
+  bucket = aws_s3_bucket.alb_access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_access_logs" {
+  bucket = aws_s3_bucket.alb_access_logs.id
+
+  rule {
+    id     = "expire-alb-access-logs"
+    status = "Enabled"
+    filter { prefix = "core/" }
+    expiration { days = var.alb_access_log_retention_days }
+    abort_incomplete_multipart_upload { days_after_initiation = 7 }
+  }
+}
+
+data "aws_iam_policy_document" "alb_access_logs" {
+  statement {
+    sid     = "AllowAlbLogDelivery"
+    effect  = "Allow"
+    actions = ["s3:PutObject"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["logdelivery.elasticloadbalancing.amazonaws.com"]
+    }
+
+    resources = ["${aws_s3_bucket.alb_access_logs.arn}/core/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "alb_access_logs" {
+  bucket = aws_s3_bucket.alb_access_logs.id
+  policy = data.aws_iam_policy_document.alb_access_logs.json
+}
+
 module "edge" {
   source = "../../edge"
+
+  depends_on = [aws_s3_bucket_policy.alb_access_logs]
 
   environment                          = var.environment
   vpc_id                               = module.network.vpc_id
@@ -54,6 +124,9 @@ module "edge" {
   alb_certificate_arn                  = var.alb_certificate_arn
   cloudfront_certificate_arn           = var.cloudfront_certificate_arn
   frontend_aliases                     = var.frontend_aliases
+  enable_deletion_protection           = var.enable_alb_deletion_protection
+  access_logs_bucket                   = aws_s3_bucket.alb_access_logs.id
+  access_logs_prefix                   = "core"
   tags                                 = local.tags
 }
 
