@@ -93,13 +93,13 @@ resource "aws_opensearch_domain" "activity" {
   cluster_config {
     instance_type          = var.opensearch_instance_type
     instance_count         = var.opensearch_instance_count
-    zone_awareness_enabled = var.opensearch_instance_count > 1
+    zone_awareness_enabled = var.opensearch_availability_zone_count > 1
 
     dynamic "zone_awareness_config" {
-      for_each = var.opensearch_instance_count > 1 ? [1] : []
+      for_each = var.opensearch_availability_zone_count > 1 ? [1] : []
 
       content {
-        availability_zone_count = 2
+        availability_zone_count = var.opensearch_availability_zone_count
       }
     }
   }
@@ -111,7 +111,7 @@ resource "aws_opensearch_domain" "activity" {
   }
 
   vpc_options {
-    subnet_ids         = slice(var.private_subnet_ids, 0, min(length(var.private_subnet_ids), var.opensearch_instance_count))
+    subnet_ids         = slice(var.private_subnet_ids, 0, min(length(var.private_subnet_ids), var.opensearch_availability_zone_count))
     security_group_ids = var.opensearch_security_group_ids
   }
 
@@ -129,6 +129,18 @@ resource "aws_opensearch_domain" "activity" {
   }
 
   tags = local.tags
+
+  lifecycle {
+    precondition {
+      condition     = length(var.private_subnet_ids) >= var.opensearch_availability_zone_count
+      error_message = "private_subnet_ids must contain at least one subnet for each requested OpenSearch Availability Zone."
+    }
+
+    precondition {
+      condition     = var.opensearch_availability_zone_count == 1 || var.opensearch_instance_count % var.opensearch_availability_zone_count == 0
+      error_message = "opensearch_instance_count must be a multiple of opensearch_availability_zone_count when zone awareness is enabled."
+    }
+  }
 }
 
 resource "aws_s3_bucket" "attachments" {

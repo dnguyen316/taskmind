@@ -28,19 +28,20 @@ module "security" {
 module "data" {
   source = "../../data"
 
-  environment                      = var.environment
-  account_suffix                   = var.account_suffix
-  vpc_id                           = module.network.vpc_id
-  private_subnet_ids               = module.network.private_subnet_ids
-  rds_security_group_ids           = [module.security.rds_security_group_id]
-  redis_security_group_ids         = [module.security.redis_security_group_id]
-  opensearch_security_group_ids    = [module.security.opensearch_security_group_id]
-  redis_auth_token                 = var.redis_auth_token
-  deletion_protection              = true
-  skip_final_snapshot              = false
-  final_snapshot_identifier_prefix = "taskmind-final-snapshot"
-  final_snapshot_identifier_suffix = var.final_snapshot_identifier_suffix
-  tags                             = local.tags
+  environment                        = var.environment
+  account_suffix                     = var.account_suffix
+  vpc_id                             = module.network.vpc_id
+  private_subnet_ids                 = module.network.private_subnet_ids
+  rds_security_group_ids             = [module.security.rds_security_group_id]
+  redis_security_group_ids           = [module.security.redis_security_group_id]
+  opensearch_security_group_ids      = [module.security.opensearch_security_group_id]
+  opensearch_availability_zone_count = 1
+  redis_auth_token                   = var.redis_auth_token
+  deletion_protection                = true
+  skip_final_snapshot                = false
+  final_snapshot_identifier_prefix   = "taskmind-final-snapshot"
+  final_snapshot_identifier_suffix   = var.final_snapshot_identifier_suffix
+  tags                               = local.tags
 }
 
 module "edge" {
