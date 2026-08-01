@@ -105,9 +105,9 @@ run "services_are_health_checked_and_rollback_safe" {
 
   assert {
     condition = alltrue([
-      aws_ecs_service.service["core"].network_configuration[0].security_groups == ["sg-00000000000000001"],
-      aws_ecs_service.service["relay"].network_configuration[0].security_groups == ["sg-00000000000000002"],
-      aws_ecs_service.service["nova"].network_configuration[0].security_groups == ["sg-00000000000000003"],
+      aws_ecs_service.service["core"].network_configuration[0].security_groups == toset(["sg-00000000000000001"]),
+      aws_ecs_service.service["relay"].network_configuration[0].security_groups == toset(["sg-00000000000000002"]),
+      aws_ecs_service.service["nova"].network_configuration[0].security_groups == toset(["sg-00000000000000003"]),
     ])
     error_message = "Each ECS service must use its matching service security group."
   }
