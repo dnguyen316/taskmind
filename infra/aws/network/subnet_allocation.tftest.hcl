@@ -15,9 +15,9 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
-    # Module outputs are lists; tolist avoids comparing a list to a tuple,
-    # which is always false even when every CIDR string is identical.
-    condition = output.public_subnet_cidrs == tolist([
+    # Comprehension-backed module outputs are tuples. Normalize both operands
+    # before comparison so matching CIDR values are not rejected by type alone.
+    condition = tolist(output.public_subnet_cidrs) == tolist([
       "10.40.0.0/20",
       "10.40.16.0/20",
     ])
@@ -25,7 +25,7 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
-    condition = output.private_subnet_cidrs == tolist([
+    condition = tolist(output.private_subnet_cidrs) == tolist([
       "10.40.64.0/20",
       "10.40.80.0/20",
     ])
@@ -33,10 +33,30 @@ run "default_subnets_are_distinct" {
   }
 
   assert {
+    # Every generated range has the same prefix length, so two ranges overlap
+    # if and only if their CIDR strings are equal.
     condition = length(setintersection(
       toset(output.public_subnet_cidrs),
       toset(output.private_subnet_cidrs),
     )) == 0
     error_message = "A default public subnet CIDR overlaps a private subnet CIDR."
+  }
+}
+
+run "maximum_supported_azs_use_all_distinct_ranges" {
+  command = plan
+
+  variables {
+    environment = "test"
+    aws_region  = "ap-southeast-2"
+    az_count    = 4
+  }
+
+  assert {
+    condition = length(setunion(
+      toset(output.public_subnet_cidrs),
+      toset(output.private_subnet_cidrs),
+    )) == 8
+    error_message = "The maximum supported AZ count must allocate eight distinct subnet CIDRs."
   }
 }

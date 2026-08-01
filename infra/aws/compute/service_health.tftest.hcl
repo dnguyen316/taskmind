@@ -10,26 +10,26 @@ mock_provider "aws" {
       arn = "arn:aws:servicediscovery:ap-southeast-2:123456789012:service/srv-00000000000000000"
     }
   }
+}
 
-  override_data {
-    target = data.aws_iam_policy_document.core_policy
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
+override_data {
+  target = data.aws_iam_policy_document.core_policy
+  values = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
   }
+}
 
-  override_data {
-    target = data.aws_iam_policy_document.relay_policy
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
+override_data {
+  target = data.aws_iam_policy_document.relay_policy
+  values = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
   }
+}
 
-  override_data {
-    target = data.aws_iam_policy_document.nova_policy
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
+override_data {
+  target = data.aws_iam_policy_document.nova_policy
+  values = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
   }
 }
 

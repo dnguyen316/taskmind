@@ -26,13 +26,25 @@ variable "final_snapshot_identifier_suffix" {
 }
 
 variable "vpc_cidr" {
-  type    = string
-  default = "10.40.0.0/16"
+  description = "IPv4 CIDR for the VPC; must be large enough for eight equal AWS-valid subnet ranges."
+  type        = string
+  default     = "10.40.0.0/16"
+
+  validation {
+    condition     = can(cidrsubnet(var.vpc_cidr, 4, 7)) && try(tonumber(split("/", var.vpc_cidr)[1]) >= 16 && tonumber(split("/", var.vpc_cidr)[1]) <= 24, false)
+    error_message = "vpc_cidr must be a valid AWS IPv4 VPC CIDR from /16 through /24."
+  }
 }
 
 variable "az_count" {
-  type    = number
-  default = 2
+  description = "Number of availability zones; the network module generates four ranges per subnet tier."
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.az_count >= 1 && var.az_count <= 4 && floor(var.az_count) == var.az_count
+    error_message = "az_count must be a whole number between 1 and 4."
+  }
 }
 
 variable "single_nat_gateway" {
