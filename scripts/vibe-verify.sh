@@ -2,6 +2,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+"$ROOT/scripts/check-tracked-secrets.sh"
+
 if rg -n "\bvar\s+[A-Za-z_][A-Za-z0-9_]*\s*=" "$ROOT/apps/backend/src/main/java" "$ROOT/apps/relay/src/main/java" "$ROOT/libs/events/src/main/java" --glob "*.java"; then
   echo "Backend Java production code must use explicit local variable types instead of var." >&2
   exit 1

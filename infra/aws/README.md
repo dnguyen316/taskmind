@@ -119,6 +119,12 @@ change this value to one that has never been used in that environment; do not de
 with a Terraform timestamp function because that would cause perpetual plan drift.
 Production also requires `CLOUDWATCH_LOGS_KMS_KEY_ID`.
 
+Production secret values belong in AWS Secrets Manager or SSM Parameter Store and in
+protected, environment-scoped GitHub Environment secrets used by deployment workflows.
+Never put secrets in Terraform/OpenTofu variable files committed to Git; keep local
+`*.tfvars` files untracked and commit only explicitly sanitized `*.tfvars.example`
+templates.
+
 ### ALB access logs and intentional teardown
 
 Every composed AWS environment writes Core ALB access logs to its own private,
