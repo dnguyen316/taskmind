@@ -44,6 +44,8 @@ resource "aws_security_group" "rds" {
   name   = "${local.name}-rds"
   vpc_id = var.vpc_id
 
+  # RDS PostgreSQL accepts client connections but does not initiate network connections.
+  # Intentionally omit egress rules instead of retaining AWS's default 0.0.0.0/0 rule.
   tags = local.tags
 }
 
@@ -51,6 +53,8 @@ resource "aws_security_group" "redis" {
   name   = "${local.name}-redis"
   vpc_id = var.vpc_id
 
+  # ElastiCache Redis accepts client connections but does not require outbound access.
+  # Intentionally omit egress rules instead of retaining AWS's default 0.0.0.0/0 rule.
   tags = local.tags
 }
 
@@ -58,6 +62,8 @@ resource "aws_security_group" "opensearch" {
   name   = "${local.name}-opensearch"
   vpc_id = var.vpc_id
 
+  # This domain has no managed-service feature configured that initiates outbound traffic.
+  # Intentionally omit egress rules instead of retaining AWS's default 0.0.0.0/0 rule.
   tags = local.tags
 }
 
