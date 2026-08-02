@@ -114,4 +114,8 @@ test("builds a template-complete issue-linked draft pull request", () => {
   ]) {
     assert.ok(pullRequest.body.includes(section), `missing section: ${section}`);
   }
+  assert.match(
+    pullRequest.body,
+    /uses GITHUB_TOKEN, so it does not trigger CI/,
+  );
 });

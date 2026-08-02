@@ -79,6 +79,7 @@ Implements the validated scope from issue #${issueNumber}.
 
 ## Verification
 
+- This workflow uses GITHUB_TOKEN, so it does not trigger CI for the draft pull request.
 - Run the repository verification commands before marking this draft ready for review.
 
 ## Agent report
