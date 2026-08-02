@@ -25,7 +25,8 @@ class RelayLocalDefaultsConfigurationTest {
 
     private Properties loadRelayProperties() throws IOException {
         Properties properties = new Properties();
-        try (var inputStream = new ClassPathResource("application.properties").getInputStream()) {
+        try (var inputStream =
+                new ClassPathResource("application-local.properties").getInputStream()) {
             properties.load(inputStream);
         }
         return properties;
@@ -35,7 +36,7 @@ class RelayLocalDefaultsConfigurationTest {
         Properties properties = new Properties();
         try (var inputStream =
                 Files.newInputStream(
-                        Path.of("../backend/src/main/resources/application.properties"))) {
+                        Path.of("../backend/src/main/resources/application-local.properties"))) {
             properties.load(inputStream);
         }
         return properties;

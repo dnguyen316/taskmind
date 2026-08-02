@@ -27,15 +27,11 @@ class NovaLocalDefaultsConfigurationTest {
                 .isEqualTo("${TASKMIND_AI_DB_USERNAME:${TASKMIND_DB_USERNAME:taskmind}}");
         assertThat(properties.getProperty("spring.datasource.password"))
                 .isEqualTo("${TASKMIND_AI_DB_PASSWORD:${TASKMIND_DB_PASSWORD:taskmind}}");
-        assertThat(properties.getProperty("spring.datasource.driver-class-name"))
-                .isEqualTo("org.postgresql.Driver");
-        assertThat(properties.getProperty("spring.flyway.schemas")).isEqualTo("ai");
-        assertThat(properties.getProperty("spring.flyway.default-schema")).isEqualTo("ai");
     }
 
     private Properties applicationYamlProperties() {
         YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
-        factory.setResources(new ClassPathResource("application.yml"));
+        factory.setResources(new ClassPathResource("application-local.yml"));
         Properties properties = factory.getObject();
         assertThat(properties).isNotNull();
         return properties;

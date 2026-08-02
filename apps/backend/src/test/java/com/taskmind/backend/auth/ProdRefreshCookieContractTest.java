@@ -40,7 +40,20 @@ import org.springframework.test.web.servlet.MockMvc;
             "taskmind.auth.cookies.secure=true",
             "taskmind.auth.cookies.same-site=Lax",
             "taskmind.cors.allowed-origins=https://app.taskmind.example",
-            "taskmind.nova.service-token=test-only-nova-token"
+            "spring.datasource.url=jdbc:postgresql://db.example/taskmind",
+            "spring.datasource.username=remote-user",
+            "spring.datasource.password=remote-password",
+            "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://issuer.taskmind.example",
+            "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://issuer.taskmind.example/jwks",
+            "taskmind.auth.jwt.issuer=taskmind-prod",
+            "taskmind.auth.jwt.audience=taskmind-api",
+            "taskmind.auth.jwt.secret=test-only-taskmind-jwt-secret-at-least-32-chars",
+            "taskmind.nova.base-url=https://nova.taskmind.example",
+            "taskmind.nova.service-token=test-only-nova-token",
+            "taskmind.relay.client.base-url=https://relay.taskmind.example",
+            "taskmind.relay.client.service-token=test-only-relay-token",
+            "taskmind.integrations.token-key=test-only-integration-key",
+            "taskmind.integrations.token-key-version=test-v1"
         })
 class ProdRefreshCookieContractTest {
     @Autowired private MockMvc mvc;

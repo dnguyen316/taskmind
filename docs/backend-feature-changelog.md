@@ -1,3 +1,26 @@
+## 2026-08-02 - Fail-closed remote service configuration
+
+### Changed
+
+- Removed database, JWT, integration-key, and internal service-token development defaults
+  from shared Core, Relay, and Nova configuration; those conveniences now belong only to
+  local and test profiles.
+- Added explicit fail-closed staging configuration for all three services and completed
+  Core's production overrides for database credentials and integration encryption keys.
+- Added startup guards that reject missing, blank, localhost, and known development values
+  whenever a remotely deployed profile starts.
+
+### Tests
+
+- Added focused Spring context tests proving both staging and production startup fail when
+  required deployment secrets are absent in Core, Relay, and Nova.
+
+### Closeout notes
+
+- Primary milestone: M13 AWS deployment and security hardening.
+- Skill used: `taskmind-backend-feature`.
+- Agent delegation: none.
+
 ## 2026-08-01 - Encrypted VPC Flow Logs and rejection alerting
 
 ### Changed

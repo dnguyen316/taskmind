@@ -1,4 +1,24 @@
 taskmind:
   ai:
     provider:
-      default: mock
+      default: ${TASKMIND_AI_PROVIDER_DEFAULT:mock}
+      mock:
+        model-id: ${TASKMIND_AI_MOCK_MODEL_ID:nova-mock-v1}
+      openai:
+        api-key: ${OPENAI_API_KEY:}
+        model-id: ${TASKMIND_AI_OPENAI_MODEL:gpt-4.1-mini}
+      anthropic:
+        api-key: ${ANTHROPIC_API_KEY:}
+        model-id: ${TASKMIND_AI_ANTHROPIC_MODEL:claude-3-5-sonnet-latest}
+    service-token: ${TASKMIND_NOVA_SERVICE_TOKEN:${TASKMIND_AI_SERVICE_TOKEN:development-only-nova-service-token}}
+  core:
+    base-url: ${TASKMIND_CORE_BASE_URL:http://localhost:8080}
+    service-token: ${TASKMIND_CORE_SERVICE_TOKEN:local-core-token}
+  relay:
+    base-url: ${TASKMIND_RELAY_BASE_URL:http://localhost:8081}
+    service-token: ${TASKMIND_RELAY_SERVICE_TOKEN:local-relay-token}
+spring:
+  datasource:
+    url: ${TASKMIND_AI_DB_URL:${TASKMIND_DB_URL:jdbc:postgresql://localhost:5432/taskmind}}
+    username: ${TASKMIND_AI_DB_USERNAME:${TASKMIND_DB_USERNAME:taskmind}}
+    password: ${TASKMIND_AI_DB_PASSWORD:${TASKMIND_DB_PASSWORD:taskmind}}
