@@ -13,7 +13,11 @@ async function claim({ github, context, issueNumber }) {
     repo: context.repo.repo,
     issue_number: Number(issueNumber),
   };
-  await github.rest.issues.removeLabel({ ...common, name: "codex-ready" });
+  const issue = await github.rest.issues.get(common);
+  const labels = new Set(issue.data.labels.map((label) => label.name));
+  if (labels.has("codex-ready")) {
+    await github.rest.issues.removeLabel({ ...common, name: "codex-ready" });
+  }
   await github.rest.issues.addLabels({
     ...common,
     labels: ["codex-in-progress"],
@@ -26,16 +30,24 @@ async function createDraftPullRequest({
   issueNumber,
   issueTitle,
 }) {
+  const numericIssueNumber = Number(issueNumber);
   const pullRequest = draftPullRequest(
-    Number(issueNumber),
+    numericIssueNumber,
     issueTitle,
     context.payload.repository.default_branch,
   );
-  await github.rest.pulls.create({
+  const common = {
     owner: context.repo.owner,
     repo: context.repo.repo,
-    ...pullRequest,
+  };
+  const existing = await github.rest.pulls.list({
+    ...common,
+    state: "open",
+    head: `${context.repo.owner}:${pullRequest.head}`,
   });
+  if (existing.data.length === 0) {
+    await github.rest.pulls.create({ ...common, ...pullRequest });
+  }
 }
 
 async function block({ github, context }) {

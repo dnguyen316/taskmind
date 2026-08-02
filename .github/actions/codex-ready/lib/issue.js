@@ -63,7 +63,7 @@ function validateIssue(event) {
     }
   }
 
-  return { number: String(issue.number), title: issue.title, body };
+  return { number: issue.number, title: issue.title, body };
 }
 
 function branchName(issueNumber) {
@@ -79,7 +79,7 @@ Implements the validated scope from issue #${issueNumber}.
 
 ## Verification
 
-- Automated checks run on this draft PR by the repository CI workflow.
+- Run the repository verification commands before marking this draft ready for review.
 
 ## Agent report
 

@@ -17,7 +17,7 @@ Run tests.
 ### Restrictions
 Do not deploy.`;
 
-function event(overrides = {}) {
+function event(overrides = {}, eventOverrides = {}) {
   return {
     label: { name: "codex-ready" },
     issue: {
@@ -28,12 +28,13 @@ function event(overrides = {}) {
       labels: [{ name: "codex-ready" }],
       ...overrides,
     },
+    ...eventOverrides,
   };
 }
 
 test("validates and extracts a Codex task form", () => {
   assert.deepEqual(validateIssue(event()), {
-    number: "42",
+    number: 42,
     title: "[Codex]: Refactor workflow",
     body: validBody,
   });
@@ -61,6 +62,39 @@ test("rejects conflicting lifecycle labels", () => {
   );
 });
 
+test("rejects a different triggering label", () => {
+  assert.throws(
+    () => validateIssue(event({}, { label: { name: "bug" } })),
+    /exact codex-ready label/,
+  );
+});
+
+test("rejects a closed issue", () => {
+  assert.throws(() => validateIssue(event({ state: "closed" })), /must be open/);
+});
+
+test("rejects a pull request payload", () => {
+  assert.throws(
+    () => validateIssue(event({ pull_request: { url: "https://example.test" } })),
+    /Pull requests cannot/,
+  );
+});
+
+test("rejects an issue without the Codex title prefix", () => {
+  assert.throws(
+    () => validateIssue(event({ title: "Refactor workflow" })),
+    /title prefix/,
+  );
+});
+
+test("rejects task form sections that are out of order", () => {
+  const body = validBody.replace(
+    "### Objective\nBuild it.\n\n### Scope\nOnly this.",
+    "### Scope\nOnly this.\n\n### Objective\nBuild it.",
+  );
+  assert.throws(() => validateIssue(event({ body })), /sections in order/);
+});
+
 test("builds a template-complete issue-linked draft pull request", () => {
   const pullRequest = draftPullRequest(
     42,
@@ -78,9 +112,6 @@ test("builds a template-complete issue-linked draft pull request", () => {
     "## Linked issue",
     "**Closes #42**",
   ]) {
-    assert.match(
-      pullRequest.body,
-      new RegExp(section.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-    );
+    assert.ok(pullRequest.body.includes(section), `missing section: ${section}`);
   }
 });

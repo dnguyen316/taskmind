@@ -46,8 +46,6 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-    outputs:
-      result: ${{ steps.codex.outputs.final-message }}
     steps:
       - name: Check out the triggering revision read-only
         uses: actions/checkout@v4
@@ -86,7 +84,21 @@ jobs:
             Read and obey every applicable AGENTS.md. Inspect and reason about the repository,
             but do not write any file, create a branch, commit, push, or call GitHub APIs.
             Return one git-apply-compatible unified diff in the required JSON patch field.
-            Do not modify anything under .github/workflows/. Avoid unrelated changes and never deploy.
+            Do not modify anything under .github/workflows/ or .github/actions/. Avoid unrelated changes and never deploy.
+
+      - name: Save generated result
+        env:
+          CODEX_RESULT: ${{ steps.codex.outputs.final-message }}
+          CODEX_RESULT_PATH: ${{ runner.temp }}/codex-result.json
+        run: printf '%s' "$CODEX_RESULT" > "$CODEX_RESULT_PATH"
+
+      - name: Upload generated result
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-result.json
+          if-no-files-found: error
+          retention-days: 1
 
   claim:
     name: Mark successful startup
@@ -116,6 +128,8 @@ jobs:
     needs: [validate, codex, claim]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Configure this environment with required reviewers in repository settings.
+    environment: codex-apply
     permissions:
       contents: write
       pull-requests: write
@@ -125,16 +139,24 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Download generated result
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-result
+
       - name: Extract and validate generated patch
         env:
-          CODEX_RESULT: ${{ needs.codex.outputs.result }}
+          CODEX_RESULT_PATH: ${{ runner.temp }}/codex-result/codex-result.json
+          CODEX_PATCH_PATH: ${{ runner.temp }}/codex.patch
         run: |
           python3 .github/actions/codex-ready/validate_patch.py
-          git apply --check /tmp/codex.patch
+          git apply --check "$CODEX_PATCH_PATH"
 
       - name: Apply and commit generated patch
         env:
           ISSUE_NUMBER: ${{ needs.validate.outputs.issue-number }}
+          CODEX_PATCH_PATH: ${{ runner.temp }}/codex.patch
         run: .github/actions/codex-ready/apply_patch.sh
 
       - name: Create issue-linked draft pull request
@@ -159,8 +181,10 @@ jobs:
     needs: [validate, codex, claim, apply]
     if: >-
       ${{ always() && github.event.label.name == 'codex-ready' &&
-          (needs.validate.result == 'failure' || needs.codex.result == 'failure' ||
-           needs.claim.result == 'failure' || needs.apply.result == 'failure') }}
+          (contains(fromJSON('["failure","cancelled"]'), needs.validate.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.codex.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.claim.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.apply.result)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
