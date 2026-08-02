@@ -7,7 +7,12 @@ from pathlib import Path, PurePosixPath
 
 def main() -> None:
     result_path = os.environ.get("CODEX_RESULT_PATH")
-    raw = Path(result_path).read_text(encoding="utf-8") if result_path else ""
+    if not result_path:
+        raise SystemExit("CODEX_RESULT_PATH is required")
+    try:
+        raw = Path(result_path).read_text(encoding="utf-8")
+    except OSError as error:
+        raise SystemExit(f"Unable to read Codex result: {error}") from error
     try:
         result = json.loads(raw)
     except json.JSONDecodeError as error:
