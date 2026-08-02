@@ -1,0 +1,204 @@
+name: Implement Codex-ready issue
+
+on:
+  issues:
+    types: [labeled]
+
+# A label event is scoped to one issue. The issue number also serializes retries and
+# repeated label events without cancelling an implementation that is already running.
+concurrency:
+  group: codex-ready-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Validate triggering issue
+    if: github.event.label.name == 'codex-ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      issue-number: ${{ steps.issue.outputs.issue-number }}
+      issue-title: ${{ steps.issue.outputs.issue-title }}
+      issue-body: ${{ steps.issue.outputs.issue-body }}
+    steps:
+      - name: Check out workflow modules
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate issue state and Codex task form
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { validate } = require('./.github/actions/codex-ready/handlers');
+            await validate({ core, context });
+
+  codex:
+    name: Generate an implementation patch
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the triggering revision read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Plan and generate patch without writing the repository
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: read-only
+          safety-strategy: read-only
+          output-schema: |
+            {
+              "type": "object",
+              "properties": {
+                "patch": {
+                  "type": "string",
+                  "description": "A git-apply-compatible unified diff and no surrounding Markdown."
+                }
+              },
+              "required": ["patch"],
+              "additionalProperties": false
+            }
+          prompt: |
+            Implement only issue #${{ needs.validate.outputs.issue-number }} in ${{ github.repository }}.
+            The issue was validated against .github/ISSUE_TEMPLATE/codex-task.yml.
+
+            Issue title:
+            ${{ needs.validate.outputs.issue-title }}
+
+            Issue body:
+            ${{ needs.validate.outputs.issue-body }}
+
+            Read and obey every applicable AGENTS.md. Inspect and reason about the repository,
+            but do not write any file, create a branch, commit, push, or call GitHub APIs.
+            Return one git-apply-compatible unified diff in the required JSON patch field.
+            Do not modify anything under .github/workflows/ or .github/actions/. Avoid unrelated changes and never deploy.
+
+      - name: Save generated result
+        env:
+          CODEX_RESULT: ${{ steps.codex.outputs.final-message }}
+          CODEX_RESULT_PATH: ${{ runner.temp }}/codex-result.json
+        run: printf '%s' "$CODEX_RESULT" > "$CODEX_RESULT_PATH"
+
+      - name: Upload generated result
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-result.json
+          if-no-files-found: error
+          retention-days: 1
+
+  claim:
+    name: Mark successful startup
+    needs: [validate, codex]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out workflow modules
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Transition ready issue to in progress
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue-number }}
+        with:
+          script: |
+            const { claim } = require('./.github/actions/codex-ready/handlers');
+            await claim({ github, context, issueNumber: process.env.ISSUE_NUMBER });
+
+  apply:
+    name: Apply patch and open draft pull request
+    needs: [validate, codex, claim]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Configure this environment with required reviewers in repository settings.
+    environment: codex-apply
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out base revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download generated result
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-result
+
+      - name: Extract and validate generated patch
+        env:
+          CODEX_RESULT_PATH: ${{ runner.temp }}/codex-result/codex-result.json
+          CODEX_PATCH_PATH: ${{ runner.temp }}/codex.patch
+        run: |
+          python3 .github/actions/codex-ready/validate_patch.py
+          git apply --check "$CODEX_PATCH_PATH"
+
+      - name: Apply and commit generated patch
+        env:
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue-number }}
+          CODEX_PATCH_PATH: ${{ runner.temp }}/codex.patch
+        run: .github/actions/codex-ready/apply_patch.sh
+
+      - name: Create issue-linked draft pull request
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue-number }}
+          ISSUE_TITLE: ${{ needs.validate.outputs.issue-title }}
+        with:
+          script: |
+            const {
+              createDraftPullRequest,
+            } = require('./.github/actions/codex-ready/handlers');
+            await createDraftPullRequest({
+              github,
+              context,
+              issueNumber: process.env.ISSUE_NUMBER,
+              issueTitle: process.env.ISSUE_TITLE,
+            });
+
+  failure:
+    name: Mark failed startup or implementation blocked
+    needs: [validate, codex, claim, apply]
+    if: >-
+      ${{ always() && github.event.label.name == 'codex-ready' &&
+          (contains(fromJSON('["failure","cancelled"]'), needs.validate.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.codex.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.claim.result) ||
+           contains(fromJSON('["failure","cancelled"]'), needs.apply.result)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out workflow modules
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Remove misleading state and mark issue blocked
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { block } = require('./.github/actions/codex-ready/handlers');
+            await block({ github, context });
