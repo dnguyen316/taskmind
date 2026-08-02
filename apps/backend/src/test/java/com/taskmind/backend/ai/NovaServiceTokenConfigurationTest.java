@@ -14,7 +14,7 @@ class NovaServiceTokenConfigurationTest {
     @Test
     void coreUsesCanonicalNovaServiceTokenWithDeprecatedAiAliasAndMatchingLocalDefault()
             throws IOException {
-        Properties properties = applicationProperties();
+        Properties properties = localProperties();
 
         assertThat(properties.getProperty("taskmind.nova.service-token"))
                 .isEqualTo(
@@ -23,9 +23,10 @@ class NovaServiceTokenConfigurationTest {
                                 + "}}");
     }
 
-    private Properties applicationProperties() throws IOException {
+    private Properties localProperties() throws IOException {
         Properties properties = new Properties();
-        try (var inputStream = new ClassPathResource("application.properties").getInputStream()) {
+        try (var inputStream =
+                new ClassPathResource("application-local.properties").getInputStream()) {
             properties.load(inputStream);
         }
         return properties;

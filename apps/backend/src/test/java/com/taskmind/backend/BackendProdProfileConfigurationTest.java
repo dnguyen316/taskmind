@@ -21,6 +21,10 @@ class BackendProdProfileConfigurationTest {
                 .isEqualTo("${TASKMIND_RELAY_SERVICE_TOKEN}");
         assertThat(properties.getProperty("taskmind.relay.client.service-token"))
                 .doesNotContain("local-relay-service-token");
+        assertThat(properties.getProperty("spring.datasource.password"))
+                .isEqualTo("${TASKMIND_DB_PASSWORD}");
+        assertThat(properties.getProperty("taskmind.integrations.token-key"))
+                .isEqualTo("${TASKMIND_INTEGRATIONS_TOKEN_KEY}");
     }
 
     private Properties prodProperties() throws IOException {
