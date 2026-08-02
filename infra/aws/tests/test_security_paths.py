@@ -40,6 +40,27 @@ class SecurityPathTest(unittest.TestCase):
         self.assertNotRegex(group_blocks, r"(?m)^\s+ingress\s*{")
         self.assertNotIn('resource "aws_security_group_rule"', self.source)
 
+    def test_managed_data_security_groups_have_no_egress(self) -> None:
+        for service in ("rds", "redis", "opensearch"):
+            group = re.search(
+                rf'resource\s+"aws_security_group"\s+"{service}"\s+\{{(.*?)\n\}}',
+                self.source,
+                re.S,
+            )
+            self.assertIsNotNone(group)
+            self.assertNotRegex(group.group(1), r"(?m)^\s+egress\s*{")
+
+        egress_blocks = re.findall(
+            r'resource\s+"aws_vpc_security_group_egress_rule"\s+"[^"]+"\s+\{(.*?)\n\}',
+            self.source,
+            re.S,
+        )
+        for block in egress_blocks:
+            self.assertNotRegex(
+                block,
+                r"(?m)^\s*security_group_id\s*=\s*aws_security_group\.(rds|redis|opensearch)\.id",
+            )
+
     def test_data_rules_authorize_only_named_services(self) -> None:
         for resource in ("rds_from_service", "redis_from_service"):
             start = self.source.index(
