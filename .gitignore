@@ -18,6 +18,35 @@ __pycache__/
 # OS
 .DS_Store
 
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+!infra/env/.env.example
+infra/env/.env
+.aws/credentials
+credentials.csv
+aws-credentials*
+aws_credentials*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Terraform/OpenTofu local inputs, state, and plans
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+tfplan*
+
+# Generated ECS deployment artifacts
+*-task-definition.json
+
 # Local vibe-coding token telemetry
 .vibe/*.jsonl
 .vibe/*.json
