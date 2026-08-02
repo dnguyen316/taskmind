@@ -19,7 +19,8 @@ git config user.name 'github-actions[bot]'
 git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git add --all
 
-if git diff --cached --name-only | grep -Eq '^\.github/(workflows|actions)(/|$)'; then
+if git diff --cached --no-renames --name-only -z |
+  grep -zEq '^\.github/(workflows|actions)(/|$)'; then
   echo 'Refusing to commit a GitHub workflow or action modification.' >&2
   exit 1
 fi
