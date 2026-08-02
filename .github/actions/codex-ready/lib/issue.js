@@ -79,8 +79,8 @@ Implements the validated scope from issue #${issueNumber}.
 
 ## Verification
 
-- This workflow uses GITHUB_TOKEN, so it does not trigger CI for the draft pull request.
-- Run the repository verification commands before marking this draft ready for review.
+- Automated CI checks are not started for this draft pull request.
+- Run the repository verification commands manually before marking this draft ready for review.
 
 ## Agent report
 
@@ -89,7 +89,7 @@ Implements the validated scope from issue #${issueNumber}.
 
 ## Risks or limitations
 
-- Human review and CI verification are required before this draft is ready to merge.
+- Human review and manual verification are required before this draft is ready to merge.
 
 ## Linked issue
 
