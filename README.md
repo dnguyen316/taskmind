@@ -111,6 +111,7 @@ Install the following before running the project locally:
 ```bash
 # 1. Create local environment file from the template
 make env-example
+# Edit infra/env/.env and replace every CHANGE_ME credential before continuing.
 
 # 2. Start local data-plane dependencies
 make infra-up
@@ -127,7 +128,7 @@ make run-frontend
 
 Then open the frontend at `http://localhost:5173`.
 
-Local infrastructure and observability run through the root `docker-compose.yml`, which includes `infra/compose/docker-compose.infra.yml` for PostgreSQL, Redis, OpenSearch, and LocalStack, plus `infra/compose/docker-compose.observability.yml` for metrics tooling. The compose project uses a shared `taskmind` network so Prometheus can scrape application containers named `backend`, `relay`, and `ai` when those services are started in the same compose project/network.
+Local infrastructure and observability run through the root `docker-compose.yml`, which includes `infra/compose/docker-compose.infra.yml` for PostgreSQL, Redis, OpenSearch, and LocalStack, plus `infra/compose/docker-compose.observability.yml` for metrics tooling. The compose project uses a shared `taskmind` network so Prometheus can scrape application containers named `backend`, `relay`, and `ai` when those services are started in the same compose project/network. This development stack is **not suitable for Internet-facing or shared hosts**; see [`infra/compose/README.md`](infra/compose/README.md) for credential, port-binding, and direct Compose instructions.
 
 Local observability URLs:
 

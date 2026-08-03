@@ -118,8 +118,10 @@ infra/env/.env.example
 
 - Root `docker-compose.yml` is a thin wrapper that includes or delegates to
   `infra/compose/docker-compose.infra.yml` and `infra/compose/docker-compose.apps.yml`.
-- `infra/compose/docker-compose.infra.yml` declares local Postgres 16, Redis 7,
-  OpenSearch or Elasticsearch-compatible search on port `9200`, and LocalStack for S3.
+- `infra/compose/docker-compose.infra.yml` declares local Postgres 16, authenticated
+  Redis 7, network-only OpenSearch or Elasticsearch-compatible search, and LocalStack
+  for S3. Any development ports published for host-run apps bind only to loopback, and
+  the stack must be documented as unsuitable for Internet-facing or shared hosts.
 - `infra/compose/docker-compose.apps.yml` declares app-service containers for Core,
   Relay, Nova, and an nginx gateway.
 - `infra/compose/nginx/nginx.conf` should route local gateway traffic to the frontend,
