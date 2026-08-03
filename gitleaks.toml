@@ -1,0 +1,37 @@
+title = "TaskMind Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+# This value is the non-production JWT signing placeholder used by Core's test profile.
+# Requiring both the exact value and exact file prevents the exception from hiding similar
+# values elsewhere in the repository.
+[[allowlists]]
+description = "Core test-profile JWT placeholder"
+condition = "AND"
+regexTarget = "match"
+paths = ['''^apps/backend/src/test/resources/application-test\.properties$''']
+regexes = ['''test-only-taskmind-jwt-secret-at-least-32-chars''']
+
+# This deleted startup-guard test assigned this exact fake production-shaped JWT value
+# three times. Limit the historical exception to that file, value, and Gitleaks rule;
+# JWT-looking values in every other source file remain reportable.
+[[allowlists]]
+description = "Historical startup-guard JWT placeholders"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/backend/src/test/java/com/taskmind/backend/security/DevelopmentCredentialStartupGuardTest\.java$''']
+regexes = ['''taskmind\.auth\.jwt\.secret=prod-jwt-secret-at-least-32-chars''']
+
+# These Terraform fixture files use this exact fake Redis token to exercise validation.
+# The exception is limited to the two confirmed fixtures rather than all test files.
+[[allowlists]]
+description = "Terraform Redis-token fixture"
+condition = "AND"
+regexTarget = "match"
+paths = [
+  '''^infra/aws/data/opensearch_availability_zones\.tftest\.hcl$''',
+  '''^infra/aws/data/final_snapshot_identifier\.tftest\.hcl$''',
+]
+regexes = ['''test-redis-token-123456789''']
