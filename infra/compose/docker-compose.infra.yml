@@ -1,12 +1,14 @@
+# DEVELOPMENT ONLY: this stack disables production-grade TLS/security controls and must
+# never be deployed on an Internet-facing or shared host. Host ports bind to loopback.
 services:
   postgres:
     image: postgres:16
     environment:
       POSTGRES_DB: ${TASKMIND_DB_NAME:-taskmind}
       POSTGRES_USER: ${TASKMIND_DB_USERNAME:-taskmind}
-      POSTGRES_PASSWORD: ${TASKMIND_DB_PASSWORD:-taskmind}
+      POSTGRES_PASSWORD: ${TASKMIND_DB_PASSWORD:?Set a non-default TASKMIND_DB_PASSWORD in infra/env/.env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -19,12 +21,18 @@ services:
 
   redis:
     image: redis:7
+    environment:
+      TASKMIND_REDIS_PASSWORD: ${TASKMIND_REDIS_PASSWORD:?Set TASKMIND_REDIS_PASSWORD in infra/env/.env}
+    command:
+      - redis-server
+      - --requirepass
+      - ${TASKMIND_REDIS_PASSWORD:?Set TASKMIND_REDIS_PASSWORD in infra/env/.env}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${TASKMIND_REDIS_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -37,8 +45,8 @@ services:
       discovery.type: single-node
       plugins.security.disabled: "true"
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
+    # Security is disabled for local container-to-container traffic, so do not publish
+    # port 9200 to the host. Use `docker compose exec opensearch curl ...` for diagnostics.
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     healthcheck:
@@ -56,10 +64,9 @@ services:
       AWS_DEFAULT_REGION: ${TASKMIND_ATTACHMENTS_S3_REGION:-ap-southeast-2}
       DEBUG: ${LOCALSTACK_DEBUG:-0}
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - localstack-data:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:4566/_localstack/health >/dev/null || exit 1"]
       interval: 10s

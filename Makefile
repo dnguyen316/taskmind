@@ -157,14 +157,19 @@ env-example: ## Create infra/env/.env from infra/env/.env.example when available
 
 infra-up: ## Start local infrastructure if compose files exist.
 	@if [ -f "$(ROOT_DIR)/docker-compose.yml" ] || [ -f "$(ROOT_DIR)/compose.yml" ]; then \
-		docker compose up -d; \
+		test -f "$(ENV_FILE)" || { echo "Missing infra/env/.env; run 'make env-example' and replace CHANGE_ME credentials."; exit 1; }; \
+		! grep -q '=CHANGE_ME' "$(ENV_FILE)" || { echo "Replace all CHANGE_ME credentials in infra/env/.env before starting infrastructure."; exit 1; }; \
+		db_password="$$(sed -n 's/^TASKMIND_DB_PASSWORD=//p' "$(ENV_FILE)")"; \
+		test -n "$$db_password" && test "$$db_password" != taskmind && test "$$db_password" != postgres || { echo "TASKMIND_DB_PASSWORD must be set to a non-default value in infra/env/.env."; exit 1; }; \
+		docker compose --env-file "$(ENV_FILE)" up -d; \
 	else \
 		echo "No compose file exists yet; nothing to start."; \
 	fi
 
 infra-down: ## Stop local infrastructure if compose files exist.
 	@if [ -f "$(ROOT_DIR)/docker-compose.yml" ] || [ -f "$(ROOT_DIR)/compose.yml" ]; then \
-		docker compose down; \
+		test -f "$(ENV_FILE)" || { echo "Missing infra/env/.env; cannot resolve the local Compose configuration."; exit 1; }; \
+		docker compose --env-file "$(ENV_FILE)" down; \
 	else \
 		echo "No compose file exists yet; nothing to stop."; \
 	fi

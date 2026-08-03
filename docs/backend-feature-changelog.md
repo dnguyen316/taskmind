@@ -1403,3 +1403,12 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M13 AWS deployment and security hardening.
 - Skills used: none.
 - Agent delegation: none.
+
+## 2026-08-02 (M00 Local Compose Hardening)
+
+- Bound host-published data-plane ports to loopback, removed unsecured OpenSearch host
+  publication, and removed LocalStack's unnecessary Docker socket mount.
+- Required non-template PostgreSQL and authenticated Redis credentials from the ignored
+  `infra/env/.env`, propagated the Redis password to host-run local services, and added
+  explicit warnings that the development stack is unsafe for Internet-facing/shared hosts.
+- No Codex skill or delegated agent was used for this infrastructure configuration pass.
