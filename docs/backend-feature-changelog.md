@@ -1,3 +1,22 @@
+## 2026-08-02 - Dedicated E2E profile and deployment guard
+
+### Changed
+
+- Restricted Core's authentication bypass to the dedicated `e2e` profile as the sole
+  active Spring profile, rejecting production, staging, local, and test combinations.
+- Added a pre-render ECS deployment check that rejects remote task definitions containing
+  the `e2e` profile or enabled bypass properties.
+
+### Tests
+
+- Added startup coverage for `prod,e2e`, `staging,e2e`, and `test,e2e` conflicts and
+  focused deployment-validator regression tests.
+
+### Closeout notes
+
+- Primary milestone: M13 AWS deployment and security hardening.
+- Skills used: none. Agent delegation: none.
+
 ## 2026-08-02 - Fail-closed remote service configuration
 
 ### Changed
@@ -1385,6 +1404,7 @@ This changelog tracks backend feature progress against the core implementation p
 - Primary milestone: M07 Nova internal integration and Relay service security hardening.
 - Skills used: none.
 - Agent delegation: none.
+
 ## 2026-08-01 - ECS service-specific egress controls
 
 ### Changed

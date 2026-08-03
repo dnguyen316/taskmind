@@ -39,15 +39,6 @@ class AuthIntegrationTest {
     @Autowired OtpService otpService; @Autowired JwtEncoder jwtEncoder; @Autowired JwtDecoder jwtDecoder;
 
     @Test
-    void testProfileE2eBypassSeedsWorkingSuperAdminLogin() throws Exception {
-        var result=mvc.perform(post("/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"superadmin@taskmind.local\",\"password\":\"1\"}"))
-                .andExpect(status().isOk()).andReturn();
-        assertThat(json.readTree(result.getResponse().getContentAsString()).path("accessToken").asText()).isNotBlank();
-        assertThat(result.getResponse().getCookie("taskmind_refresh")).isNotNull();
-    }
-
-    @Test
     void signupPersistsPendingUserHashedPasswordIdentityAndOtpThenVerificationActivatesAndIssuesTokens() throws Exception {
         var email=email();
         mvc.perform(post("/v1/auth/signup/email").contentType(MediaType.APPLICATION_JSON).content(signup(email))).andExpect(status().isAccepted());

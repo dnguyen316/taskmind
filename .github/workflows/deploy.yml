@@ -40,13 +40,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: maven
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
 
@@ -89,13 +89,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: maven
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
 
@@ -191,6 +191,11 @@ jobs:
           aws ecs describe-task-definition --task-definition "$CORE_TASK_DEFINITION" --query taskDefinition > core-task-definition.json
           aws ecs describe-task-definition --task-definition "$RELAY_TASK_DEFINITION" --query taskDefinition > relay-task-definition.json
           aws ecs describe-task-definition --task-definition "$NOVA_TASK_DEFINITION" --query taskDefinition > nova-task-definition.json
+
+      - name: Reject E2E profiles and bypasses in remote task definitions
+        run: >-
+          scripts/validate-deployment-profiles.py "$DEPLOY_ENVIRONMENT"
+          core-task-definition.json relay-task-definition.json nova-task-definition.json
 
       - name: Render Core task definition
         id: render-core

@@ -62,14 +62,14 @@ Reference feature slices:
 
 All HTTP goes through one axios client. Never instantiate axios elsewhere. Feature APIs call typed helpers that use the shared `apiClient`.
 
-| File                | Role                                                                                                                                                                                                                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apiClient.ts`      | Shared axios instance. Injects bearer tokens. For `401` on a protected route, performs a single-flight refresh via `/v1/auth/token/refresh`, retries once, then emits session-expired behavior. Public auth endpoints are exempt. Base URL comes from `VITE_API_BASE_URL` and defaults to `http://localhost:8080`. |
-| `apiError.ts`       | Normalizes failed responses to a typed `ApiError`.                                                                                                                                                                                                                                                                 |
-| `authToken.ts`      | Access/refresh token storage.                                                                                                                                                                                                                                                                                      |
-| `authSession.ts`    | `onSessionExpired` / `notifySessionExpired` and token-refresh notification plumbing.                                                                                                                                                                                                                               |
-| `e2eAuth.ts`        | Super-admin bypass helper for local E2E.                                                                                                                                                                                                                                                                           |
-| `taskDataEvents.ts` | Lightweight in-app event bus for task-data refreshes.                                                                                                                                                                                                                                                              |
+| File                  | Role                                                                                                                                                                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiClient.ts`        | Shared axios instance. Injects bearer tokens. For `401` on a protected route, performs a single-flight refresh via `/v1/auth/token/refresh`, retries once, then emits session-expired behavior. Public auth endpoints are exempt. Base URL comes from `VITE_API_BASE_URL` and defaults to `http://localhost:8080`. |
+| `apiError.ts`         | Normalizes failed responses to a typed `ApiError`.                                                                                                                                                                                                                                                                 |
+| `authToken.ts`        | Access/refresh token storage.                                                                                                                                                                                                                                                                                      |
+| `authSession.ts`      | `onSessionExpired` / `notifySessionExpired` and token-refresh notification plumbing.                                                                                                                                                                                                                               |
+| `e2e/support/auth.ts` | Browser-runner-only credential reader; it is outside the Vite application graph.                                                                                                                                                                                                                                   |
+| `taskDataEvents.ts`   | Lightweight in-app event bus for task-data refreshes.                                                                                                                                                                                                                                                              |
 
 ```mermaid
 flowchart TD
@@ -88,7 +88,7 @@ flowchart TD
 - `ensureInitialized()` runs before each navigation so guards can make decisions from the current session state.
 - Public routes include the landing/home route, `/login`, `/signup`, and `/forgot-password`.
 - Session expiry redirects to `/login?redirect=...`.
-- Local/test E2E login uses the build-kit bypass credentials: `superadmin@taskmind.local` / password `1` / OTP `1`.
+- Browser E2E login receives `E2E_AUTH_EMAIL`, `E2E_AUTH_PASSWORD`, and `E2E_AUTH_OTP` through the Playwright process environment. Playwright configuration may supply safe defaults for non-CI local tests; production application code and Vite builds must never import or define them.
 
 ## Stores (Pinia)
 

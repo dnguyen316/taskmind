@@ -27,6 +27,7 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20.19.41",
     "@vitejs/plugin-vue": "^5.2.1",
     "prettier": "^3.8.3",
