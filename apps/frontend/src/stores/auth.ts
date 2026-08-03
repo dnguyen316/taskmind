@@ -27,12 +27,6 @@ interface JwtClaims {
   permissions?: unknown
 }
 
-export const E2E_AUTH_CREDENTIALS = {
-  email: 'superadmin@taskmind.local',
-  password: '1',
-  otp: '1',
-} as const
-
 type AuthMode = 'login' | 'signup'
 
 interface FetchCurrentUserOptions {

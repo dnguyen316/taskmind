@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { e2eAuthCredentials } from './support/auth'
 
 const emptyReport = {
   range: 'WEEK',
@@ -35,10 +36,11 @@ const emptyReport = {
 }
 
 test('reports labels unavailable and empty rollup metrics', async ({ page }) => {
+  const credentials = e2eAuthCredentials()
   await page.route('**/v1/reports?**', (route) => route.fulfill({ json: emptyReport }))
   await page.goto('/login')
-  await page.getByLabel(/email/i).fill('superadmin@taskmind.local')
-  await page.getByLabel(/password/i).fill('1')
+  await page.getByLabel(/email/i).fill(credentials.email)
+  await page.getByLabel(/password/i).fill(credentials.password)
   await page.getByRole('button', { name: /sign in|login/i }).click()
   await expect(page).toHaveURL(/onboarding|dashboard|projects|reports/)
 
