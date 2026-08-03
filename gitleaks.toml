@@ -13,6 +13,17 @@ regexTarget = "match"
 paths = ['''^apps/backend/src/test/resources/application-test\.properties$''']
 regexes = ['''test-only-taskmind-jwt-secret-at-least-32-chars''']
 
+# This deleted startup-guard test assigned this exact fake production-shaped JWT value
+# three times. Limit the historical exception to that file, value, and Gitleaks rule;
+# JWT-looking values in every other source file remain reportable.
+[[allowlists]]
+description = "Historical startup-guard JWT placeholders"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/backend/src/test/java/com/taskmind/backend/security/DevelopmentCredentialStartupGuardTest\.java$''']
+regexes = ['''taskmind\.auth\.jwt\.secret=prod-jwt-secret-at-least-32-chars''']
+
 # These Terraform fixture files use this exact fake Redis token to exercise validation.
 # The exception is limited to the two confirmed fixtures rather than all test files.
 [[allowlists]]
