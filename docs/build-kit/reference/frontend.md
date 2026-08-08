@@ -108,6 +108,10 @@ flowchart TD
 - **Scheduler** — calendar/month layouts, block "why" rationale popovers, and task-detail navigation from scheduled block details.
 - **Spec breakdown** — spec workspace, source panel, tree nodes, hierarchy merge, and attachments.
 - **Reports** — analytics views with PDF export via jspdf.
+- **Dashboard** — a time-aware personalized greeting, live KPI rail, recommended next
+  actions, and responsive task/activity panels backed by the existing Core dashboard
+  aggregation. Search continues to route through the activity search experience, and
+  dashboard loading, empty, and retry states remain visible and actionable.
 
 ## Conventions
 

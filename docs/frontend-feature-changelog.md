@@ -49,6 +49,28 @@
 
 - `cd apps/frontend && npm run typecheck`
 
+## 2026-08-08 - Dashboard visual hierarchy refresh
+
+### Summary
+
+- Reworked the M12 dashboard around a personalized time-aware heading, compact live KPI
+  rail, and a focused set of task, spec-breakdown, and project next actions.
+- Replaced generic lists with responsive recent-task and activity panels, including
+  status treatments, concise rollup summaries, and dedicated loading, empty, and retry
+  states.
+- Preserved the existing Core dashboard and activity-search contracts; no OpenAPI change
+  was required. The `taskmind-frontend-feature` skill was used, with no delegated agents.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/tasks/pages/DashboardPage.vue`
+- `cd apps/frontend && npm run typecheck`
+- `cd apps/frontend && npm run build`
+- `make vibe-verify`
+- Browser E2E was skipped because this environment does not provide a browser binary;
+  the intended flow is to sign in with the local super-admin bypass and inspect
+  `/dashboard` at desktop and mobile widths.
+
 ## 2026-07-01 - Spec breakdown onboarding flow
 
 ### Changed
@@ -888,6 +910,7 @@
 - `cd apps/frontend && npm run typecheck`
 
 - Documented that SPA refresh/logout continues to use the HttpOnly refresh cookie and relies on browser-supplied Origin/Referer headers; no custom frontend CSRF header is currently required.
+
 ## 2026-07-18 - Auth initialization profile failure cleanup
 
 ### Summary
