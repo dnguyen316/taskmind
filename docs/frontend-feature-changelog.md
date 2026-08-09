@@ -938,3 +938,16 @@
 - `cd apps/frontend && npm run format -- src/stores/auth.ts src/stores/__tests__/auth.test.ts package.json`
 - `cd apps/frontend && npm run test -- src/stores/__tests__/auth.test.ts`
 - `cd apps/frontend && npm run typecheck`
+
+## 2026-08-09 - Nova-centered dashboard search
+
+### Summary
+
+- Promoted dashboard search into a dedicated Nova search surface with natural-language assist, quick prompts, loading/error recovery, and Ctrl/Cmd+K focus.
+- Enhanced activity autocomplete with AI and standard appearances, entity icons, destination hints, configurable view-all behavior, and responsive popup styling.
+- Selecting a concrete recommendation now opens its task or project directly; other suggestions continue to the full activity search.
+- No Codex skill or delegated agent was used; implementation was completed locally.
+
+### Verification
+
+- Browser E2E flow: sign in with the local super-admin bypass, focus dashboard search with Ctrl/Cmd+K, enter a query, inspect recommendations, and submit with Nova.

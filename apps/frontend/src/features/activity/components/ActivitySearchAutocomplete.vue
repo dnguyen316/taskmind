@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, watch } from 'vue'
-import { SearchOutlined } from '@ant-design/icons-vue'
+import {
+  ArrowRightOutlined,
+  CheckSquareOutlined,
+  FolderOpenOutlined,
+  HistoryOutlined,
+  RobotOutlined,
+  SearchOutlined,
+} from '@ant-design/icons-vue'
 import {
   recommendActivitySearch,
   type ActivitySearchFilters,
@@ -19,6 +26,8 @@ const props = withDefaults(
     allowClear?: boolean
     showViewAll?: boolean
     viewAllLabel?: string
+    appearance?: 'standard' | 'ai'
+    showShortcutHint?: boolean
   }>(),
   {
     filters: () => ({}),
@@ -30,6 +39,8 @@ const props = withDefaults(
     allowClear: true,
     showViewAll: true,
     viewAllLabel: 'View all results',
+    appearance: 'standard',
+    showShortcutHint: false,
   },
 )
 
@@ -52,6 +63,7 @@ type SuggestionOption = {
 }
 
 const focused = ref(false)
+const shell = ref<HTMLElement | null>(null)
 const suggestions = ref<ActivitySearchSuggestion[]>([])
 const suggestionsLoading = ref(false)
 const suggestionsErrorMessage = ref('')
@@ -63,7 +75,7 @@ const trimmedQuery = computed(() => props.value.trim())
 const hasValidQuery = computed(() => trimmedQuery.value.length >= props.minLength)
 const remainingCharacters = computed(() => Math.max(props.minLength - trimmedQuery.value.length, 0))
 const showRecommendationDropdown = computed(() => focused.value)
-const viewAllLabelText = computed(() => `View all results for “${trimmedQuery.value}”`)
+const viewAllLabelText = computed(() => `${props.viewAllLabel} for “${trimmedQuery.value}”`)
 const dropdownState = computed(() => {
   if (!hasValidQuery.value) {
     return 'too-short'
@@ -129,6 +141,8 @@ const suggestionOptions = computed<SuggestionOption[]>(() => {
       })),
     )
   }
+
+  if (!props.showViewAll) return stateOptions
 
   return [
     ...stateOptions,
@@ -239,6 +253,18 @@ function recommendationTarget(recommendation: ActivitySearchSuggestion) {
   return recommendation.routeName ? 'Open item' : 'Use search term'
 }
 
+function recommendationIcon(entityType: string) {
+  if (entityType === 'task') return CheckSquareOutlined
+  if (entityType === 'project') return FolderOpenOutlined
+  return HistoryOutlined
+}
+
+function focusInput() {
+  shell.value?.querySelector<HTMLInputElement>('input')?.focus()
+}
+
+defineExpose({ focusInput })
+
 function focusRecommendationDropdown() {
   if (blurTimer) {
     clearTimeout(blurTimer)
@@ -267,13 +293,18 @@ function handleKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="activity-search-autocomplete-shell">
+  <div
+    ref="shell"
+    class="activity-search-autocomplete-shell"
+    :class="{ 'is-ai': appearance === 'ai' }"
+  >
     <a-auto-complete
       :value="value"
       class="activity-search-autocomplete"
       :options="suggestionOptions"
       :open="showRecommendationDropdown"
       :allow-clear="allowClear"
+      :popup-class-name="`activity-search-popup activity-search-popup--${appearance}`"
       @update:value="updateValue"
       @focus="focusRecommendationDropdown"
       @blur="closeRecommendationDropdown"
@@ -285,20 +316,37 @@ function handleKeydown(event: KeyboardEvent) {
         @keydown="handleKeydown"
         @press-enter="submitSearch()"
       >
-        <template #prefix><SearchOutlined /></template>
+        <template #prefix>
+          <span v-if="appearance === 'ai'" class="search-ai-mark" aria-hidden="true"
+            ><RobotOutlined
+          /></span>
+          <SearchOutlined v-else />
+        </template>
+        <template v-if="showShortcutHint" #suffix>
+          <kbd class="search-shortcut" aria-label="Control or Command K">Ctrl K</kbd>
+        </template>
       </a-input>
       <template #option="option">
         <div v-if="option.recommendation" class="recommendation-option">
+          <span
+            class="recommendation-icon"
+            :data-entity="option.recommendation.entityType"
+            aria-hidden="true"
+          >
+            <component :is="recommendationIcon(option.recommendation.entityType)" />
+          </span>
           <div>
             <div class="recommendation-label">{{ option.recommendation.label }}</div>
             <div class="recommendation-meta">{{ recommendationMeta(option.recommendation) }}</div>
           </div>
-          <span class="recommendation-target">{{
-            recommendationTarget(option.recommendation)
-          }}</span>
+          <span class="recommendation-target"
+            >{{ recommendationTarget(option.recommendation) }} <ArrowRightOutlined
+          /></span>
         </div>
         <div v-else-if="option.kind === 'viewAll'" class="recommendation-view-all">
-          {{ option.label }}
+          <SearchOutlined aria-hidden="true" />
+          <span>{{ option.label }}</span>
+          <ArrowRightOutlined aria-hidden="true" />
         </div>
         <div v-else class="recommendation-status" :data-state="dropdownState">
           <a-spin v-if="dropdownState === 'loading'" size="small" />
@@ -316,6 +364,45 @@ function handleKeydown(event: KeyboardEvent) {
 .activity-search-autocomplete-shell,
 .activity-search-autocomplete {
   width: 100%;
+}
+.activity-search-autocomplete-shell.is-ai :deep(.ant-input-affix-wrapper) {
+  min-height: 52px;
+  padding: 6px 8px 6px 10px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.activity-search-autocomplete-shell.is-ai :deep(.ant-input) {
+  color: var(--tm-text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.activity-search-autocomplete-shell.is-ai :deep(.ant-input::placeholder) {
+  color: var(--tm-text-soft);
+}
+.search-ai-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin-right: 7px;
+  color: #fff;
+  font-size: 16px;
+  background: var(--tm-ai-grad);
+  border-radius: 11px;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.24);
+  place-items: center;
+}
+.search-shortcut {
+  min-width: 38px;
+  padding: 4px 6px;
+  color: var(--tm-text-soft);
+  font-family: var(--tm-mono);
+  font-size: 10px;
+  line-height: 1;
+  text-align: center;
+  background: var(--tm-surface-subtle);
+  border: 1px solid var(--tm-border-soft);
+  border-radius: 6px;
 }
 
 .recommendation-empty,
@@ -338,6 +425,24 @@ function handleKeydown(event: KeyboardEvent) {
   justify-content: space-between;
   gap: 12px;
 }
+.recommendation-option > div {
+  flex: 1;
+  min-width: 0;
+}
+.recommendation-icon {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  color: var(--tm-primary);
+  background: var(--tm-primary-soft);
+  border-radius: 10px;
+  place-items: center;
+}
+.recommendation-icon[data-entity='project'] {
+  color: var(--tm-accent-teal);
+  background: color-mix(in srgb, var(--tm-accent-teal) 11%, transparent);
+}
 
 .recommendation-label,
 .recommendation-view-all {
@@ -346,7 +451,11 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 .recommendation-view-all {
-  border-top: 1px solid var(--tm-border-subtle);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--tm-border-soft);
 }
 
 .recommendation-meta,
@@ -356,6 +465,45 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 .recommendation-target {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
   white-space: nowrap;
+}
+:global(.activity-search-popup) {
+  padding: 7px;
+  background: var(--tm-card-bg);
+  border: 1px solid var(--tm-border);
+  border-radius: 14px;
+  box-shadow: var(--tm-shadow-lg);
+}
+:global(.activity-search-popup .ant-select-item) {
+  min-height: 48px;
+  padding: 7px 8px;
+  border-radius: 10px;
+}
+:global(
+  .activity-search-popup .ant-select-item-option-active:not(.ant-select-item-option-disabled)
+),
+:global(
+  .activity-search-popup .ant-select-item-option-selected:not(.ant-select-item-option-disabled)
+) {
+  background: var(--tm-primary-soft);
+}
+:global(.activity-search-popup--ai) {
+  margin-top: 8px;
+  border-color: var(--tm-primary-soft-border);
+}
+@media (max-width: 640px) {
+  .activity-search-autocomplete-shell.is-ai :deep(.ant-input-affix-wrapper) {
+    min-height: 48px;
+  }
+  .activity-search-autocomplete-shell.is-ai :deep(.ant-input) {
+    font-size: 14px;
+  }
+  .search-shortcut,
+  .recommendation-target {
+    display: none;
+  }
 }
 </style>

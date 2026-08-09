@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import {
+  ArrowRightOutlined,
   AppstoreOutlined,
   AuditOutlined,
   BellOutlined,
@@ -9,21 +10,33 @@ import {
   ClockCircleOutlined,
   FolderOpenOutlined,
   LineChartOutlined,
+  RobotOutlined,
   RightOutlined,
   ThunderboltOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 import ActivitySearchAutocomplete from '../../activity/components/ActivitySearchAutocomplete.vue'
+import { assistActivitySearch } from '../api/activitySearchApi'
 import { useDashboard } from '../../dashboard/composables/useDashboard'
 import type { DashboardActivitySnippet, DashboardTaskItem } from '../../dashboard/types'
 import { useAuthStore } from '../../../stores/auth'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime } from '../utils/taskDates'
+import type { ActivitySearchSuggestion } from '../types'
 
 const { dashboard, loading, errorMessage, fetchDashboard } = useDashboard()
 const authStore = useAuthStore()
 const router = useRouter()
 const searchQuery = ref('')
+const dashboardSearch = ref<{ focusInput: () => void } | null>(null)
+const aiSearchLoading = ref(false)
+const aiSearchErrorMessage = ref('')
+let aiSearchRequestId = 0
+const quickSearchPrompts = [
+  'Find blocked tasks from this week',
+  'Show recently completed work',
+  'What changed today?',
+]
 const dashboardKpis = computed(() => dashboard.value?.kpis)
 const realTaskMetrics = computed(() => ({
   active: dashboardKpis.value?.openTasks ?? 0,
@@ -79,8 +92,48 @@ function submitDashboardSearch(value = searchQuery.value) {
   void router.push({ name: 'activity-search', query: { q: query } })
 }
 
-function selectDashboardSearchOption(value: string) {
+async function submitDashboardAiSearch(value = searchQuery.value) {
+  const prompt = value.trim()
+  if (!prompt) {
+    dashboardSearch.value?.focusInput()
+    return
+  }
+
   searchQuery.value = value
+  aiSearchRequestId += 1
+  const requestId = aiSearchRequestId
+  aiSearchLoading.value = true
+  aiSearchErrorMessage.value = ''
+
+  try {
+    const proposal = await assistActivitySearch(prompt, prompt)
+    if (requestId === aiSearchRequestId) {
+      await router.push({ name: 'activity-search', query: { q: proposal.query } })
+    }
+  } catch (error: unknown) {
+    if (requestId === aiSearchRequestId) {
+      aiSearchErrorMessage.value =
+        error instanceof Error ? error.message : 'Nova could not prepare this search.'
+    }
+  } finally {
+    if (requestId === aiSearchRequestId) aiSearchLoading.value = false
+  }
+}
+
+function selectDashboardSearchOption(value: string, recommendation?: ActivitySearchSuggestion) {
+  searchQuery.value = value
+  if (recommendation?.routeName && recommendation.entityId) {
+    void router.push({ name: recommendation.routeName, params: { id: recommendation.entityId } })
+    return
+  }
+  submitDashboardSearch(value)
+}
+
+function focusDashboardSearch(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    dashboardSearch.value?.focusInput()
+  }
 }
 
 function humanizeStatus(status: string) {
@@ -107,7 +160,13 @@ function activitySummary(item: DashboardActivitySnippet) {
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', focusDashboardSearch)
   await fetchDashboard().catch(() => undefined)
+})
+
+onBeforeUnmount(() => {
+  aiSearchRequestId += 1
+  window.removeEventListener('keydown', focusDashboardSearch)
 })
 </script>
 
@@ -116,19 +175,6 @@ onMounted(async () => {
     <template #title>{{ greeting }}, {{ firstName }}</template>
     <template #subtitle>Here’s what needs your attention today.</template>
     <template #headerActions>
-      <div class="dashboard-search">
-        <ActivitySearchAutocomplete
-          v-model:value="searchQuery"
-          class="dashboard-search-autocomplete"
-          input-size="large"
-          :suggestion-limit="6"
-          show-view-all
-          view-all-label="View all results"
-          @select-suggestion="selectDashboardSearchOption"
-          @submit-search="submitDashboardSearch"
-          @view-all="submitDashboardSearch"
-        />
-      </div>
       <a-button
         class="notification-button"
         shape="circle"
@@ -143,6 +189,61 @@ onMounted(async () => {
         ><a-button type="primary" size="large">+ New task</a-button></RouterLink
       >
     </template>
+
+    <section class="ai-search-center" aria-labelledby="ai-search-title">
+      <div class="ai-search-copy">
+        <span class="nova-orb" aria-hidden="true"><RobotOutlined /></span>
+        <div>
+          <h2 id="ai-search-title">Ask Nova to find anything</h2>
+          <p>Describe what you need. Nova turns it into a precise workspace search.</p>
+        </div>
+      </div>
+      <div class="ai-search-control" :class="{ 'is-loading': aiSearchLoading }">
+        <ActivitySearchAutocomplete
+          ref="dashboardSearch"
+          v-model:value="searchQuery"
+          class="dashboard-search-autocomplete"
+          appearance="ai"
+          input-size="large"
+          placeholder="Try “Find blocked tasks updated this week”"
+          :suggestion-limit="6"
+          :show-shortcut-hint="true"
+          show-view-all
+          view-all-label="Search workspace"
+          @select-suggestion="selectDashboardSearchOption"
+          @submit-search="submitDashboardAiSearch"
+          @view-all="submitDashboardSearch"
+        />
+        <a-button
+          class="ask-nova-button"
+          type="primary"
+          size="large"
+          :loading="aiSearchLoading"
+          @click="submitDashboardAiSearch()"
+        >
+          <template #icon><RobotOutlined /></template>
+          Ask Nova
+          <ArrowRightOutlined v-if="!aiSearchLoading" />
+        </a-button>
+      </div>
+      <div class="ai-search-footer">
+        <span class="prompt-label">Try asking</span>
+        <button
+          v-for="prompt in quickSearchPrompts"
+          :key="prompt"
+          type="button"
+          class="quick-prompt"
+          :disabled="aiSearchLoading"
+          @click="submitDashboardAiSearch(prompt)"
+        >
+          {{ prompt }}
+        </button>
+      </div>
+      <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
+        {{ aiSearchErrorMessage }}
+        <button type="button" @click="submitDashboardSearch()">Search without Nova</button>
+      </p>
+    </section>
 
     <section class="metric-rail tm-card-surface" aria-label="Task overview">
       <article v-for="metric in metricCards" :key="metric.label" class="metric-item">
@@ -261,14 +362,151 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.dashboard-search-autocomplete {
-  width: min(360px, 32vw);
+.ai-search-center {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  overflow: visible;
+  background:
+    radial-gradient(
+      circle at 8% 0%,
+      color-mix(in srgb, var(--tm-primary) 12%, transparent),
+      transparent 34%
+    ),
+    var(--tm-card-bg);
+  border: 1px solid var(--tm-primary-soft-border);
+  border-radius: 20px;
+  box-shadow: var(--tm-shadow-md);
 }
-.dashboard-search .ant-input-affix-wrapper {
-  width: 100%;
+.ai-search-copy {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.nova-orb {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  font-size: 18px;
+  background: var(--tm-ai-grad);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.26);
+  place-items: center;
+}
+.ai-search-copy h2 {
+  margin: 0;
   color: var(--tm-text);
+  font-size: 18px;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+.ai-search-copy p {
+  margin: 4px 0 0;
+  color: var(--tm-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ai-search-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  width: min(960px, 100%);
+  padding: 5px;
   background: var(--tm-card-bg);
-  border-color: var(--tm-border);
+  border: 1px solid var(--tm-border);
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(28, 35, 64, 0.1);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+.ai-search-control:focus-within {
+  border-color: var(--tm-primary);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tm-primary) 13%, transparent),
+    0 18px 42px rgba(28, 35, 64, 0.12);
+  transform: translateY(-1px);
+}
+.ai-search-control.is-loading {
+  border-color: var(--tm-primary-soft-border);
+}
+.dashboard-search-autocomplete {
+  min-width: 0;
+}
+.ask-nova-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-width: 134px;
+  height: 48px;
+  padding-inline: 18px;
+  font-size: 13px;
+  font-weight: 650;
+  border: 0;
+  border-radius: 13px;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--tm-primary) 28%, transparent);
+}
+.ai-search-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.prompt-label {
+  margin-right: 2px;
+  color: var(--tm-text-soft);
+  font-size: 11px;
+  font-weight: 650;
+}
+.quick-prompt {
+  min-height: 30px;
+  padding: 5px 10px;
+  color: var(--tm-text-muted);
+  font-size: 11px;
+  font-weight: 550;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--tm-surface-subtle) 88%, transparent);
+  border: 1px solid var(--tm-border-soft);
+  border-radius: 9px;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+.quick-prompt:hover:not(:disabled),
+.quick-prompt:focus-visible {
+  color: var(--tm-primary);
+  background: var(--tm-primary-soft);
+  border-color: var(--tm-primary-soft-border);
+  transform: translateY(-1px);
+}
+.quick-prompt:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.ai-search-error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: -4px 0 0;
+  color: var(--tm-warning);
+  font-size: 12px;
+}
+.ai-search-error button {
+  padding: 0;
+  color: var(--tm-primary);
+  font-weight: 650;
+  cursor: pointer;
+  background: none;
+  border: 0;
 }
 .notification-button {
   border-color: var(--tm-border);
@@ -598,6 +836,29 @@ onMounted(async () => {
   }
 }
 @media (max-width: 720px) {
+  .ai-search-center {
+    gap: 14px;
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .ai-search-control {
+    grid-template-columns: 1fr;
+    padding: 5px;
+  }
+  .ask-nova-button {
+    width: 100%;
+  }
+  .ai-search-footer {
+    align-items: stretch;
+  }
+  .prompt-label {
+    flex-basis: 100%;
+  }
+  .quick-prompt {
+    flex: 1 1 180px;
+    min-height: 36px;
+    text-align: left;
+  }
   .metric-rail {
     grid-template-columns: 1fr;
     padding: 0 14px;
@@ -637,6 +898,17 @@ onMounted(async () => {
   }
   .panel-header {
     padding-inline: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-search-control,
+  .quick-prompt {
+    transition: none;
+  }
+  .ai-search-control:focus-within,
+  .quick-prompt:hover:not(:disabled),
+  .quick-prompt:focus-visible {
+    transform: none;
   }
 }
 </style>
