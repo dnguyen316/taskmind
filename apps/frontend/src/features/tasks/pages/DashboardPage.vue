@@ -177,7 +177,7 @@ onBeforeUnmount(() => {
             v-model:value="searchQuery"
             class="dashboard-search-autocomplete"
             appearance="ai"
-            input-size="large"
+            input-size="middle"
             placeholder="Ask Nova to search workspace"
             :suggestion-limit="6"
             :show-shortcut-hint="true"
@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
           <a-button
             class="ask-nova-button"
             type="primary"
-            size="large"
+            size="middle"
             :loading="aiSearchLoading"
             aria-label="Ask Nova to search"
             @click="submitDashboardAiSearch()"
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard-header-search {
   position: relative;
-  width: clamp(400px, 43vw, 620px);
+  width: clamp(340px, 38vw, 540px);
   min-width: 0;
 }
 .ai-search-control {
@@ -348,10 +348,10 @@ onBeforeUnmount(() => {
   gap: 6px;
   align-items: center;
   width: 100%;
-  padding: 5px;
+  padding: 3px;
   background: var(--tm-card-bg);
   border: 1px solid var(--tm-border);
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow: 0 14px 36px rgba(28, 35, 64, 0.1);
   transition:
     border-color 180ms ease,
@@ -371,18 +371,30 @@ onBeforeUnmount(() => {
 .dashboard-search-autocomplete {
   min-width: 0;
 }
+.dashboard-search-autocomplete :deep(.ant-input-affix-wrapper) {
+  min-height: 40px;
+  padding-block: 3px;
+}
+.dashboard-search-autocomplete :deep(.search-ai-mark) {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+.dashboard-search-autocomplete :deep(.ant-input) {
+  font-size: 14px;
+}
 .ask-nova-button {
   display: inline-flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
-  min-width: 134px;
-  height: 48px;
-  padding-inline: 18px;
+  min-width: 112px;
+  height: 38px;
+  padding-inline: 14px;
   font-size: 13px;
   font-weight: 650;
   border: 0;
-  border-radius: 13px;
+  border-radius: 10px;
   box-shadow: 0 8px 18px color-mix(in srgb, var(--tm-primary) 28%, transparent);
 }
 .ai-search-error {
