@@ -117,6 +117,9 @@ Relay, plus Core's activity-search read API, target OpenSearch:
   `TASKMIND_*_SERVICE_TOKEN`, LLM API keys, database password, and OAuth client secrets.
 - Set `SPRING_PROFILES_ACTIVE=prod` in production. The production profile disables the E2E
   bypass and the application enforces that guard in code.
+- Before rendering ECS revisions, deployment validates every selected task definition and
+  rejects staging or production containers that activate `e2e` or enable an E2E bypass
+  property, including command-line property overrides.
 
 ### ECS egress matrix
 
@@ -126,14 +129,14 @@ address plus two). AWS control-plane traffic uses TCP 443 to the interface endpo
 group for ECR API/Docker, CloudWatch Logs, Secrets Manager, SSM/SSM Messages, KMS, and
 X-Ray. Core reaches S3 on TCP 443 through the gateway endpoint's AWS-managed prefix list.
 
-| Caller | Allowed destination | TCP port | Application dependency |
-| --- | --- | ---: | --- |
-| Core | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Primary persistence, streams/cache, and activity search |
-| Core | Relay / Nova security groups | 8081 / 8082 | Context/search projections and AI facade calls |
-| Core | S3 gateway endpoint prefix list | 443 | Attachment object storage |
-| Relay | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Projection persistence, event stream, and indexing/search |
-| Nova | RDS / Redis security groups | 5432 / 6379 | AI audit/job persistence and chat/session state |
-| Nova | Core / Relay security groups | 8080 / 8081 | Tool callbacks and context retrieval |
+| Caller | Allowed destination                      |          TCP port | Application dependency                                    |
+| ------ | ---------------------------------------- | ----------------: | --------------------------------------------------------- |
+| Core   | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Primary persistence, streams/cache, and activity search   |
+| Core   | Relay / Nova security groups             |       8081 / 8082 | Context/search projections and AI facade calls            |
+| Core   | S3 gateway endpoint prefix list          |               443 | Attachment object storage                                 |
+| Relay  | RDS / Redis / OpenSearch security groups | 5432 / 6379 / 443 | Projection persistence, event stream, and indexing/search |
+| Nova   | RDS / Redis security groups              |       5432 / 6379 | AI audit/job persistence and chat/session state           |
+| Nova   | Core / Relay security groups             |       8080 / 8081 | Tool callbacks and context retrieval                      |
 
 Two HTTPS internet paths remain unavoidable with the current provider integrations and
 private-subnet/NAT topology. Nova calls configured external AI provider APIs. Core calls

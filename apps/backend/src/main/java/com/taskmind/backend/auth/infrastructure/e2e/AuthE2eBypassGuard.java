@@ -2,14 +2,13 @@ package com.taskmind.backend.auth.infrastructure.e2e;
 
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AuthE2eBypassGuard {
-    private static final Set<String> ALLOWED_BYPASS_PROFILES = Set.of("local", "test", "e2e");
+    private static final String REQUIRED_BYPASS_PROFILE = "e2e";
 
     private final Environment environment;
     private final boolean enabled;
@@ -36,9 +35,9 @@ public class AuthE2eBypassGuard {
         }
 
         java.util.List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
-        if (activeProfiles.size() != 1 || !ALLOWED_BYPASS_PROFILES.contains(activeProfiles.get(0))) {
+        if (activeProfiles.size() != 1 || !REQUIRED_BYPASS_PROFILE.equals(activeProfiles.get(0))) {
             throw new IllegalStateException(
-                    "E2E authentication bypass may only be enabled with exactly one of the local, test, or e2e profiles");
+                    "E2E authentication bypass may only be enabled with the dedicated e2e profile and no other active profiles");
         }
     }
 }

@@ -19,7 +19,7 @@ class AuthE2eBypassGuardTest {
         environment.setActiveProfiles("prod");
         assertThatThrownBy(() -> new AuthE2eBypassGuard(environment, true, true).validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("exactly one of the local, test, or e2e profiles");
+                .hasMessageContaining("dedicated e2e profile");
     }
 
     @Test
@@ -28,7 +28,7 @@ class AuthE2eBypassGuardTest {
         environment.setActiveProfiles("staging");
         assertThatThrownBy(() -> new AuthE2eBypassGuard(environment, true, true).validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("exactly one of the local, test, or e2e profiles");
+                .hasMessageContaining("dedicated e2e profile");
     }
 
     @Test
@@ -64,7 +64,37 @@ class AuthE2eBypassGuardTest {
                     assertThat(context.getStartupFailure())
                             .hasRootCauseInstanceOf(IllegalStateException.class)
                             .hasRootCauseMessage(
-                                    "E2E authentication bypass may only be enabled with exactly one of the local, test, or e2e profiles");
+                                    "E2E authentication bypass may only be enabled with the dedicated e2e profile and no other active profiles");
+                });
+    }
+
+    @Test
+    void productionAndE2eProfilesRejectEnabledBypass() {
+        assertConflictingProfilesFail("prod,e2e");
+    }
+
+    @Test
+    void stagingAndE2eProfilesRejectEnabledBypass() {
+        assertConflictingProfilesFail("staging,e2e");
+    }
+
+    @Test
+    void testAndE2eProfilesRejectEnabledBypass() {
+        assertConflictingProfilesFail("test,e2e");
+    }
+
+    private void assertConflictingProfilesFail(String profiles) {
+        contextRunner
+                .withPropertyValues(
+                        "spring.profiles.active=" + profiles,
+                        "taskmind.auth.e2e-bypass.enabled=true",
+                        "taskmind.auth.e2e-bypass.allow-dangerous-local-seed=true")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(IllegalStateException.class)
+                            .hasRootCauseMessage(
+                                    "E2E authentication bypass may only be enabled with the dedicated e2e profile and no other active profiles");
                 });
     }
 

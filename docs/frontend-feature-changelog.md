@@ -1,3 +1,17 @@
+## 2026-08-02 - Isolated browser-test authentication credentials
+
+### Changed
+
+- Removed E2E credentials from the Pinia auth store and moved credential resolution into
+  Playwright-only support code outside the Vite production application graph.
+- Browser tests now receive credentials from runner environment variables; safe defaults
+  are created only by non-CI Playwright configuration.
+
+### Closeout notes
+
+- Primary milestone: M03 frontend authentication; secondary milestone: M13 hardening.
+- Skills used: none. Agent delegation: none.
+
 ## 2026-07-12 - Reports unavailable metric states
 
 ### Changed
