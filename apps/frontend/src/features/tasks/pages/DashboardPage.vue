@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import {
+  ArrowRightOutlined,
   AppstoreOutlined,
   AuditOutlined,
   BellOutlined,
@@ -9,21 +10,28 @@ import {
   ClockCircleOutlined,
   FolderOpenOutlined,
   LineChartOutlined,
+  RobotOutlined,
   RightOutlined,
   ThunderboltOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 import ActivitySearchAutocomplete from '../../activity/components/ActivitySearchAutocomplete.vue'
+import { assistActivitySearch } from '../api/activitySearchApi'
 import { useDashboard } from '../../dashboard/composables/useDashboard'
 import type { DashboardActivitySnippet, DashboardTaskItem } from '../../dashboard/types'
 import { useAuthStore } from '../../../stores/auth'
 import AppLayout from '../components/AppLayout.vue'
 import { formatDateTime } from '../utils/taskDates'
+import type { ActivitySearchSuggestion } from '../types'
 
 const { dashboard, loading, errorMessage, fetchDashboard } = useDashboard()
 const authStore = useAuthStore()
 const router = useRouter()
 const searchQuery = ref('')
+const dashboardSearch = ref<{ focusInput: () => void } | null>(null)
+const aiSearchLoading = ref(false)
+const aiSearchErrorMessage = ref('')
+let aiSearchRequestId = 0
 const dashboardKpis = computed(() => dashboard.value?.kpis)
 const realTaskMetrics = computed(() => ({
   active: dashboardKpis.value?.openTasks ?? 0,
@@ -79,8 +87,48 @@ function submitDashboardSearch(value = searchQuery.value) {
   void router.push({ name: 'activity-search', query: { q: query } })
 }
 
-function selectDashboardSearchOption(value: string) {
+async function submitDashboardAiSearch(value = searchQuery.value) {
+  const prompt = value.trim()
+  if (!prompt) {
+    dashboardSearch.value?.focusInput()
+    return
+  }
+
   searchQuery.value = value
+  aiSearchRequestId += 1
+  const requestId = aiSearchRequestId
+  aiSearchLoading.value = true
+  aiSearchErrorMessage.value = ''
+
+  try {
+    const proposal = await assistActivitySearch(prompt, prompt)
+    if (requestId === aiSearchRequestId) {
+      await router.push({ name: 'activity-search', query: { q: proposal.query } })
+    }
+  } catch (error: unknown) {
+    if (requestId === aiSearchRequestId) {
+      aiSearchErrorMessage.value =
+        error instanceof Error ? error.message : 'Nova could not prepare this search.'
+    }
+  } finally {
+    if (requestId === aiSearchRequestId) aiSearchLoading.value = false
+  }
+}
+
+function selectDashboardSearchOption(value: string, recommendation?: ActivitySearchSuggestion) {
+  searchQuery.value = value
+  if (recommendation?.routeName && recommendation.entityId) {
+    void router.push({ name: recommendation.routeName, params: { id: recommendation.entityId } })
+    return
+  }
+  submitDashboardSearch(value)
+}
+
+function focusDashboardSearch(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    dashboardSearch.value?.focusInput()
+  }
 }
 
 function humanizeStatus(status: string) {
@@ -107,7 +155,13 @@ function activitySummary(item: DashboardActivitySnippet) {
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', focusDashboardSearch)
   await fetchDashboard().catch(() => undefined)
+})
+
+onBeforeUnmount(() => {
+  aiSearchRequestId += 1
+  window.removeEventListener('keydown', focusDashboardSearch)
 })
 </script>
 
@@ -116,18 +170,40 @@ onMounted(async () => {
     <template #title>{{ greeting }}, {{ firstName }}</template>
     <template #subtitle>Here’s what needs your attention today.</template>
     <template #headerActions>
-      <div class="dashboard-search">
-        <ActivitySearchAutocomplete
-          v-model:value="searchQuery"
-          class="dashboard-search-autocomplete"
-          input-size="large"
-          :suggestion-limit="6"
-          show-view-all
-          view-all-label="View all results"
-          @select-suggestion="selectDashboardSearchOption"
-          @submit-search="submitDashboardSearch"
-          @view-all="submitDashboardSearch"
-        />
+      <div class="dashboard-header-search">
+        <div class="ai-search-control" :class="{ 'is-loading': aiSearchLoading }">
+          <ActivitySearchAutocomplete
+            ref="dashboardSearch"
+            v-model:value="searchQuery"
+            class="dashboard-search-autocomplete"
+            appearance="ai"
+            input-size="large"
+            placeholder="Ask Nova to search workspace"
+            :suggestion-limit="6"
+            :show-shortcut-hint="true"
+            show-view-all
+            view-all-label="Search workspace"
+            @select-suggestion="selectDashboardSearchOption"
+            @submit-search="submitDashboardAiSearch"
+            @view-all="submitDashboardSearch"
+          />
+          <a-button
+            class="ask-nova-button"
+            type="primary"
+            size="large"
+            :loading="aiSearchLoading"
+            aria-label="Ask Nova to search"
+            @click="submitDashboardAiSearch()"
+          >
+            <template #icon><RobotOutlined /></template>
+            <span class="ask-nova-label">Ask Nova</span>
+            <ArrowRightOutlined v-if="!aiSearchLoading" />
+          </a-button>
+        </div>
+        <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
+          {{ aiSearchErrorMessage }}
+          <button type="button" @click="submitDashboardSearch()">Search without Nova</button>
+        </p>
       </div>
       <a-button
         class="notification-button"
@@ -261,14 +337,80 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.dashboard-search-autocomplete {
-  width: min(360px, 32vw);
+.dashboard-header-search {
+  position: relative;
+  width: clamp(400px, 43vw, 620px);
+  min-width: 0;
 }
-.dashboard-search .ant-input-affix-wrapper {
+.ai-search-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
   width: 100%;
-  color: var(--tm-text);
+  padding: 5px;
   background: var(--tm-card-bg);
-  border-color: var(--tm-border);
+  border: 1px solid var(--tm-border);
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(28, 35, 64, 0.1);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+.ai-search-control:focus-within {
+  border-color: var(--tm-primary);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tm-primary) 13%, transparent),
+    0 18px 42px rgba(28, 35, 64, 0.12);
+  transform: translateY(-1px);
+}
+.ai-search-control.is-loading {
+  border-color: var(--tm-primary-soft-border);
+}
+.dashboard-search-autocomplete {
+  min-width: 0;
+}
+.ask-nova-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-width: 134px;
+  height: 48px;
+  padding-inline: 18px;
+  font-size: 13px;
+  font-weight: 650;
+  border: 0;
+  border-radius: 13px;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--tm-primary) 28%, transparent);
+}
+.ai-search-error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 12;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  background: var(--tm-card-bg);
+  border: 1px solid var(--tm-primary-soft-border);
+  border-radius: 9px;
+  box-shadow: var(--tm-shadow-md);
+  color: var(--tm-warning);
+  font-size: 12px;
+}
+.ai-search-error button {
+  padding: 0;
+  color: var(--tm-primary);
+  font-weight: 650;
+  cursor: pointer;
+  background: none;
+  border: 0;
 }
 .notification-button {
   border-color: var(--tm-border);
@@ -637,6 +779,14 @@ onMounted(async () => {
   }
   .panel-header {
     padding-inline: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-search-control {
+    transition: none;
+  }
+  .ai-search-control:focus-within {
+    transform: none;
   }
 }
 </style>
