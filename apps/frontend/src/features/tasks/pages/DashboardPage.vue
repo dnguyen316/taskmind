@@ -32,11 +32,6 @@ const dashboardSearch = ref<{ focusInput: () => void } | null>(null)
 const aiSearchLoading = ref(false)
 const aiSearchErrorMessage = ref('')
 let aiSearchRequestId = 0
-const quickSearchPrompts = [
-  'Find blocked tasks from this week',
-  'Show recently completed work',
-  'What changed today?',
-]
 const dashboardKpis = computed(() => dashboard.value?.kpis)
 const realTaskMetrics = computed(() => ({
   active: dashboardKpis.value?.openTasks ?? 0,
@@ -175,6 +170,41 @@ onBeforeUnmount(() => {
     <template #title>{{ greeting }}, {{ firstName }}</template>
     <template #subtitle>Here’s what needs your attention today.</template>
     <template #headerActions>
+      <div class="dashboard-header-search">
+        <div class="ai-search-control" :class="{ 'is-loading': aiSearchLoading }">
+          <ActivitySearchAutocomplete
+            ref="dashboardSearch"
+            v-model:value="searchQuery"
+            class="dashboard-search-autocomplete"
+            appearance="ai"
+            input-size="large"
+            placeholder="Ask Nova to search workspace"
+            :suggestion-limit="6"
+            :show-shortcut-hint="true"
+            show-view-all
+            view-all-label="Search workspace"
+            @select-suggestion="selectDashboardSearchOption"
+            @submit-search="submitDashboardAiSearch"
+            @view-all="submitDashboardSearch"
+          />
+          <a-button
+            class="ask-nova-button"
+            type="primary"
+            size="large"
+            :loading="aiSearchLoading"
+            aria-label="Ask Nova to search"
+            @click="submitDashboardAiSearch()"
+          >
+            <template #icon><RobotOutlined /></template>
+            <span class="ask-nova-label">Ask Nova</span>
+            <ArrowRightOutlined v-if="!aiSearchLoading" />
+          </a-button>
+        </div>
+        <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
+          {{ aiSearchErrorMessage }}
+          <button type="button" @click="submitDashboardSearch()">Search without Nova</button>
+        </p>
+      </div>
       <a-button
         class="notification-button"
         shape="circle"
@@ -189,61 +219,6 @@ onBeforeUnmount(() => {
         ><a-button type="primary" size="large">+ New task</a-button></RouterLink
       >
     </template>
-
-    <section class="ai-search-center" aria-labelledby="ai-search-title">
-      <div class="ai-search-copy">
-        <span class="nova-orb" aria-hidden="true"><RobotOutlined /></span>
-        <div>
-          <h2 id="ai-search-title">Ask Nova to find anything</h2>
-          <p>Describe what you need. Nova turns it into a precise workspace search.</p>
-        </div>
-      </div>
-      <div class="ai-search-control" :class="{ 'is-loading': aiSearchLoading }">
-        <ActivitySearchAutocomplete
-          ref="dashboardSearch"
-          v-model:value="searchQuery"
-          class="dashboard-search-autocomplete"
-          appearance="ai"
-          input-size="large"
-          placeholder="Try “Find blocked tasks updated this week”"
-          :suggestion-limit="6"
-          :show-shortcut-hint="true"
-          show-view-all
-          view-all-label="Search workspace"
-          @select-suggestion="selectDashboardSearchOption"
-          @submit-search="submitDashboardAiSearch"
-          @view-all="submitDashboardSearch"
-        />
-        <a-button
-          class="ask-nova-button"
-          type="primary"
-          size="large"
-          :loading="aiSearchLoading"
-          @click="submitDashboardAiSearch()"
-        >
-          <template #icon><RobotOutlined /></template>
-          Ask Nova
-          <ArrowRightOutlined v-if="!aiSearchLoading" />
-        </a-button>
-      </div>
-      <div class="ai-search-footer">
-        <span class="prompt-label">Try asking</span>
-        <button
-          v-for="prompt in quickSearchPrompts"
-          :key="prompt"
-          type="button"
-          class="quick-prompt"
-          :disabled="aiSearchLoading"
-          @click="submitDashboardAiSearch(prompt)"
-        >
-          {{ prompt }}
-        </button>
-      </div>
-      <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
-        {{ aiSearchErrorMessage }}
-        <button type="button" @click="submitDashboardSearch()">Search without Nova</button>
-      </p>
-    </section>
 
     <section class="metric-rail tm-card-surface" aria-label="Task overview">
       <article v-for="metric in metricCards" :key="metric.label" class="metric-item">
@@ -362,59 +337,17 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.ai-search-center {
+.dashboard-header-search {
   position: relative;
-  display: grid;
-  gap: 16px;
-  padding: 24px;
-  overflow: visible;
-  background:
-    radial-gradient(
-      circle at 8% 0%,
-      color-mix(in srgb, var(--tm-primary) 12%, transparent),
-      transparent 34%
-    ),
-    var(--tm-card-bg);
-  border: 1px solid var(--tm-primary-soft-border);
-  border-radius: 20px;
-  box-shadow: var(--tm-shadow-md);
-}
-.ai-search-copy {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-.nova-orb {
-  display: grid;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  color: #fff;
-  font-size: 18px;
-  background: var(--tm-ai-grad);
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.26);
-  place-items: center;
-}
-.ai-search-copy h2 {
-  margin: 0;
-  color: var(--tm-text);
-  font-size: 18px;
-  line-height: 1.3;
-  letter-spacing: -0.025em;
-}
-.ai-search-copy p {
-  margin: 4px 0 0;
-  color: var(--tm-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  width: clamp(400px, 43vw, 620px);
+  min-width: 0;
 }
 .ai-search-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
   align-items: center;
-  width: min(960px, 100%);
+  width: 100%;
   padding: 5px;
   background: var(--tm-card-bg);
   border: 1px solid var(--tm-border);
@@ -452,51 +385,22 @@ onBeforeUnmount(() => {
   border-radius: 13px;
   box-shadow: 0 8px 18px color-mix(in srgb, var(--tm-primary) 28%, transparent);
 }
-.ai-search-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.prompt-label {
-  margin-right: 2px;
-  color: var(--tm-text-soft);
-  font-size: 11px;
-  font-weight: 650;
-}
-.quick-prompt {
-  min-height: 30px;
-  padding: 5px 10px;
-  color: var(--tm-text-muted);
-  font-size: 11px;
-  font-weight: 550;
-  cursor: pointer;
-  background: color-mix(in srgb, var(--tm-surface-subtle) 88%, transparent);
-  border: 1px solid var(--tm-border-soft);
-  border-radius: 9px;
-  transition:
-    color 150ms ease,
-    background 150ms ease,
-    border-color 150ms ease,
-    transform 150ms ease;
-}
-.quick-prompt:hover:not(:disabled),
-.quick-prompt:focus-visible {
-  color: var(--tm-primary);
-  background: var(--tm-primary-soft);
-  border-color: var(--tm-primary-soft-border);
-  transform: translateY(-1px);
-}
-.quick-prompt:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
 .ai-search-error {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin: -4px 0 0;
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 12;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  background: var(--tm-card-bg);
+  border: 1px solid var(--tm-primary-soft-border);
+  border-radius: 9px;
+  box-shadow: var(--tm-shadow-md);
   color: var(--tm-warning);
   font-size: 12px;
 }
@@ -836,29 +740,6 @@ onBeforeUnmount(() => {
   }
 }
 @media (max-width: 720px) {
-  .ai-search-center {
-    gap: 14px;
-    padding: 18px;
-    border-radius: 16px;
-  }
-  .ai-search-control {
-    grid-template-columns: 1fr;
-    padding: 5px;
-  }
-  .ask-nova-button {
-    width: 100%;
-  }
-  .ai-search-footer {
-    align-items: stretch;
-  }
-  .prompt-label {
-    flex-basis: 100%;
-  }
-  .quick-prompt {
-    flex: 1 1 180px;
-    min-height: 36px;
-    text-align: left;
-  }
   .metric-rail {
     grid-template-columns: 1fr;
     padding: 0 14px;
@@ -901,13 +782,10 @@ onBeforeUnmount(() => {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ai-search-control,
-  .quick-prompt {
+  .ai-search-control {
     transition: none;
   }
-  .ai-search-control:focus-within,
-  .quick-prompt:hover:not(:disabled),
-  .quick-prompt:focus-visible {
+  .ai-search-control:focus-within {
     transform: none;
   }
 }
