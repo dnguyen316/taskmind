@@ -966,3 +966,15 @@
 - `cd apps/frontend && npm run build`
 - `make vibe-verify`
 - Browser E2E was not run because the authenticated local application stack was unavailable in this session.
+
+## 2026-08-09 - Compact dashboard search sizing
+
+### Summary
+
+- Reduced the dashboard search control's overall width, input height, AI icon, padding, and Ask Nova button dimensions so it aligns with the surrounding header actions.
+- Kept the compact sizing local to the dashboard header; activity search controls elsewhere retain their existing dimensions.
+- No Codex skill or delegated agent was used; implementation was completed locally.
+
+### Verification
+
+- Browser E2E was not run because the Playwright Chromium download was blocked by the environment; the intended flow is to sign in with the local super-admin bypass and compare the dashboard search input and Ask Nova action with the adjacent notification and New task buttons.
