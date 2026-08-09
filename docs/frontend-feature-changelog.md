@@ -951,3 +951,18 @@
 ### Verification
 
 - Browser E2E flow: sign in with the local super-admin bypass, focus dashboard search with Ctrl/Cmd+K, enter a query, inspect recommendations, and submit with Nova.
+
+## 2026-08-09 - Dashboard search header placement correction
+
+### Summary
+
+- Returned the improved Nova search control to the dashboard top bar immediately before notifications while retaining AI assist, recommendations, keyboard focus, loading feedback, and fallback search.
+- Removed the standalone dashboard search section and its quick-prompt content so task metrics remain the first content section.
+- No Codex skill or delegated agent was used; implementation was completed locally.
+
+### Verification
+
+- `cd apps/frontend && npm run typecheck`
+- `cd apps/frontend && npm run build`
+- `make vibe-verify`
+- Browser E2E was not run because the authenticated local application stack was unavailable in this session.
