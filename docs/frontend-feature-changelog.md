@@ -978,3 +978,19 @@
 ### Verification
 
 - Browser E2E was not run because the Playwright Chromium download was blocked by the environment; the intended flow is to sign in with the local super-admin bypass and compare the dashboard search input and Ask Nova action with the adjacent notification and New task buttons.
+
+## 2026-08-09 - Explicit compact activity search presentation
+
+### Summary
+
+- Added an opt-in compact presentation to the shared AI activity autocomplete, including a 37px desktop control, a smaller AI mark, and a 44px narrow-screen touch target; its standard presentation remains the default.
+- Enabled compact mode in the dashboard header, reduced its maximum width and visual weight, and hid the decorative arrow and shortcut hint at constrained desktop widths before allowing the query field to truncate.
+- Added component source-contract coverage that keeps compact mode on the dashboard while the full activity search panel continues using the unchanged standard presentation.
+- Used the local `taskmind-frontend-feature` skill; no delegated agents were used.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/activity/components/ActivitySearchAutocomplete.vue src/features/activity/components/ActivitySearchAutocomplete.test.ts src/features/tasks/pages/DashboardPage.vue ../../docs/frontend-feature-changelog.md`
+- `cd apps/frontend && npm run test -- src/features/activity/components/ActivitySearchAutocomplete.test.ts`
+- `cd apps/frontend && npm run typecheck`
+- Browser E2E: dashboard header alignment and clipping checked at representative desktop and mobile widths.

@@ -177,6 +177,7 @@ onBeforeUnmount(() => {
             v-model:value="searchQuery"
             class="dashboard-search-autocomplete"
             appearance="ai"
+            presentation="compact"
             input-size="middle"
             placeholder="Ask Nova to search workspace"
             :suggestion-limit="6"
@@ -197,7 +198,7 @@ onBeforeUnmount(() => {
           >
             <template #icon><RobotOutlined /></template>
             <span class="ask-nova-label">Ask Nova</span>
-            <ArrowRightOutlined v-if="!aiSearchLoading" />
+            <ArrowRightOutlined v-if="!aiSearchLoading" class="ask-nova-arrow" />
           </a-button>
         </div>
         <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
@@ -339,20 +340,20 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard-header-search {
   position: relative;
-  width: clamp(340px, 38vw, 540px);
+  width: clamp(300px, 32vw, 460px);
   min-width: 0;
 }
 .ai-search-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   width: 100%;
-  padding: 3px;
+  padding: 2px;
   background: var(--tm-card-bg);
   border: 1px solid var(--tm-border);
   border-radius: 14px;
-  box-shadow: 0 14px 36px rgba(28, 35, 64, 0.1);
+  box-shadow: 0 6px 18px rgba(28, 35, 64, 0.07);
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
@@ -362,7 +363,7 @@ onBeforeUnmount(() => {
   border-color: var(--tm-primary);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--tm-primary) 13%, transparent),
-    0 18px 42px rgba(28, 35, 64, 0.12);
+    0 9px 24px rgba(28, 35, 64, 0.09);
   transform: translateY(-1px);
 }
 .ai-search-control.is-loading {
@@ -371,31 +372,19 @@ onBeforeUnmount(() => {
 .dashboard-search-autocomplete {
   min-width: 0;
 }
-.dashboard-search-autocomplete :deep(.ant-input-affix-wrapper) {
-  min-height: 40px;
-  padding-block: 3px;
-}
-.dashboard-search-autocomplete :deep(.search-ai-mark) {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-}
-.dashboard-search-autocomplete :deep(.ant-input) {
-  font-size: 14px;
-}
 .ask-nova-button {
   display: inline-flex;
-  gap: 8px;
+  gap: 5px;
   align-items: center;
   justify-content: center;
-  min-width: 112px;
-  height: 38px;
-  padding-inline: 14px;
+  min-width: 104px;
+  height: 37px;
+  padding-inline: 11px;
   font-size: 13px;
   font-weight: 650;
   border: 0;
   border-radius: 10px;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--tm-primary) 28%, transparent);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--tm-primary) 22%, transparent);
 }
 .ai-search-error {
   display: flex;
@@ -426,6 +415,23 @@ onBeforeUnmount(() => {
 }
 .notification-button {
   border-color: var(--tm-border);
+}
+@media (max-width: 1400px) {
+  .dashboard-header-search {
+    width: clamp(290px, 31vw, 410px);
+  }
+  .ask-nova-arrow {
+    display: none;
+  }
+}
+@media (max-width: 1280px) {
+  .dashboard-search-autocomplete :deep(.search-shortcut) {
+    display: none;
+  }
+  .ask-nova-button {
+    min-width: 92px;
+    padding-inline: 9px;
+  }
 }
 .metric-rail {
   display: grid;
