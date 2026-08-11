@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { RobotOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import ActivitySearchAutocomplete from './ActivitySearchAutocomplete.vue'
 import { useActivitySearch } from '../composables/useActivitySearch'
 import { listProjects } from '../../projects/api/projectsApi'
@@ -10,6 +11,7 @@ import type { ActivitySearchDocument } from '../../tasks/types'
 
 const route = useRoute()
 const projects = ref<Project[]>([])
+const RECOMMENDATION_ERROR_KEY = 'activity-search-recommendation-error'
 const loadingProjects = ref(false)
 const projectSelectorError = ref('')
 const projectPermissionDenied = ref(false)
@@ -87,6 +89,10 @@ function submitSearch() {
   void runSearch()
 }
 
+function showRecommendationError(errorMessage: string) {
+  message.error({ content: errorMessage, key: RECOMMENDATION_ERROR_KEY })
+}
+
 function selectSuggestion(value: string) {
   query.value = value
 }
@@ -133,6 +139,7 @@ function payloadPreview(document: ActivitySearchDocument) {
             @select-suggestion="selectSuggestion"
             @submit-search="submitSearch"
             @view-all="submitSearch"
+            @recommendation-error="showRecommendationError"
           />
         </a-form-item>
 

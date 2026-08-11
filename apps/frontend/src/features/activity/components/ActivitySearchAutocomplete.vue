@@ -51,6 +51,7 @@ const emit = defineEmits<{
   selectSuggestion: [value: string, recommendation?: ActivitySearchSuggestion]
   submitSearch: [value: string]
   viewAll: [value: string]
+  recommendationError: [message: string]
 }>()
 
 const VIEW_ALL_OPTION_PREFIX = '__taskmind_view_all__:'
@@ -68,7 +69,6 @@ const focused = ref(false)
 const shell = ref<HTMLElement | null>(null)
 const suggestions = ref<ActivitySearchSuggestion[]>([])
 const suggestionsLoading = ref(false)
-const suggestionsErrorMessage = ref('')
 let suggestionTimer: ReturnType<typeof setTimeout> | undefined
 let blurTimer: ReturnType<typeof setTimeout> | undefined
 let suggestionRequestId = 0
@@ -85,10 +85,6 @@ const dropdownState = computed(() => {
 
   if (suggestionsLoading.value) {
     return 'loading'
-  }
-
-  if (suggestionsErrorMessage.value) {
-    return 'error'
   }
 
   if (suggestions.value.length === 0) {
@@ -116,13 +112,6 @@ const suggestionOptions = computed<SuggestionOption[]>(() => {
     stateOptions.push({
       value: `${STATUS_OPTION_PREFIX}loading`,
       label: 'Searching recommendations…',
-      disabled: true,
-      kind: 'status',
-    })
-  } else if (dropdownState.value === 'error') {
-    stateOptions.push({
-      value: `${STATUS_OPTION_PREFIX}error`,
-      label: suggestionsErrorMessage.value,
       disabled: true,
       kind: 'status',
     })
@@ -156,20 +145,16 @@ const suggestionOptions = computed<SuggestionOption[]>(() => {
   ]
 })
 
-async function loadSuggestions() {
+async function loadSuggestions(requestId = ++suggestionRequestId) {
   const suggestionQuery = trimmedQuery.value
-  suggestionRequestId += 1
-  const requestId = suggestionRequestId
 
   if (suggestionQuery.length < props.minLength) {
     suggestions.value = []
-    suggestionsErrorMessage.value = ''
     suggestionsLoading.value = false
     return
   }
 
   suggestionsLoading.value = true
-  suggestionsErrorMessage.value = ''
 
   try {
     const nextSuggestions = await recommendActivitySearch({
@@ -180,11 +165,10 @@ async function loadSuggestions() {
     if (requestId === suggestionRequestId) {
       suggestions.value = nextSuggestions
     }
-  } catch (error: unknown) {
+  } catch {
     if (requestId === suggestionRequestId) {
       suggestions.value = []
-      suggestionsErrorMessage.value =
-        error instanceof Error ? error.message : 'Failed to load activity suggestions.'
+      emit('recommendationError', 'Recommendations couldn’t be loaded. You can still search.')
     }
   } finally {
     if (requestId === suggestionRequestId) {
@@ -196,17 +180,19 @@ async function loadSuggestions() {
 watch(
   () => [props.value, props.filters] as const,
   () => {
+    const requestId = ++suggestionRequestId
     if (suggestionTimer) {
       clearTimeout(suggestionTimer)
     }
     suggestionTimer = setTimeout(() => {
-      void loadSuggestions()
+      void loadSuggestions(requestId)
     }, props.debounceMs)
   },
   { deep: true },
 )
 
 onScopeDispose(() => {
+  suggestionRequestId += 1
   if (suggestionTimer) {
     clearTimeout(suggestionTimer)
   }
