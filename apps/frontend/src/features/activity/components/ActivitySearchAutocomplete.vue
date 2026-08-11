@@ -27,6 +27,7 @@ const props = withDefaults(
     showViewAll?: boolean
     viewAllLabel?: string
     appearance?: 'standard' | 'ai'
+    presentation?: 'standard' | 'compact'
     showShortcutHint?: boolean
   }>(),
   {
@@ -40,6 +41,7 @@ const props = withDefaults(
     showViewAll: true,
     viewAllLabel: 'View all results',
     appearance: 'standard',
+    presentation: 'standard',
     showShortcutHint: false,
   },
 )
@@ -296,7 +298,10 @@ function handleKeydown(event: KeyboardEvent) {
   <div
     ref="shell"
     class="activity-search-autocomplete-shell"
-    :class="{ 'is-ai': appearance === 'ai' }"
+    :class="{
+      'is-ai': appearance === 'ai',
+      'is-compact': presentation === 'compact',
+    }"
   >
     <a-auto-complete
       :value="value"
@@ -379,6 +384,26 @@ function handleKeydown(event: KeyboardEvent) {
 }
 .activity-search-autocomplete-shell.is-ai :deep(.ant-input::placeholder) {
   color: var(--tm-text-soft);
+}
+.activity-search-autocomplete-shell.is-ai.is-compact :deep(.ant-input-affix-wrapper) {
+  min-height: 37px;
+  padding: 3px 5px 3px 7px;
+}
+.activity-search-autocomplete-shell.is-ai.is-compact :deep(.ant-input) {
+  min-width: 0;
+  font-size: 14px;
+}
+.activity-search-autocomplete-shell.is-ai.is-compact .search-ai-mark {
+  width: 27px;
+  height: 27px;
+  margin-right: 4px;
+  font-size: 14px;
+  border-radius: 8px;
+  box-shadow: 0 3px 9px rgba(79, 70, 229, 0.18);
+}
+.activity-search-autocomplete-shell.is-ai.is-compact .search-shortcut {
+  min-width: 34px;
+  padding-inline: 4px;
 }
 .search-ai-mark {
   display: grid;
@@ -500,6 +525,9 @@ function handleKeydown(event: KeyboardEvent) {
   }
   .activity-search-autocomplete-shell.is-ai :deep(.ant-input) {
     font-size: 14px;
+  }
+  .activity-search-autocomplete-shell.is-ai.is-compact :deep(.ant-input-affix-wrapper) {
+    min-height: 44px;
   }
   .search-shortcut,
   .recommendation-target {
