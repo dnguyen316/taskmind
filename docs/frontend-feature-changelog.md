@@ -994,3 +994,17 @@
 - `cd apps/frontend && npm run test -- src/features/activity/components/ActivitySearchAutocomplete.test.ts`
 - `cd apps/frontend && npm run typecheck`
 - Browser E2E: dashboard header alignment and clipping checked at representative desktop and mobile widths.
+
+## 2026-08-11 - Activity search failure toasts
+
+### Summary
+
+- Replaced the dashboard Nova search inline transport error with a concise, keyed Ant Design toast.
+- Changed recommendation lookup failures to emit a typed event instead of adding a disabled error option, while retaining full-search and view-all actions.
+- Guarded recommendation failure notifications against stale, superseded, and disposed requests and coalesced repeated failures with stable toast keys.
+- Added component contract tests for Nova and recommendation failures, stale-request suppression, removal of inline errors, and continued normal search availability.
+- Used the local `taskmind-frontend-feature` skill; no delegated agents were used.
+
+### Verification
+
+- Browser E2E was not run because the authenticated local application stack was not started in this session; the intended flow is to reject recommendation and Nova assist requests, verify one toast per failure type, and confirm full search remains available.

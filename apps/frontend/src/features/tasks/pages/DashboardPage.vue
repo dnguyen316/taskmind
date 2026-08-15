@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import {
   ArrowRightOutlined,
   AppstoreOutlined,
@@ -30,8 +31,9 @@ const router = useRouter()
 const searchQuery = ref('')
 const dashboardSearch = ref<{ focusInput: () => void } | null>(null)
 const aiSearchLoading = ref(false)
-const aiSearchErrorMessage = ref('')
 let aiSearchRequestId = 0
+const NOVA_SEARCH_ERROR_KEY = 'dashboard-nova-search-error'
+const RECOMMENDATION_ERROR_KEY = 'dashboard-search-recommendation-error'
 const dashboardKpis = computed(() => dashboard.value?.kpis)
 const realTaskMetrics = computed(() => ({
   active: dashboardKpis.value?.openTasks ?? 0,
@@ -98,21 +100,26 @@ async function submitDashboardAiSearch(value = searchQuery.value) {
   aiSearchRequestId += 1
   const requestId = aiSearchRequestId
   aiSearchLoading.value = true
-  aiSearchErrorMessage.value = ''
 
   try {
     const proposal = await assistActivitySearch(prompt, prompt)
     if (requestId === aiSearchRequestId) {
       await router.push({ name: 'activity-search', query: { q: proposal.query } })
     }
-  } catch (error: unknown) {
+  } catch {
     if (requestId === aiSearchRequestId) {
-      aiSearchErrorMessage.value =
-        error instanceof Error ? error.message : 'Nova could not prepare this search.'
+      message.error({
+        content: 'Nova couldn’t prepare this search. Try again.',
+        key: NOVA_SEARCH_ERROR_KEY,
+      })
     }
   } finally {
     if (requestId === aiSearchRequestId) aiSearchLoading.value = false
   }
+}
+
+function showRecommendationError(errorMessage: string) {
+  message.error({ content: errorMessage, key: RECOMMENDATION_ERROR_KEY })
 }
 
 function selectDashboardSearchOption(value: string, recommendation?: ActivitySearchSuggestion) {
@@ -187,6 +194,7 @@ onBeforeUnmount(() => {
             @select-suggestion="selectDashboardSearchOption"
             @submit-search="submitDashboardAiSearch"
             @view-all="submitDashboardSearch"
+            @recommendation-error="showRecommendationError"
           />
           <a-button
             class="ask-nova-button"
@@ -201,10 +209,6 @@ onBeforeUnmount(() => {
             <ArrowRightOutlined v-if="!aiSearchLoading" class="ask-nova-arrow" />
           </a-button>
         </div>
-        <p v-if="aiSearchErrorMessage" class="ai-search-error" role="alert">
-          {{ aiSearchErrorMessage }}
-          <button type="button" @click="submitDashboardSearch()">Search without Nova</button>
-        </p>
       </div>
       <a-button
         class="notification-button"
@@ -385,33 +389,6 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 10px;
   box-shadow: 0 4px 10px color-mix(in srgb, var(--tm-primary) 22%, transparent);
-}
-.ai-search-error {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  position: absolute;
-  top: calc(100% + 7px);
-  right: 0;
-  z-index: 12;
-  max-width: 100%;
-  margin: 0;
-  padding: 7px 10px;
-  background: var(--tm-card-bg);
-  border: 1px solid var(--tm-primary-soft-border);
-  border-radius: 9px;
-  box-shadow: var(--tm-shadow-md);
-  color: var(--tm-warning);
-  font-size: 12px;
-}
-.ai-search-error button {
-  padding: 0;
-  color: var(--tm-primary);
-  font-weight: 650;
-  cursor: pointer;
-  background: none;
-  border: 0;
 }
 .notification-button {
   border-color: var(--tm-border);
