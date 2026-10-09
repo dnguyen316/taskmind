@@ -88,6 +88,14 @@ flowchart TD
 - `ensureInitialized()` runs before each navigation so guards can make decisions from the current session state.
 - Public routes include the landing/home route, `/login`, `/signup`, and `/forgot-password`.
 - Session expiry redirects to `/login?redirect=...`.
+- Login and signup share a responsive, theme-aware form with explicit input labels,
+  password-manager autocomplete, a keyboard-accessible password visibility control,
+  loading feedback, and focused error messages. Switching between them preserves the
+  `redirect` query and clears password, verification, and error state.
+- Signup shows a two-step details/email-verification indicator and the eight-character
+  password requirement. Successful signup requests focus the one-time-code field and
+  clear the password. Changing the email clears verification errors/code and focuses
+  the email field; the user enters their password again before restarting signup.
 - Browser E2E login receives `E2E_AUTH_EMAIL`, `E2E_AUTH_PASSWORD`, and `E2E_AUTH_OTP` through the Playwright process environment. Playwright configuration may supply safe defaults for non-CI local tests; production application code and Vite builds must never import or define them.
 
 ## Stores (Pinia)

@@ -1,3 +1,48 @@
+## 2026-10-09 - Login and signup form usability
+
+### Changed
+
+- Polished the shared M03 login/signup form with locally served Inter, clearer type
+  hierarchy, consistent field sizing, calmer card spacing, responsive header/footer,
+  and light/dark colors aligned with the public landing page.
+- Moved password recovery beside the password label. Added explicit field associations,
+  autocomplete hints, an accessible keyboard password visibility button, an upfront
+  password requirement, focused authentication errors, and disabled/loading controls.
+- Added a two-step signup indicator, verification-code focus/autocomplete, and spam-folder
+  guidance. Changing email clears errors/code and returns focus to email; submitted
+  signup passwords are cleared and must be entered again to restart signup.
+- Switching login/signup preserves the requested redirect and clears password/code/error
+  state. In-flight submissions are guarded against duplicate calls and obsolete route
+  transitions. Existing Core payloads/endpoints remain unchanged.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/auth/pages/AuthPage.vue ../../docs/build-kit/reference/frontend.md ../../docs/frontend-feature-changelog.md`
+- `npm run typecheck`, `npm run build`, and
+  `npm run test -- src/stores/__tests__/auth.test.ts`: passed. Existing large-bundle
+  warning remains.
+- `node /tmp/taskmind-auth/check.mjs`: Playwright Chromium at `http://localhost:5173`,
+  widths 320, 390, 768, and 1440. Passed page identity, meaningful rendering, no Vite
+  overlay, no horizontal overflow, native email/short-password validation, keyboard
+  password visibility, error focus, retained input on failure, login/signup redirect
+  preservation, pending/disabled controls, verification autofocus/progress, verification
+  failure, changing email, successful login/verification navigation, password recovery,
+  and dark-mode contrast. Inspected screenshots outside the repository. Browser plugin
+  was unavailable, so regular Playwright used the installed system Chromium.
+- Auth API responses were mocked. Only intentional 401/400 HTTP console messages were
+  observed; no application runtime errors. Live Core authentication and the super-admin
+  login/create-project/create-task/status/logout E2E were not run because Core and its
+  infrastructure are not running in this environment.
+- `make vibe-verify`: attempted; blocked at `mvn test` because Maven is not installed
+  (`mvn: command not found`). No backend changes or milestone-completion claim.
+
+### Closeout notes
+
+- Primary milestone: M03. No Core contract/OpenAPI changes or dependency changes.
+- Skills: `frontend-testing-debugging`, `cloud-environment-runtime`, and local
+  `taskmind-frontend-feature` / `taskmind-frontend-agent` workflows. Delegation: none.
+- Provider token counts were unavailable; no token event recorded.
+
 ## 2026-10-09 - Landing page clarity and interactive preview
 
 ### Changed
