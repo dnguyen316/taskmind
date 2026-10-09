@@ -101,6 +101,15 @@ flowchart TD
 
 ## Notable feature mechanics
 
+- **Public landing** — `/` uses a responsive hero, an interactive example daily plan,
+  feature links to matching walkthrough steps, and signup/sign-in routes. Checking
+  example tasks updates local completion progress; trying the Nova suggestion moves
+  the customer preview task to Tomorrow and offers Undo. Example changes are not saved
+  or sent to Core. The header has one shared theme toggle and a mobile navigation
+  disclosure that closes on selection, Escape, outside interaction, or desktop resize.
+  Keyboard focus, a skip link, live example status, and reduced-motion support remain
+  available without authentication. Landing typography uses locally served Inter with
+  its license in `apps/frontend/public/fonts/`.
 - **Shell navigation** — authenticated desktop workspace routes render inside a persistent sidebar that can be collapsed to icon-only mode or resized between compact and wide widths with the mouse; mobile routes continue to use the drawer navigation.
 - **Tasks editor** — Tiptap-based block editor with custom image/video node views, media resize, and AI **description autocomplete** inline suggestions.
 - **AI** — capture, goal breakdown, weekly review for the authenticated user, project brief, translate, and **Nova Chat** through Core facades. Nova chat streams via Core at `/v1/nova/chat/stream`.

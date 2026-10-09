@@ -1,3 +1,51 @@
+## 2026-10-09 - Landing page clarity and interactive preview
+
+### Changed
+
+- Refreshed the public M03 landing page with readable Inter typography, a white/violet
+  palette, clear signup actions, open feature columns, and a three-step walkthrough.
+- Replaced the fixed-width tilted mockup with a responsive example daily plan. Task
+  checkboxes update completion progress locally; the Nova example moves a task to
+  Tomorrow and offers Undo. The preview does not save tasks or invoke AI services.
+- Consolidated the header to one shared theme toggle. Mobile navigation supports
+  Escape with focus restoration, outside interaction, link selection, and desktop
+  resize. Added a skip link, focus indicators, live example announcements, and
+  reduced-motion handling.
+- Linked feature actions to their matching walkthrough steps and replaced broad
+  privacy claims with concrete review/edit messaging. Added the existing check-mark
+  brand as a favicon and served Inter locally with its license.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- index.html src/features/landing/pages/LandingPage.vue src/features/landing/components/LandingHeader.vue src/features/landing/components/LandingPreview.vue src/features/landing/styles/landing.css ../../docs/build-kit/reference/frontend.md`
+- `cd apps/frontend && npm run typecheck` and `npm run build`: passed. The existing
+  large-chunk build warning remains.
+- Playwright Chromium at `http://localhost:5173`: page identity, meaningful rendering,
+  absence of framework overlays, keyboard task completion, progress extremes,
+  reschedule/Undo, feature/walkthrough anchors, signup/sign-in destinations, theme
+  persistence, mobile menu, skip link, and reduced-motion handling passed. Tested
+  widths 320, 390, 768, 860, 861, 1024, 1280, 1440, 1586, and 1942; no horizontal
+  overflow or cropped preview. Browser plugin was unavailable.
+- Compared generated section references and rendered screenshots with `view_image`:
+  copy, hero balance, type, palette, preview framing, section order, and responsive
+  layout. Retained the existing Ant Design icons/theme control and coherent content
+  width; dark mode and dynamic demo states intentionally extend the references.
+- Core was not running during public-page browser checks. The existing global auth
+  startup refresh reported connection failures on port 8080; no landing runtime
+  errors were found. Auth form submission and the authenticated
+  login/create-project/create-task/status/logout E2E were not run because they are
+  outside this public landing change.
+- `BASH_ENV=/tmp/taskmind-ui/maven-env.sh make vibe-verify`: passed with Java 17,
+  Maven 3.9.11, the session proxy, and system CA trust configured outside the repo.
+  All Java reactor tests, the required Spotless checks, and frontend typecheck passed.
+
+### Closeout notes
+
+- Primary milestone: M03. No Core contract or OpenAPI changes.
+- Skills used: `frontend-app-builder`, `frontend-testing-debugging`, and the local
+  `taskmind-frontend-feature` workflow. Agent delegation: none.
+- Provider token counts were not available, so no token event was recorded.
+
 ## 2026-08-02 - Isolated browser-test authentication credentials
 
 ### Changed
