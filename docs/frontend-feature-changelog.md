@@ -1,3 +1,44 @@
+## 2026-10-14 - Notion-style task document editor
+
+### Changed
+
+- Advanced M03 task detail UX from a metadata-heavy form and plain textarea to an open
+  document: directly editable title, two-column properties on desktop, a single column
+  on mobile, sticky desktop save actions, and collapsible metadata/attachments/AI sections.
+- Added Tiptap 3 and Markdown persistence with filtered slash commands, keyboard command
+  selection, headings, lists, checked to-do items, quotes, code, dividers, text selection
+  formatting, undo/redo, and block duplication/deletion. Editor code loads asynchronously.
+  Existing description strings and single line breaks remain readable; Core PATCH shape,
+  optimistic version, and the 2,000-character description limit remain unchanged.
+- Added unsaved/saving/saved feedback, Ctrl/Cmd+S, failed-save draft retention, guarded
+  submissions, disabled editing during persistence, and unsaved navigation/unload warnings.
+- Replaced command-menu emoji with native icons, kept focus and accessible labels,
+  positioned menus within the viewport, and retained the workspace shell and dark theme.
+
+### Verification
+
+- `cd apps/frontend && npm run format -- src/features/tasks/components/TaskDescriptionEditor.vue src/features/tasks/components/TaskEditorSaveBar.vue src/features/tasks/pages/TaskDetailPage.vue src/features/tasks/editor e2e/task-editor.spec.ts e2e/support/taskEditor.ts ../../docs/build-kit/reference/frontend.md ../../docs/frontend-feature-changelog.md`
+- `npm run test -- src`, `npm run typecheck`, and `npm run build`: passed.
+  The existing application bundle-size warning remains; the new editor has its own chunk.
+- `npx playwright test e2e/task-editor.spec.ts --reporter=line --output=/tmp/taskmind-playwright`:
+  seven routed UI tests cover block commands, checkboxes, Markdown save/reload, formatting,
+  undo/redo, keyboard save, version retention, error recovery, draft protection, block
+  actions, legacy/soft line breaks, normal URLs, property-only legacy saves, and mobile length/overflow handling.
+  Core/auth responses are mocked; live backend/database/AI calls were not exercised.
+- Playwright Chromium at `http://localhost:5173`: desktop 1505×1045 and mobile 390×844,
+  plus narrow/tablet layout checks. Page identity, meaningful content, no error overlay,
+  no runtime/console errors, and light/dark screenshots inspected outside the repository.
+  Browser plugin was not available. Compared the generated concept and rendered UI for
+  title/body typography, document width/spacing, property layout, neutral white canvas,
+  command menu, and disclosure anatomy. Intentional differences: retained existing
+  workspace sidebar, date/time control and theme, added Heading 3 and block actions,
+  and actual task text/counts/save state instead of mockup values.
+- `make vibe-verify`: attempted, blocked by `mvn: command not found` after the tracked
+  filename check passed. The full Java/service gate and live super-admin flow remain unverified.
+- Skills: frontend-app-builder, frontend-testing-debugging, cloud-environment-runtime,
+  and the repository TaskMind frontend feature workflow. Primary agent only; no delegation.
+  No commits, branches, pushes, or deployment performed. Provider token counts unavailable.
+
 ## 2026-10-09 - Login and signup form usability
 
 ### Changed
