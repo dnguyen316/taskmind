@@ -119,7 +119,19 @@ flowchart TD
   available without authentication. Landing typography uses locally served Inter with
   its license in `apps/frontend/public/fonts/`.
 - **Shell navigation** — authenticated desktop workspace routes render inside a persistent sidebar that can be collapsed to icon-only mode or resized between compact and wide widths with the mouse; mobile routes continue to use the drawer navigation.
-- **Tasks editor** — Tiptap-based block editor with custom image/video node views, media resize, and AI **description autocomplete** inline suggestions.
+- **Tasks editor** — the task detail page is an open document with an editable title,
+  compact properties, and a Tiptap 3 block editor. `/` opens a filterable command menu
+  with arrow-key/Enter selection and Escape dismissal. Supported blocks include text,
+  three heading levels, bullet/numbered/to-do lists, quotes, code, and dividers. Selecting
+  text opens a formatting toolbar; native editor shortcuts and undo/redo work. Block
+  actions duplicate or delete the current top-level block. Descriptions round-trip as
+  Markdown in the existing Core string field; legacy single line breaks are preserved.
+  The 2,000-character limit includes Markdown syntax and is enforced before PATCH.
+  Save is explicit via the sticky desktop action, mobile action, or Ctrl/Cmd+S. Draft,
+  saving, and saved states are visible; a failed save retains the draft. Editing is
+  disabled during PATCH, duplicate submits are guarded, and navigation/browser unload
+  warns about unsaved work. Metadata, attachments, and AI assistance remain in disclosure
+  sections. Inline media resizing and AI autocomplete remain follow-up work.
 - **AI** — capture, goal breakdown, weekly review for the authenticated user, project brief, translate, and **Nova Chat** through Core facades. Nova chat streams via Core at `/v1/nova/chat/stream`.
 - **Notifications** — notification bell plus SSE stream from Core at `/v1/notifications/stream`.
 - **Scheduler** — calendar/month layouts, block "why" rationale popovers, and task-detail navigation from scheduled block details.
